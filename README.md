@@ -1,4 +1,4 @@
-# ![MMdnn](https://yr1o6g.dm2304.livefilestore.com/y4meSL_Qn-BxWEximZ5MXQT-fFHBaDG1vClm1SquraPPu8IFQtQ4zAQWf3wYapGYa03e05fDhhAf0eNita3QWetA_rlTx2t6DZVN0e8456OPnsEzHjlGd8MbBGocmWBe4aHPu88Ij3VJnFYNt5EwnhCTL5nwi3WJmquvpFWZJmReLsebbHiQdY3k91UK-28dKJ2nHJlEl3Q_uuDb2dBMuvN8A?width=35&height=35&cropmode=none) MMdnn
+# ![MMdnn](https://ndqzpq.dm2304.livefilestore.com/y4mF9ON1vKrSy0ew9dM3Fw6KAvLzQza2nL9JiMSIfgfKLbqJPvuxwOC2VIur_Ycz4TvVpkibMkvKXrX-N9QOkyh0AaUW4qhWDak8cyM0UoLLxc57apyhfDaxflLlZrGqiJgzn1ztsxiaZMzglaIMhoo8kjPuZ5-vY7yoWXqJuhC1BDHOwgNPwIgzpxV1H4k1oQzmewThpAJ_w_fUHzianZtMw?width=35&height=35&cropmode=none) MMdnn
 
 A comprehensive, cross-framework solution to convert, visualize and diagnosis deep neural network models. The "MM" in MMdnn stands for model management and "dnn" is an acronym for deep neural network.
 
