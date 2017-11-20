@@ -1,0 +1,59 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) Microsoft Corporation. All rights reserved.
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
+from mmdnn.conversion.common.DataStructure.graph import GraphNode, Graph
+from tensorflow.core.framework.node_def_pb2 import NodeDef
+
+
+class TensorflowGraphNode(GraphNode):        
+
+    def __init__(self, layer):
+        super(TensorflowGraphNode, self).__init__(layer)        
+
+
+    @property
+    def name(self):
+        return self.layer.name
+
+
+    @property
+    def type(self):        
+        return self.layer.op
+
+
+    @property
+    def tf_layer(self):
+        return self.layer
+
+
+
+class TensorflowGraph(Graph):
+      
+    def __init__(self, model):
+        # sanity check.
+        pass
+
+        super(TensorflowGraph, self).__init__(model)
+        self.model = model
+      
+  
+    def build(self):        
+        for i, layer in enumerate(self.model.node):
+            self.layer_map[layer.name] = TensorflowGraphNode(layer)
+
+        for i, layer in enumerate(self.model.node):            
+            self.layer_map[layer.name] = TensorflowGraphNode(layer)
+            self.layer_name_map[layer.name] = layer.name
+            for pred in layer.input:
+                if pred not in self.layer_map:
+                    new_node = NodeDef()
+                    new_node.name = pred
+                    new_node.op = "NoOp"
+                    self.layer_map[pred] = TensorflowGraphNode(new_node)
+                    self.layer_name_map[pred] = pred
+                
+                self._make_connection(pred, layer.name)
+
+        super(TensorflowGraph, self).build()

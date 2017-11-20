@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+// Align with Numpy at https://docs.scipy.org/doc/numpy/user/basics.types.html.
+// No TensorFlow quantized data types.
+enum DataType {
+    DT_UNDEFINED = 0;
+    DT_INT8 = 1;
+    DT_INT16 = 2;
+    DT_INT32 = 3;
+    DT_INT64 = 4;
+    DT_UINT8 = 5;
+    DT_UINT16 = 6;
+    DT_UINT32 = 7;
+    DT_UINT64 = 8;
+    DT_FLOAT16 = 9;
+    DT_FLOAT32 = 10;
+    DT_FLOAT64 = 11;
+    DT_COMPLEX64 = 12;
+    DT_COMPLEX128 = 13;
+    DT_BOOL = 14;
+    DT_STRING = 15;
+}
+
+message GraphDef {
+    repeated NodeDef node = 1;
+    int32 version = 2;
+}
+
+message NodeDef {
+    // The name given to this operator. Used for naming inputs,
+    // logging, visualization, etc. Unique within a single GraphDef.
+    // Must match the regexp "[A-Za-z0-9.][A-Za-z0-9_./]*".
+    string name = 1;
+
+    // The operation name. There may be custom parameters in attrs.
+    // Op names starting with an underscore are reserved for internal use.
+    string op = 2;
+
+    // Each input is "node:src_output" with "node" being a string name and
+    // "src_output" indicating which output tensor to use from "node".
+    // Regular inputs may optionally be followed by control inputs that
+    // have the format "^node".
+    repeated string input = 3;
+
+    // Operation-specific graph-construction-time configuration.
+    // Note that this should include all attrs defined in the
+    // corresponding OpDef, including those with a value matching
+    // the default -- this allows the default to change and makes
+    // NodeDefs easier to interpret on their own. However, if an
+    // attr with a default is not specified in this list, the
+    // default will be used.
+    // The "names" (keys) must match the regexp "[a-z][a-z0-9_]+" (and
+    // one of the names from the corresponding OpDef's attr field).
+    // The values must have a type matching the corresponding OpDef
+    // attr's type field.
+    // TODO(josh11b): Add some examples here showing best practices.
+    map<string, AttrValue> attr = 4;
+};
+
+// Protocol buffer representing the value for an attr used to configure an Op.
+// Comment indicates the corresponding attr type. Only the field matching the
+// attr type may be filled.
+message AttrValue {
+    message ListValue {
+        repeated bytes s = 2;                       // "list(string)"
+        repeated int64 i = 3 [packed = true];       // "list(int)"
+        repeated float f = 4 [packed = true];       // "list(float)"
+        repeated bool b = 5 [packed = true];        // "list(bool)"
+        repeated DataType type = 6 [packed = true]; // "list(type)"
+        repeated TensorShape shape = 7;             // "list(shape)"
+        repeated LiteralTensor tensor = 8;          // "list(tensor)"
+    }
+
+    oneof value {
+        ListValue list = 1;       // any "list(...)"
+        bytes s = 2;              // "string"
+        int64 i = 3;              // "int"
+        float f = 4;              // "float"
+        bool b = 5;               // "bool"
+        DataType type = 6;        // "type"
+        TensorShape shape = 7;    // "shape"
+        LiteralTensor tensor = 8; // "tensor"
+    }
+}
+
+// Dimensions of a tensor.
+message TensorShape {
+    // One dimension of the tensor.
+    message Dim {
+        // Size of the tensor in that dimension.
+        // This value must be >= -1, but values of -1 are reserved for "unknown"
+        // shapes (values of -1 mean "unknown" dimension). Certain wrappers
+        // that work with TensorShape may fail at runtime when deserializing
+        // a TensorShape containing a dim value of -1.
+        int64 size = 1;
+
+        // Optional name of the tensor dimension.
+        string name = 2;
+    };
+
+    // Dimensions of the tensor, such as {"input", 30}, {"output", 40}
+    // for a 30 x 40 2D tensor. If an entry has size -1, this
+    // corresponds to a dimension of unknown size. The names are
+    // optional.
+    //
+    // The order of entries in "dim" matters: It indicates the layout of the
+    // values in the tensor in-memory representation.
+    //
+    // The first entry in "dim" is the outermost dimension used to layout the
+    // values, the last entry is the innermost dimension. This matches the
+    // in-memory layout of RowMajor Eigen tensors.
+    //
+    // If "dim.size()" > 0, "unknown_rank" must be false.
+    repeated Dim dim = 2;
+
+    // If true, the number of dimensions in the shape is unknown.
+    // If true, "dim.size()" must be 0.
+    bool unknown_rank = 3;
+};
+
+// Protocol buffer representing a literal tensor value.
+// As data types cross languages and toolkits differ, we can only cover the shared ones.
+// Then each toolkit converts literal values to final ones according to type.
+message LiteralTensor {
+    DataType dtype = 1;
+
+    // Shape of the tensor.
+    TensorShape tensor_shape = 2;
+    
+    // Only one of the representations below is set, one of "tensor_contents" and
+    // the "xxx_val" attributes.  We are not using oneof because as oneofs cannot
+    // contain repeated fields it would require another extra set of messages.
+    
+    // Version number.
+    //
+    // In version 0, if the "repeated xxx" representations contain only one
+    // element, that element is repeated to fill the shape.  This makes it easy
+    // to represent a constant Tensor with a single value.
+    int32 version_number = 3;
+    
+    // Serialized raw tensor content from either Tensor::AsProtoTensorContent or
+    // memcpy in tensorflow::grpc::EncodeTensorToByteBuffer. This representation
+    // can be used for all tensor types. The purpose of this representation is to
+    // reduce serialization overhead during RPC call by avoiding serialization of
+    // many repeated small items.
+    bytes tensor_content = 4;
+
+    // DT_INT32, DT_INT16, DT_INT8.
+    repeated int32 int_val = 5 [packed = true];
+
+    // DT_UINT32, DT_UINT16, DT_UINT8.
+    repeated int32 uint_val = 6 [packed = true];
+
+    // DT_INT64
+    repeated int64 int64_val = 7 [packed = true];
+
+    // DT_UINT64
+    repeated int64 uint64_val = 8 [packed = true];
+
+    // DT_FLOAT16, DT_FLOAT32.
+    repeated float float_val = 9 [packed = true];
+
+    // DT_FLOAT64, DT_COMPLEX64, DT_COMPLEX128 (may be truncated)
+    repeated double double_val = 10 [packed = true];
+
+    // DT_BOOL
+    repeated bool bool_val = 11 [packed = true];
+
+    // DT_STRING
+    repeated bytes string_val = 12;
+};
