@@ -4,7 +4,7 @@
 
 ### Extract Keras model
 
-You can refer */conversion/examples/keras/extract_model.py* to extract your Keras model.
+We provide an example code *mmdnn/conversion/examples/keras/extract_model.py* to extract Keras pre-trained model. You can refer it to extract your own model.
 
 > usage: extract_model.py [-h] -n {vgg16,vgg19,inception_v3,resnet50,mobilenet,xception}
 
@@ -25,7 +25,7 @@ model.save_weights('model_weights.h5')
 You can convert only network structure to IR for visualization or training in other frameworks.
 
 ```bash
-~/ModelConverter$ python3 -m conversion._script.convertToIR -f keras -d inception_v3 -n imagenet_inceptionv3.json
+$ python -m mmdnn.conversion._script.convertToIR -f keras -d inception_v3 -n imagenet_inceptionv3.json
 
 Using TensorFlow backend.
 IR network structure is saved as [inception_v3.json].
@@ -40,13 +40,13 @@ Warning: weights are not loaded.
 You can use following bash command to convert the network architecture [*imagenet_inceptionv3.json*] with weights [*imagenet_inceptionv3.h5*] to IR architecture file [*inception_v3.pb*], [*inception_v3.json*] and IR weights file [*inception_v3.npy*]
 
 ```bash
-~/ModelConverter$ python3 -m conversion._script.convertToIR -f keras -d inception_v3 -n imagenet_inceptionv3.json -w imagenet_inceptionv3.h5
+$ python -m mmdnn.conversion._script.convertToIR -f keras -d inception_v3 -n imagenet_inceptionv3.json -w imagenet_inceptionv3.h5
 
 Using TensorFlow backend.
 .
 .
 .
-Network file [conversion/examples/keras/models/imagenet_inceptionv3.json] is loaded successfully.
+Network file [imagenet_inceptionv3.json] is loaded successfully.
 IR network structure is saved as [inception_v3.json].
 IR network structure is saved as [inception_v3.pb].
 IR weights are saved as [inception_v3.npy].
@@ -57,7 +57,7 @@ IR weights are saved as [inception_v3.npy].
 Since the generated Keras model code snippet can restore weights from IR weights file directly, we don't need to convert weights in this step.
 
 ```bash
-~/ModelConverter$ python3 -m conversion._script.IRToCode -f keras --IRModelPath inception_v3.pb --dstModelPath keras_inception_v3.py
+$ python -m mmdnn.conversion._script.IRToCode -f keras --IRModelPath inception_v3.pb --dstModelPath keras_inception_v3.py
 
 Parse file [inception_v3.pb] with binary format successfully.
 Target network code snippet is saved as [keras_inception_v3.py].
@@ -68,7 +68,7 @@ Target network code snippet is saved as [keras_inception_v3.py].
 After generating the keras code snippet, you can convert the Keras code snippet and IR weights file to Keras original model for further usage.
 
 ```bash
-~/ModelConverter$ python3 -m conversion.examples.keras.imagenet_test -n keras_inception_v3.py -w inception_v3.npy --dump keras_inception_v3.h5
+$ python -m mmdnn.conversion.examples.keras.imagenet_test -n keras_inception_v3.py -w inception_v3.npy --dump keras_inception_v3.h5
 
 Using TensorFlow backend.
 .

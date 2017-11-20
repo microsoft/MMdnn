@@ -11,7 +11,7 @@ You can download some pre-trained models from [MXNet Model Gallery](https://gith
 You can convert only network structure to IR for visualization or training in other frameworks.
 
 ```bash
-~/ModelConverter$ python -m conversion._script.convertToIR -f mxnet -n mxnet/models/resnet-50-symbol.json -d resnet50 --inputShape 3 224 224
+$ python -m mmdnn.conversion._script.convertToIR -f mxnet -n mxnet/models/resnet-50-symbol.json -d resnet50 --inputShape 3 224 224
 .
 .
 .
@@ -27,7 +27,7 @@ You can use following bash command to convert both the network architecture and 
 > The input data shape is not in the architecture description of MXNet, we need to specify the data shape in conversion command.
 
 ```bash
-~/ModelConverter$ python -m conversion._script.convertToIR -f mxnet -n mxnet/models/resnet-50-symbol.json -w mxnet/models/resnet-50-0000.params -d resnet50 --inputShape 3 224 224
+$ python -m mmdnn.conversion._script.convertToIR -f mxnet -n mxnet/models/resnet-50-symbol.json -w mxnet/models/resnet-50-0000.params -d resnet50 --inputShape 3 224 224
 .
 .
 .
@@ -43,7 +43,7 @@ We need to generate both MXNet architecture code snippet and weights file to bui
 > Arugment 'dw' is used to specify the converted MXNet model file name for next step use.
 
 ```bash
-~/ModelConverter$ python -m conversion._script.IRToCode -f mxnet --IRModelPath inception_v3.pb --dstModelPath mxnet_inception_v3.py --IRWeightPath inception_v3.npy -dw mxnet_inception_v3-0000.params
+$ python -m mmdnn.conversion._script.IRToCode -f mxnet --IRModelPath inception_v3.pb --dstModelPath mxnet_inception_v3.py --IRWeightPath inception_v3.npy -dw mxnet_inception_v3-0000.params
 
 Parse file [inception_v3.pb] with binary format successfully.
 Detect input layer [input_1] using infer batch size, set it as default value [1]
@@ -55,7 +55,7 @@ Target network code snippet is saved as [mxnet_inception_v3.py].
 After generating the MXNet code snippet and weights, you can take a  further step to generate an original MXNet checkpoint file.
 
 ```bash
-~/ModelConverter$ python3 -m conversion.examples.mxnet.imagenet_test -n mxnet_inception_v3 -w mxnet_inception_v3-0000.params --dump inception_v3
+$ python -m mmdnn.conversion.examples.mxnet.imagenet_test -n mxnet_inception_v3 -w mxnet_inception_v3-0000.params --dump inception_v3
 .
 .
 .

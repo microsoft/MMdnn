@@ -26,7 +26,7 @@ Checkpoint **weights** file is stored as *examples/tf/resnet_v2_152.ckpt*
 2. Use python to extract both network architecture and weights
 
 ```bash
-$ python -m conversion.examples.tensorflow.extract_model -n resnet152 -ckpt examples/tf/resnet_v2_152.ckpt
+$ python -m mmdnn.conversion.examples.tensorflow.extract_model -n resnet152 -ckpt examples/tf/resnet_v2_152.ckpt
 .
 .
 .
@@ -52,7 +52,7 @@ You can convert only network structure to IR for visualization or training in ot
 > Note: it is much better to specify the **output node name** for Tensorflow models
 
 ```bash
-$ python -m conversion._script.convertToIR -f tensorflow -d resnet152 -n imagenet_resnet152.ckpt.meta --dstNodeName Squeeze
+$ python -m mmdnn.conversion._script.convertToIR -f tensorflow -d resnet152 -n imagenet_resnet152.ckpt.meta --dstNodeName Squeeze
 
 Parse file [imagenet_resnet152.ckpt.meta] with binary format successfully.
 Tensorflow model file [imagenet_resnet152.ckpt.meta] loaded successfully.
@@ -66,7 +66,7 @@ Warning: weights are not loaded.
 You can use following bash command to convert the checkpoint files to IR architecture file [*resnet152.pb*], [*resnet152.json*] and IR weights file [*resnet152.npy*]
 
 ```bash
-$ python -m conversion._script.convertToIR -f tensorflow -d resnet152 -n imagenet_resnet152.ckpt.meta -w imagenet_resnet152.ckpt  --dstNodeName Squeeze
+$ python -m mmdnn.conversion._script.convertToIR -f tensorflow -d resnet152 -n imagenet_resnet152.ckpt.meta -w imagenet_resnet152.ckpt  --dstNodeName Squeeze
 
 Parse file [imagenet_resnet152.ckpt.meta] with binary format successfully.
 Tensorflow model file [imagenet_resnet152.ckpt.meta] loaded successfully.
@@ -81,7 +81,7 @@ IR weights are saved as [resnet152.npy].
 The generated Tensorflow code snippet can restore weights from IR weights file directly, but we need the tensors' shape information to infer some parameters.
 
 ```bash
-$ python -m conversion._script.IRToCode -f tensorflow --IRModelPath resnet152.pb --IRWeightPath resnet152.npy --dstModelPath tf_resnet152.py
+$ python -m mmdnn.conversion._script.IRToCode -f tensorflow --IRModelPath resnet152.pb --IRWeightPath resnet152.npy --dstModelPath tf_resnet152.py
 
 Parse file [resnet152.pb] with binary format successfully.
 Target network code snippet is saved as [tf_resnet152.py].
@@ -90,7 +90,7 @@ Target network code snippet is saved as [tf_resnet152.py].
 You can refer the example tool to test your converted model. In this case we use the Tensorflow -> IR -> Tensorflow resnet_v2_152 model as an example.
 
 ```bash
-$ python -m conversion.examples.tensorflow.imagenet_test -s tf -p resnet -n tf_resnet152 -w resnet152.npy
+$ python -m mmdnn.conversion.examples.tensorflow.imagenet_test -s tf -p resnet -n tf_resnet152 -w resnet152.npy
 .
 .
 .
@@ -105,7 +105,7 @@ The information shows that the output result of **"Squeeze"** layers from origin
 After generating the Tensorflow code snippet, you can convert the Tensorflow code snippet and IR weights file to Tensorflow original model for further usage.
 
 ```bash
-$ python -m conversion.examples.tensorflow.imagenet_test -n tf_resnet152.py -w resnet152.npy --dump tf_resnet152.ckpt
+$ python -m mmdnn.conversion.examples.tensorflow.imagenet_test -n tf_resnet152.py -w resnet152.npy --dump tf_resnet152.ckpt
 .
 .
 .
