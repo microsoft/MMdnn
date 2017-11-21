@@ -4,7 +4,6 @@
 
 Currently we only implemented the Caffe-IR part. Any contribution to Caffe emitter (IR -> Caffe) is welcome.
 
-
 ### Caffe pre-trained model
 
 We tested [vgg19 model](https://gist.github.com/ksimonyan/3785162f95cd2d5fee77#file-readme-md) and [Googlenet model](https://github.com/BVLC/caffe/blob/80f44100e19fd371ff55beb3ec2ad5919fb6ac43/models/bvlc_googlenet/readme.md) from [Caffe2 Model Zoo](https://github.com/caffe2/caffe2/wiki/Model-Zoo).
@@ -14,7 +13,7 @@ We tested [vgg19 model](https://gist.github.com/ksimonyan/3785162f95cd2d5fee77#f
 You can use following bash command to convert the network architecture [*VGG_ILSVRC_19_layers_deploy.prototxt*] with weights [*VGG_ILSVRC_19_layers.caffemodel*] to IR architecture file [*vgg19.pb*], [*vgg19.json*] and IR weights file [*vgg19.npy*]
 
 ```bash
-~/ModelConverter$ python -m mmdnn.conversion._script.convertToIR -f caffe -d vgg19 -n VGG_ILSVRC_19_layers_deploy.prototxt -w VGG_ILSVRC_19_layers.caffemodel
+$ python -m mmdnn.conversion._script.convertToIR -f caffe -d vgg19 -n VGG_ILSVRC_19_layers_deploy.prototxt -w VGG_ILSVRC_19_layers.caffemodel
 .
 .
 .
@@ -26,10 +25,10 @@ IR weights are saved as [vgg19.npy].
 ## Limitation
 
 - Currently no RNN related operations support
-- Only VGG19 and Googlenet models tested.
+- Only VGG19 and GoogleNet models tested.
 
 ---
 
-# Acknowledgement
+## Acknowledgement
 
 Thanks to [Saumitro Dasgupta](https://github.com/ethereon), the initial code of *caffe-to-tensorflow* references to his project [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow).
