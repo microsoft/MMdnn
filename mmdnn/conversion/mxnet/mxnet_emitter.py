@@ -266,7 +266,7 @@ def predict(model, labels, url):
 
     
     @staticmethod
-    def transfer_pad(mode, data_shape, kernel, stride):
+    def transfer_pad(pad_list):
         # if len(stride) == 0:
         #     stride = list([1] * len(kernel))
         # if mode == b'SAME':
@@ -387,13 +387,13 @@ def predict(model, labels, url):
 
         defuse_pad = False
         pad = list()
-        if "padding" in IR_node.IR_layer.attr:    
+        if "pads" in IR_node.IR_layer.attr:    
             output_shape = list()            
             for e in IR_node.IR_layer.attr["_output_shapes"].list.shape[0].dim:
                 output_shape.append(e.size)
 
             # print("Warning: MXNet Convolution Layer pad does not match IR Convolution Layer pad")
-            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["padding"].s, output_shape, kernel, stride)
+            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["pads"].list.i)
         pad = ', '.join('%s' % i for i in pad)
 
         kernel = ', '.join('%s' % i for i in kernel)        
@@ -535,13 +535,13 @@ def predict(model, labels, url):
 
         defuse_pad = False
         pad = list()
-        if "padding" in IR_node.IR_layer.attr:
+        if "pads" in IR_node.IR_layer.attr:
             output_shape = list()
             for e in IR_node.IR_layer.attr["_output_shapes"].list.shape[0].dim:
                 output_shape.append(e.size)
         
             # print("Warning: MXNet Pooling Layer pad does not match IR Pooling Layer pad")
-            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["padding"].s, output_shape, kernel, stride)
+            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["pads"].list.i)
         pad = ', '.join('%s' % i for i in pad)
 
         kernel = ', '.join('%s' % i for i in kernel)
@@ -631,13 +631,13 @@ def predict(model, labels, url):
 
         defuse_pad = False
         pad = list()
-        if "padding" in IR_node.IR_layer.attr:
+        if "pads" in IR_node.IR_layer.attr:
             output_shape = list()
             for e in IR_node.IR_layer.attr["_output_shapes"].list.shape[0].dim:
                 output_shape.append(e.size)
         
             # print("Warning: MXNet Deconvolution Layer pad does not match IR Deconvolution Layer pad")
-            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["padding"].s, output_shape, kernel, stride)
+            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["pads"].list.i)
         pad = ', '.join('%s' % i for i in pad)
 
         kernel = ', '.join('%s' % i for i in kernel)

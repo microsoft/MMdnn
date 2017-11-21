@@ -3,6 +3,7 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
+from __future__ import absolute_import
 import argparse
 import numpy as np
 import sys
@@ -93,7 +94,9 @@ class TestKit(object):
 
         'mxnet' : {
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'resnet'        : lambda path : TestKit.Identity(path, 224)
+            'resnet'        : lambda path : TestKit.Identity(path, 224),
+            'squeezenet'    : lambda path : TestKit.Identity(path, 224),
+            'inception_bn'  : lambda path : TestKit.Identity(path, 224)
         }
     }
 
