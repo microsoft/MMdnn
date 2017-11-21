@@ -87,7 +87,6 @@ Ubuntu 16.04 with
 
 @ 11/21/2017
 
-
 ## Limitation
 
 - Lambda layer no support

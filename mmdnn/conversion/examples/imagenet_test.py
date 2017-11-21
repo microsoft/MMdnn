@@ -9,7 +9,6 @@ import sys
 import os
 from six import text_type as _text_type
 from tensorflow.contrib.keras.python.keras.preprocessing import image
-import tensorflow as tf
 
 
 class TestKit(object):
@@ -19,11 +18,11 @@ class TestKit(object):
             'vgg19'          : [(386, 0.78324348), (101, 0.19303614), (385, 0.018230435), (347, 0.0021320845), (348, 0.0013114288)],
             'inception_v1'   : [(386, 0.74765885), (101, 0.21649569), (385, 0.035726305), (343, 2.2025948e-05), (346, 1.609625e-05)]
         },
-        'tf' : {
-            'vgg19'             : [(386, 21.274265), (101, 20.239922), (385, 18.051809), (347, 15.064944), (354, 14.070037)],
-            'resnet'            : [(387, 14.552186), (102, 11.523594), (386, 7.2283664), (500, 4.6292458), (899, 2.8113561)],
-            'inception_v3'      : [(387, 10.452494), (102, 7.0714035), (386, 4.9622779), (341, 1.9631921), (685, 1.6739436)],
-            'mobilenet'         : [(387, 22.832821), (102, 21.173042), (386, 16.660761), (349, 13.075641), (350, 10.205788)]
+        'tensorflow' : {
+            'vgg19'             : [(21, 11.285443), (144, 10.240093), (23, 9.1792336), (22, 8.1113129), (128, 8.1065922)],
+            'resnet'            : [(22, 11.756789), (147, 8.5718527), (24, 6.1751032), (88, 4.3121386), (141, 4.1778097)],
+            'inception_v3'      : [(22, 9.4921198), (24, 4.0932288), (25, 3.700398), (23, 3.3715961), (147, 3.3620636)],
+            'mobilenet'         : [(22, 16.223597), (24, 14.54775), (147, 13.173758), (145, 11.36431), (728, 11.083847)]
         },
         'keras' : {
             'vgg16'             : [(21, 0.81199354), (562, 0.019326132), (23, 0.018279659), (144, 0.012460723), (22, 0.012429929)],
@@ -74,10 +73,11 @@ class TestKit(object):
             'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True)
         },
 
-        'tf' : {
+        'tensorflow' : {
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
             'inception_v3'  : lambda path : TestKit.Standard(path, 299),
             'resnet'        : lambda path : TestKit.Standard(path, 299),
+            'resnet152'     : lambda path : TestKit.Standard(path, 299),
             'mobilenet'     : lambda path : TestKit.Standard(path, 224)
         },
 
