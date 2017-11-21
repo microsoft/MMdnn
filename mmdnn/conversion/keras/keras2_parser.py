@@ -145,6 +145,7 @@ class Keras2Parser(Parser):
             for dim in source_node.output_shape:
                 new_dim = target_node.attr["shape"].shape.dim.add()
                 new_dim.size = -1 if dim == None else dim
+        
         else:
             target_node.attr["shape"].shape.unknown_rank = True
 
