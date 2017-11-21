@@ -55,9 +55,14 @@ Xception|×|√|√|×|×
 
 We will use the conversion from [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-models) to CNTK as an example.
 
-1. Download the pre-trained models
+Install [keras](https://keras.io/#installation) and [tensorflow](https://www.tensorflow.org/install/) in case
 
-We prepare a simple model extractor for [Keras applications](https://keras.io/applications/#applications), you can refer it to extract your Keras model structure and weights.
+```bash
+$ pip install keras
+$ pip install tensorflow
+```
+
+1. The example will download the pre-trained models at first, then use a simple model extractor for [Keras applications](https://keras.io/applications/#applications), you can refer it to extract your Keras model structure and weights.
 
 ```bash
 $ python -m mmdnn.conversion.examples.keras.extract_model -n inception_v3
