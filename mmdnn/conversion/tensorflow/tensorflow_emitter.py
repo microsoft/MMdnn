@@ -267,7 +267,7 @@ def KitModel(weight_file = None):
         return self.emit_RNNs(IR_node, "GRU")
 
 
-    def emit_Add(self, IR_node):        
+    def emit_Add(self, IR_node):
         self.add_body(1, "{:<15} = {}".format(
             IR_node.variable_name,
             ' +'.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
@@ -281,7 +281,7 @@ def KitModel(weight_file = None):
             IR_node.name))
 
 
-    def emit_BatchNorm(self, IR_node):        
+    def emit_BatchNorm(self, IR_node):
         self.used_layers.add(IR_node.type)
         self.add_body(1, "{:<15} = batch_normalization({}, variance_epsilon = {}, name = '{}')".format(
             IR_node.variable_name,

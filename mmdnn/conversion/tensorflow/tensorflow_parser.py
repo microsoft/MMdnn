@@ -341,7 +341,7 @@ class TensorflowParser(Parser):
     def _convert_identity_operation(self, source_node, in_edge_count = None, new_op = None):
         IR_node = self.IR_graph.node.add()
         TensorflowParser._copy_and_reop(source_node, IR_node, new_op)
-        self._convert_inedge(source_node, IR_node)
+        self._convert_inedge(source_node, IR_node, 0, in_edge_count)
         return IR_node
     
     
