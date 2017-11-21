@@ -144,8 +144,7 @@ class Keras2Parser(Parser):
         if hasattr(source_node, "output_shape"):
             for dim in source_node.output_shape:
                 new_dim = target_node.attr["shape"].shape.dim.add()
-                new_dim.size = -1 if dim == None else dim
-        
+                new_dim.size = -1 if dim == None else dim        
         else:
             target_node.attr["shape"].shape.unknown_rank = True
 
@@ -160,9 +159,33 @@ class Keras2Parser(Parser):
             print("Warning: [%s] don't have data format info." % (source_node.keras_layer.name))
 
 
-    @staticmethod
-    def _convert_padding(source_node, target_node):
-        target_node.attr["padding"].s = source_node.keras_layer.padding.upper().encode('utf-8')
+    def _convert_padding(self, source_node, target_node, dim):
+        # target_node.attr["padding"].s = source_node.keras_layer.padding.upper().encode('utf-8')
+        pad = source_node.keras_layer.padding.upper()
+        if pad == "SAME":
+            input_shape = source_node.layer.input_shape
+            cnt = 0
+            if self.data_format == 'channels_last':
+                input_shape = input_shape[1:-1]
+            else:
+                input_shape = input_shape[2:]
+            pad_along = list()
+            for dims in input_shape:
+                if (dims % source_node.layer.strides[cnt] == 0):
+                    pad_along.append(max(source_node.layer.kernel_size[cnt] - source_node.layer.strides[cnt], 0))
+                else:
+                    pad_along.append(max(source_node.layer.kernel_size[cnt] - (dims % source_node.layer.strides[cnt]), 0))
+                cnt += 1
+            pad_along_first = list()
+            pad_along_second = list()
+            for i in range(len(pad_along)):
+                pad_along_first[i] = pad_along[i] // 2
+                pad_along_second[i] = pad_along[i] - pad_along_first[i]
+            target_node.attr["pads"].list.i.extend([0, 0] + pad_along_first + pad_along_second + [0, 0])
+        elif pad == "VALID":
+            target_node.attr["pads"].list.i.extend([0, 0] * (dim + 2))
+        else:
+            raise ValueError("Padding format of [{}] is not supported".format(pad))
 
 
     def _defuse_activation(self, keras_node):
@@ -216,7 +239,7 @@ class Keras2Parser(Parser):
         self._convert_inedge(source_node, IR_node)
         
         # padding
-        Keras2Parser._convert_padding(source_node, IR_node)
+        self._convert_padding(source_node, IR_node, dim)
                
         # filter
         # [kd, kh, kw, channel_size, filter number]
@@ -273,7 +296,7 @@ class Keras2Parser(Parser):
             IR_node.attr["strides"].list.i[:] = [1] * (dim + 2) # for saving dim
         else:
             # padding
-            Keras2Parser._convert_padding(source_node, IR_node)
+            self._convert_padding(source_node, IR_node, dim)
 
             # strides
             # [1, sd, sh, sw, 1]

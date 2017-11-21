@@ -73,6 +73,17 @@ class MXNetParser(Parser):
         return data
 
 
+    @staticmethod
+    def _convert_axis(IR_node, axis):
+        ndim = len(IR_node.attr['_output_shapes'].list.shape[0].dim)
+        if axis == 0:
+            return 0
+        elif axis == 1:
+            return ndim - 1
+        else:
+            return axis - 1
+
+
     def trace_shape(self, source_node, IR_node):
         while (not IR_node.op == "Flatten"):
             IR_node = self.IR_layer_map[IR_node.input[0]]
@@ -532,11 +543,13 @@ class MXNetParser(Parser):
             #     del IR_node.input[:]
             #     IR_node.input.append(source_node.name + "_pad")
 
-            IR_node.attr["padding"].s = b"VALID"
-            self._defuse_padding(source_node)
-            del IR_node.input[:]
-            IR_node.input.append(source_node.name + "_pad")
+            # IR_node.attr["padding"].s = b"VALID"
+            # self._defuse_padding(source_node)
+            # del IR_node.input[:]
+            # IR_node.input.append(source_node.name + "_pad")
 
+            pad = MXNetParser.str2intList(layer_attr.get("pad"))
+            IR_node.attr["pads"].list.i.extend([0, 0] + pad * 2 + [0, 0])
 
         # output shape
         self.set_output_shape(source_node, IR_node)
@@ -594,6 +607,9 @@ class MXNetParser(Parser):
         # input edge
         self._convert_inedge(source_node, IR_node)
 
+        # output shape
+        self.set_output_shape(source_node, IR_node)
+
         layer_attr = dict()
         if "attr" in source_node.layer:
             layer_attr = source_node.layer["attr"]
@@ -601,10 +617,10 @@ class MXNetParser(Parser):
             layer_attr = source_node.layer["param"]
 
         # axis
-        # if self.data_format not in MXNetParser.channels_last: 
-        # 	IR_node.attr["axis"].i = int(layer_attr.get("axis", "1"))
-        # else:
-        IR_node.attr["axis"].i = -1
+        if self.data_format not in MXNetParser.channels_last: 
+        	IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("axis", "1")))
+        else:
+            IR_node.attr["axis"].i = int(layer_attr.get("axis", "1"))
 
         # scale
         IR_node.attr["scale"].b = not MXNetParser.str2bool(layer_attr.get("fix_gamma", "True"))
@@ -614,9 +630,6 @@ class MXNetParser(Parser):
 
         # momentum
         IR_node.attr["momentum"].f = float(layer_attr.get("momentum", "0.9"))
-
-        # output shape
-        self.set_output_shape(source_node, IR_node)
 
         # weights
         if self.weight_loaded:
@@ -701,10 +714,13 @@ class MXNetParser(Parser):
                 #     del IR_node.input[:]
                 #     IR_node.input.append(source_node.name + "_pad")
             
-                IR_node.attr["padding"].s = b"VALID"
-                self._defuse_padding(source_node)
-                del IR_node.input[:]
-                IR_node.input.append(source_node.name + "_pad")
+                # IR_node.attr["padding"].s = b"VALID"
+                # self._defuse_padding(source_node)
+                # del IR_node.input[:]
+                # IR_node.input.append(source_node.name + "_pad")
+
+                pad = MXNetParser.str2intList(layer_attr.get("pad"))
+                IR_node.attr["pads"].list.i.extend([0, 0] + pad * 2 + [0, 0])
 
         # output shape
         self.set_output_shape(source_node, IR_node)
@@ -790,10 +806,14 @@ class MXNetParser(Parser):
             #     self._defuse_padding(source_node)
             #     del IR_node.input[:]
             #     IR_node.input.append(source_node.name + "_pad")
-            IR_node.attr["padding"].s = b"VALID"
-            self._defuse_padding(source_node)
-            del IR_node.input[:]
-            IR_node.input.append(source_node.name + "_pad")
+            
+            # IR_node.attr["padding"].s = b"VALID"
+            # self._defuse_padding(source_node)
+            # del IR_node.input[:]
+            # IR_node.input.append(source_node.name + "_pad")
+
+            pad = MXNetParser.str2intList(layer_attr.get("pad"))
+            IR_node.attr["pads"].list.i.extend([0, 0] + pad * 2 + [0, 0])
 
         # output shape
         self.set_output_shape(source_node, IR_node)
@@ -1053,17 +1073,6 @@ class MXNetParser(Parser):
         # raise NotImplementedError
 
 
-    @staticmethod
-    def _convert_axis(IR_node, axis):
-        ndim = len(IR_node.attr['_output_shapes'].list.shape[0].dim)
-        if axis == 0:
-            return 0
-        elif axis == 1:
-            return ndim - 1
-        else:
-            return axis - 1
-
-
     def rename_Concat(self, source_node):
         IR_node = self.IR_graph.node.add()
 
@@ -1122,6 +1131,9 @@ class MXNetParser(Parser):
         # input edge
         self._convert_inedge(source_node, IR_node)
 
+        # output shape
+        self.set_output_shape(source_node, IR_node)
+
         # attr
         assert "attr" in source_node.layer or "param" in source_node.layer
         layer_attr = dict()
@@ -1131,11 +1143,9 @@ class MXNetParser(Parser):
             layer_attr = source_node.layer["param"]
 
         # axis
-        IR_node.attr["axis"].i = int(layer_attr.get("axis"))
+        IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("axis")))
 
-        # output shape
-        self.set_output_shape(source_node, IR_node)
-
+        
         # raise NotImplementedError
 
 
