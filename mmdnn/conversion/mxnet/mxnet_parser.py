@@ -37,8 +37,8 @@ class MXNetParser(Parser):
         # "softrelu"  : "SoftReLU"
     }
 
-    channels_last = ['NDHWC', 'NHWC']
-
+    channels_last = ['NDHWC', 'NHWC', 'NWC']
+    channels_first = ['NCDHW', 'NCHW', 'NCW']
 
     @property
     def src_graph(self):
@@ -91,10 +91,9 @@ class MXNetParser(Parser):
         input_shape = list()
         for e in IR_node.attr["_output_shapes"].list.shape[0].dim:
             input_shape.append(e.size)
-        C = input_shape[-1]
-        H = input_shape[1]
-        W = input_shape[2]
-        return C, H, W
+        C = input_shape.pop()
+        ret = [C] + input_shape[1:]
+        return ret
 
 
     def check_pad_mode(self, source_node, IR_node):
@@ -442,11 +441,13 @@ class MXNetParser(Parser):
                 self.set_weight(source_node.name, "weights", self.weight_data.get(source_node.name + "_weight").asnumpy().transpose((1, 0)))
             else:
                 weight = self.weight_data.get(source_node.name + "_weight").asnumpy().transpose((1, 0))
-                input_channel, input_height, input_width = self.trace_shape(source_node, IR_node)
-                output_shape = int(layer_attr.get("num_hidden"))
-                weight = weight.reshape((input_channel, input_height, input_width, output_shape))
-                weight = weight.transpose((1, 2, 0, 3))
-                weight = weight.reshape((input_channel* input_height* input_width, output_shape))
+                original_shape = weight.shape
+                channel_first_list = self.trace_shape(source_node, IR_node)
+                dim = len(channel_first_list) + 1
+                weight = weight.reshape(channel_first_list + [original_shape[1]])
+                assert dim > 2
+                weight = weight.transpose(list(range(1, dim-1)) + [0, dim-1])
+                weight = weight.reshape(original_shape)
                 self.set_weight(source_node.name, "weights", weight)
 
             if IR_node.attr["use_bias"].b:
@@ -617,7 +618,7 @@ class MXNetParser(Parser):
             layer_attr = source_node.layer["param"]
 
         # axis
-        if self.data_format not in MXNetParser.channels_last: 
+        if self.data_format in MXNetParser.channels_first: 
         	IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("axis", "1")))
         else:
             IR_node.attr["axis"].i = int(layer_attr.get("axis", "1"))
@@ -762,7 +763,10 @@ class MXNetParser(Parser):
             layer_attr = source_node.layer["param"]
 
         # dim
-        IR_node.attr["dim"].i = int(layer_attr.get("axis", "-1"))
+        if self.data_format in MXNetParser.channels_first:
+            IR_node.attr["dim"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("axis", "-1")))
+        else:
+            IR_node.attr["dim"].i = int(layer_attr.get("axis", "-1"))
 
         # output shape
         self.set_output_shape(source_node, IR_node)
@@ -1092,8 +1096,11 @@ class MXNetParser(Parser):
         elif "param" in source_node.layer:
             layer_attr = source_node.layer["param"]
 
-        # dim 
-        IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("dim", "1")))
+        # dim
+        if self.data_format in MXNetParser.channels_first:
+            IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("dim", "1")))
+        else:
+            IR_node.attr["axis"].i = int(layer_attr.get("dim", "1"))
 
 
     def rename_cast(self, source_node):
@@ -1143,8 +1150,10 @@ class MXNetParser(Parser):
             layer_attr = source_node.layer["param"]
 
         # axis
-        IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("axis")))
-
+        if self.data_format in MXNetParser.channels_first:
+            IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("axis")))
+        else:
+            IR_node.attr["axis"].i = int(layer_attr.get("axis"))
         
         # raise NotImplementedError
 
