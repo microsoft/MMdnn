@@ -15,8 +15,8 @@ class TestKit(object):
 
     truth = {
         'caffe' : {
-            'vgg19'          : [(386, 0.78324348), (101, 0.19303614), (385, 0.018230435), (347, 0.0021320845), (348, 0.0013114288)],
-            'inception_v1'   : [(386, 0.74765885), (101, 0.21649569), (385, 0.035726305), (343, 2.2025948e-05), (346, 1.609625e-05)]
+            'vgg19'          : [(21, 0.37522122), (144, 0.28500062), (23, 0.099720284), (134, 0.036305398), (22, 0.033559237)],
+            'inception_v1'   : [(21, 0.93591732), (23, 0.037170019), (22, 0.014315935), (128, 0.005050648), (749, 0.001965977)]
         },
         'tensorflow' : {
             'vgg19'             : [(21, 11.285443), (144, 10.240093), (23, 9.1792336), (22, 8.1113129), (128, 8.1065922)],
@@ -34,10 +34,10 @@ class TestKit(object):
             'inception_resnet'  : [(21, 0.93837249), (87, 0.0021177295), (146, 0.0019775454), (23, 0.00072135136), (24, 0.00056668324)]
         },
         'mxnet' : {
-            'vgg19'          : [(386, 0.71452385), (101, 0.25398338), (385, 0.028478812), (347, 0.0014366163), (354, 0.00053119892)],
-            'resnet'         : [(386, 0.68158048), (101, 0.27469227), (385, 0.038434178), (347, 0.0027639084), (348, 0.00042860108)],
-            'squeezenet'     : [(386, 0.98810065), (101, 0.0090002166), (385, 0.0027751704), (354, 8.5944812e-05), (348, 1.8317563e-05)],
-            'inception_bn'   : [(386, 0.59537756), (101, 0.36962193), (385, 0.034420349), (354, 0.00017646443), (347, 0.00015946048)]
+            'vgg19'          : [(21, 0.54552644), (144, 0.19179004), (23, 0.066389613), (22, 0.022819581), (128, 0.02271222)],
+            'resnet'         : [(21, 0.84012794), (144, 0.097428247), (23, 0.039757393), (146, 0.010432643), (99, 0.0023797606)],
+            'squeezenet'     : [(21, 0.36026478), (128, 0.084114805), (835, 0.07940048), (144, 0.057378717), (749, 0.053491514)],
+            'inception_bn'   : [(21, 0.84332663), (144, 0.041747514), (677, 0.021810319), (973, 0.02054958), (115, 0.008529461)]
         }
     }
 
@@ -93,21 +93,22 @@ class TestKit(object):
 
         'mxnet' : {
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'resnet'        : lambda path : TestKit.Identity(path, 224)
+            'resnet'        : lambda path : TestKit.Identity(path, 224, True),
+            'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'inception_bn'  : lambda path : TestKit.Identity(path, 224, False)
         }
     }
 
     def __init__(self):
         parser = argparse.ArgumentParser()
 
-        parser.add_argument('-p', '--preprocess',
-            type = _text_type, help='Model Preprocess Type')
+        parser.add_argument('-p', '--preprocess', type=_text_type, help='Model Preprocess Type')
 
-        parser.add_argument('-n',
-            type = _text_type, default = 'kit_imagenet', help = 'Network structure file name.')
+        parser.add_argument('-n', type=_text_type, default='kit_imagenet',
+                            help='Network structure file name.')
 
         parser.add_argument('-s', type = _text_type, help = 'Source Framework Type',
-            choices = ["caffe", "tensorflow", "keras", "cntk", "mxnet"])
+                            choices = ["caffe", "tensorflow", "keras", "cntk", "mxnet"])
 
         parser.add_argument('-w',
             type = _text_type, help = 'Network weights file name', required = True)
@@ -130,7 +131,7 @@ class TestKit(object):
 
 
     @staticmethod
-    def ZeroCenter(path, size, BGRTranspose = False):
+    def ZeroCenter(path, size, BGRTranspose=False):
         img = image.load_img(path, target_size = (size, size))
         x = image.img_to_array(img)
         if BGRTranspose == True:
@@ -152,9 +153,11 @@ class TestKit(object):
 
     
     @staticmethod
-    def Identity(path, size):
+    def Identity(path, size, BGRTranspose=False):
         img = image.load_img(path, target_size = (size, size))
         x = image.img_to_array(img)
+        if BGRTranspose == True:
+            x = x[..., ::-1]
         return x
 
 

@@ -66,6 +66,14 @@ Then the output files *inception_v3-symbol.json* and *inception_v3-0000.params* 
 
 ---
 
+## Develop version
+
+Ubuntu 16.04 with
+
+- MXNet 0.11.0
+
+@ 11/22/2017
+
 ## Limitation
 
 - Currently no RNN related operations support

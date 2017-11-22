@@ -16,9 +16,9 @@ class TestMXNet(TestKit):
     def __init__(self):
         super(TestMXNet, self).__init__()
         
-        self.truth['tf']['resnet'] = [(387, 13.758859), (102, 11.153274), (386, 7.5652766), (500, 3.8271735), (899, 2.4549766)]
-        self.truth['tf']['inception_v3'] = [(387, 10.534704), (102, 7.0679927), (386, 4.8876195), (341, 2.0347159), (685, 1.9010825)]
-        self.truth['keras']['inception_v3'] = [(386, 0.94602561), (101, 0.027771622), (385, 0.0023679493), (340, 0.00017149728), (684, 0.000170618)]
+        self.truth['tensorflow']['resnet'] = [(22, 13.58994), (147, 8.9273033), (90, 5.7173896), (24, 5.709712), (88, 4.7731524)]
+        self.truth['tensorflow']['inception_v3'] = [(22, 9.6691055), (24, 4.3524752), (25, 3.5957956), (132, 3.5657482), (23, 3.3462858)]
+        self.truth['keras']['inception_v3'] = [(21, 0.93430501), (23, 0.0028834261), (131, 0.0014781745), (24, 0.0014518937), (22, 0.0014435325)]
 
         self.model = self.MainModel.RefactorModel()
         self.model = self.MainModel.deploy_weight(self.model, self.args.w)

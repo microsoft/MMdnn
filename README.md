@@ -44,8 +44,9 @@ Models                                              | Caffe | Keras | Tensorflow
 [ResNet V1 50](https://arxiv.org/abs/1512.03385)    |   ×   |   √   |     √      |   o  |   √   |    √
 [ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   ×   |   √   |     √      |   √  |   √   |
 [VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √
-[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      |   ×  |   ×
-[Xception]((https://arxiv.org/abs/1610.02357))      |   ×   |   √   |     √      |   ×  |   ×
+[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (No Relu6) |    ×
+[Xception]((https://arxiv.org/abs/1610.02357))      |   ×   |   √   |     √      |   ×  |   ×   |
+[SqueezeNet](https://arxiv.org/pdf/1602.07360)      |       |   √   |     √      |   √  |   √   |
 
 #### On-going frameworks
 
@@ -62,7 +63,6 @@ Install [keras](https://keras.io/#installation) and [tensorflow](https://www.ten
 ```bash
 $ pip install keras
 $ pip install tensorflow
-$ pip install 
 ```
 
 1. The example will download the pre-trained models at first, then use a simple model extractor for [Keras applications](https://keras.io/applications/#applications), you can refer it to extract your Keras model structure and weights.
