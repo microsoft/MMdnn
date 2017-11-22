@@ -107,7 +107,7 @@ class TestKit(object):
             type = _text_type, default = 'kit_imagenet', help = 'Network structure file name.')
 
         parser.add_argument('-s', type = _text_type, help = 'Source Framework Type',
-            choices = ["caffe", "tf", "keras", "cntk", "mxnet"])
+            choices = ["caffe", "tensorflow", "keras", "cntk", "mxnet"])
 
         parser.add_argument('-w',
             type = _text_type, help = 'Network weights file name', required = True)
