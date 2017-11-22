@@ -27,6 +27,15 @@ class TensorflowGraphNode(GraphNode):
     def tf_layer(self):
         return self.layer
 
+    def get_attr(self, name, default_value = None):
+        if name in self.layer.attr:
+            attr = self.layer.attr[name]
+            field = attr.WhichOneof('value')
+            val = getattr(attr, field) if field else default_value
+            return val
+            # return val.decode('utf-8') if isinstance(val, bytes) else val
+        else:
+            return default_value
 
 
 class TensorflowGraph(Graph):

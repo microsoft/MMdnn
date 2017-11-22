@@ -52,8 +52,8 @@ class TensorflowParser(Parser):
         5 : graph_pb2.DT_INT16,
         6 : graph_pb2.DT_INT8,
         7 : graph_pb2.DT_STRING,
-        9 : graph_pb2.DT_INT64        
-        }
+        9 : graph_pb2.DT_INT64
+    }
 
     
     @property
@@ -178,7 +178,7 @@ class TensorflowParser(Parser):
             IR_node.attr['scale'].b = False
             output_node = self.get_son(source_node.name, [0, 0, 0], True)
         else:
-            IR_node.attr['scale'].b = True            
+            IR_node.attr['scale'].b = True
             if self.weight_loaded:
                 self.set_weight(source_node.name, 'scale', self.ckpt_data[gamma.name])
             output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
@@ -250,9 +250,6 @@ class TensorflowParser(Parser):
         # strides
         IR_node.attr['strides'].list.i[:] = source_node.layer.attr['strides'].list.i[:]
 
-        # data_format
-        IR_node.attr['data_format'].s = source_node.layer.attr['data_format'].s
-
         # window_shape
         IR_node.attr['window_shape'].list.i[:] = source_node.layer.attr['ksize'].list.i[:]
         
@@ -283,6 +280,10 @@ class TensorflowParser(Parser):
         if new_op == None: new_op = source_node.type
         IR_node.name = source_node.name
         IR_node.op = new_op
+
+        if 'data_format' in source_node.layer.attr:            
+            IR_node.attr['data_format'].s = source_node.get_attr('data_format')
+
         if 'dtype' in source_node.layer.attr:            
             assert source_node.layer.attr['dtype'].type in TensorflowParser.dtype_map, 'type [{}] is unknown.'.format(source_node.layer.attr['dtype'].type)
             IR_node.attr["dtype"].type = TensorflowParser.dtype_map[source_node.layer.attr['dtype'].type]
@@ -349,9 +350,6 @@ class TensorflowParser(Parser):
         # strides
         IR_node.attr['strides'].list.i[:] = source_node.layer.attr['strides'].list.i[:]
 
-        # data_format
-        IR_node.attr['data_format'].s = source_node.layer.attr['data_format'].s
-
         # input[1] : W
         # filter
         W = self.tf_graph.get_node(source_node.layer.input[1])
@@ -387,11 +385,14 @@ class TensorflowParser(Parser):
     def rename_Add(self, source_node):
         if not source_node.covered:
             scopes = self._get_scopes(source_node.name)
-            if scopes[-2] == 'dropout':
+            if len(scopes) < 3:
+                self._convert_identity_operation(source_node)
+                
+            elif scopes[-2] == 'dropout':
                 # converted [dropout]
                 pass
 
-            if scopes[-2] == 'batchnorm':
+            elif scopes[-2] == 'batchnorm':
                 # convert [tf.contrib.layers.batch_norm]
                 self._convert_layers_batchnorm(source_node)
 
@@ -528,7 +529,6 @@ class TensorflowParser(Parser):
     def rename_DepthwiseConv2dNative(self, source_node):
         IR_node = self._convert_identity_operation(source_node, 1, 'DepthwiseConv')
         IR_node.attr['strides'].list.i[:] = source_node.layer.attr['strides'].list.i[:]
-        IR_node.attr['data_format'].s = source_node.layer.attr['data_format'].s
 
         input_node = self.src_graph.get_parent(source_node.name, [1])
         IR_node.attr['filter'].list.i.extend([dim.size for dim in input_node.layer.attr['_output_shapes'].list.shape[0].dim])
@@ -537,3 +537,44 @@ class TensorflowParser(Parser):
         if self.weight_loaded:
             weight = self.src_graph.get_parent(source_node.name, [1, 0])
             self.set_weight(source_node.name, 'weights', self.ckpt_data[weight.name])
+
+    def rename_FusedBatchNorm(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, 1, 'BatchNorm')
+        IR_node.attr['epsilon'].f = source_node.get_attr('epsilon', 0)
+        
+        # gamma (scale)
+        scale = self.get_parent(source_node.name, [1], True)
+        
+        if scale.type == 'Const':
+            value = scale.get_attr('value')
+            shape = value.tensor_shape
+            assert len(shape.dim) == 1
+            shape = shape.dim[0].size
+            
+            assert len(value.float_val) == 1
+            value = value.float_val[0]
+
+            if np.isclose(value, 1.0):
+                IR_node.attr['scale'].b = False
+            else:
+                IR_node.attr['scale'].b = True
+                self.set_weight(source_node.name, 'scale', np.array([value] * shape))
+        
+        else:
+            scale = self.get_parent(scale.name, [0], True)            
+            self.set_weight(source_node.name, 'scale', self.ckpt_data[scale.name])            
+            IR_node.attr['scale'].b = True
+        
+        # bias
+        bias = self.get_parent(source_node.name, [2, 0], True)
+        self.set_weight(source_node.name, 'bias', self.ckpt_data[bias.name])
+        IR_node.attr['bias'].b = True
+        
+        # Mean
+        mean = self.get_parent(source_node.name, [3, 0], True)
+        self.set_weight(source_node.name, 'mean', self.ckpt_data[mean.name])
+        
+        # Var
+        var = self.get_parent(source_node.name, [4, 0], True)
+        self.set_weight(source_node.name, 'var', self.ckpt_data[var.name])
+        

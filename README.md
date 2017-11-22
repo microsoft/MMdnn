@@ -1,5 +1,7 @@
 # ![MMdnn](https://ndqzpq.dm2304.livefilestore.com/y4mF9ON1vKrSy0ew9dM3Fw6KAvLzQza2nL9JiMSIfgfKLbqJPvuxwOC2VIur_Ycz4TvVpkibMkvKXrX-N9QOkyh0AaUW4qhWDak8cyM0UoLLxc57apyhfDaxflLlZrGqiJgzn1ztsxiaZMzglaIMhoo8kjPuZ5-vY7yoWXqJuhC1BDHOwgNPwIgzpxV1H4k1oQzmewThpAJ_w_fUHzianZtMw?width=35&height=35&cropmode=none) MMdnn
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A comprehensive, cross-framework solution to convert, visualize and diagnosis deep neural network models. The "MM" in MMdnn stands for model management and "dnn" is an acronym for deep neural network.
 
 Basically it converts many DNN models that trained by one framework into others. The major features include:
@@ -35,15 +37,15 @@ The intermediate representation will store the network structures as a protobuf 
 
 The model conversion between current supported frameworks is tested on some **ImageNet** models.
 
-Models | Caffe | Keras | Tensorflow | CNTK | MXNet | Pytorch
-:-----:|:-----:|:-----:|:----------:|:----:|:-----:|:-------:|
-[Inception V1](http://arxiv.org/abs/1409.4842v1)|√|√|√|√|√
-[Inception V3](http://arxiv.org/abs/1512.00567)|×|√|√|√|√
-[ResNet V1 50](https://arxiv.org/abs/1512.03385)|×|√|√|o|√
-[ResNet V2 152](https://arxiv.org/abs/1603.05027)|×|√|√|√|√
-[VGG 19](http://arxiv.org/abs/1409.1556.pdf)|√|√|√|√|√|√
-[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|×|√|√|×|×
-Xception|×|√|√|×|×
+Models                                              | Caffe | Keras | Tensorflow | CNTK | MXNet | PyTorch |
+:--------------------------------------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:-------:|
+[Inception V1](http://arxiv.org/abs/1409.4842v1)    |   √   |   √   |     √      |   √  |   √
+[Inception V3](http://arxiv.org/abs/1512.00567)     |   ×   |   √   |     √      |   √  |   √
+[ResNet V1 50](https://arxiv.org/abs/1512.03385)    |   ×   |   √   |     √      |   o  |   √   |    √
+[ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   ×   |   √   |     √      |   √  |   √   |
+[VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √
+[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      |   ×  |   ×
+[Xception]((https://arxiv.org/abs/1610.02357))      |   ×   |   √   |     √      |   ×  |   ×
 
 #### On-going frameworks
 
@@ -60,6 +62,7 @@ Install [keras](https://keras.io/#installation) and [tensorflow](https://www.ten
 ```bash
 $ pip install keras
 $ pip install tensorflow
+$ pip install 
 ```
 
 1. The example will download the pre-trained models at first, then use a simple model extractor for [Keras applications](https://keras.io/applications/#applications), you can refer it to extract your Keras model structure and weights.

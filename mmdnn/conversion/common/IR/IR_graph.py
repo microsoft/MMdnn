@@ -4,8 +4,8 @@
 #----------------------------------------------------------------------------------------------
 
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
+from mmdnn.conversion.common.IR.graph_pb2 import TensorShape
 from mmdnn.conversion.common.DataStructure.graph import Graph, GraphNode
-
 
 def load_protobuf_from_file(container, filename):
     with open(filename, 'rb') as fin:
@@ -36,21 +36,51 @@ class IRGraphNode(GraphNode):
     def replace_scope(name):
         return name.replace('/', '_')
 
-
     @property
     def IR_layer(self):
         return self.layer
-
 
     @property
     def name(self):
         return self.layer.name
 
-
     @property
     def type(self):
         return self.layer.op
 
+    def set_attrs(self, attrs):
+        for name, val in attrs.items():            
+            if isinstance(val, bool):
+                self.attr[name] = val
+            elif isinstance(val, int):
+                self.attr[name].i = val
+            elif isinstance(val, float):
+                self.attr[name].f = val
+            elif isinstance(val, str):
+                self.attr[name].s = val.encode('utf-8')
+            elif isinstance(val, TensorShape):
+                self.attr[name].shape.MergeFromString(val.SerializeToString())
+            elif isinstance(val, list):
+                if len(val) == 0: return
+
+                if isinstance(val[0], int):
+                    self.attr[name].list.i.extend(val)
+                elif isinstance(val[0], TensorShape):
+                    self.attr[name].list.shape.extend(val)
+                else:
+                    raise NotImplementedError('AttrValue cannot be list of %s' % type(val[0]))
+            else:
+                raise NotImplementedError('AttrValue cannot be of %s' % type(val))
+
+
+    def get_attr(self, name, default_value = None):
+        if name in self.layer.attr:
+            attr = self.layer.attr[name]
+            field = attr.WhichOneof('value')
+            val = getattr(attr, field) if field else default_value
+            return val.decode('utf-8') if isinstance(val, bytes) else val            
+        else:
+            return default_value
 
 
 class IRGraph(Graph):

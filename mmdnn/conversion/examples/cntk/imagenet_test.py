@@ -15,9 +15,8 @@ class TestCNTK(TestKit):
 
     def __init__(self):
         super(TestCNTK, self).__init__()
-
-        self.truth['tf']['resnet'] = [(387, 13.758857), (102, 11.153278), (386, 7.5652742), (500, 3.827177), (899, 2.4549768)]
-        self.truth['keras']['resnet'] = [(101, 0.53137851), (386, 0.44522655), (385, 0.020743029), (354, 0.00091928436), (348, 0.00076986785)]
+        
+        self.truth['keras']['resnet'] = [(144, 0.77398175), (23, 0.10650793), (21, 0.081077583), (146, 0.0092755388), (562, 0.0089645367)]
         
         self.model = self.MainModel.KitModel(self.args.w)
         # self.model, self.testop = self.MainModel.KitModel(self.args.w)

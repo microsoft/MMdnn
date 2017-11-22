@@ -30,13 +30,13 @@ image_size = {
 
 def _main():
     parser = argparse.ArgumentParser()
-    
+
     parser.add_argument('-n', '--network',
         type = _text_type, help='Model Type', required = True,
         choices = ['vgg16', 'vgg19', 'inception_v3', 'resnet', 'mobilenet', 'xception', 'inception_resnet'])
 
     parser.add_argument('-i', '--image',
-        type = _text_type, help='Test Image Path')
+        type = _text_type, help = 'Test Image Path')
 
     args = parser.parse_args()
     

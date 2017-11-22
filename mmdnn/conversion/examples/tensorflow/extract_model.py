@@ -6,17 +6,19 @@
 import argparse
 from six import text_type as _text_type
 import tensorflow as tf
-
-
-slim = tf.contrib.slim
 from tensorflow.contrib.slim.python.slim.nets import vgg
 from tensorflow.contrib.slim.python.slim.nets import inception
 from tensorflow.contrib.slim.python.slim.nets import resnet_v2
+from mmdnn.conversion.examples.imagenet_test import TestKit
+
+slim = tf.contrib.slim
 
 input_layer_map = {
     'vgg16'         : lambda : tf.placeholder(name = 'input', dtype = tf.float32, shape=[None, 224, 224, 3]),
     'vgg19'         : lambda : tf.placeholder(name = 'input', dtype = tf.float32, shape=[None, 224, 224, 3]),
     'inception_v1'  : lambda : tf.placeholder(name = 'input', dtype = tf.float32, shape=[None, 224, 224, 3]),
+    'inception_v2'  : lambda : tf.placeholder(name = 'input', dtype = tf.float32, shape=[None, 299, 299, 3]),
+    'inception_v3'  : lambda : tf.placeholder(name = 'input', dtype = tf.float32, shape=[None, 299, 299, 3]),
     'resnet50'      : lambda : tf.placeholder(name = 'input', dtype = tf.float32, shape=[None, 299, 299, 3]),
     'resnet101'     : lambda : tf.placeholder(name = 'input', dtype = tf.float32, shape=[None, 299, 299, 3]),
     'resnet152'     : lambda : tf.placeholder(name = 'input', dtype = tf.float32, shape=[None, 299, 299, 3]),
@@ -52,9 +54,12 @@ networks_map = {
 def _main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-n', '--network', type = _text_type, 
-        choices = ['vgg16', 'vgg19', 'inception_v1', 'inception_v2', 'inception_v3', 'resnet50', 'resnet101', 'resnet152', 'resnet200', 'mobilenet', 'xception'],
-        help = 'Model Type', required = True)
+    parser.add_argument('-n', '--network', type = _text_type, help = 'Model Type', required = True,
+        choices = ['vgg16', 'vgg19', 'inception_v1', 'inception_v2', 'inception_v3', 'resnet50', 
+                   'resnet101', 'resnet152', 'resnet200', 'mobilenet', 'xception'])
+
+    parser.add_argument('-i', '--image',
+        type = _text_type, help='Test Image Path')
 
     parser.add_argument('-ckpt', '--checkpoint',
         type = _text_type, help = 'Tensorflow Checkpoint file name', required = True)
@@ -76,8 +81,19 @@ def _main():
         sess.run(init)
         saver = tf.train.Saver()
         saver.restore(sess, args.checkpoint)
-        save_path = saver.save(sess, "imagenet_{}.ckpt".format(args.network))
+        save_path = saver.save(sess, "./imagenet_{}.ckpt".format(args.network))
         print("Model saved in file: %s" % save_path)
+
+        if args.image:
+            import numpy as np
+            func = TestKit.preprocess_func['tensorflow'][args.network]
+            img = func(args.image)            
+            img = np.expand_dims(img, axis = 0)
+            predict = sess.run(logits, feed_dict = {data_input : img})
+            predict = np.squeeze(predict)
+            top_indices = predict.argsort()[-5:][::-1]
+            result = [(i, predict[i]) for i in top_indices]
+            print (result)
     
 
 if __name__=='__main__':

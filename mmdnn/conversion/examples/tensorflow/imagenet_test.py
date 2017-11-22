@@ -10,7 +10,6 @@ import os
 import tensorflow as tf
 from mmdnn.conversion.examples.imagenet_test import TestKit
 
-
 class TestTF(TestKit):
 
     def __init__(self):
