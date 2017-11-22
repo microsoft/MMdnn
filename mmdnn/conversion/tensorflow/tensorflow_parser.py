@@ -126,6 +126,37 @@ class TensorflowParser(Parser):
         IR_node.attr['axes'].list.i.extend(axes)
     
     
+    def _convert_padding(self, source_node, kernel_shape):
+        pad = source_node.layer.attr["padding"].s
+        if pad == "SAME"：
+            input_node = self.tf_graph.get_parent(source_node.name, [0])
+            input_shape = [dim.size for dim in input_node.layer.attr["_output_shapes"].list.shape[0].dim]
+            cnt = 0
+            if source_node.layer.attr["data_format"].s == 'channels_last':
+                input_shape = input_shape[1:-1]
+                cnt = 1
+            else:
+                input_shape = input_shape[2:]
+                cnt = 2
+            pad_along = list()
+            for dims in input_shape:
+                if (dims % source_node.layer.attr["strides"].list.i[cnt] == 0):
+                    pad_along.append(max(kernel_shape[cnt] - source_node.layer.attr["strides"].list.i[cnt], 0))
+                else:
+                    pad_along.append(max(kernel_shape[cnt] - (dims % source_node.layer.attr["strides"].list.i[cnt]), 0))
+                cnt += 1
+            pad_along_first = list()
+            pad_along_second = list()
+            for i in range(len(pad_along)):
+                pad_along_first[i] = pad_along[i] // 2
+                pad_along_second[i] = pad_along[i] - pad_along_second[i]
+            return list([0, 0] + pad_along_first + pad_along_second + [0, 0])
+        elif pad == "VALID":
+            return list([0, 0] * len(source_node.layer.attr["strides"].list.i))
+        else:
+            raise ValueError("Padding format of [{}] is not supported".format(pad))
+
+
     def _convert_layers_batchnorm(self, source_node):
         # name, op
         IR_node = self.IR_graph.node.add()
@@ -219,12 +250,12 @@ class TensorflowParser(Parser):
         # strides
         IR_node.attr['strides'].list.i[:] = source_node.layer.attr['strides'].list.i[:]
 
-        # padding
-        IR_node.attr['padding'].s = source_node.layer.attr['padding'].s
-
         # window_shape
         IR_node.attr['window_shape'].list.i[:] = source_node.layer.attr['ksize'].list.i[:]
         
+        # padding
+        IR_node.attr['pads'].list.i[:] = self._convert_padding(source_node, IR_node.attr["window_shape"].list.i)
+
         # pool type
         IR_node.attr['pooling_type'].s = pool_type
     
@@ -319,15 +350,15 @@ class TensorflowParser(Parser):
         # strides
         IR_node.attr['strides'].list.i[:] = source_node.layer.attr['strides'].list.i[:]
 
-        # padding
-        IR_node.attr['padding'].s = source_node.layer.attr['padding'].s
-
         # input[1] : W
         # filter
         W = self.tf_graph.get_node(source_node.layer.input[1])
         W = self.tf_graph.get_node(W.layer.input[0]).layer
         for e in W.attr['shape'].shape.dim:
             IR_node.attr['filter'].list.i.append(e.size)
+
+        # padding
+        IR_node.attr['pads'].list.i[:] = self._convert_padding(source_node, IR_node.attr["filter"].list.i)
                 
         if self.weight_loaded:            
             self.set_weight(source_node.name, 'weights', self.ckpt_data[W.name])
@@ -498,11 +529,11 @@ class TensorflowParser(Parser):
     def rename_DepthwiseConv2dNative(self, source_node):
         IR_node = self._convert_identity_operation(source_node, 1, 'DepthwiseConv')
         IR_node.attr['strides'].list.i[:] = source_node.layer.attr['strides'].list.i[:]
-        IR_node.attr['padding'].s = source_node.layer.attr['padding'].s
-        
+
         input_node = self.src_graph.get_parent(source_node.name, [1])
         IR_node.attr['filter'].list.i.extend([dim.size for dim in input_node.layer.attr['_output_shapes'].list.shape[0].dim])
-        
+        IR_node.attr['pads'].list.i[:] = self._convert_padding(source_node, IR_node.attr["filter"].list.i)
+
         if self.weight_loaded:
             weight = self.src_graph.get_parent(source_node.name, [1, 0])
             self.set_weight(source_node.name, 'weights', self.ckpt_data[weight.name])

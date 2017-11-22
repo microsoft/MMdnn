@@ -266,29 +266,49 @@ def predict(model, labels, url):
 
     
     @staticmethod
-    def transfer_pad(mode, data_shape, kernel, stride):
-        if len(stride) == 0:
-            stride = list([1] * len(kernel))
-        if mode == b'SAME':
-            # print(data_shape, kernel, stride)
-            defuse_pad = False
-            ret = list()
-            for i in range(len(kernel)):
-                defuse_pad, same_pad = MXNetEmitter.calculate_same_pad(data_shape[i+1], kernel[i], stride[i])
-                ret.append(same_pad)
-            if defuse_pad:
-                tmp = list([0, 0, 0, 0])
-                for e in ret:
-                    tmp.extend([int(e / 2), int(e / 2 + 1)])
-                ret = tmp
-            else:
-                ret = [int(e / 2) for e in ret]
-            return defuse_pad, ret
-        elif mode == b'VALID':
-            return False, list([0]* len(kernel))
+    def transfer_pad(pad_list):
+        # if len(stride) == 0:
+        #     stride = list([1] * len(kernel))
+        # if mode == b'SAME':
+        #     # print(data_shape, kernel, stride)
+        #     defuse_pad = False
+        #     ret = list()
+        #     for i in range(len(kernel)):
+        #         defuse_pad, same_pad = MXNetEmitter.calculate_same_pad(data_shape[i+1], kernel[i], stride[i])
+        #         ret.append(same_pad)
+        #     if defuse_pad:
+        #         tmp = list([0, 0, 0, 0])
+        #         for e in ret:
+        #             tmp.extend([int(e / 2), int(e / 2 + 1)])
+        #         ret = tmp
+        #     else:
+        #         ret = [int(e / 2) for e in ret]
+        #     return defuse_pad, ret
+        # elif mode == b'VALID':
+        #     return False, list([0]* len(kernel))
+        # else:
+        #     raise ValueError("Padding algorithm [{}] is not supported" % mode)
+        defuse_pad = False
+        pad = list()
+
+        assert len(pad_list) % 2 == 0
+        mid = int(len(pad_list)/2)
+        pad_first = pad_list[2:mid]
+        pad_second = pad_list[mid:-2]
+
+        for i in range(0, mid-2):
+            if not pad_first[i] == pad_second[i]:
+                defuse_pad = True
+
+        if defuse_pad:
+            pad.extend([0] * 4)
+            for i in range(0, mid-2):
+                pad.extend([pad_first[i], pad_second[i]])
         else:
-            raise ValueError("Padding algorithm [{}] is not supported" % mode)
-            
+            pad = pad_first
+
+        return defuse_pad, pad
+
         # raise NotImplementedError
     
 
@@ -367,13 +387,13 @@ def predict(model, labels, url):
 
         defuse_pad = False
         pad = list()
-        if "padding" in IR_node.IR_layer.attr:    
+        if "pads" in IR_node.IR_layer.attr:    
             output_shape = list()            
             for e in IR_node.IR_layer.attr["_output_shapes"].list.shape[0].dim:
                 output_shape.append(e.size)
 
             # print("Warning: MXNet Convolution Layer pad does not match IR Convolution Layer pad")
-            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["padding"].s, output_shape, kernel, stride)
+            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["pads"].list.i)
         pad = ', '.join('%s' % i for i in pad)
 
         kernel = ', '.join('%s' % i for i in kernel)        
@@ -515,13 +535,13 @@ def predict(model, labels, url):
 
         defuse_pad = False
         pad = list()
-        if "padding" in IR_node.IR_layer.attr:
+        if "pads" in IR_node.IR_layer.attr:
             output_shape = list()
             for e in IR_node.IR_layer.attr["_output_shapes"].list.shape[0].dim:
                 output_shape.append(e.size)
         
             # print("Warning: MXNet Pooling Layer pad does not match IR Pooling Layer pad")
-            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["padding"].s, output_shape, kernel, stride)
+            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["pads"].list.i)
         pad = ', '.join('%s' % i for i in pad)
 
         kernel = ', '.join('%s' % i for i in kernel)
@@ -611,13 +631,13 @@ def predict(model, labels, url):
 
         defuse_pad = False
         pad = list()
-        if "padding" in IR_node.IR_layer.attr:
+        if "pads" in IR_node.IR_layer.attr:
             output_shape = list()
             for e in IR_node.IR_layer.attr["_output_shapes"].list.shape[0].dim:
                 output_shape.append(e.size)
         
             # print("Warning: MXNet Deconvolution Layer pad does not match IR Deconvolution Layer pad")
-            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["padding"].s, output_shape, kernel, stride)
+            defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["pads"].list.i)
         pad = ', '.join('%s' % i for i in pad)
 
         kernel = ', '.join('%s' % i for i in kernel)
