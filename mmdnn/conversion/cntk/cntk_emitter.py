@@ -65,7 +65,7 @@ def KitModel(weight_file = None):
 """
 
 
-    def gen_codes(self, phase = 'test'):
+    def gen_code(self, phase = 'test'):
         self.phase = phase
         self.add_body(0, self.header_code)
 

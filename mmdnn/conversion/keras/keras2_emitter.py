@@ -82,8 +82,8 @@ def load_weights(model, weight_file):
 def KitModel(weight_file = None):
         """
 
-    
-    def gen_codes(self, phase):
+
+    def gen_code(self, phase):
         self.add_body(0, self.header_code)
         for layer in self.IR_graph.topological_sort:
             current_node = self.IR_graph.get_node(layer)
@@ -91,7 +91,7 @@ def KitModel(weight_file = None):
 
             if hasattr(self, "emit_" + node_type):
                 func = getattr(self, "emit_" + node_type)
-                self.add_body(1, func(current_node))
+                func(current_node)
             else:
                 print("KerasEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
@@ -106,7 +106,7 @@ def KitModel(weight_file = None):
             func = getattr(self, "_layer_" + i)
             func()
 
-        return self.body_codes
+        return self.body_code
 
 
     @staticmethod
@@ -114,14 +114,24 @@ def KitModel(weight_file = None):
         return ', '.join('%s' % i for i in filter(lambda x:x > 0, shapes))
 
 
+    def _emit_activation(self, IR_node, op):
+        self.add_body(1, "{:<15} = layers.Activation(name = '{}', activation = '{}')({})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            op,
+            self.parent_variable_name(IR_node)))
+
+    
     def _emit_merge(self, IR_node, func):
-        inputs = ', '.join('%s' % self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
-        code = "{:<15} = layers.{}(name = '{}', inputs = [{}])".format(
-            IR_node.replace_scope(IR_node.name),
+        inputs = ', '.join('%s' % self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)        
+        axis = ' axis = {},'.format(IR_node.get_attr('axis')) if 'axis' in IR_node.layer.attr else ""
+        self.add_body(1, "{:<15} = layers.{}(name = '{}',{} inputs = [{}])".format(
+            IR_node.variable_name,
             func,
-            IR_node.name, 
-            inputs)
-        return code
+            IR_node.name,
+            axis,
+            inputs))
+        
 
     def _emit_convolution(self, IR_node, conv_type):
         filters = IR_node.IR_layer.attr["filter"].list.i[-1]
@@ -132,7 +142,7 @@ def KitModel(weight_file = None):
         padding = IR_node.IR_layer.attr["padding"].s.decode('utf-8')
         padding = padding.lower()
 
-        return "{:<15} = {}(name = '{}', {}, kernel_size = ({}), strides = ({}), padding = '{}', use_bias = {})({})".format(
+        self.add_body(1, "{:<15} = {}(name = '{}', {}, kernel_size = ({}), strides = ({}), padding = '{}', use_bias = {})({})".format(
             IR_node.variable_name,
             conv_type,
             IR_node.name,
@@ -141,7 +151,7 @@ def KitModel(weight_file = None):
             strides,
             padding,
             use_bias,
-            self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+            self.parent_variable_name(IR_node)))
 
 
     def emit_Convolution(self, IR_node):
@@ -160,11 +170,12 @@ def KitModel(weight_file = None):
             assert False
         
         if IR_node.layer.attr['global_pooling'].b:
-            ret = "{:<15} = layers.Global{}(name = \'{}\')({})".format(
-                IR_node.replace_scope(IR_node.name),
+            self.add_body(1, "{:<15} = layers.Global{}(name = '{}')({})".format(
+                IR_node.variable_name,
                 pool_name,
                 IR_node.name,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+                self.parent_variable_name(IR_node)))
+
         else:
             for e in IR_node.IR_layer.attr["dilation_rate"].list.i:
                 assert e == 1
@@ -177,31 +188,36 @@ def KitModel(weight_file = None):
             strides = IR_node.IR_layer.attr['strides'].list.i[1:-1]
             strides = ', '.join('%s' % i for i in strides)
             
-            ret = "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
-                IR_node.replace_scope(IR_node.name),
+            self.add_body(1, "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
+                IR_node.variable_name,
                 pool_name,
                 IR_node.name,
                 pool_size,
                 strides,
                 padding,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+                self.parent_variable_name(IR_node)))
 
-        return ret
 
+    #############
+    # Operators #
+    #############
 
     def emit_UNKNOWN(self, IR_node):
         print (IR_node.name)
+    
+
+    def emit_Add(self, IR_node):
+        self._emit_merge(IR_node, "add")        
 
 
     def emit_DataInput(self, IR_node):
         shape_str = IRGraph.shapeToStr(IR_node.IR_layer.attr["shape"].shape)
         dtype_str = ", dtype = '{}'".format(self.dtype_map[IR_node.layer.attr['dtype'].type]) if 'dtype' in IR_node.layer.attr else ""
-        code = "{:<15} = layers.Input(name = '{}', shape = ({},) {})".format(
-                IR_node.variable_name,
-                IR_node.name,
-                shape_str,
-                dtype_str)
-        return code
+        self.add_body(1, "{:<15} = layers.Input(name = '{}', shape = ({},) {})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            shape_str,
+            dtype_str))
 
 
     def emit_Dropout(self, IR_node):
@@ -209,82 +225,63 @@ def KitModel(weight_file = None):
         if 'seed' in IR_node.IR_layer.attr:
             seed = IR_node.IR_layer.attr['seed'].i
 
-        ret = "{:<15} = layers.Dropout(name = '{}', rate = {}, seed = {})({})".format(
-            IR_node.replace_scope(IR_node.name),
+        self.add_body(1, "{:<15} = layers.Dropout(name = '{}', rate = {}, seed = {})({})".format(
+            IR_node.variable_name,
             IR_node.name,
             IR_node.IR_layer.attr["keep_prob"].f,
             seed,
-            self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
-
-        return ret
+            self.parent_variable_name(IR_node)))
  
 
     def emit_FullyConnected(self, IR_node):
-        return "{:<15} = layers.Dense(name = '{}', units = {}, use_bias = {})({})".format(
-                IR_node.variable_name,
-                IR_node.name,
-                IR_node.layer.attr["units"].i,
-                IR_node.layer.attr["use_bias"].b,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+        self.add_body(1, "{:<15} = layers.Dense(name = '{}', units = {}, use_bias = {})({})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            IR_node.layer.attr["units"].i,
+            IR_node.layer.attr["use_bias"].b,
+            self.parent_variable_name(IR_node)))
 
 
     def emit_Flatten(self, IR_node):
         self.used_layers.add('Flatten')
-        return "{:<15} = __flatten(name = '{}', input = {})".format(
+        self.add_body(1, "{:<15} = __flatten(name = '{}', input = {})".format(
             IR_node.variable_name,            
             IR_node.name,
-            self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+            self.parent_variable_name(IR_node)))
         
 
     def emit_Reshape(self, IR_node):
         shape_str = self.shapeToStr(IR_node.IR_layer.attr["shape"].list.i)
-        return "{:<15} = layers.Reshape(name = '{}', target_shape = ({},))({})".format(
+        self.add_body(1, "{:<15} = layers.Reshape(name = '{}', target_shape = ({},))({})".format(
             IR_node.variable_name,
             IR_node.name,
             shape_str,
-            self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+            self.parent_variable_name(IR_node)))
 
 
     def emit_Tanh(self, IR_node):
-        return "{:<15} = layers.Activation(name = '{}', activation = 'tanh')({})".format(
-                IR_node.variable_name,
-                IR_node.name,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+        self._emit_activation(IR_node, 'tanh')
 
 
     def emit_Relu(self, IR_node):
-        code = "{:<15} = layers.Activation(name = '{}', activation = 'relu')({})".format(
-                IR_node.replace_scope(IR_node.name),
-                IR_node.name,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
-        return code
+        self._emit_activation(IR_node, 'relu')
 
 
     def emit_Softmax(self, IR_node):
-        code = "{:<15} = layers.Activation(name = '{}', activation = 'softmax')({})".format(
-                IR_node.replace_scope(IR_node.name), 
-                IR_node.name,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
-        return code
-
+        self._emit_activation(IR_node, 'softmax')
+        
 
     def emit_Sigmoid(self, IR_node):
-        code = "{:<15} = layers.Activation(name = '{}', activation = 'sigmoid')({})".format(
-                IR_node.replace_scope(IR_node.name), 
-                IR_node.name,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
-        return code
-
+        self._emit_activation(IR_node, 'sigmoid')
+        
 
     def emit_Embedding(self, IR_node):
-        ret = "{:<15} = layers.Embedding(input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
-                IR_node.name, 
-                IR_node.IR_layer.attr['input_dim'].i,
-                IR_node.IR_layer.attr['output_dim'].i,
-                IR_node.IR_layer.attr['mask_zero'].b,
-                IR_node.in_edges[0])
-
-        return ret
+        self.add_body(1, "{:<15} = layers.Embedding(input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
+            IR_node.variable_name, 
+            IR_node.get_attr('input_dim'),
+            IR_node.IR_layer.attr['output_dim'].i,
+            IR_node.IR_layer.attr['mask_zero'].b,
+            IR_node.in_edges[0]))
 
 
     def emit_RNNs(self, IR_node, func):
@@ -315,26 +312,20 @@ def KitModel(weight_file = None):
         return self.emit_RNNs(IR_node, "GRU")
 
 
-    def emit_Add(self, IR_node):
-        code = self._emit_merge(IR_node, "add")
-        return code
-
-
-    def emit_Concat(self, IR_node):
-        code = self._emit_merge(IR_node, "concatenate")
-        return code
+    def emit_Concat(self, IR_node):        
+        self._emit_merge(IR_node, "concatenate")        
 
 
     def emit_BatchNorm(self, IR_node):
         axis = IR_node.layer.attr['axis'].i if 'axis' in IR_node.layer.attr else -1        
-        return "{:<15} = layers.BatchNormalization(name = '{}', axis = {}, epsilon = {}, center = {}, scale = {})({})".format(
-                IR_node.variable_name,
-                IR_node.name,                
-                axis,
-                IR_node.layer.attr['epsilon'].f,
-                IR_node.layer.attr['bias'].b,
-                IR_node.layer.attr['scale'].b,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+        self.add_body(1, "{:<15} = layers.BatchNormalization(name = '{}', axis = {}, epsilon = {}, center = {}, scale = {})({})".format(
+            IR_node.variable_name,
+            IR_node.name,                
+            axis,
+            IR_node.layer.attr['epsilon'].f,
+            IR_node.layer.attr['bias'].b,
+            IR_node.layer.attr['scale'].b,
+            self.parent_variable_name(IR_node)))
     
     
     def emit_Pad(self, IR_node):
@@ -346,32 +337,32 @@ def KitModel(weight_file = None):
 
         dim = len(IR_node.IR_layer.attr['paddings'].list.i) // 2 - 2
 
-        padding_str = ""
+        padding_str = str()
         for idx in range(1, dim + 1):
             padding_str += "({}, {}),".format(
                     IR_node.IR_layer.attr['paddings'].list.i[idx + idx],
                     IR_node.IR_layer.attr['paddings'].list.i[idx + idx + 1])
 
-        return "{:<15} = layers.{}{}D(name = '{}', padding = ({}))({})".format(
-                IR_node.variable_name,
-                func,
-                dim,
-                IR_node.name,
-                padding_str,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+        self.add_body(1, "{:<15} = layers.{}{}D(name = '{}', padding = ({}))({})".format(
+            IR_node.variable_name,
+            func,
+            dim,
+            IR_node.name,
+            padding_str,
+            self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name))
 
+    
     def emit_Squeeze(self, IR_node):
-        return self.emit_Flatten(IR_node)
+        self.emit_Flatten(IR_node)
 
 
     def emit_ReduceMean(self, IR_node):
         axes = ', '.join('%s' % i for i in IR_node.layer.attr['axes'].list.i)
-        
-        return "{:<15} = layers.Lambda(lambda x: K.mean(x, axis=[{}], keepdims = {}))({})".format(
-                IR_node.replace_scope(IR_node.name),                
-                axes,
-                IR_node.layer.attr['keepdims'].b,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+        self.add_body(1,"{:<15} = layers.Lambda(lambda x: K.mean(x, axis=[{}], keepdims = {}))({})".format(
+            IR_node.variable_name,
+            axes,
+            IR_node.layer.attr['keepdims'].b,
+            self.parent_variable_name(IR_node)))
 
 
     def emit_LRN(self, IR_node):
@@ -394,10 +385,10 @@ def KitModel(weight_file = None):
 
 
     def emit_Relu6(self, IR_node):        
-        return "{:<15} = layers.Activation(keras.applications.mobilenet.relu6, name = '{}')({})".format(
-                IR_node.variable_name,
-                IR_node.name,
-                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)
+        self.add_body(1, "{:<15} = layers.Activation(keras.applications.mobilenet.relu6, name = '{}')({})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name))
 
     
     def emit_DepthwiseConv(self, IR_node):

@@ -58,7 +58,7 @@ class Keras2Parser(Parser):
         json_file.close()
 
         # Load the model weights
-        loaded_model = model_from_json(loaded_model_json, custom_objects = {
+        loaded_model = model_from_json(loaded_model_json, custom_objects={
             'relu6': _keras.applications.mobilenet.relu6,
             'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D})
 
@@ -66,7 +66,7 @@ class Keras2Parser(Parser):
             if os.path.isfile(model_weight_path):
                 loaded_model.load_weights(model_weight_path)
                 self.weight_loaded = True
-                print ("Network file [{}] and [{}] is loaded successfully.".format(model_network_path, model_weight_path))
+                print("Network file [{}] and [{}] is loaded successfully.".format(model_network_path, model_weight_path))
 
             else:
                 print("Warning: Weights File [%s] is not found." % (model_weight_path))
@@ -132,11 +132,6 @@ class Keras2Parser(Parser):
             IR_node.attr["dtype"].type = Keras2Parser.dtype_map[source_node.layer.dtype]
         
         Keras2Parser._set_output_shape(source_node, IR_node)
-
-
-    def _convert_inedge(self, source_node, IR_node):
-        for e in source_node.in_edges:
-            IR_node.input.append(self.src_graph.get_node(e).real_name)
 
 
     @staticmethod
@@ -213,7 +208,7 @@ class Keras2Parser(Parser):
                     self.set_weight(source_node.name, "bias", source_node.layer.get_weights()[1])
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
         
         # padding
         Keras2Parser._convert_padding(source_node, IR_node)
@@ -264,7 +259,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node, "Pool")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         IR_node.attr['pooling_type'].s = pooling_type.encode('utf-8')
         
@@ -297,16 +292,13 @@ class Keras2Parser(Parser):
     def _convert_merge(self, source_node, new_name = None):
         IR_node = self.IR_graph.node.add()
 
-        # name, op
-        if new_name is None:
-            Keras2Parser._copy_and_reop(source_node, IR_node)
-        else:
-            Keras2Parser._copy_and_reop(source_node, IR_node, new_name)
+        # name, op        
+        Keras2Parser._copy_and_reop(source_node, IR_node, new_name)
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
-        # for Concat axis
+        # For concat axis
         if hasattr(source_node.layer, 'axis'):
             IR_node.attr['axis'].i = source_node.layer.axis
         return IR_node
@@ -317,7 +309,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(keras_node, IR_node, "Pad")
 
         # input edge
-        self._convert_inedge(keras_node, IR_node)
+        self.convert_inedge(keras_node, IR_node)
         
         IR_node.attr['mode'].s = mode
 
@@ -337,9 +329,14 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node)
         
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
     
+    # Merge Layers
+    def rename_Add(self, source_node):
+        self._convert_merge(source_node)
+    
+
     def rename_InputLayer(self, source_node):
         # only for training
         IR_node = self.IR_graph.node.add()
@@ -348,7 +345,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node, "DataInput")
         
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # shape
         Keras2Parser._copy_shape(source_node.keras_layer, IR_node)
@@ -422,7 +419,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node)
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         IR_node.attr["keep_prob"].f = source_node.keras_layer.rate
         if source_node.keras_layer.seed != None:
@@ -437,7 +434,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node, "FullyConnected")
         
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # units
         IR_node.attr["units"].i = source_node.keras_layer.units
@@ -462,7 +459,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node)
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
 
     def rename_Activation(self, keras_node):
@@ -472,7 +469,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(keras_node, IR_node, self.activation_map[keras_node.keras_layer.activation.__name__])
 
         # input edge
-        self._convert_inedge(keras_node, IR_node)
+        self.convert_inedge(keras_node, IR_node)
 
 
     def rename_Embedding(self, source_node):
@@ -482,7 +479,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node)
         
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # input_dim
         IR_node.attr["input_dim"].i = source_node.keras_layer.input_dim
@@ -504,7 +501,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(keras_node, IR_node)
         
         # input edge
-        self._convert_inedge(keras_node, IR_node)
+        self.convert_inedge(keras_node, IR_node)
 
         # units
         IR_node.attr["units"].i = keras_node.keras_layer.units
@@ -527,19 +524,14 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node)
         
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # units
         IR_node.attr["units"].i = source_node.keras_layer.units
 
         # activation
         self._defuse_activation(source_node)
-
-
-    # Merge Layers
-    def rename_Add(self, source_node):
-        self._convert_merge(source_node)
-
+    
 
     def rename_Multiply(self, source_node):
         self._convert_merge(source_node, 'Mul')
@@ -565,7 +557,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node, 'Reshape')
         
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # for target shape      
         IR_node.attr["shape"].list.i.append(-1)
@@ -579,7 +571,7 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node, "Keras Lambda")
         
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         IR_node.attr['function'].s = source_node.keras_layer.function.__name__
         for dim in source_node.keras_layer.output_shape:
@@ -599,9 +591,9 @@ class Keras2Parser(Parser):
 
         # name, op
         Keras2Parser._copy_and_reop(keras_node, IR_node, 'BatchNorm')
-        
+
         # input edge
-        self._convert_inedge(keras_node, IR_node)
+        self.convert_inedge(keras_node, IR_node)
 
         # axis
         IR_node.attr['axis'].i = keras_node.keras_layer.axis
@@ -615,8 +607,8 @@ class Keras2Parser(Parser):
         if self.weight_loaded:
             # Parameter arrangement in Keras: gamma, beta, mean, variance
             idx = 0
-            
-            # scale            
+
+            # scale
             if IR_node.attr['scale'].b:
                 self.set_weight(keras_node.name, "scale", keras_node.layer.get_weights()[idx])
                 idx += 1
@@ -628,7 +620,7 @@ class Keras2Parser(Parser):
 
             # mean
             self.set_weight(keras_node.name, "mean", keras_node.layer.get_weights()[idx])
-                
+
             # var
             self.set_weight(keras_node.name, "var", keras_node.layer.get_weights()[idx + 1])
 

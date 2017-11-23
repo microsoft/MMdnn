@@ -28,8 +28,6 @@ class MXNetEmitter(Emitter):
         "sigmoid" : "Sigmoid",
         "tanh"    : "Tanh",
         "elu"     : "Elu"
-        # Not support yet 
-        # "softrelu"  : "SoftReLU"
     }
 
     transpose_map = {
@@ -41,6 +39,7 @@ class MXNetEmitter(Emitter):
     channels_last = ['NDHWC', 'NHWC']
 
     def __init__(self, model):
+        super(MXNetEmitter, self).__init__()
         from six import string_types as _string_types
         
         if isinstance(model, _string_types):
@@ -59,23 +58,24 @@ class MXNetEmitter(Emitter):
 
         self.IR_graph = IRGraph(network_path)
         self.IR_graph.build()
-    
 
-    def _gen_header(self):
-        str = """import mxnet as mx
+
+    @property
+    def header_code(self):
+        return """import mxnet as mx
 import numpy as np
 
 # mxnet-cpu only support channel first, default convert the model and weight as channel first
+
+def RefactorModel():
 """
-        return str
 
 
-    def gen_codes(self, phase):
+    def gen_code(self, phase):
         self.IR_layer_map = dict()
+        self.add_body(0, self.header_code)
         for layer in self.IR_graph.topological_sort:
             self.IR_layer_map[layer] = self.IR_graph.get_node(layer)
-        header = self._gen_header()
-        network_code = header + "def RefactorModel():\n"
 
         shape = dict()
         for layer in self.IR_graph.topological_sort:
@@ -84,15 +84,15 @@ import numpy as np
 
             if len(current_node.in_edges) == 0:
                 current_node.in_edges.append('data')
-    
+
             if node_type.lower() in MXNetEmitter.activation_map:
                 func = getattr(self, "emit_Activation")
                 line = func(current_node, node_type.lower())
-                network_code += "    " + line + "\n"
+                self.add_body(1, line)
             elif hasattr(self, "emit_" + node_type):
                 func = getattr(self, "emit_" + node_type)
                 line = func(current_node)
-                network_code += "    " + line + "\n"
+                self.add_body(1, line)
             else:
                 print("MXNet Emitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
@@ -110,10 +110,9 @@ import numpy as np
                         cur_shape.append(dim.size)
                     first = False
 
-                cur_shape.insert(1, cur_shape.pop())    
+                cur_shape.insert(1, cur_shape.pop())
                 shape[current_node.name] = ', '.join('%s' % i for i in cur_shape)
 
-        # output_weights_file = raw_input("Please type the path you want to save your MXNet model weights: ")
 
         if self.weight_loaded:
             dirname = os.path.dirname(self.output_weights_file)
@@ -127,11 +126,11 @@ import numpy as np
             "model",
             ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers]),
             ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers]))
-        
-        network_code += "    " + comment + "\n"
-        network_code += "    " + last_line + "\n"
-        network_code += "    return model\n\n\n"
-            
+
+        self.add_body(1, comment)
+        self.add_body(1, last_line)
+        self.add_body(1, "return model")
+
         weight_code = ""
         if not self.weight_loaded:
             weight_code += "# emitter does not detect any import weights, you may generate weights file manually\n"
@@ -154,7 +153,7 @@ import numpy as np
             batch_end_callback = mx.callback.Speedometer(batch_size, 100), # output progress for each 100 data batches
             num_epoch = 10) # train for at most 10 dataset passes\n\n
 """
-            code = network_code + weight_code + train_code + main_code
+            code = self.body_code + weight_code + train_code + main_code
         else:
             test_code = """import matplotlib.pyplot as plt
 from collections import namedtuple
@@ -199,7 +198,7 @@ def predict(model, labels, url):
     # predict(model, labels, 'http://writm.com/wp-content/uploads/2016/08/Cat-hd-wallpapers.jpg')    
 """
 
-            code = network_code + weight_code + test_code + main_code
+            code = self.body_code + weight_code + test_code + main_code
 
         return code
     
@@ -241,7 +240,6 @@ def predict(model, labels, url):
         str += "])\n"
         str += "    model.set_params(arg_params = arg_params, aux_params = aux_params, allow_missing = True)\n\n    return model\n\n\n"
         return str
-        # raise NotImplementedError
 
 
     @staticmethod
@@ -288,8 +286,6 @@ def predict(model, labels, url):
             return False, list([0]* len(kernel))
         else:
             raise ValueError("Padding algorithm [{}] is not supported" % mode)
-            
-        # raise NotImplementedError
     
 
     @staticmethod   

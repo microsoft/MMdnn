@@ -66,7 +66,7 @@ def KitModel(weight_file = None):
         super(TensorflowEmitter, self)._build()
     
 
-    def gen_codes(self, phase):
+    def gen_code(self, phase):
         self.trainable = (phase == 'train')
         self.add_body(0, self.header_code)
 
@@ -90,7 +90,7 @@ def KitModel(weight_file = None):
             func = getattr(self, "_layer_" + i)
             func()
 
-        return self.body_codes
+        return self.body_code
 
 
     @staticmethod

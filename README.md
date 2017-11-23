@@ -45,7 +45,7 @@ Models                                              | Caffe | Keras | Tensorflow
 [ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   ×   |   √   |     √      |   √  |   √   |
 [VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √
 [MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (No Relu6) |    ×
-[Xception]((https://arxiv.org/abs/1610.02357))      |   ×   |   √   |     √      |   ×  |   ×   |
+[Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      |   ×  |   ×   |
 [SqueezeNet](https://arxiv.org/pdf/1602.07360)      |       |   √   |     √      |   √  |   √   |
 
 #### On-going frameworks
@@ -58,7 +58,7 @@ Models                                              | Caffe | Keras | Tensorflow
 
 We will use the conversion from [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-models) to CNTK as an example.
 
-Install [keras](https://keras.io/#installation) and [tensorflow](https://www.tensorflow.org/install/) in case
+Install [Keras](https://keras.io/#installation) and [Tensorflow](https://www.tensorflow.org/install/) in case
 
 ```bash
 $ pip install keras
@@ -160,6 +160,9 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d converted -n imagene
 ## Installation
 
 You can use pip to install MMdnn.
+```bash
+pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.0/mmdnn-0.1.0-py2.py3-none-any.whl
+```
 
 # Contributing
 

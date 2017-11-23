@@ -10,16 +10,15 @@ from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 
 class Emitter(object):
     
-    def __init__(self):
-        self.header_codes = ""
-        self.body_codes = ""
+    def __init__(self):        
+        self.body_code = str()
         self.weights_dict = dict()
         self.used_layers = set()
         self.weight_loaded = False
 
 
     def run(self, dstNetworkPath, dstWeightPath = None, phase = 'test'):
-        self.save_codes(dstNetworkPath, phase)        
+        self.save_code(dstNetworkPath, phase)
 
 
     # share functions
@@ -27,9 +26,9 @@ class Emitter(object):
         if isinstance(codes, _string_types):
             codes = [codes]
         for code in codes:
-            self.body_codes += ("    " * indent) + code + '\n'
+            self.body_code += ("    " * indent) + code + '\n'
 
-    def _load_weights(self, file_name = None):
+    def _load_weights(self, file_name=None):
         import numpy as np
         self.weight_loaded = True
         try:
@@ -45,15 +44,16 @@ class Emitter(object):
     def _build(self):
         self.IR_graph.build()
     
-    def gen_codes(self, phase):
+    
+    def gen_code(self, phase):
         raise NotImplementedError("do not use base emitter class.")
 
 
-    def save_codes(self, filepath, phase):
-        codes = self.gen_codes(phase)
+    def save_code(self, filepath, phase):
+        code = self.gen_code(phase)
         with open(filepath, 'w') as fout:
-            fout.write(codes)
-        print ("Target network code snippet is saved as [{}].".format(filepath))
+            fout.write(code)
+        print("Target network code snippet is saved as [{}].".format(filepath))
 
 
     @staticmethod
@@ -61,7 +61,7 @@ class Emitter(object):
         import numpy as np
         with open(filename, 'wb') as of:
             np.save(of, weights)
-        print ("Target weights are saved as [{}].".format(filename))
+        print("Target weights are saved as [{}].".format(filename))
         
 
 

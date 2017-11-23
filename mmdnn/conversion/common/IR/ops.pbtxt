@@ -312,8 +312,24 @@ op {
 
 op {
   name: "Add"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+  }
+  input_arg {
+    name: "y"
+    type_attr: "T"
+  }
+  output_arg {
+    name: "z"
+    type_attr: "T"
+  }
+  attr {
+    name: "axis"
+    type: "int"    
+  }  
   summary: "Returns x + y element-wise."
-  description: "*NOTE*: `Add` supports broadcasting. `AddN` does not. More about broadcasting. [here](http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html)"
+  description: "*NOTE*: `Add` supports broadcasting."
 }
 
 op {

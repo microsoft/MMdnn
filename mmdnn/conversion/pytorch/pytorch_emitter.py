@@ -76,7 +76,7 @@ def load_weights(weight_file):
 class KitModel(nn.Module):    
 """
 
-    def gen_codes(self, phase):
+    def gen_code(self, phase):
         self.add_init(1, """
     def __init__(self, weight_file):
         super(KitModel, self).__init__()
