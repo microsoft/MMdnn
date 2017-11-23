@@ -2,12 +2,13 @@
 #  Copyright (c) Microsoft Corporation. All rights reserved.
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
+
 import argparse
 import numpy as np
 import sys
 import os
-import torch
 from mmdnn.conversion.examples.imagenet_test import TestKit
+import torch
 
 
 class TestTorch(TestKit):
@@ -48,6 +49,6 @@ class TestTorch(TestKit):
 
 
 
-if __name__=='__main__':       
+if __name__=='__main__':
     tester = TestTorch()
     tester.inference(tester.args.image)
