@@ -134,9 +134,10 @@ def KitModel(weight_file = None):
         
 
     def _emit_convolution(self, IR_node, conv_type):
-        filters = IR_node.IR_layer.attr["filter"].list.i[-1]
+        filters = IR_node.get_attr('kernel_shape')[-1]
+        #  IR_layer.attr["filter"].list.i[-1]
         filters_str = 'filters = {}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier = {}'.format(filters)
-        kernel_size = ', '.join('%s' % i for i in IR_node.layer.attr['filter'].list.i[:-2])
+        kernel_size = ', '.join('%s' % i for i in IR_node.get_attr('kernel_shape')[:-2])
         strides = ','.join('%s' % i for i in IR_node.IR_layer.attr["strides"].list.i[1:-1])
         use_bias = IR_node.IR_layer.attr["use_bias"].b 
         padding = IR_node.IR_layer.attr["padding"].s.decode('utf-8')
@@ -157,45 +158,6 @@ def KitModel(weight_file = None):
     def emit_Convolution(self, IR_node):
         dim = len(IR_node.IR_layer.attr["strides"].list.i) - 2
         return self._emit_convolution(IR_node, 'layers.Conv{}D'.format(dim))
-
-
-    def emit_Pool(self, IR_node):
-        dim = len(IR_node.IR_layer.attr["strides"].list.i) - 2
-
-        if IR_node.layer.attr['pooling_type'].s == b"MAX":
-            pool_name = "MaxPooling{}D".format(dim)
-        elif IR_node.layer.attr['pooling_type'].s == b"AVG":
-            pool_name = "AveragePooling{}D".format(dim)
-        else:
-            assert False
-        
-        if IR_node.layer.attr['global_pooling'].b:
-            self.add_body(1, "{:<15} = layers.Global{}(name = '{}')({})".format(
-                IR_node.variable_name,
-                pool_name,
-                IR_node.name,
-                self.parent_variable_name(IR_node)))
-
-        else:
-            for e in IR_node.IR_layer.attr["dilation_rate"].list.i:
-                assert e == 1
-            
-            padding = IR_node.IR_layer.attr["padding"].s.decode('utf-8')
-            padding = padding.lower()
-
-            pool_size = IR_node.IR_layer.attr['window_shape'].list.i[1:-1]            
-            pool_size = ', '.join('%s' % i for i in pool_size)
-            strides = IR_node.IR_layer.attr['strides'].list.i[1:-1]
-            strides = ', '.join('%s' % i for i in strides)
-            
-            self.add_body(1, "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
-                IR_node.variable_name,
-                pool_name,
-                IR_node.name,
-                pool_size,
-                strides,
-                padding,
-                self.parent_variable_name(IR_node)))
 
 
     #############
@@ -248,7 +210,49 @@ def KitModel(weight_file = None):
             IR_node.variable_name,            
             IR_node.name,
             self.parent_variable_name(IR_node)))
-        
+
+
+    def emit_Pool(self, IR_node):
+        dim = len(IR_node.get_attr("strides")) - 2
+
+        pooling_type = IR_node.get_attr('pooling_type')
+        if  pooling_type == "MAX":
+            pool_name = "MaxPooling{}D".format(dim)
+        elif pooling_type == "AVG":
+            pool_name = "AveragePooling{}D".format(dim)
+        else:
+            assert False
+
+        if IR_node.layer.attr['global_pooling'].b:
+            self.add_body(1, "{:<15} = layers.Global{}(name = '{}')({})".format(
+                IR_node.variable_name,
+                pool_name,
+                IR_node.name,
+                self.parent_variable_name(IR_node)))
+
+        else:
+            dilations = IR_node.get_attr('dilations')
+            if dilations:
+                for e in IR_node.get_attr('dilations'):
+                    assert e == 1
+
+            padding = IR_node.IR_layer.attr["padding"].s.decode('utf-8')
+            padding = padding.lower()
+
+            pool_size = IR_node.get_attr('kernel_shape')[1:-1]
+            pool_size = ', '.join('%s' % i for i in pool_size)
+            strides = IR_node.get_attr('strides')[1:-1]
+            strides = ', '.join('%s' % i for i in strides)
+
+            self.add_body(1, "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
+                IR_node.variable_name,
+                pool_name,
+                IR_node.name,
+                pool_size,
+                strides,
+                padding,
+                self.parent_variable_name(IR_node)))
+
 
     def emit_Reshape(self, IR_node):
         shape_str = self.shapeToStr(IR_node.IR_layer.attr["shape"].list.i)
