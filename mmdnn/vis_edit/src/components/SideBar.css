@@ -1,0 +1,71 @@
+.sideBar{
+    height:calc(100vh - 70px);
+    border-right: 1px solid #e9e9e9;
+    box-shadow: 2px 0 2px 0 rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.08);
+    /* resize: horizontal; */
+    overflow: hidden;
+    /* background: #333; */
+}
+
+.ant-menu-inline{
+    border-right: none !important;
+    
+}
+li.allLayers>ul.ant-menu-sub{
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+.menuItem{
+    font-size: 15px;
+}
+.layerClass{
+    font-size:14px;
+}
+.layerName{
+    font-size:12px;
+}
+li.search{
+    background-color: white !important;
+    line-height:30px !important;
+    height: 30px !important;
+    position: relative !important;
+    left: -25px !important; 
+}
+/* stype the input button */
+div.fileinputs {
+    position: relative;
+}
+
+div.fakefile {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    z-index: 1;
+}
+
+div.fakefile input[type=button] {
+    /* enough width to completely overlap the real hidden file control */
+    cursor: pointer;
+    width: 148px;
+}
+
+div.fileinputs input.file {
+    position: relative;
+    text-align: right;
+    -moz-opacity:0 ;
+    filter:alpha(opacity:0);
+    opacity: 0;
+    z-index: 2;
+}
+
+.inputButton{
+    padding: 0px !important;
+    /* background-color: #333 !important; */
+    /* color:white !important; */
+    border:none !important;
+}
+
+[hidden] {
+    display: none !important;
+  }  

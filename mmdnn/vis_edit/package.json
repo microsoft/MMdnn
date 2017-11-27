@@ -1,0 +1,32 @@
+{
+  "name": "vis_edit",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@types/antd": "^1.0.0",
+    "@types/dagre": "^0.7.38",
+    "@types/react-redux": "^5.0.13",
+    "antd": "^2.13.10",
+    "dagre": "^0.7.4",
+    "react": "^16.1.1",
+    "react-dom": "^16.1.1",
+    "react-redux": "^5.0.6",
+    "react-scripts-ts": "2.8.0",
+    "redux": "^3.7.2"
+  },
+  "scripts": {
+    "start": "react-scripts-ts start",
+    "build": "react-scripts-ts build",
+    "test": "react-scripts-ts test --env=jsdom --setupTestFrameworkScriptFile=raf/polyfill",
+    "eject": "react-scripts-ts eject"
+  },
+  "devDependencies": {
+    "@types/enzyme-adapter-react-16": "^1.0.1",
+    "@types/jest": "^21.1.6",
+    "@types/node": "^8.0.53",
+    "@types/react": "^16.0.23",
+    "@types/react-dom": "^16.0.3",
+    "enzyme": "^3.2.0",
+    "enzyme-adapter-react-16": "^1.1.0"
+  }
+}
