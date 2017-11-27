@@ -101,6 +101,7 @@ const selectLayer = (layer, info, mode) => {
 }
 //draw
 const draw = (json) => {
+    d3.select('.shiftMargin').remove()
     // let { nodes, edges, height, width } = getDag(json.node)
     let mode;
     let margin = 10
