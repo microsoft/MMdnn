@@ -3,12 +3,19 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+
 import argparse
 import numpy as np
 import sys
 import os
 from six import text_type as _text_type
-from tensorflow.contrib.keras.python.keras.preprocessing import image
+
+# work for tf 1.4 in windows & linux
+from tensorflow.contrib.keras.api.keras.preprocessing import image
+
+# work for tf 1.3 & 1.4 in linux
+# from tensorflow.contrib.keras.python.keras.preprocessing import image
 
 
 class TestKit(object):
@@ -92,15 +99,15 @@ class TestKit(object):
             default = "mmdnn/conversion/examples/data/seagull.jpg",
             help = 'Test image path.'
         )
-        
+
         parser.add_argument('--dump',
             type = _text_type,
             default = None,
             help = 'Target model path.')
-        
+
         self.args = parser.parse_args()
         if self.args.n.endswith('.py'):
-            self.args.n = self.args.n[:-3]            
+            self.args.n = self.args.n[:-3]
         self.MainModel = __import__(self.args.n)
 
 
@@ -125,7 +132,7 @@ class TestKit(object):
         x *= 2.0
         return x
 
-    
+
     @staticmethod
     def Identity(path, size, BGRTranspose=False):
         img = image.load_img(path, target_size = (size, size))
@@ -135,31 +142,31 @@ class TestKit(object):
         return x
 
 
-    def preprocess(self, image_path):        
+    def preprocess(self, image_path):
         func = self.preprocess_func[self.args.s][self.args.preprocess]
         return func(image_path)
 
-    
+
     def print_result(self, predict):
         predict = np.squeeze(predict)
         top_indices = predict.argsort()[-5:][::-1]
         self.result = [(i, predict[i]) for i in top_indices]
         print (self.result)
 
-    
-    def print_intermediate_result(self, intermediate_output, if_transpose = False):                        
+
+    def print_intermediate_result(self, intermediate_output, if_transpose = False):
         intermediate_output = np.squeeze(intermediate_output)
-        
+
         if if_transpose == True:
             intermediate_output = np.transpose(intermediate_output, [2, 0, 1])
-        
+
         print (intermediate_output)
         print (intermediate_output.shape)
 
 
     def test_truth(self):
         this_truth = self.truth[self.args.s][self.args.preprocess]
-        for index, i in enumerate(self.result):            
+        for index, i in enumerate(self.result):
             assert this_truth[index][0] == i[0]
             assert np.isclose(this_truth[index][1], i[1], atol = 1e-6)
 
@@ -167,19 +174,19 @@ class TestKit(object):
             self.args.preprocess,
             self.args.s
         ))
-    
-    
+
+
     def inference(self, image_path):
-        self.preprocess(image_path)                
+        self.preprocess(image_path)
         self.print_result()
 
-    
+
     def dump(self, path = None):
         raise NotImplementError()
 
 
 '''
-if __name__=='__main__':    
+if __name__=='__main__':
     tester = TestKit()
     tester.inference('examples/data/elephant.jpg')
 '''

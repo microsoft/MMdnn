@@ -16,8 +16,8 @@ We will use the **resnet_v2_152** model as an example.
 
 ```bash
 $ wget http://download.tensorflow.org/models/resnet_v2_152_2017_04_14.tar.gz -P examples/tf/
-$ tar -xvf examples/tf/inception_v3_2016_08_28.tar.gz
-$ rm examples/tf/inception_v3_2016_08_28.tar.gz
+$ tar -xvf examples/tf/resnet_v2_152_2017_04_14.tar.gz
+$ rm examples/tf/resnet_v2_152_2017_04_14.tar.gz
 $ mv *.ckpt *.graph examples/tf/
 ```
 

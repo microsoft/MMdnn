@@ -58,6 +58,10 @@ setup(
     # simple. Or you can use find_packages().
     packages=find_packages(),
 
+    package_data={
+        'mmdnn':['visualization/*']
+    },
+
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     #   py_modules=["my_module"],
@@ -66,8 +70,8 @@ setup(
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=['numpy >= 1.11.0'],
-    
+    install_requires=['numpy >= 1.11.0', 'six'],
+
     # To provide executable scripts, use entry points in preference to the
     # "scripts" keyword. Entry points provide cross-platform support and allow
     # pip to create the appropriate form of executable for the target platform.
