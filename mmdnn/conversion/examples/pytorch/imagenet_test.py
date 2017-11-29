@@ -15,6 +15,10 @@ class TestTorch(TestKit):
 
     def __init__(self):
         super(TestTorch, self).__init__()
+
+        self.truth['tensorflow']['inception_v3'] = [(22, 9.6691055), (24, 4.3524747), (25, 3.5957973), (132, 3.5657473), (23, 3.346283)]
+        self.truth['keras']['inception_v3'] = [(21, 0.93430489), (23, 0.002883445), (131, 0.0014781791), (24, 0.0014518998), (22, 0.0014435351)]
+
         self.model = self.MainModel.KitModel(self.args.w)
         self.model.eval()
 

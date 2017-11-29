@@ -120,7 +120,7 @@ class KitModel(nn.Module):
 
         padding = self._convert_padding(IR_node)
         input_node = IR_node.variable_name + '_pad'
-        self.add_body(2, "{:<15} = F.pad({}, {} {})".format(
+        self.add_body(2, "{:<15} = F.pad({}, {}{})".format(
             input_node,
             self.parent_variable_name(IR_node),
             padding,
