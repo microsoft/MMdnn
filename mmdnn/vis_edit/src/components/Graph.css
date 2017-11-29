@@ -1,0 +1,11 @@
+.graphWindow{
+    /* background-color: #595959; */
+    position: absolute;
+    top:70px;
+    left:20vw;
+    /* width:85vw; */
+    height:calc(100vh - 70px);
+    overflow: hidden;
+    /* z-index: -1; */
+    /* overflow-y: scroll; */
+}
