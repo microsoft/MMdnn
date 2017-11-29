@@ -10,7 +10,12 @@ import numpy as np
 import sys
 import os
 from six import text_type as _text_type
-from tensorflow.contrib.keras.python.keras.preprocessing import image
+
+# work for tf 1.4 in windows & linux
+from tensorflow.contrib.keras.api.keras.preprocessing import image
+
+# work for tf 1.3 & 1.4 in linux
+# from tensorflow.contrib.keras.python.keras.preprocessing import image
 
 
 class TestKit(object):
