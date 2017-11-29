@@ -1,6 +1,10 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) Microsoft Corporation. All rights reserved.
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
 import re
 
-    
 def get_lower_case(text):
     '''
     Convert PascalCase name to words concatenated by '_'.
@@ -19,13 +23,3 @@ def get_upper_case(text):
 def get_real_name(text):
     text = text.strip().split(':')
     return ''.join(text[:-1])
-
-def listToStr(data):
-    ret = ""
-    first = True
-    for e in data:
-        if first == False:
-            ret += ", "
-        ret += str(e)
-        first = False
-    return ret
