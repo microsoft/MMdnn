@@ -1,6 +1,10 @@
 var json;
 const nodeW = 150, nodeH = 30;
 const filePath = "model.json";
+const miniW = window.innerWidth * 0.12
+const miniH = (window.innerHeight-85) * 0.98
+
+
 /*hanle import model*/
 const handleFileSelect = (evt) => {
     let file = evt.target.files[0]
@@ -23,7 +27,7 @@ document.getElementById('importModel').addEventListener('change', handleFileSele
 //generate dag
 getDag = (layers, mode, margin) => {
     let g = new dagre.graphlib.Graph();
-    g.setGraph({ranksep:20, marginx:margin, marginy:margin});
+    g.setGraph({ranksep:20, marginx:margin, marginy:margin, rankdir:'BT'});
     g.setDefaultEdgeLabel(() => { return {}; });
     layers.forEach(layer => {
         // console.info('layer at dag:',layer)
@@ -126,7 +130,10 @@ const draw = (json) => {
     let height = dag.height
     let width = dag.width
     
-    let scale = Math.min(window.innerWidth*0.85 / width, (window.innerHeight-85)/height)
+    // let scale = Math.min(window.innerWidth*0.85 / width, (window.innerHeight-85)/height)
+    let scale = 1
+    let x_shift = 0
+    let y_shift = 0
     let svg_w = Math.max(width, window.innerWidth)
     let svg_h = Math.max(height, (window.innerHeight-85))
 
@@ -172,7 +179,7 @@ const draw = (json) => {
 
     let shiftMargin = svg.append('g')
     .attr('class', 'shiftMargin')
-    .attr("transform", `translate(${window.innerWidth*(0.15+0.36) - width*scale/2}, 0) scale(1)`)
+    .attr("transform", `translate(${window.innerWidth*(0.15) }, 0) scale(1)`)
 
     let g = shiftMargin.append('g')
         .attr('class', 'scene')
@@ -180,7 +187,7 @@ const draw = (json) => {
     
     let g2 = g.append('g')
         .attr("class", "graph")
-        .attr('transform', `translate(0, 0) scale(${scale})`)
+        .attr('transform', `translate(${x_shift}, ${y_shift}) scale(${scale})`)
 
     buildGraph(g2, nodes, edges)
 
@@ -205,8 +212,7 @@ const draw = (json) => {
 
             selectLayer(d, info, mode)
         })
-    let miniW = window.innerWidth * 0.12
-    let miniH = (window.innerHeight-85) * 0.98
+    
     let miniScale = Math.min(miniW / width, miniH / height)
     if(height/width > miniH/miniW ||true){
         miniMap(nodes, edges, width, height, miniScale)
@@ -232,20 +238,23 @@ const draw = (json) => {
         k = parseFloat(k)*parseFloat(k_)
         x = x_
         y = y_
-        // y = parseInt(y)+parseInt(y_)
+        console.info('pan', x, y)
+        // limit x, y
+        console.info(width*k*0.7)
+        x = Math.max(-width*k*0.3, Math.min(x, width*k*0.7))
+        y= Math.min(0.4 * window.innerHeight, Math.max(-height*k + 0.4 * window.innerHeight, y))
         g.attr('transform', `translate(${x}, ${y}) scale(${k})`);
         // let {height:h0, y:y0} = d3.select(".mapMask").node().getBoundingClientRect()
         // console.info(h0, y0)
         d3.select(".mapMask")
             .attr("y", (-y) / k)
-            .attr("height", miniH / k)
+            .attr("height", miniH*miniScale / k)
 
         // a trick to make text svg transform in MS Edge
         d3.selectAll(".labels").classed("tempclass", true);
         setTimeout(function () { d3.selectAll(".labels").classed("tempclass", false); }, 40);
     }
     function scroll(e){
-        // if "q" is down
         let { k, x, y } = transformParser(d3.select('.scene').attr('transform'))
         if(shiftDown){
             // g.attr('transform', d3.event.transform);
@@ -253,10 +262,12 @@ const draw = (json) => {
         }else{
             y = parseInt(y) + parseInt(d3.event.wheelDeltaY)
         }
+
+        y= Math.min(0.4 * window.innerHeight, Math.max(-height*k + 0.4*window.innerHeight, y))
         g.attr('transform', `translate(${x}, ${y}) scale(${k})`);
         d3.select(".mapMask")
-        .attr("y", (-y) / k)
-        .attr("height", miniH / k)
+        .attr("y", (-y) / k *miniScale)
+        .attr("height", miniH*miniScale / k)
         
     }
     function keyZoom(e){
@@ -302,7 +313,7 @@ const miniMap = (nodes, edges, width, height, miniScale) => {
     let mask = map.append("rect")
         .attr("class", "mapMask")
         .attr("width", "12vw")
-        .attr("height", height*miniScale)
+        .attr("height", miniScale*miniH)
         .style("fill", "#777")
         .style("opacity", 0.12)
         .call(d3.drag()
