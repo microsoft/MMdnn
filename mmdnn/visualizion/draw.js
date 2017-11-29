@@ -28,8 +28,8 @@ getDag = (layers, mode, margin) => {
     layers.forEach(layer => {
         // console.info('layer at dag:',layer)
         // let name = layer.name.split('/').pop()
-        label = mode == "IR" ? `${layer.name}:${layer.op}` : `${layer.name}:${layer.class_name}`
-        g.setNode(layer.name, { label: label, width: label.length * 8, height: nodeH })
+        label = mode == "IR" ? `${layer.name}|${layer.op}` : `${layer.name}:${layer.class_name}`
+        g.setNode(layer.name, { label: label, width: label.split('/').pop().length * 8, height: nodeH })
         //IR model or keras model
         if (mode == "IR" && layer.input) {
             layer.input.forEach(input => {
@@ -83,7 +83,7 @@ const COLORs = d3.schemeCategory20
 
 // select a layer
 const selectLayer = (layer, info, mode) => {
-    name = layer.label.split(":")[0]
+    name = layer.label.split("|")[0]
     layerInfo = info.filter(i => i.name == name)[0]
     // console.info(layerInfo)
     // config = JSON.stringify(layerInfo.config, null, 2)
@@ -96,7 +96,15 @@ const selectLayer = (layer, info, mode) => {
     }
     // console.info(JSON.stringify(config, null, 2))
     config = obj2str(config)
-    document.getElementById('layerName').innerText = name
+    const max_len = 20
+    if(name.length>max_len){
+        document.getElementById('layerName').innerText = name.slice(0, max_len-1)+"..."
+    }else{
+        document.getElementById('layerName').innerText = name
+    }
+    
+    document.getElementById('layerName').title = name
+    
     document.getElementById('layerConfig').innerHTML = config
 }
 //draw
@@ -179,11 +187,11 @@ const draw = (json) => {
     let nodeMasks = d3.selectAll('.node')
         .append("rect")
         .attr('class', 'nodeMask')
-        .attr("width", d => (d.width))
-        .attr("height", nodeH)
+        .attr("width", d => 1.2*d.width)
+        .attr("height", 1.2*nodeH)
         // .attr('rx', nodeH / 5)
         // .attr('ry', nodeH / 5)
-        .attr("transform", d => { return `translate( ${-d.width * 0.5},${-nodeH * 0.5})` })
+        .attr("transform", d => { return `translate( ${-d.width * 0.6},${-nodeH * 0.6})` })
         .style("fill", "transparent")
         .style("stroke", "none")
         .on("click", function (d) {
@@ -192,7 +200,7 @@ const draw = (json) => {
                 .style('stroke', "none")
 
             d3.select(this)
-                .style("stroke", "gray")
+                .style("stroke", "red")
                 .style("stroke-width", 5)
 
             selectLayer(d, info, mode)
@@ -241,7 +249,6 @@ const draw = (json) => {
         let { k, x, y } = transformParser(d3.select('.scene').attr('transform'))
         if(shiftDown){
             // g.attr('transform', d3.event.transform);
-            console.info(d3.event.wheelDeltaY)
             k = d3.event.wheelDeltaY>0?k*1.1:k*0.9
         }else{
             y = parseInt(y) + parseInt(d3.event.wheelDeltaY)
@@ -360,7 +367,7 @@ const buildGraph = (g2, nodes, edges, label=true) => {
         let labels = drawNode.append("text")
         .attr('class', 'labels')
         .style("text-anchor", "middle")
-        .text(d => d.label)
+        .text(d => d.label.split("/").pop())
     }
     
     let drawLink = g2.selectAll(".link")
@@ -399,7 +406,7 @@ const obj2str = (obj, i = 0) => {
         if (v == null) {
             return `${br}<p>${space}<b>${k}</b>: null </p>`
         } else if (typeof (v) == "object" && Array.isArray(v)) {
-            if (typeof (v[0]) == "string") {
+            if (typeof (v[0]) == "string"||typeof (v[0]) == "number") {
                 return `${br}<p>${space}<b>${k}</b>: ${v.join(',')} </p>`
             } else {
                 v = v.map(d => obj2str(d, i + 1))
