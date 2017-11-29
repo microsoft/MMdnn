@@ -10,10 +10,11 @@ from mmdnn.conversion.keras.keras2_graph import Keras2Graph
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.DataStructure.parser import Parser
+from mmdnn.conversion.common.utils import *
 
 
 class Keras2Parser(Parser):
-   
+
     dtype_map = {
         "float16" : graph_pb2.DT_FLOAT16,
         "float32" : graph_pb2.DT_FLOAT32,
@@ -26,12 +27,15 @@ class Keras2Parser(Parser):
     }
 
     activation_map = {
-        "relu"    : "Relu",
-        'softmax' : "Softmax",
-        'sigmoid' : "Sigmoid",
-        "tanh"    : "Tanh",
-        "elu"     : "Elu",
-        "relu6"   : "Relu6"
+        "relu"          : "Relu",
+        'softmax'       : "Softmax",
+        'sigmoid'       : "Sigmoid",
+        "tanh"          : "Tanh",
+        "elu"           : "Elu",
+        "relu6"         : "Relu6",
+        'softplus'      : 'Softplus',
+        'softsign'      : 'Softsign',
+        'hard_sigmoid'  : 'HardSigmoid'
     }
 
 
@@ -115,13 +119,10 @@ class Keras2Parser(Parser):
         shape = graph_pb2.TensorShape()
         for dim in source_node.layer.output_shape:
             new_dim = shape.dim.add()
-            if dim == None:
-                new_dim.size = -1
-            else:
-                new_dim.size = dim
+            new_dim.size = dim if dim else -1
 
         IR_node.attr["_output_shapes"].list.shape.extend([shape])
-    
+
 
     @staticmethod
     def _copy_and_reop(source_node, IR_node, new_op = None):
@@ -130,7 +131,7 @@ class Keras2Parser(Parser):
 
         if hasattr(source_node.layer, "dtype"):
             IR_node.attr["dtype"].type = Keras2Parser.dtype_map[source_node.layer.dtype]
-        
+
         Keras2Parser._set_output_shape(source_node, IR_node)
 
 
@@ -140,7 +141,7 @@ class Keras2Parser(Parser):
             for dim in source_node.output_shape:
                 new_dim = target_node.attr["shape"].shape.dim.add()
                 new_dim.size = -1 if dim == None else dim
-        
+
         else:
             target_node.attr["shape"].shape.unknown_rank = True
 
@@ -156,30 +157,47 @@ class Keras2Parser(Parser):
 
 
     @staticmethod
-    def _convert_padding(source_node, target_node):
-        target_node.attr["padding"].s = source_node.keras_layer.padding.upper().encode('utf-8')
+    def _convert_padding(source_node, IR_node):
+        # TODO: Fused conv and pool with padding is different from defused operators
+        dims = len(source_node.layer.input_shape)
+        if source_node.layer.padding == 'valid':
+            assign_IRnode_values(IR_node, {'auto_pad' : "VALID", 'pads' : [0, 0] * dims})
+
+        elif source_node.layer.padding == 'same':
+            kernel_shape = source_node.layer.kernel_size if hasattr(source_node.layer, 'kernel_size') else source_node.layer.pool_size
+            padding = compute_tf_same_padding(
+                source_node.layer.input_shape,
+                kernel_shape,
+                list(source_node.layer.strides))
+            assign_IRnode_values(IR_node, {'auto_pad' : "SAME_LOWER", 'pads' : padding})
+
+        else:
+            assert False
 
 
-    def _defuse_activation(self, keras_node):
-        if keras_node.keras_layer.activation is None or keras_node.keras_layer.activation.__name__ == "linear":
+    def _defuse_activation(self, source_node):
+        if source_node.layer.activation is None or source_node.layer.activation.__name__ == "linear":
             return
 
         IR_node = self.IR_graph.node.add()
-        IR_node.name = keras_node.name + "_activation"
-        IR_node.op = Keras2Parser.activation_map[keras_node.layer.activation.__name__]
-        IR_node.input.append(keras_node.name)
-        Keras2Parser._set_output_shape(keras_node, IR_node)
-        
-        # Kit TODO: More activation functions        
+        IR_node.name = source_node.real_name + "_activation"
+        IR_node.op = Keras2Parser.activation_map[source_node.layer.activation.__name__]
+        IR_node.input.append(source_node.real_name)
+        Keras2Parser._set_output_shape(source_node, IR_node)
+
+        # TODO: More activation functions
         # for ELU
-        if hasattr(keras_node.layer, 'alpha'):
-            IR_node.attr['alpha'].f = keras_node.layer.alpha
+        if hasattr(source_node.layer, 'alpha'):
+            assign_attr_value(IR_node['alpha'], source_node.layer.alpha)
 
-        self.src_graph.get_node(keras_node.name).real_name = IR_node.name
+        source_node.real_name = IR_node.name
 
-    
+
     def _convert_convolution(self, source_node, dim):
         IR_node = self.IR_graph.node.add()
+
+        # input edge
+        self.convert_inedge(source_node, IR_node)
 
         # name, op
         if source_node.type.startswith('Separable'):
@@ -190,63 +208,59 @@ class Keras2Parser(Parser):
 
         else:
             if source_node.type.startswith('Conv'):
-                Keras2Parser._copy_and_reop(source_node, IR_node, "Convolution")
+                Keras2Parser._copy_and_reop(source_node, IR_node, "Conv")
 
             elif source_node.type.startswith('Deconv'):
-                Keras2Parser._copy_and_reop(source_node, IR_node, "Deconvolution")            
+                Keras2Parser._copy_and_reop(source_node, IR_node, "ConvTranspose")
 
             elif source_node.type.startswith('Depthwise'):
-                Keras2Parser._copy_and_reop(source_node, IR_node, "DepthwiseConv")                
+                Keras2Parser._copy_and_reop(source_node, IR_node, "DepthwiseConv")
 
             else:
                 raise NotImplementedError("Convolution layer [{}] is not supported.".format(source_node.type))
 
             # weights
-            if self.weight_loaded == True:            
+            if self.weight_loaded:
                 self.set_weight(source_node.name, "weights", source_node.layer.get_weights()[0])
-                if source_node.layer.use_bias == True:
+                if source_node.layer.use_bias:
                     self.set_weight(source_node.name, "bias", source_node.layer.get_weights()[1])
 
-        # input edge
-        self.convert_inedge(source_node, IR_node)
-        
-        # padding
+        if isinstance(source_node.layer.kernel_size, int):
+            source_node.layer.kernel_size = (source_node.layer.kernel_size) * dim
+
+        if isinstance(source_node.layer.strides, int):
+            source_node.layer.strides = (source_node.layer.strides) * dim
+
+        if isinstance(source_node.layer.dilation_rate, int):
+            source_node.layer.dilation_rate = (source_node.layer.dilation_rate) * dim
+
+        kwargs = dict()
+
+        # pads
         Keras2Parser._convert_padding(source_node, IR_node)
-               
+
         # filter
         # [kd, kh, kw, channel_size, filter number]
-        if isinstance(source_node.layer.kernel_size, int):
-            IR_node.attr["filter"].list.i.extend([source_node.layer.kernel_size] * dim)
-        else:
-            IR_node.attr["filter"].list.i.extend(source_node.layer.kernel_size)
-        
         in_channel = source_node.layer.input_shape[-1] if self.data_format == "channels_last" else source_node.layer.input_shape[1]
         out_channel = source_node.layer.filters or source_node.layer.depth_multiplier
-        
+
         if source_node.type.startswith("Deconv"):
-            IR_node.attr["filter"].list.i.extend([out_channel, in_channel])
+            kwargs['kernel_shape'] = list(source_node.layer.kernel_size) + [out_channel, in_channel]
         else:
-            IR_node.attr["filter"].list.i.extend([in_channel, out_channel])
-        
+            kwargs['kernel_shape'] = list(source_node.layer.kernel_size) + [in_channel, out_channel]
+
         # use_bias
-        IR_node.attr["use_bias"].b = source_node.keras_layer.use_bias
+        kwargs['use_bias'] = source_node.keras_layer.use_bias
 
         # strides
         # [1, sd, sh, sw, 1]
-        IR_node.attr["strides"].list.i.append(1)
-        if isinstance(source_node.layer.kernel_size, int):
-            IR_node.attr["strides"].list.i.extend([source_node.layer.strides] * dim)
-        else:
-            IR_node.attr["strides"].list.i.extend(source_node.layer.strides)
-        IR_node.attr['strides'].list.i.append(1)
-                            
+        kwargs['strides'] = [1] + list(source_node.layer.strides) + [1]
+
         # dilations
-        IR_node.attr['dilation_rate'].list.i.append(1)
-        if isinstance(source_node.layer.dilation_rate, int):
-            IR_node.attr["dilation_rate"].list.i.extend([source_node.layer.dilation_rate] * dim)
-        else:
-            IR_node.attr["dilation_rate"].list.i.extend(source_node.layer.dilation_rate)
-        IR_node.attr['dilation_rate'].list.i.append(1)        
+        # [1, dd, dh, dw, 1]
+        kwargs['dilations'] = [1] + list(source_node.layer.dilation_rate) + [1]
+
+        assign_IRnode_values(IR_node, kwargs)
 
         # activation
         self._defuse_activation(source_node)
@@ -261,38 +275,46 @@ class Keras2Parser(Parser):
         # input edge
         self.convert_inedge(source_node, IR_node)
 
-        IR_node.attr['pooling_type'].s = pooling_type.encode('utf-8')
-        
+        kwargs = {}
+
+        kwargs['pooling_type'] = pooling_type
+
         if is_global:
-            IR_node.attr['global_pooling'].b = True
-            IR_node.attr["strides"].list.i[:] = [1] * (dim + 2) # for saving dim
+            kwargs['global_pooling'] = True
+            kwargs['strides'] = [1] * (dim + 2)
         else:
+            if isinstance(source_node.layer.pool_size, int):
+                source_node.layer.pool_size = (source_node.layer.pool_size) * dim
+
+            if isinstance(source_node.layer.strides, int):
+                source_node.layer.strides = (source_node.layer.strides) * dim
+
             # padding
-            Keras2Parser._convert_padding(source_node, IR_node)
+            self._convert_padding(source_node, IR_node)
 
             # strides
             # [1, sd, sh, sw, 1]
-            IR_node.attr["strides"].list.i.append(1)
-            if isinstance(source_node.layer.strides, int):
-                IR_node.attr["strides"].list.i.extend([source_node.layer.strides] * dim)
-            else:
-                IR_node.attr["strides"].list.i.extend(source_node.layer.strides)
-            IR_node.attr['strides'].list.i.append(1)
+            kwargs['strides'] = [1] + list(source_node.layer.strides) + [1]
 
             # window_shape
             # [1, pd, ph, pw, 1]
-            IR_node.attr["window_shape"].list.i.append(1)
-            if isinstance(source_node.layer.pool_size, int):
-                IR_node.attr["window_shape"].list.i.extend([source_node.layer.pool_size] * dim)
-            else:
-                IR_node.attr["window_shape"].list.i.extend(source_node.layer.pool_size)    
-            IR_node.attr["window_shape"].list.i.append(1)          
-    
-    
+            kwargs['kernel_shape'] = [1] + list(source_node.layer.pool_size) + [1]
+
+        assign_IRnode_values(IR_node, kwargs)
+
+        if is_global:
+            flatten_node = self.IR_graph.node.add()
+            flatten_node.name = source_node.name + '_flatten'
+            flatten_node.op = 'Flatten'
+            flatten_node.input.append(source_node.name)
+            Keras2Parser._set_output_shape(source_node, flatten_node)
+            source_node.real_name = flatten_node.name
+
+
     def _convert_merge(self, source_node, new_name = None):
         IR_node = self.IR_graph.node.add()
 
-        # name, op        
+        # name, op
         Keras2Parser._copy_and_reop(source_node, IR_node, new_name)
 
         # input edge
@@ -303,52 +325,52 @@ class Keras2Parser(Parser):
             IR_node.attr['axis'].i = source_node.layer.axis
         return IR_node
 
-    
-    def _convert_padding_api(self, keras_node, IR_node, mode):
+
+    def _convert_padding_api(self, source_node, IR_node, mode):
          # name, op
-        Keras2Parser._copy_and_reop(keras_node, IR_node, "Pad")
+        Keras2Parser._copy_and_reop(source_node, IR_node, "Pad")
 
         # input edge
-        self.convert_inedge(keras_node, IR_node)
-        
-        IR_node.attr['mode'].s = mode
+        self.convert_inedge(source_node, IR_node)
+
+        kwargs = dict()
+        kwargs['mode'] = mode
 
         # padding
-        IR_node.attr["paddings"].list.i.extend([0, 0])
-        for e in keras_node.keras_layer.padding:
-            for j in e:
-                IR_node.attr["paddings"].list.i.append(j)
-        IR_node.attr["paddings"].list.i.extend([0, 0])
+        kwargs['pads'] = [0, 0]
+        for padding_pair in source_node.layer.padding:
+            kwargs['pads'].extend(padding_pair)
+        kwargs['pads'] += [0, 0]
+        kwargs['pads'] = convert_tf_pad_to_onnx(kwargs['pads'])
+        IR_node.set_attrs(kwargs)
+        print (IR_node)
+        assert False
 
 
     def rename_UNKNOWN(self, source_node):
         # only for training
         IR_node = self.IR_graph.node.add()
-        
+
         # name, op
         Keras2Parser._copy_and_reop(source_node, IR_node)
-        
+
         # input edge
         self.convert_inedge(source_node, IR_node)
 
-    
+
+    def rename_Activation(self, keras_node):
+        IR_node = self.IR_graph.node.add()
+
+        # name, op
+        Keras2Parser._copy_and_reop(keras_node, IR_node, self.activation_map[keras_node.keras_layer.activation.__name__])
+
+        # input edge
+        self.convert_inedge(keras_node, IR_node)
+
+
     # Merge Layers
     def rename_Add(self, source_node):
         self._convert_merge(source_node)
-    
-
-    def rename_InputLayer(self, source_node):
-        # only for training
-        IR_node = self.IR_graph.node.add()
-        
-        # name, op
-        Keras2Parser._copy_and_reop(source_node, IR_node, "DataInput")
-        
-        # input edge
-        self.convert_inedge(source_node, IR_node)
-
-        # shape
-        Keras2Parser._copy_shape(source_node.keras_layer, IR_node)
 
 
     def rename_Conv1D(self, source_node):
@@ -361,8 +383,23 @@ class Keras2Parser(Parser):
 
     def rename_Conv3D(self, source_node):
         self._convert_convolution(source_node, 3)
-       
-    
+
+
+    def rename_InputLayer(self, source_node):
+        # only for training
+        IR_node = self.IR_graph.node.add()
+
+        # name, op
+        Keras2Parser._copy_and_reop(source_node, IR_node, "DataInput")
+
+        # input edge
+        self.convert_inedge(source_node, IR_node)
+
+        # shape
+        Keras2Parser._copy_shape(source_node.keras_layer, IR_node)
+
+
+
     def rename_GlobalMaxPooling1D(self, source_node):
         self._convert_pooling(source_node, 1, "MAX", True)
 
@@ -373,7 +410,7 @@ class Keras2Parser(Parser):
 
     def rename_GlobalMaxPooling3D(self, source_node):
         self._convert_pooling(source_node, 3, "MAX", True)
-        
+
 
     def rename_GlobalAveragePooling1D(self, source_node):
         self._convert_pooling(source_node, 1, "AVG", True)
@@ -406,10 +443,10 @@ class Keras2Parser(Parser):
     def rename_AveragePooling2D(self, source_node):
         self._convert_pooling(source_node, 2, "AVG", False)
 
-    
+
     def rename_AveragePooling3D(self, source_node):
         self._convert_pooling(source_node, 3, "AVG", False)
-    
+
 
     def rename_Dropout(self, source_node):
         # only for training
@@ -424,7 +461,7 @@ class Keras2Parser(Parser):
         IR_node.attr["keep_prob"].f = source_node.keras_layer.rate
         if source_node.keras_layer.seed != None:
             IR_node.attr["seed"].i = source_node.keras_layer.seed
-  
+
 
     # Core Layers
     def rename_Dense(self, source_node):
@@ -432,7 +469,7 @@ class Keras2Parser(Parser):
 
         # name, op
         Keras2Parser._copy_and_reop(source_node, IR_node, "FullyConnected")
-        
+
         # input edge
         self.convert_inedge(source_node, IR_node)
 
@@ -442,12 +479,12 @@ class Keras2Parser(Parser):
         # use_bias
         IR_node.attr["use_bias"].b = source_node.keras_layer.use_bias
 
-        # weights        
-        if self.weight_loaded == True:            
+        # weights
+        if self.weight_loaded == True:
             self.set_weight(source_node.name, 'weights', source_node.layer.get_weights()[0])
             if IR_node.attr["use_bias"].b == True:
                 self.set_weight(source_node.name, 'bias', source_node.layer.get_weights()[1])
-            
+
         # activation
         self._defuse_activation(source_node)
 
@@ -462,22 +499,12 @@ class Keras2Parser(Parser):
         self.convert_inedge(source_node, IR_node)
 
 
-    def rename_Activation(self, keras_node):
-        IR_node = self.IR_graph.node.add()
-
-        # name, op
-        Keras2Parser._copy_and_reop(keras_node, IR_node, self.activation_map[keras_node.keras_layer.activation.__name__])
-
-        # input edge
-        self.convert_inedge(keras_node, IR_node)
-
-
     def rename_Embedding(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # name, op
         Keras2Parser._copy_and_reop(source_node, IR_node)
-        
+
         # input edge
         self.convert_inedge(source_node, IR_node)
 
@@ -499,7 +526,7 @@ class Keras2Parser(Parser):
 
         # name, op
         Keras2Parser._copy_and_reop(keras_node, IR_node)
-        
+
         # input edge
         self.convert_inedge(keras_node, IR_node)
 
@@ -522,7 +549,7 @@ class Keras2Parser(Parser):
 
         # name, op
         Keras2Parser._copy_and_reop(source_node, IR_node)
-        
+
         # input edge
         self.convert_inedge(source_node, IR_node)
 
@@ -531,7 +558,7 @@ class Keras2Parser(Parser):
 
         # activation
         self._defuse_activation(source_node)
-    
+
 
     def rename_Multiply(self, source_node):
         self._convert_merge(source_node, 'Mul')
@@ -547,7 +574,7 @@ class Keras2Parser(Parser):
 
 
     def rename_Concatenate(self, source_node):
-        IR_node = self._convert_merge(source_node, 'Concat')        
+        IR_node = self._convert_merge(source_node, 'Concat')
 
 
     def rename_Reshape(self, source_node):
@@ -555,11 +582,11 @@ class Keras2Parser(Parser):
 
         # name, op
         Keras2Parser._copy_and_reop(source_node, IR_node, 'Reshape')
-        
+
         # input edge
         self.convert_inedge(source_node, IR_node)
 
-        # for target shape      
+        # for target shape
         IR_node.attr["shape"].list.i.append(-1)
         IR_node.attr["shape"].list.i.extend(source_node.layer.target_shape)
 
@@ -569,7 +596,7 @@ class Keras2Parser(Parser):
 
         # name, op
         Keras2Parser._copy_and_reop(source_node, IR_node, "Keras Lambda")
-        
+
         # input edge
         self.convert_inedge(source_node, IR_node)
 
@@ -586,7 +613,7 @@ class Keras2Parser(Parser):
 
 
 
-    def rename_BatchNormalization(self, keras_node):        
+    def rename_BatchNormalization(self, keras_node):
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -597,7 +624,7 @@ class Keras2Parser(Parser):
 
         # axis
         IR_node.attr['axis'].i = keras_node.keras_layer.axis
-        
+
         IR_node.attr['scale'].b = keras_node.keras_layer.scale
 
         IR_node.attr['bias'].b = keras_node.keras_layer.center
@@ -627,7 +654,7 @@ class Keras2Parser(Parser):
 
     def rename_ZeroPadding2D(self, keras_node):
         IR_node = self.IR_graph.node.add()
-        self._convert_padding_api(keras_node, IR_node, "CONSTANT")
+        self._convert_padding_api(keras_node, IR_node, "constant")
 
 
     def rename_SeparableConv2D(self, source_node):
@@ -639,4 +666,4 @@ class Keras2Parser(Parser):
 
 
     def custom_relu6(x):
-        return _keras.relu(x, max_value = 6)
+        return _keras.relu(x, max_value=6)

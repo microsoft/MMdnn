@@ -1,3 +1,8 @@
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) Microsoft Corporation. All rights reserved.
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
+
 from six import string_types as _string_types
 from mmdnn.conversion.caffe.errors import ConversionError
 from mmdnn.conversion.common.IR.graph_pb2 import GraphDef, NodeDef, TensorShape

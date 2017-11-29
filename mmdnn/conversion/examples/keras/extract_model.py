@@ -67,5 +67,14 @@ def _main():
         result = [(i, predict[i]) for i in top_indices]
         print (result)
 
+        # layer_name = 'block2_pool'
+        # intermediate_layer_model = keras.Model(inputs=model.input,
+        #                                  outputs=model.get_layer(layer_name).output)
+        # intermediate_output = intermediate_layer_model.predict(img)
+        # print (intermediate_output)
+        # print (intermediate_output.shape)
+        # print ("%.30f" % np.sum(intermediate_output))
+
+
 if __name__=='__main__':
     _main()

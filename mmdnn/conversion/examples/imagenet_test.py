@@ -4,7 +4,6 @@
 #----------------------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-
 import argparse
 import numpy as np
 import sys
@@ -162,6 +161,7 @@ class TestKit(object):
 
         print (intermediate_output)
         print (intermediate_output.shape)
+        print ("%.30f" % np.sum(intermediate_output))
 
 
     def test_truth(self):

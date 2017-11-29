@@ -3,13 +3,15 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
-import tensorflow
 import numpy as np
+import tensorflow
+from tensorflow.python.framework import tensor_util
+from tensorflow.core.framework import attr_value_pb2
 from mmdnn.conversion.tensorflow.tensorflow_graph import TensorflowGraph
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
+from mmdnn.conversion.common.utils import *
 from mmdnn.conversion.common.DataStructure.parser import Parser
-from tensorflow.python.framework import tensor_util
 
 
 class TensorflowParser(Parser):
@@ -213,21 +215,58 @@ class TensorflowParser(Parser):
 
         return False
 
+    @staticmethod
+    def tensor_shape_to_list(shapes):
+        if isinstance(shapes, attr_value_pb2.AttrValue):
+            return [dim.size for dim in shapes.shape.dim]
+
+        else:
+            ret = []
+            for shape in shapes:
+                this_one = [dim.size for dim in shape.dim]
+                ret.append(this_one)
+            return ret
+
+
+    def _convert_padding(self, source_node, IR_node, kernel_size):
+        # TODO: Fused conv and pool with padding is different from defused operators
+        input_node = self.get_parent(source_node.name, [0])
+        input_shape = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
+
+        if source_node.get_attr('padding') == 'VALID':
+            dims = len(input_shape)
+            assign_IRnode_values(IR_node, {'auto_pad' : "VALID", 'pads' : [0, 0] * dims})
+
+        elif source_node.get_attr('padding') == 'SAME':
+            padding = compute_tf_same_padding(
+                input_shape,
+                kernel_size,
+                source_node.get_attr('strides'))
+            assign_IRnode_values(IR_node, {'auto_pad' : "SAME_LOWER", 'pads' : padding})
+
+        else:
+            assert False
+
+
     def _convert_pooling(self, source_node, pool_type):
-        IR_node = self._convert_identity_operation(source_node, new_op = 'Pool')
+        IR_node = self._convert_identity_operation(source_node, new_op='Pool')
+        kwargs = {}
 
         # strides
-        IR_node.attr['strides'].list.i[:] = source_node.layer.attr['strides'].list.i[:]
-
-        # padding
-        IR_node.attr['padding'].s = source_node.layer.attr['padding'].s
+        kwargs['strides'] = source_node.get_attr('strides')
 
         # window_shape
-        IR_node.attr['window_shape'].list.i[:] = source_node.layer.attr['ksize'].list.i[:]
+        kwargs['kernel_shape'] = source_node.get_attr('ksize')
 
         # pool type
-        IR_node.attr['pooling_type'].s = pool_type
+        kwargs['pooling_type'] = pool_type
 
+        # padding
+        self._convert_padding(source_node, IR_node, kwargs['kernel_shape'][1:-1])
+
+        assign_IRnode_values(IR_node, kwargs)
+
+        
     def gen_IR(self):
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
@@ -250,8 +289,9 @@ class TensorflowParser(Parser):
         IR_node.name = source_node.name
         IR_node.op = new_op
 
+        kwargs = {}
         if 'data_format' in source_node.layer.attr:
-            IR_node.attr['data_format'].s = source_node.get_attr('data_format')
+            kwargs['data_format'] = source_node.get_attr('data_format')
 
         if 'dtype' in source_node.layer.attr:
             assert source_node.layer.attr['dtype'].type in TensorflowParser.dtype_map, 'type [{}] is unknown.'.format(source_node.layer.attr['dtype'].type)
@@ -259,6 +299,8 @@ class TensorflowParser(Parser):
 
         if '_output_shapes' in source_node.layer.attr:
             IR_node.attr["_output_shapes"].MergeFromString(source_node.layer.attr['_output_shapes'].SerializeToString())
+
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def _convert_inedge(self, source_node, IR_node, start_idx = 0, end_idx = None):
@@ -268,7 +310,7 @@ class TensorflowParser(Parser):
 
 
     def _get_bias(self, source_node, IR_node):
-        if len(source_node.out_edges) < 1:
+        if not source_node.out_edges:
             return
 
         add_node = self.tf_graph.get_node(source_node.out_edges[0])
@@ -278,7 +320,7 @@ class TensorflowParser(Parser):
         variable = self.tf_graph.get_node(add_node.in_edges[1])
         variable = self.tf_graph.get_node(variable.in_edges[0])
 
-        assert variable.layer.attr['shape'].shape.dim[0].size == IR_node.attr['filter'].list.i[-1]
+        assert variable.layer.attr['shape'].shape.dim[0].size == IR_node.attr['kernel_shape'].list.i[-1]
 
         if self.weight_loaded:
             assert variable.name in self.ckpt_data
@@ -299,12 +341,13 @@ class TensorflowParser(Parser):
     def rename_UNKNOWN(self, source_node):
         if source_node.type in self.skip_type:
             return
-        print("Tensorflow has not supported operator [%s] with name [%s]." % (source_node.type, source_node.name))
+        print("Tensorflow has not supported operator [%s] with name [%s]."
+              % (source_node.type, source_node.name))
         return
 
 
     def rename_Placeholder(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op = 'DataInput')
+        IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
 
         # shape
         TensorflowParser._copy_shape(source_node, IR_node)
@@ -314,23 +357,26 @@ class TensorflowParser(Parser):
         """
         weights: name_weights, name_bias
         """
-        IR_node = self._convert_identity_operation(source_node, 1, 'Convolution')
+        IR_node = self._convert_identity_operation(source_node, 1, 'Conv')
+
+        kwargs = {}
 
         # strides
-        IR_node.attr['strides'].list.i[:] = source_node.layer.attr['strides'].list.i[:]
-
-        # padding
-        IR_node.attr['padding'].s = source_node.layer.attr['padding'].s
+        kwargs['strides'] = source_node.get_attr('strides')
 
         # input[1] : W
         # filter
         W = self.tf_graph.get_node(source_node.layer.input[1])
         W = self.tf_graph.get_node(W.layer.input[0]).layer
-        for e in W.attr['shape'].shape.dim:
-            IR_node.attr['filter'].list.i.append(e.size)
+        kwargs['kernel_shape'] = self.tensor_shape_to_list(W.attr['shape'])
+
+        # padding
+        self._convert_padding(source_node, IR_node, kwargs['kernel_shape'][:-2])
 
         if self.weight_loaded:
             self.set_weight(source_node.name, 'weights', self.ckpt_data[W.name])
+
+        assign_IRnode_values(IR_node, kwargs)
 
         # output[0] : B
         self._get_bias(source_node, IR_node)
@@ -378,7 +424,7 @@ class TensorflowParser(Parser):
         IR_node = self._convert_identity_operation(source_node, 1)
 
         # for target shape
-        IR_node.attr["shape"].shape.MergeFromString(source_node.layer.attr['_output_shapes'].list.shape[0].SerializeToString())
+        IR_node.attr["shape"].shape.MergeFromString(source_node.get_attr('_output_shapes').shape[0].SerializeToString())
 
 
     def rename_MatMul(self, source_node):
@@ -472,16 +518,16 @@ class TensorflowParser(Parser):
 
     def rename_Pad(self, source_node):
         IR_node = self._convert_identity_operation(source_node, 1, 'Pad')
-        IR_node.attr['mode'].s = b'CONSTANT'
-        IR_node.attr['constant_values'].f = 0.0
+        kwargs = {}
+        kwargs['mode'] = 'constant'
+        kwargs['constant_values'] = 0.0
 
         # paddings
         padding = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
-
         shapes = tensor_util.MakeNdarray(padding)
-        for i in shapes:
-            for j in i:
-                IR_node.attr['paddings'].list.i.append(j)
+        kwargs['pads'] = convert_tf_pad_to_onnx(shapes)
+
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_Mean(self, source_node):
@@ -497,15 +543,20 @@ class TensorflowParser(Parser):
 
     def rename_DepthwiseConv2dNative(self, source_node):
         IR_node = self._convert_identity_operation(source_node, 1, 'DepthwiseConv')
-        IR_node.attr['strides'].list.i[:] = source_node.layer.attr['strides'].list.i[:]
-        IR_node.attr['padding'].s = source_node.layer.attr['padding'].s
+        kwargs = {}
+        kwargs['strides'] = source_node.get_attr('strides')
 
         input_node = self.src_graph.get_parent(source_node.name, [1])
-        IR_node.attr['filter'].list.i.extend([dim.size for dim in input_node.layer.attr['_output_shapes'].list.shape[0].dim])
+        kwargs['kernel_shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
+
+        self._convert_padding(source_node, IR_node, kwargs['kernel_shape'][:-2])
 
         if self.weight_loaded:
             weight = self.src_graph.get_parent(source_node.name, [1, 0])
             self.set_weight(source_node.name, 'weights', self.ckpt_data[weight.name])
+
+        assign_IRnode_values(IR_node, kwargs)
+
 
     def rename_FusedBatchNorm(self, source_node):
         IR_node = self._convert_identity_operation(source_node, 1, 'BatchNorm')

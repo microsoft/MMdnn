@@ -14,13 +14,13 @@ def get_handler_name(node_kind):
 
 
 class NodeMapper(object):
-    
+
     @classmethod
     def _convert_output_shape(cls, kwargs, node):
         shape = TensorShape()
         dim = shape.dim.add()
         dim.size = -1
-        
+
         if len(node.output_shape) > 2:
             for i in node.output_shape[2:]:
                 dim = shape.dim.add()
@@ -31,22 +31,22 @@ class NodeMapper(object):
             dim = shape.dim.add()
             dim.size = node.output_shape[1]
         kwargs['_output_shapes'] = [shape]
-    
+
     @classmethod
     def get_kernel_params(cls, node):
-        kwargs = {}        
+        kwargs = {}
         if node.kernel_parameters.p_h > 0 or node.kernel_parameters.p_w > 0:
-            padding = [0, 0, node.kernel_parameters.p_h, node.kernel_parameters.p_h, node.kernel_parameters.p_w, node.kernel_parameters.p_w, 0, 0]
+            padding = [0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0, 0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0]
         elif node.kernel_parameters.s_h > 1 or node.kernel_parameters.s_w > 1:
-            padding = [0, 0, (node.kernel_parameters.s_h - 1) // 2, node.kernel_parameters.s_h // 2, (node.kernel_parameters.s_w - 1) // 2, node.kernel_parameters.s_w // 2, 0, 0]
+            padding = [0, (node.kernel_parameters.s_h - 1) // 2, (node.kernel_parameters.s_w - 1) // 2, 0, 0, node.kernel_parameters.s_h // 2, node.kernel_parameters.s_w // 2, 0]
         else:
             padding = None
-        
-        kwargs['padding'] = 'VALID'
+
+        kwargs['auto_pad'] = 'VALID'
         kwargs['strides'] = [1, node.kernel_parameters.s_h, node.kernel_parameters.s_w, 1]
         cls._convert_output_shape(kwargs, node)
-        
-        return kwargs, {'paddings' : padding, 'mode' : 'CONSTANT', 'constant_values' : 0.0}
+
+        return kwargs, {'pads' : padding, 'mode' : 'constant', 'constant_values' : 0.0}
 
 
     @classmethod
@@ -60,7 +60,7 @@ class NodeMapper(object):
             dim.size = i
         dim = shape.dim.add()
         dim.size = node.output_shape.channels
-        
+
         kwargs = {'shape': shape} # Ignore the dimension of batch size
         cls._convert_output_shape(kwargs, node)
         return Node.create('DataInput', **kwargs)
@@ -74,16 +74,17 @@ class NodeMapper(object):
     def map_convolution(cls, node):
         kwargs, padding = cls.get_kernel_params(node)
         parent, _ = node.get_only_parent()
-        kwargs['filter'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]
-        kwargs['use_bias'] = node.parameters.bias_term        
+        kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]
+        kwargs['use_bias'] = node.parameters.bias_term
         group = node.parameters.group
         if group != 1:
             kwargs['group'] = group
-        
-        if padding['paddings'] != None:
-            return [Node.create('Pad', **padding), Node.create('Convolution', **kwargs)]
+
+        if padding['pads'] != None:
+            return [Node.create('Pad', **padding), Node.create('Conv', **kwargs)]
         else:
-            return Node.create('Convolution', **kwargs)
+            kwargs['pads'] = [0] * 8
+            return Node.create('Conv', **kwargs)
 
 
     @classmethod
@@ -91,12 +92,12 @@ class NodeMapper(object):
         raise NotImplementedError()
         kwargs = cls.get_kernel_params(node)
         parent, _ = node.get_only_parent()
-        kwargs['filter'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]
+        kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]
         group = node.parameters.group
         if group != 1:
-            kwargs['group'] = group              
+            kwargs['group'] = group
         return Node.create('deconv', **kwargs)
-    
+
     @classmethod
     def map_crop(cls, node):
         offset = node.parameters.offset
@@ -105,13 +106,13 @@ class NodeMapper(object):
             return Node.create('crop', **kwargs)
         else:
             return Node.create('crop')
-    
+
     @classmethod
     def map_relu(cls, node):
         kwargs = {}
         cls._convert_output_shape(kwargs, node)
         return Node.create('Relu', **kwargs)
-    
+
     @classmethod
     def map_pooling(cls, node):
         kwargs, padding = cls.get_kernel_params(node)
@@ -122,21 +123,22 @@ class NodeMapper(object):
         else:
             # Stochastic pooling, for instance.
             raise ConversionError('Unsupported pooling type.')
-        kwargs['window_shape'] = [1, node.kernel_parameters.k_h, node.kernel_parameters.k_w, 1]
+        kwargs['kernel_shape'] = [1, node.kernel_parameters.k_h, node.kernel_parameters.k_w, 1]
         cls._convert_output_shape(kwargs, node)
-        
-        if padding['paddings'] != None:
+
+        if padding['pads'] != None:
             return [Node.create('Pad', **padding), Node.create('Pool', **kwargs)]
         else:
+            kwargs['pads'] = [0] * 8
             return Node.create('Pool', **kwargs)
-    
+
 
     @classmethod
     def _add_flatten_layer(cls, node):
         shape = TensorShape()
         dim = shape.dim.add()
-        dim.size = -1       
-        
+        dim.size = -1
+
         dim = shape.dim.add()
         dim.size = 1
         for i in node.output_shape[1:]:
@@ -149,8 +151,8 @@ class NodeMapper(object):
         #TODO: Axis
         assert node.parameters.axis == 1
         #TODO: Unbiased
-        kwargs = {'use_bias' : node.parameters.bias_term, 'units' : node.parameters.num_output}        
-        
+        kwargs = {'use_bias' : node.parameters.bias_term, 'units' : node.parameters.num_output}
+
         # check if need the Flatten layer
         parent, _ = node.get_only_parent()
         ret = []
@@ -158,11 +160,11 @@ class NodeMapper(object):
             ret.append(cls._add_flatten_layer(parent))
         ret.append(Node.create('FullyConnected', **kwargs))
         return ret
-    
+
     @classmethod
     def map_softmax(cls, node):
         return Node.create('Softmax')
-    
+
     @classmethod
     def map_lrn(cls, node):
         params = node.parameters
@@ -170,19 +172,19 @@ class NodeMapper(object):
         kwargs = {'size': int((params.local_size + 1) / 2), 'alpha': params.alpha, 'beta': params.beta, 'k' : params.k}
         cls._convert_output_shape(kwargs, node)
         return Node.create('LRN', **kwargs)
-    
+
     @classmethod
     def map_concat(cls, node):
         kwargs = {'axis': (2, 3, 1, 0)[node.parameters.axis]}
         cls._convert_output_shape(kwargs, node)
         return Node.create('Concat', **kwargs)
-    
+
     @classmethod
     def map_dropout(cls, node):
         kwargs = {'keep_prob': node.parameters.dropout_ratio}
         cls._convert_output_shape(kwargs, node)
         return Node.create('Dropout', **kwargs)
-    
+
     @classmethod
     def map_batch_norm(cls, node):
         scale_offset = len(node.data) == 4
@@ -191,12 +193,12 @@ class NodeMapper(object):
         kwargs['epsilon'] = epsilon
         cls._convert_output_shape(kwargs, node)
         return Node.create('batch_normalization', **kwargs)
-    
+
     @classmethod
     def map_eltwise(cls, node):
         operations = {0: 'mul', 1: 'sum', 2: 'max'}
         op_code = node.parameters.operation
-        try:            
+        try:
             return Node.create(operations[op_code])
         except KeyError:
             raise ConversionError('Unknown elementwise operation: {}'.format(op_code))
