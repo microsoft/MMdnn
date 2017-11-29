@@ -156,6 +156,7 @@ class TestKit(object):
         
         print (intermediate_output)
         print (intermediate_output.shape)
+        print ("%.30f" % np.sum(intermediate_output))
 
 
     def test_truth(self):

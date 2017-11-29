@@ -5,6 +5,7 @@
 
 from mmdnn.conversion.common.DataStructure.graph import GraphNode, Graph
 from tensorflow.core.framework.node_def_pb2 import NodeDef
+from tensorflow.core.framework import attr_value_pb2
 
 
 class TensorflowGraphNode(GraphNode):        
@@ -33,7 +34,10 @@ class TensorflowGraphNode(GraphNode):
             attr = self.layer.attr[name]
             field = attr.WhichOneof('value')
             val = getattr(attr, field) if field else default_value
-            return val
+            if isinstance(val, attr_value_pb2.AttrValue.ListValue):
+                return list(val.ListFields()[0][1])
+            else:
+                return val.decode('utf-8') if isinstance(val, bytes) else val
         else:
             return default_value
 

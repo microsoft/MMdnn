@@ -9,6 +9,7 @@ from mmdnn.conversion.common.IR.IR_graph import IRGraph, IRGraphNode
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.DataStructure.emitter import Emitter
+from mmdnn.conversion.common.utils import *
 
 
 class Keras2Emitter(Emitter):
@@ -47,19 +48,19 @@ import keras.backend as K
 
 def load_weights(model, weight_file):
     import numpy as np
-    
+
     if weight_file == None:
         return
-    
+
     try:
         weights_dict = np.load(weight_file).item()
     except:
-        weights_dict = np.load(weight_file, encoding='bytes').item()                 
+        weights_dict = np.load(weight_file, encoding='bytes').item()
 
     for layer in model.layers:
         if layer.name in weights_dict:
             cur_dict = weights_dict[layer.name]
-            current_layer_parameters = list()            
+            current_layer_parameters = list()
             if layer.__class__.__name__ == "BatchNormalization":
                 if 'scale' in cur_dict:
                     current_layer_parameters.append(cur_dict['scale'])
@@ -121,9 +122,9 @@ def KitModel(weight_file = None):
             op,
             self.parent_variable_name(IR_node)))
 
-    
+
     def _emit_merge(self, IR_node, func):
-        inputs = ', '.join('%s' % self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)        
+        inputs = ', '.join('%s' % self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
         axis = ' axis = {},'.format(IR_node.get_attr('axis')) if 'axis' in IR_node.layer.attr else ""
         self.add_body(1, "{:<15} = layers.{}(name = '{}',{} inputs = [{}])".format(
             IR_node.variable_name,
@@ -131,18 +132,52 @@ def KitModel(weight_file = None):
             IR_node.name,
             axis,
             inputs))
-        
+
+
+    @staticmethod
+    def _convert_padding(padding):
+        padding = convert_onnx_pad_to_tf(padding)[1:-1]
+        for idx, pad in enumerate(padding):
+            padding[idx] = tuple(pad)
+        padding = tuple(padding)
+        return padding
+
+
+    def _defuse_padding(self, IR_node):
+        auto_pad = IR_node.get_attr('auto_pad')
+        if auto_pad:
+            input_node = self.parent_variable_name(IR_node)
+            if auto_pad == 'VALID':
+                padding = 'valid'
+            elif auto_pad.startswith("SAME"):
+                padding = 'same'
+            else:
+                assert False
+            return input_node, padding
+
+        else:
+            padding = IR_node.get_attr("pads")
+            padding = self._convert_padding(padding)
+            if is_valid_padding(padding) == False:
+                input_node = IR_node.variable_name + '_input'
+                self.add_body(1, "{:<15} = layers.ZeroPadding{}D(padding = {})({})".format(
+                    input_node,
+                    len(padding),
+                    padding,
+                    self.parent_variable_name(IR_node)))
+            else:
+                input_node = self.parent_variable_name(IR_node)
+
+            return input_node, 'valid'
+
 
     def _emit_convolution(self, IR_node, conv_type):
         filters = IR_node.get_attr('kernel_shape')[-1]
-        #  IR_layer.attr["filter"].list.i[-1]
         filters_str = 'filters = {}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier = {}'.format(filters)
         kernel_size = ', '.join('%s' % i for i in IR_node.get_attr('kernel_shape')[:-2])
-        strides = ','.join('%s' % i for i in IR_node.IR_layer.attr["strides"].list.i[1:-1])
-        use_bias = IR_node.IR_layer.attr["use_bias"].b 
-        padding = IR_node.IR_layer.attr["padding"].s.decode('utf-8')
-        padding = padding.lower()
+        strides = ', '.join('%s' % i for i in IR_node.IR_layer.attr["strides"].list.i[1:-1])
 
+        input_node, padding = self._defuse_padding(IR_node)
         self.add_body(1, "{:<15} = {}(name = '{}', {}, kernel_size = ({}), strides = ({}), padding = '{}', use_bias = {})({})".format(
             IR_node.variable_name,
             conv_type,
@@ -151,12 +186,12 @@ def KitModel(weight_file = None):
             kernel_size,
             strides,
             padding,
-            use_bias,
-            self.parent_variable_name(IR_node)))
+            IR_node.get_attr('use_bias'),
+            input_node))
 
 
-    def emit_Convolution(self, IR_node):
-        dim = len(IR_node.IR_layer.attr["strides"].list.i) - 2
+    def emit_Conv(self, IR_node):
+        dim = len(IR_node.get_attr('kernel_shape')) - 2
         return self._emit_convolution(IR_node, 'layers.Conv{}D'.format(dim))
 
 
@@ -166,10 +201,10 @@ def KitModel(weight_file = None):
 
     def emit_UNKNOWN(self, IR_node):
         print (IR_node.name)
-    
+
 
     def emit_Add(self, IR_node):
-        self._emit_merge(IR_node, "add")        
+        self._emit_merge(IR_node, "add")
 
 
     def emit_DataInput(self, IR_node):
@@ -193,7 +228,7 @@ def KitModel(weight_file = None):
             IR_node.IR_layer.attr["keep_prob"].f,
             seed,
             self.parent_variable_name(IR_node)))
- 
+
 
     def emit_FullyConnected(self, IR_node):
         self.add_body(1, "{:<15} = layers.Dense(name = '{}', units = {}, use_bias = {})({})".format(
@@ -207,7 +242,7 @@ def KitModel(weight_file = None):
     def emit_Flatten(self, IR_node):
         self.used_layers.add('Flatten')
         self.add_body(1, "{:<15} = __flatten(name = '{}', input = {})".format(
-            IR_node.variable_name,            
+            IR_node.variable_name,
             IR_node.name,
             self.parent_variable_name(IR_node)))
 
@@ -236,13 +271,12 @@ def KitModel(weight_file = None):
                 for e in IR_node.get_attr('dilations'):
                     assert e == 1
 
-            padding = IR_node.IR_layer.attr["padding"].s.decode('utf-8')
-            padding = padding.lower()
-
             pool_size = IR_node.get_attr('kernel_shape')[1:-1]
             pool_size = ', '.join('%s' % i for i in pool_size)
             strides = IR_node.get_attr('strides')[1:-1]
             strides = ', '.join('%s' % i for i in strides)
+
+            input_node, padding = self._defuse_padding(IR_node)
 
             self.add_body(1, "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
                 IR_node.variable_name,
@@ -251,7 +285,7 @@ def KitModel(weight_file = None):
                 pool_size,
                 strides,
                 padding,
-                self.parent_variable_name(IR_node)))
+                input_node))
 
 
     def emit_Reshape(self, IR_node):
@@ -273,15 +307,15 @@ def KitModel(weight_file = None):
 
     def emit_Softmax(self, IR_node):
         self._emit_activation(IR_node, 'softmax')
-        
+
 
     def emit_Sigmoid(self, IR_node):
         self._emit_activation(IR_node, 'sigmoid')
-        
+
 
     def emit_Embedding(self, IR_node):
         self.add_body(1, "{:<15} = layers.Embedding(input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
-            IR_node.variable_name, 
+            IR_node.variable_name,
             IR_node.get_attr('input_dim'),
             IR_node.IR_layer.attr['output_dim'].i,
             IR_node.IR_layer.attr['mask_zero'].b,
@@ -296,9 +330,9 @@ def KitModel(weight_file = None):
                     IR_node.IR_layer.attr['recurrent_dropout'].f)
         else:
             dropout_str = ""
-        
+
         code = "{:<15} = layers.{}(units = {}, use_bias = {} {})({})".format(
-                IR_node.name, 
+                IR_node.name,
                 func,
                 IR_node.IR_layer.attr['units'].i,
                 IR_node.IR_layer.attr['use_bias'].b,
@@ -316,85 +350,79 @@ def KitModel(weight_file = None):
         return self.emit_RNNs(IR_node, "GRU")
 
 
-    def emit_Concat(self, IR_node):        
-        self._emit_merge(IR_node, "concatenate")        
+    def emit_Concat(self, IR_node):
+        self._emit_merge(IR_node, "concatenate")
 
 
     def emit_BatchNorm(self, IR_node):
-        axis = IR_node.layer.attr['axis'].i if 'axis' in IR_node.layer.attr else -1        
+        axis = IR_node.layer.attr['axis'].i if 'axis' in IR_node.layer.attr else -1
         self.add_body(1, "{:<15} = layers.BatchNormalization(name = '{}', axis = {}, epsilon = {}, center = {}, scale = {})({})".format(
             IR_node.variable_name,
-            IR_node.name,                
+            IR_node.name,
             axis,
             IR_node.layer.attr['epsilon'].f,
             IR_node.layer.attr['bias'].b,
             IR_node.layer.attr['scale'].b,
             self.parent_variable_name(IR_node)))
-    
-    
+
+
     def emit_Pad(self, IR_node):
-        if 'mode' not in IR_node.layer.attr or IR_node.IR_layer.attr['mode'].s == b"CONSTANT":
+        mode = IR_node.get_attr('mode', 'constant')
+        if mode == "constant":
             func = "ZeroPadding"
         else:
-            print (IR_node.IR_layer.attr['mode'].s)
-            assert False
+            print (mode)
+            raise NotImplementedError()
 
-        dim = len(IR_node.IR_layer.attr['paddings'].list.i) // 2 - 2
+        dim = len(IR_node.get_attr('pads')) // 2 - 2
 
-        padding_str = str()
-        for idx in range(1, dim + 1):
-            padding_str += "({}, {}),".format(
-                    IR_node.IR_layer.attr['paddings'].list.i[idx + idx],
-                    IR_node.IR_layer.attr['paddings'].list.i[idx + idx + 1])
-
-        self.add_body(1, "{:<15} = layers.{}{}D(name = '{}', padding = ({}))({})".format(
+        padding = self._convert_padding(IR_node.get_attr('pads'))
+        self.add_body(1, "{:<15} = layers.{}{}D(name='{}', padding={})({})".format(
             IR_node.variable_name,
             func,
             dim,
             IR_node.name,
-            padding_str,
-            self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name))
+            padding,
+            self.parent_variable_name(IR_node)))
 
-    
+
     def emit_Squeeze(self, IR_node):
         self.emit_Flatten(IR_node)
 
 
     def emit_ReduceMean(self, IR_node):
-        axes = ', '.join('%s' % i for i in IR_node.layer.attr['axes'].list.i)
-        self.add_body(1,"{:<15} = layers.Lambda(lambda x: K.mean(x, axis=[{}], keepdims = {}))({})".format(
+        axes = ', '.join('%s' % i for i in IR_node.get_attr('axes'))
+        self.add_body(1,"{:<15} = layers.Lambda(lambda x: K.mean(x, axis=[{}], keepdims={}))({})".format(
             IR_node.variable_name,
             axes,
-            IR_node.layer.attr['keepdims'].b,
+            IR_node.get_attr('keepdims'),
             self.parent_variable_name(IR_node)))
 
 
     def emit_LRN(self, IR_node):
         self.used_layers.add(IR_node.type)
-        code = "{:<15} = LRN(size = {}, alpha = {}, beta = {}, k = {}, name = '{}')({})".format(
+        self.add_body(1, "{:<15} = LRN(size = {}, alpha = {}, beta = {}, k = {}, name = '{}')({})".format(
             IR_node.variable_name,
-            IR_node.layer.attr['size'].i,
-            IR_node.layer.attr['alpha'].f,
-            IR_node.layer.attr['beta'].f,
-            IR_node.layer.attr['k'].f,
+            IR_node.get_attr('size'),
+            IR_node.get_attr('alpha'),
+            IR_node.get_attr('beta'),
+            IR_node.get_attr('k'),
             IR_node.name,
-            self.IR_graph.get_parent(IR_node.name, [0]).variable_name)
-        
-        return code
+            self.parent_variable_name(IR_node)))
 
 
     def emit_SeparableConv(self, IR_node):
-        assert len(IR_node.layer.attr["strides"].list.i) == 4
+        assert len(IR_node.get_attr("strides")) == 4
         return self._emit_convolution(IR_node, "layers.SeparableConv2D")
 
 
-    def emit_Relu6(self, IR_node):        
+    def emit_Relu6(self, IR_node):
         self.add_body(1, "{:<15} = layers.Activation(keras.applications.mobilenet.relu6, name = '{}')({})".format(
             IR_node.variable_name,
             IR_node.name,
             self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name))
 
-    
+
     def emit_DepthwiseConv(self, IR_node):
         return self._emit_convolution(IR_node, 'keras.applications.mobilenet.DepthwiseConv2D')
 
@@ -410,7 +438,7 @@ def __flatten(name, input):
         self.add_body(0, '''
 from keras.layers.core import Layer
 class LRN(Layer):
-    
+
     def __init__(self, size=5, alpha=0.0005, beta=0.75, k=2, **kwargs):
         self.n = size
         self.alpha = alpha
