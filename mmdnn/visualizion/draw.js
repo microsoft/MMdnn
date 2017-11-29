@@ -1,6 +1,10 @@
 var json;
 const nodeW = 150, nodeH = 30;
 const filePath = "model.json";
+const miniW = window.innerWidth * 0.12
+const miniH = (window.innerHeight-85) * 0.98
+
+
 /*hanle import model*/
 const handleFileSelect = (evt) => {
     let file = evt.target.files[0]
@@ -23,13 +27,11 @@ document.getElementById('importModel').addEventListener('change', handleFileSele
 //generate dag
 getDag = (layers, mode, margin) => {
     let g = new dagre.graphlib.Graph();
-    g.setGraph({ranksep:20, marginx:margin, marginy:margin});
+    g.setGraph({ranksep:20, marginx:margin, marginy:margin, rankdir:'BT'});
     g.setDefaultEdgeLabel(() => { return {}; });
     layers.forEach(layer => {
-        // console.info('layer at dag:',layer)
-        // let name = layer.name.split('/').pop()
-        label = mode == "IR" ? `${layer.name}:${layer.op}` : `${layer.name}:${layer.class_name}`
-        g.setNode(layer.name, { label: label, width: label.length * 8, height: nodeH })
+        label = mode == "IR" ? `${layer.name}|${layer.op}` : `${layer.name}:${layer.class_name}`
+        g.setNode(layer.name, { label: label, width: label.split('/').pop().length * 8, height: nodeH })
         //IR model or keras model
         if (mode == "IR" && layer.input) {
             layer.input.forEach(input => {
@@ -37,15 +39,12 @@ getDag = (layers, mode, margin) => {
             })
         } else if (mode == "keras" && layer.inbound_nodes.length > 0) {
             inputs = layer.inbound_nodes[0]
-            // console.info(inputs)
             inputs.forEach(input => {
-                // console.info(input[0])
                 g.setEdge(input[0], layer.name)
             })
         }
     })
     dagre.layout(g)
-    // console.info(g.nodes(), g.edges())
     let nodes = [], edges = []
     g.nodes().forEach((v) => {
         if (g.node(v)) {
@@ -83,10 +82,8 @@ const COLORs = d3.schemeCategory20
 
 // select a layer
 const selectLayer = (layer, info, mode) => {
-    name = layer.label.split(":")[0]
+    name = layer.label.split("|")[0]
     layerInfo = info.filter(i => i.name == name)[0]
-    // console.info(layerInfo)
-    // config = JSON.stringify(layerInfo.config, null, 2)
     if (mode == "IR") {
         config = layerInfo.attr
         name = layerInfo.name
@@ -94,15 +91,23 @@ const selectLayer = (layer, info, mode) => {
         config = layerInfo.config
         name = layerInfo.label
     }
-    // console.info(JSON.stringify(config, null, 2))
     config = obj2str(config)
-    document.getElementById('layerName').innerText = name
+    const max_len = 20
+    if(name.length>max_len){
+        document.getElementById('layerName').innerText = name.slice(0, max_len-1)+"..."
+    }else{
+        document.getElementById('layerName').innerText = name
+    }
+    
+    document.getElementById('layerName').title = name
+    
     document.getElementById('layerConfig').innerHTML = config
 }
 //draw
 const draw = (json) => {
-    d3.select('.shiftMargin').remove()
-    // let { nodes, edges, height, width } = getDag(json.node)
+    d3.select('.shiftMargin').remove() //remove previous graph
+
+
     let mode;
     let margin = 10
     if (json.node) {
@@ -118,15 +123,16 @@ const draw = (json) => {
     let height = dag.height
     let width = dag.width
     
-    let scale = Math.min(window.innerWidth*0.85 / width, (window.innerHeight-85)/height)
+    // let scale = Math.min(window.innerWidth*0.85 / width, (window.innerHeight-85)/height)
+    let scale = 1
+    let x_shift = 0
+    let y_shift = 0
     let svg_w = Math.max(width, window.innerWidth)
     let svg_h = Math.max(height, (window.innerHeight-85))
 
     let svg = d3.select('#draw')
         .attr("width", svg_w)
         .attr("height", svg_h)
-
-    // d3.selectAll('g').remove()
 
     let def = svg.append("defs")
     def.append("marker")
@@ -164,7 +170,7 @@ const draw = (json) => {
 
     let shiftMargin = svg.append('g')
     .attr('class', 'shiftMargin')
-    .attr("transform", `translate(${window.innerWidth*(0.15+0.36) - width*scale/2}, 0) scale(1)`)
+    .attr("transform", `translate(${window.innerWidth*(0.15) }, 0) scale(1)`)
 
     let g = shiftMargin.append('g')
         .attr('class', 'scene')
@@ -172,39 +178,40 @@ const draw = (json) => {
     
     let g2 = g.append('g')
         .attr("class", "graph")
-        .attr('transform', `translate(0, 0) scale(${scale})`)
+        .attr('transform', `translate(${x_shift}, ${y_shift}) scale(${scale})`)
 
     buildGraph(g2, nodes, edges)
 
     let nodeMasks = d3.selectAll('.node')
         .append("rect")
         .attr('class', 'nodeMask')
-        .attr("width", d => (d.width))
-        .attr("height", nodeH)
+        .attr("width", d => 1.2*d.width)
+        .attr("height", 1.2*nodeH)
         // .attr('rx', nodeH / 5)
         // .attr('ry', nodeH / 5)
-        .attr("transform", d => { return `translate( ${-d.width * 0.5},${-nodeH * 0.5})` })
+        .attr("transform", d => { return `translate( ${-d.width * 0.6},${-nodeH * 0.6})` })
         .style("fill", "transparent")
         .style("stroke", "none")
         .on("click", function (d) {
-            // console.info(d)
+            console.info("click")
+            d3.event.stopPropagation()
+            d3.event.preventDefault()
             d3.selectAll('.nodeMask')
                 .style('stroke', "none")
 
             d3.select(this)
-                .style("stroke", "gray")
+                .style("stroke", "red")
                 .style("stroke-width", 5)
 
             selectLayer(d, info, mode)
         })
-    let miniW = window.innerWidth * 0.12
-    let miniH = (window.innerHeight-85) * 0.98
+    
     let miniScale = Math.min(miniW / width, miniH / height)
     if(height/width > miniH/miniW ||true){
         miniMap(nodes, edges, width, height, miniScale)
     }
 
-    svg.call(d3.zoom().on('zoom', zoomFn))
+    svg.call(d3.zoom().on('zoom', pan))
     .on("wheel.zoom", scroll)
     .on("dblclick.zoom", null)
     
@@ -216,40 +223,40 @@ const draw = (json) => {
    .on("keydown", keyZoom)
    .on("keyup", ()=>{shiftDown=false})
     
-    function zoomFn(e) {
-
-        // g.attr('transform', d3.event.transform);
+    function pan(e) {
+        d3.event.stopPropagation()
+        d3.event.preventDefault()
+        console.info('pan')
         let { k:k_, x:x_, y:y_ } = d3.zoomTransform(this)
         let { k, x, y } = transformParser(d3.select('.scene').attr('transform'))
         k = parseFloat(k)*parseFloat(k_)
         x = x_
         y = y_
-        // y = parseInt(y)+parseInt(y_)
+        // limit x, y
+        x = Math.max(-width*k*0.3, Math.min(x, width*k*0.7))
+        y= Math.min(0.4 * window.innerHeight, Math.max(-height*k + 0.4 * window.innerHeight, y))
         g.attr('transform', `translate(${x}, ${y}) scale(${k})`);
-        // let {height:h0, y:y0} = d3.select(".mapMask").node().getBoundingClientRect()
-        // console.info(h0, y0)
         d3.select(".mapMask")
-            .attr("y", (-y) / k)
-            .attr("height", miniH / k)
+            .attr("y", (-y) / k *miniScale)
+            .attr("height", miniH*miniScale / k)
 
         // a trick to make text svg transform in MS Edge
         d3.selectAll(".labels").classed("tempclass", true);
         setTimeout(function () { d3.selectAll(".labels").classed("tempclass", false); }, 40);
     }
     function scroll(e){
-        // if "q" is down
         let { k, x, y } = transformParser(d3.select('.scene').attr('transform'))
         if(shiftDown){
-            // g.attr('transform', d3.event.transform);
-            console.info(d3.event.wheelDeltaY)
             k = d3.event.wheelDeltaY>0?k*1.1:k*0.9
         }else{
             y = parseInt(y) + parseInt(d3.event.wheelDeltaY)
         }
+
+        y= Math.min(0.4 * window.innerHeight, Math.max(-height*k + 0.4*window.innerHeight, y))
         g.attr('transform', `translate(${x}, ${y}) scale(${k})`);
         d3.select(".mapMask")
-        .attr("y", (-y) / k)
-        .attr("height", miniH / k)
+        .attr("y", (-y) / k *miniScale)
+        .attr("height", miniH*miniScale / k)
         
     }
     function keyZoom(e){
@@ -267,8 +274,8 @@ const draw = (json) => {
             }
             g.attr('transform', `translate(${x}, ${y}) scale(${k })`);
             d3.select(".mapMask")
-            .attr("y", (-y) / k)
-            .attr("height", miniH / k)
+            .attr("y", (-y) / k *miniScale)
+            .attr("height", miniH*miniScale / k)
         }
         }
 }
@@ -295,7 +302,7 @@ const miniMap = (nodes, edges, width, height, miniScale) => {
     let mask = map.append("rect")
         .attr("class", "mapMask")
         .attr("width", "12vw")
-        .attr("height", height*miniScale)
+        .attr("height", miniScale*miniH)
         .style("fill", "#777")
         .style("opacity", 0.12)
         .call(d3.drag()
@@ -311,11 +318,8 @@ const miniMap = (nodes, edges, width, height, miniScale) => {
         let { height, y: mask_y } = d3.select(this).node().getBBox()
         let r = height / (0.98*(window.innerHeight-85))
         let { k, x, y } = transformParser(d3.select('.scene').attr('transform'))
-        // let k = d3.select('.scene').node().transform.baseVal[0].matrix
         d3.select(this).attr("y", mask_y + d3.event.dy);
-        // console.info(d3.event)
         d3.select('.scene').attr('transform', `translate(${x}, ${y - d3.event.dy / (r)}) scale(${k})`)
-        // console.info(transformParser(d3.select('.scene').attr('transform')))
     }
 
     function dragended(d) {
@@ -360,7 +364,7 @@ const buildGraph = (g2, nodes, edges, label=true) => {
         let labels = drawNode.append("text")
         .attr('class', 'labels')
         .style("text-anchor", "middle")
-        .text(d => d.label)
+        .text(d => d.label.split("/").pop())
     }
     
     let drawLink = g2.selectAll(".link")
@@ -399,7 +403,7 @@ const obj2str = (obj, i = 0) => {
         if (v == null) {
             return `${br}<p>${space}<b>${k}</b>: null </p>`
         } else if (typeof (v) == "object" && Array.isArray(v)) {
-            if (typeof (v[0]) == "string") {
+            if (typeof (v[0]) == "string"||typeof (v[0]) == "number") {
                 return `${br}<p>${space}<b>${k}</b>: ${v.join(',')} </p>`
             } else {
                 v = v.map(d => obj2str(d, i + 1))
