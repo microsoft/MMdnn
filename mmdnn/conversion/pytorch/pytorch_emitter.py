@@ -110,7 +110,7 @@ class KitModel(nn.Module):
         return self.header_code + '\n' + self.init_code + '\n' + self.body_code
 
 
-    def _defuse_padding(self, IR_node):
+    def _defuse_padding(self, IR_node, extra_str = ""):
         input_node = self.parent_variable_name(IR_node)
         if IR_node.get_attr('auto_pad') == 'VALID':
             return input_node
@@ -120,10 +120,12 @@ class KitModel(nn.Module):
 
         padding = self._convert_padding(IR_node)
         input_node = IR_node.variable_name + '_pad'
-        self.add_body(2, "{:<15} = F.pad({}, {})".format(
+        self.add_body(2, "{:<15} = F.pad({}, {} {})".format(
             input_node,
             self.parent_variable_name(IR_node),
-            padding))
+            padding,
+            extra_str
+            ))
 
         return input_node
 
@@ -165,8 +167,10 @@ class KitModel(nn.Module):
 
         if IR_node.get_attr('pooling_type') == "MAX":
             pool_name = "max_pool{}d".format(dim)
+            exstr = ", value=float('-Inf')"
         elif IR_node.get_attr('pooling_type') == "AVG":
             pool_name = "avg_pool{}d".format(dim)
+            exstr = ""
         else:
             assert False
 
@@ -185,14 +189,13 @@ class KitModel(nn.Module):
             pool_size = IR_node.get_attr('kernel_shape')[1:-1]
             strides = IR_node.get_attr('strides')[1:-1]
 
-            input_node = self._defuse_padding(IR_node)
-            self.add_body(2, "{:<15} = F.{}(input={}, kernel_size=({}), stride=({}))".format(
+            input_node = self._defuse_padding(IR_node, exstr)
+            self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={})".format(
                 IR_node.variable_name,
                 pool_name,
                 input_node,
-                ', '.join([str(id) for id in pool_size]),
-                ', '.join([str(id) for id in strides]),
-                # padding
+                tuple(pool_size),
+                tuple(strides)
                 ))
 
 
@@ -237,10 +240,13 @@ class KitModel(nn.Module):
             IR_node.layer.attr["units"].i,
             IR_node.IR_layer.attr["use_bias"].b))
 
+        input_node = self.parent_variable_name(IR_node)
+        if len(self.IR_graph.get_parent(IR_node.name, [0]).get_attr('_output_shapes')[0].dim) > 2:
+            input_node = "{}.view({}.size(0), -1)".format(input_node, input_node)
         self.add_body(2, "{:<15} = self.{}({})".format(
             IR_node.variable_name,
             IR_node.variable_name,
-            self.IR_graph.get_parent(IR_node.name, [0]).real_variable_name))
+            input_node))
 
         if self.weight_loaded:
             self.check_if_need_transpose(IR_node)
@@ -256,6 +262,7 @@ class KitModel(nn.Module):
 
 
     def emit_Reshape(self, IR_node):
+        raise NotImplementedError
         shape_str = IRGraph.shapeToStr(IR_node.IR_layer.attr["shape"].shape, True)
         self.add_body(1, "{:<15} = Reshape(name = \"{}\", target_shape = ({}))({})".format(
             IR_node.variable_name,
@@ -265,6 +272,7 @@ class KitModel(nn.Module):
 
 
     def emit_Tanh(self, IR_node):
+        raise NotImplementedError()
         code = "{:<15} = Activation(name = '{}', activation = 'tanh')({})".format(
                 IR_node.replace_scope(IR_node.name),
                 IR_node.name,
