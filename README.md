@@ -162,7 +162,7 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d converted -n imagene
 
 You can use pip to install MMdnn.
 ```bash
-pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.0/mmdnn-0.1.0-py2.py3-none-any.whl
+pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.1/mmdnn-0.1.1-py2.py3-none-any.whl
 ```
 
 # Contributing
