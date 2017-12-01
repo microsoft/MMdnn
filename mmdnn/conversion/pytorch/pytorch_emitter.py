@@ -141,15 +141,16 @@ class KitModel(nn.Module):
         kernel = IR_node.get_attr('kernel_shape')[:-2]
         strides = IR_node.get_attr('strides')[1:-1]
 
-        self.add_init(2, "self.{} = self.__conv({}, name='{}', in_channels={}, out_channels={}, kernel_size=({}), stride=({}), bias={})".format(
+        self.add_init(2, "self.{} = self.__conv({}, name='{}', in_channels={}, out_channels={}, kernel_size={}, stride={}, groups={}, bias={})".format(
             IR_node.variable_name,
             dim,
             IR_node.name,
             in_channels,
             filter,
-            ', '.join('%s' % id for id in kernel),
-            ', '.join('%s' % id for id in strides),
+            tuple(kernel),
+            tuple(strides),
             # padding,
+            IR_node.get_attr('group', 1),
             IR_node.get_attr('use_bias')))
 
         input_node = self._defuse_padding(IR_node)

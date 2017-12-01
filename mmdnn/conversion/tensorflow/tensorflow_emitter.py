@@ -105,9 +105,10 @@ def KitModel(weight_file = None):
         self.used_layers.add(IR_node.type)
         strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides')[1:-1])
         input_node, padding = self._defuse_padding(IR_node)
-        self.add_body(1, "{:<15} = convolution({}, strides = [{}], padding = '{}', name = '{}')".format(
+        self.add_body(1, "{:<15} = convolution({}, group={}, strides=[{}], padding='{}', name='{}')".format(
             IR_node.variable_name,
             input_node,
+            IR_node.get_attr('group', 1),
             strides_str,
             padding,
             IR_node.name))
@@ -393,11 +394,19 @@ def KitModel(weight_file = None):
 
     def _layer_Conv(self):
         self.add_body(0, """
-def convolution(input, name, **kwargs):
-    w = tf.Variable(__weights_dict[name]['weights'], trainable = is_train, name = name + "_weight")
-    layer = tf.nn.convolution(input, w, **kwargs)
+def convolution(input, name, group, **kwargs):
+    w = tf.Variable(__weights_dict[name]['weights'], trainable=is_train, name=name + "_weight")
+    if group == 1:
+        layer = tf.nn.convolution(input, w, **kwargs)
+    else:
+        weight_groups = tf.split(w, num_or_size_splits=group, axis=-1)
+        xs = tf.split(input, num_or_size_splits=group, axis=-1)
+        convolved = [tf.nn.convolution(x, weight, **kwargs) for
+                    (x, weight) in zip(xs, weight_groups)]
+        layer = tf.concat(convolved, axis=-1)
+
     if 'bias' in __weights_dict[name]:
-        b = tf.Variable(__weights_dict[name]['bias'], trainable = is_train, name = name + "_bias")
+        b = tf.Variable(__weights_dict[name]['bias'], trainable=is_train, name=name + "_bias")
         layer = layer + b
     return layer""")
 

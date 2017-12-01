@@ -172,19 +172,18 @@ def KitModel(weight_file = None):
 
 
     def _emit_convolution(self, IR_node, conv_type):
+        assert IR_node.get_attr('group', 1) == 1
         filters = IR_node.get_attr('kernel_shape')[-1]
         filters_str = 'filters = {}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier = {}'.format(filters)
-        kernel_size = ', '.join('%s' % i for i in IR_node.get_attr('kernel_shape')[:-2])
-        strides = ', '.join('%s' % i for i in IR_node.IR_layer.attr["strides"].list.i[1:-1])
 
         input_node, padding = self._defuse_padding(IR_node)
-        self.add_body(1, "{:<15} = {}(name = '{}', {}, kernel_size = ({}), strides = ({}), padding = '{}', use_bias = {})({})".format(
+        self.add_body(1, "{:<15} = {}(name='{}', {}, kernel_size=({}), strides=({}), padding='{}', use_bias={})({})".format(
             IR_node.variable_name,
             conv_type,
             IR_node.name,
             filters_str,
-            kernel_size,
-            strides,
+            tuple(IR_node.get_attr('kernel_shape')[:-2]),
+            tuple(IR_node.get_attr('strides')[1:-1]),
             padding,
             IR_node.get_attr('use_bias'),
             input_node))

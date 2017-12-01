@@ -103,11 +103,13 @@ def KitModel(weight_file = None):
             self.used_layers.add(IR_node.type)
             dim = len(IR_node.get_attr('strides')) - 2
             padding = [False] + [IR_node.get_attr('auto_pad') != 'VALID'] * dim
-            self.add_body(1, "{:<15} = convolution({}, strides = ({},), auto_padding = [{}], name = '{}')".format(
+            self.add_body(1, "{:<15} = convolution({}, strides={}, auto_padding={}, dilation={}, groups={}, name='{}')".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
-                ', '.join('%s' % i for i in IR_node.get_attr('strides')[1:-1]),
-                ', '.join('%s' % i for i in padding),
+                tuple(IR_node.get_attr('strides')[1:-1]),
+                padding,
+                tuple(IR_node.get_attr('dilations', [1])),
+                IR_node.get_attr('group', 1),
                 IR_node.name))
 
         else:
