@@ -196,7 +196,7 @@ class NodeMapper(object):
 
     @classmethod
     def map_eltwise(cls, node):
-        operations = {0: 'mul', 1: 'sum', 2: 'max'}
+        operations = {0: 'Mul', 1: 'Add', 2: 'Max'}
         op_code = node.parameters.operation
         try:
             return Node.create(operations[op_code])
