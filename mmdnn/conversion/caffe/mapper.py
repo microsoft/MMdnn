@@ -188,11 +188,11 @@ class NodeMapper(object):
     @classmethod
     def map_batch_norm(cls, node):
         scale_offset = len(node.data) == 4
-        kwargs = {} if scale_offset else {'scale_offset': False}
+        kwargs = {} if scale_offset else {'scale' : False, 'bias' : False}
         epsilon = node.parameters.eps
         kwargs['epsilon'] = epsilon
         cls._convert_output_shape(kwargs, node)
-        return Node.create('batch_normalization', **kwargs)
+        return Node.create('BatchNorm', **kwargs)
 
     @classmethod
     def map_eltwise(cls, node):

@@ -125,13 +125,12 @@ class KitModel(nn.Module):
             self.parent_variable_name(IR_node),
             padding,
             extra_str
-            ))
+        ))
 
         return input_node
 
 
     def emit_Conv(self, IR_node):
-        # https://github.com/pytorch/pytorch/blob/master/torch/nn/modules/conv.py
         self.used_layers.add(IR_node.type)
 
         dim = len(IR_node.get_attr('strides')) - 2
