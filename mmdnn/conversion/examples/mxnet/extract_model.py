@@ -45,7 +45,7 @@ def _main():
     parser.add_argument('-n', '--network', type=_text_type, help='Model Type', required=True,
                         choices = _default_model_info.keys())
 
-    parser.add_argument('-i', '--image',
+    parser.add_argument('-i', '--image', default=None,
                         type=_text_type, help='Test Image Path')
 
     parser.add_argument('-o', '--output_dir', default='./',
@@ -60,6 +60,10 @@ def _main():
         return -1
 
     print("Model {} saved.".format(args.network))
+
+    if args.image:
+        # Yuhao TODO: inference code
+        pass
 
     return 0
 
