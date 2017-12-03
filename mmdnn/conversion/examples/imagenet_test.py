@@ -6,15 +6,8 @@
 from __future__ import absolute_import
 import argparse
 import numpy as np
-import sys
-import os
 from six import text_type as _text_type
-
-# work for tf 1.4 in windows & linux
 from tensorflow.contrib.keras.api.keras.preprocessing import image
-
-# work for tf 1.3 & 1.4 in linux
-# from tensorflow.contrib.keras.python.keras.preprocessing import image
 
 
 class TestKit(object):
@@ -44,6 +37,10 @@ class TestKit(object):
             'resnet'         : [(21, 0.84012794), (144, 0.097428247), (23, 0.039757393), (146, 0.010432643), (99, 0.0023797606)],
             'squeezenet'     : [(21, 0.36026478), (128, 0.084114805), (835, 0.07940048), (144, 0.057378717), (749, 0.053491514)],
             'inception_bn'   : [(21, 0.84332663), (144, 0.041747514), (677, 0.021810319), (973, 0.02054958), (115, 0.008529461)]
+        },
+        'pytorch' :{
+            'resnet152' : [(21, 13.080057), (141, 12.32998), (94, 9.8761454), (146, 9.3761511), (143, 8.9194641)],
+            'vgg19'     : [(821, 8.4734678), (562, 8.3472366), (835, 8.2712851), (749, 7.792901), (807, 6.6604013)],
         }
     }
 
@@ -76,6 +73,12 @@ class TestKit(object):
             'resnet'        : lambda path : TestKit.Identity(path, 224, True),
             'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 224, False),
             'inception_bn'  : lambda path : TestKit.Identity(path, 224, False)
+        },
+
+        'pytorch' : {
+            'vgg19'         : lambda path : TestKit.Normalize(path),
+            'resnet152'     : lambda path : TestKit.Normalize(path),
+            'inception_v3'  : lambda path : TestKit.Normalize(path),
         }
     }
 
@@ -119,6 +122,17 @@ class TestKit(object):
         x[..., 0] -= 103.939
         x[..., 1] -= 116.779
         x[..., 2] -= 123.68
+        return x
+
+
+    @staticmethod
+    def Normalize(path, size=224, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+        img = image.load_img(path, target_size=(size, size))
+        x = image.img_to_array(img)
+        x /= 255.0
+        for i in range(0, 3):
+            x[..., i] -= mean[i]
+            x[..., i] /= std[i]
         return x
 
 
