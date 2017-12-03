@@ -54,6 +54,17 @@ Models                                              | Caffe | Keras | Tensorflow
 - [Caffe2](https://caffe2.ai/)
 - [CoreML](https://developer.apple.com/documentation/coreml)
 
+#### Installation
+
+You can get stable version of MMdnn by
+```bash
+pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.1/mmdnn-0.1.1-py2.py3-none-any.whl
+```
+
+or you can try newest version by
+```bash
+pip install -U git+https://github.com/Microsoft/MMdnn.git@master
+```
 
 #### Usage
 
@@ -157,13 +168,6 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d converted -n imagene
 3. Open the simple model visualizater [*visualization/index.html*] and choose file *converted.json*
 
 ![Inception_v3](https://opacdq.dm2304.livefilestore.com/y4mNlERtWTEHaNad3F2mbhwFTwHdSI2qXXG4fR-a46E4b0bjCUuXle49NeOuUO3Lntx9FsGq3tBK3krGtUmJsCcpijsNjggjptKlCYewvu-75k0m3UhsPZflWs7ouGrxOEJqq1RqovWM-xm9hOYGoW0FWK18RuBXyRBwGIbj4F-iy8ASLm4qDbS1UPP_VfiPOgKWMXOk6Bw6EhCpQZJvblpsw?width=1024&height=833&cropmode=none)
-
-## Installation
-
-You can use pip to install MMdnn.
-```bash
-pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.1/mmdnn-0.1.1-py2.py3-none-any.whl
-```
 
 # Contributing
 
