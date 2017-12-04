@@ -15,7 +15,8 @@ class TestKit(object):
     truth = {
         'caffe' : {
             'vgg19'          : [(21, 0.37522122), (144, 0.28500062), (23, 0.099720284), (134, 0.036305398), (22, 0.033559237)],
-            'inception_v1'   : [(21, 0.93591732), (23, 0.037170019), (22, 0.014315935), (128, 0.005050648), (749, 0.001965977)]
+            'inception_v1'   : [(21, 0.93591732), (23, 0.037170019), (22, 0.014315935), (128, 0.005050648), (749, 0.001965977)],
+            'resnet152'      : [(144, 0.79701376), (21, 0.14233606), (23, 0.039521229), (22, 0.010107794), (99, 0.00460691)]
         },
         'tensorflow' : {
             'vgg19'             : [(21, 11.285443), (144, 10.240093), (23, 9.1792336), (22, 8.1113129), (128, 8.1065922)],
@@ -47,7 +48,8 @@ class TestKit(object):
     preprocess_func = {
         'caffe' : {
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True)
+            'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'resnet152'     : lambda path : TestKit.ZeroCenter(path, 224, True)
         },
 
         'tensorflow' : {

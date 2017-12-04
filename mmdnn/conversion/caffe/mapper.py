@@ -156,8 +156,9 @@ class NodeMapper(object):
         # check if need the Flatten layer
         parent, _ = node.get_only_parent()
         ret = []
-        if parent.output_shape.height > 1 or parent.output_shape.width > 1:
-            ret.append(cls._add_flatten_layer(parent))
+                
+        # if parent.output_shape.height > 1 or parent.output_shape.width > 1:
+        ret.append(cls._add_flatten_layer(parent))
         ret.append(Node.create('FullyConnected', **kwargs))
         return ret
 
