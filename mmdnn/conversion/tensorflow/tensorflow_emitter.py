@@ -114,7 +114,7 @@ def KitModel(weight_file = None):
             IR_node.name))
 
 
-    def _defuse_padding(self, IR_node):
+    def _defuse_padding(self, IR_node, extra_str=""):
         auto_pad = IR_node.get_attr('auto_pad')
         if auto_pad:
             input_node = self.parent_variable_name(IR_node)
@@ -123,7 +123,8 @@ def KitModel(weight_file = None):
             elif auto_pad.startswith("SAME"):
                 padding = 'SAME'
             else:
-                assert False
+                raise ValueError("Unknown padding type [{}].".format(auto_pad))
+
             return input_node, padding
 
         else:
@@ -131,10 +132,12 @@ def KitModel(weight_file = None):
             padding = convert_onnx_pad_to_tf(padding)
             if is_valid_padding(padding) == False:
                 input_node = IR_node.variable_name + '_pad'
-                self.add_body(1, "{:<15} = tf.pad({}, paddings = {})".format(
+                self.add_body(1, "{:<15} = tf.pad({}, paddings = {}{})".format(
                     input_node,
                     self.parent_variable_name(IR_node),
-                    padding))
+                    padding,
+                    extra_str
+                    ))
             else:
                 input_node = self.parent_variable_name(IR_node)
 
@@ -142,7 +145,16 @@ def KitModel(weight_file = None):
 
 
     def emit_Pool(self, IR_node):
-        op = 'max_pool' if IR_node.layer.attr['pooling_type'].s == b'MAX' else 'avg_pool'
+        pooling_type = IR_node.get_attr('pooling_type')
+        if pooling_type == 'MAX':
+            op = 'max_pool'
+            padding_const = ", constant_value=float('-Inf')"
+        elif pooling_type == 'AVG':
+            op = 'avg_pool'
+            padding_const = ""
+        else:
+            raise ValueError("unknown pooling type [{}].".format(pooling_type))
+
         arrlen = len(IR_node.get_attr('strides'))
         dim_str = '3d' if arrlen == 5 else ""
 
@@ -160,7 +172,7 @@ def KitModel(weight_file = None):
             kernel_shape_str = ', '.join('%s' % i for i in IR_node.get_attr('kernel_shape'))
             strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides'))
 
-            input_node, padding = self._defuse_padding(IR_node)
+            input_node, padding = self._defuse_padding(IR_node, padding_const)
 
             self.add_body(1, "{:<15} = tf.nn.{}{}({}, [{}], [{}], padding='{}', name='{}')".format(
                 IR_node.variable_name,
