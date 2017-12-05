@@ -4,6 +4,7 @@ from google.protobuf import text_format
 from copy import deepcopy
 import numbers
 import os
+import tempfile
 
 from mmdnn.conversion.caffe.mapper import get_handler_name
 from mmdnn.conversion.caffe.resolver import get_caffe_resolver, has_pycaffe
@@ -239,7 +240,7 @@ class CaffeGraph(object):
 
     def compute_output_shapes(self, model):
         sorted_nodes = self.topologically_sorted()
-        tmp_prototxt = 'deploy.prototxt'
+        (tmp_handle, tmp_prototxt) = tempfile.mkstemp(suffix=".prototxt")
         with open(tmp_prototxt, 'w') as f:
             f.write(text_format.MessageToString(model))
         self.prototxt = tmp_prototxt
@@ -257,6 +258,7 @@ class CaffeGraph(object):
             for node in sorted_nodes:
                 if node.output_shape is None:
                     node.output_shape = TensorShape(*NodeKind.compute_output_shape(node))
+            os.close(tmp_handle)
             os.remove(tmp_prototxt)
         else:
             for node in sorted_nodes:
