@@ -27,12 +27,14 @@ The intermediate representation will store the network structures as a protobuf 
 
 #### Support frameworks
 
-- [Caffe](http://caffe.berkeleyvision.org/) (Source only)
-- [Keras](https://keras.io/)
-- [MXNet](http://mxnet.incubator.apache.org/)
-- [Tensorflow](https://www.tensorflow.org/) (Experimental)
-- [Microsoft Cognitive Toolkit (CNTK)](http://www.microsoft.com/en-us/cognitive-toolkit) (Destination only)
-- [PyTorch](http://pytorch.org/) (Destination only)
+> [Note] You can click the links to get detail README of each framework
+
+- [Caffe](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/caffe/README.md) (Source only)
+- [Keras](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/keras/README.md)
+- [MXNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/mxnet/README.md)
+- [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental)
+- [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md) (Destination only)
+- [PyTorch](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/pytorch/README.md) (Destination only)
 
 #### Tested models
 
