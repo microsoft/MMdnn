@@ -35,13 +35,13 @@ class NodeMapper(object):
     @classmethod
     def get_kernel_params(cls, node, input_shape):
         kwargs = {}
-        
+
         o_h_caffe = node.output_shape.height
         o_h_tf = (input_shape.height + node.kernel_parameters.p_h * 2 - node.kernel_parameters.k_h + 1) // node.kernel_parameters.s_h
-        
+
         o_w_caffe = node.output_shape.width
         o_w_tf = (input_shape.width + node.kernel_parameters.p_w * 2 - node.kernel_parameters.k_w + 1) // node.kernel_parameters.s_w
-                
+
         kwargs['pads'] = [0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0] + \
                   [0, node.kernel_parameters.p_h + o_h_caffe - o_h_tf, node.kernel_parameters.p_w + o_w_caffe - o_w_tf, 0]
         kwargs['strides'] = [1, node.kernel_parameters.s_h, node.kernel_parameters.s_w, 1]
@@ -76,7 +76,7 @@ class NodeMapper(object):
         parent, _ = node.get_only_parent()
         kwargs = cls.get_kernel_params(node, parent.output_shape)
         kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]
-        kwargs['use_bias'] = node.parameters.bias_term        
+        kwargs['use_bias'] = node.parameters.bias_term
         kwargs['group'] = node.parameters.group
         return Node.create('Conv', **kwargs)
 
@@ -86,8 +86,8 @@ class NodeMapper(object):
         raise NotImplementedError()
         parent, _ = node.get_only_parent()
         kwargs = cls.get_kernel_params(node, parent.output_shape)
-        
-        kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]        
+
+        kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]
         kwargs['group'] = node.parameters.group
         return Node.create('deconv', **kwargs)
 
@@ -145,7 +145,7 @@ class NodeMapper(object):
         # check if need the Flatten layer
         parent, _ = node.get_only_parent()
         ret = []
-                
+
         # if parent.output_shape.height > 1 or parent.output_shape.width > 1:
         ret.append(cls._add_flatten_layer(parent))
         ret.append(Node.create('FullyConnected', **kwargs))
@@ -177,8 +177,7 @@ class NodeMapper(object):
 
     @classmethod
     def map_batch_norm(cls, node):
-        scale_offset = len(node.data) == 4
-        kwargs = {} if scale_offset else {'scale' : False, 'bias' : False}
+        kwargs = {'scale' : len(node.data) >= 3, 'bias' : len(node.data) == 4}
         epsilon = node.parameters.eps
         kwargs['epsilon'] = epsilon
         cls._convert_output_shape(kwargs, node)
