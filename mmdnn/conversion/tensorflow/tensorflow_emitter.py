@@ -148,7 +148,7 @@ def KitModel(weight_file = None):
         pooling_type = IR_node.get_attr('pooling_type')
         if pooling_type == 'MAX':
             op = 'max_pool'
-            padding_const = ", constant_value=float('-Inf')"
+            padding_const = ", constant_values=float('-Inf')"
         elif pooling_type == 'AVG':
             op = 'avg_pool'
             padding_const = ""

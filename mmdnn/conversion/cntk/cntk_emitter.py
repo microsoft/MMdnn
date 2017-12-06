@@ -5,6 +5,7 @@
 
 import os
 
+import cntk
 from mmdnn.conversion.common.IR.IR_graph import IRGraph, IRGraphNode
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
@@ -97,12 +98,43 @@ def KitModel(weight_file = None):
         new_shape = filter(lambda x:x >- 1, [dim.size for dim in shapes.dim])
         return ', '.join('%s' % i for i in new_shape)
 
+    @staticmethod
+    def is_valid_padding(auto_pad, pads):
+        """
+        different from utils.is_valid_padding
+        """
+        if auto_pad:
+            if auto_pad == 'VALID':
+                return True
+            elif auto_pad.startswith('SAME'):
+                return False
+            else:
+                raise ValueError("Unknown padding type{}.".format(auto_pad))
+
+        else:
+            lens = len(pads)
+            assert lens % 2 == 0
+            for i in range(0, lens // 2):
+                if pads[i] != 0:
+                    return False
+            return True
+
+    @staticmethod
+    def is_ceil_mode(pads):
+        lens = len(pads)
+        for i in range(lens // 2 + 1, lens - 1):
+            if pads[i] == pads[i - lens // 2]:
+                return False
+        else:
+            return True
+
 
     def emit_Conv(self, IR_node):
         if self.weight_loaded:
             self.used_layers.add(IR_node.type)
             dim = len(IR_node.get_attr('strides')) - 2
-            padding = [False] + [IR_node.get_attr('auto_pad') != 'VALID'] * dim
+            padding = not self.is_valid_padding(IR_node.get_attr('auto_pad'), IR_node.get_attr('pads'))
+            padding = [False] + [padding] * dim
             self.add_body(1, "{:<15} = convolution({}, strides={}, auto_padding={}, dilation={}, groups={}, name='{}')".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
@@ -137,23 +169,33 @@ def KitModel(weight_file = None):
             for e in IR_node.get_attr('dilations', []):
                 assert e == 1
 
-            pool_size = ', '.join('%s' % id for id in IR_node.get_attr('kernel_shape')[1:-1])
-            strides = ', '.join('%s' % id for id in IR_node.get_attr('strides')[1:-1])
-            padding = IR_node.get_attr('auto_pad') != 'VALID'
+            dim = len(IR_node.get_attr('kernel_shape')) - 2
+            padding = not self.is_valid_padding(IR_node.get_attr('auto_pad'), IR_node.get_attr('pads'))
+            padding = [False] + [padding] * dim
+            ceil_out_dim = self.is_ceil_mode(IR_node.get_attr('pads'))
+
+            pooling_type = IR_node.get_attr('pooling_type')
+            if pooling_type == 'MAX':
+                pooling_type = cntk.MAX_POOLING
+            elif pooling_type == 'AVG':
+                pooling_type = cntk.AVG_POOLING
+            else:
+                raise ValueError
 
             if self.weight_loaded:
                 self.used_layers.add(IR_node.type)
-                self.add_body(1, "{:<15} = pooling({}, '{}', filter_shape = ({}), strides = ({}), pad = {}, name = '{}')".format(
+                self.add_body(1, "{:<15} = pooling({}, pooling_type={}, pooling_window_shape={}, strides={}, auto_padding={}, ceil_out_dim={})".format(
                     IR_node.variable_name,
                     input_node,
-                    IR_node.get_attr('pooling_type'),
-                    pool_size,
-                    strides,
+                    pooling_type,
+                    tuple(IR_node.get_attr('kernel_shape')[1:-1]),
+                    tuple(IR_node.get_attr('strides')[1:-1]),
                     padding,
-                    IR_node.name))
+                    ceil_out_dim
+                    ))
 
             else:
-                raise NotImplementedError("")
+                raise NotImplementedError
 
 
     def emit_UNKNOWN(self, IR_node):
@@ -253,7 +295,7 @@ def KitModel(weight_file = None):
 
     def emit_Add(self, IR_node):
         if len(IR_node.in_edges) > 1:
-            inputs = '+ '.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
+            inputs = ' +'.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
             self.add_body(1, "{:<15} = {}".format(
                 IR_node.variable_name,
                 inputs))
@@ -270,7 +312,7 @@ def KitModel(weight_file = None):
 
     def emit_BatchNorm(self, IR_node):
         self.used_layers.add(IR_node.type)
-        self.add_body(1, "{:<15} = batch_normalization({}, epsilon = {}, name = '{}')".format(
+        self.add_body(1, "{:<15} = batch_normalization({}, epsilon={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('epsilon'),
@@ -290,7 +332,7 @@ def KitModel(weight_file = None):
         padding = IR_node.get_attr('pads')
         padding = convert_onnx_pad_to_tf(padding)[1:]
 
-        self.add_body(1, "{:<15} = ops.pad({}, pattern = {}, {})".format(
+        self.add_body(1, "{:<15} = ops.pad({}, pattern={}, {})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             padding,
@@ -336,7 +378,7 @@ def lrn(input, **kwargs):
 def dense(input, name, **kwargs):
     w = __weights_dict[name]['weights']
     b = __weights_dict[name]['bias'] if 'bias' in __weights_dict[name] else None
-    return BlockApiSetup.linear(output_shape = w.shape[1], input_shape = w.shape[0], scale_init = w, bias_init = b, name = name, **kwargs)(input)
+    return BlockApiSetup.linear(output_shape=w.shape[1], input_shape=w.shape[0], scale_init=w, bias_init=b, name=name, **kwargs)(input)
 """)
 
 
@@ -346,14 +388,14 @@ def convolution(input, name, **kwargs):
     dim = __weights_dict[name]['weights'].ndim
 
     weight = np.transpose(__weights_dict[name]['weights'], [dim - 1, dim - 2] + list(range(0, dim - 2)))
-    w = cntk.Parameter(init = weight, name = name + '_weight')
+    w = cntk.Parameter(init=weight, name=name + '_weight')
 
     input = cntk.transpose(input, [dim - 2] + list(range(0, dim - 2)))
 
     layer = ops.convolution(w, input, **kwargs)
     if 'bias' in __weights_dict[name]:
         bias = np.reshape(__weights_dict[name]['bias'], [-1] + [1] * (dim - 2))
-        b = cntk.Parameter(init = bias, name = name + '_bias')
+        b = cntk.Parameter(init=bias, name=name + '_bias')
         layer = layer + b
     layer = cntk.transpose(layer, list(range(1, dim - 1)) + [0])
     return layer
@@ -362,10 +404,10 @@ def convolution(input, name, **kwargs):
 
     def _layer_Pool(self):
         self.add_body(0, """
-def pooling(input, type, name, **kwargs):
+def pooling(input, **kwargs):
     dim = len(input.output.shape)
     input = cntk.transpose(input, [dim - 1] + list(range(0, dim - 1)))
-    layer = layers.MaxPooling(**kwargs)(input) if type == 'MAX' else layers.AveragePooling(**kwargs)(input)
+    layer = ops.pooling(input, **kwargs)
     layer = cntk.transpose(layer, list(range(1, dim)) + [0])
     return layer
 """)

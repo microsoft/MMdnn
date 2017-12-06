@@ -43,7 +43,7 @@ Models                                              | Caffe | Keras | Tensorflow
 [Inception V1](http://arxiv.org/abs/1409.4842v1)    |   √   |   √   |     √      |   √  |   √   | x (No LRN)
 [Inception V3](http://arxiv.org/abs/1512.00567)     |   ×   |   √   |     √      |   √  |   √   |    √
 [ResNet V1 50](https://arxiv.org/abs/1512.03385)    |   ×   |   √   |     √      |   o  |   √   |    √
-[ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   ×   |   √   |     √      |   √  |   √   |    √
+[ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   √   |   √   |     √      |   √  |   √   |    √
 [VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √
 [MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (No Relu6) | × | ×
 [Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      |   ×  |   ×   |    ×
