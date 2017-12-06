@@ -21,6 +21,7 @@ class TestKit(object):
         'tensorflow' : {
             'vgg19'             : [(21, 11.285443), (144, 10.240093), (23, 9.1792336), (22, 8.1113129), (128, 8.1065922)],
             'resnet'            : [(22, 11.756789), (147, 8.5718527), (24, 6.1751032), (88, 4.3121386), (141, 4.1778097)],
+            'resnet_v1_101'     : [(21, 14.384739), (23, 14.262486), (144, 14.068737), (94, 12.17205), (134, 12.064575)],
             'inception_v3'      : [(22, 9.4921198), (24, 4.0932288), (25, 3.700398), (23, 3.3715961), (147, 3.3620636)],
             'mobilenet'         : [(22, 16.223597), (24, 14.54775), (147, 13.173758), (145, 11.36431), (728, 11.083847)]
         },
@@ -56,6 +57,7 @@ class TestKit(object):
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
             'inception_v3'  : lambda path : TestKit.Standard(path, 299),
             'resnet'        : lambda path : TestKit.Standard(path, 299),
+            'resnet_v1_101' : lambda path : TestKit.ZeroCenter(path, 224, False),
             'resnet152'     : lambda path : TestKit.Standard(path, 299),
             'mobilenet'     : lambda path : TestKit.Standard(path, 224)
         },
@@ -92,11 +94,11 @@ class TestKit(object):
         parser.add_argument('-n', type=_text_type, default='kit_imagenet',
                             help='Network structure file name.')
 
-        parser.add_argument('-s', type = _text_type, help = 'Source Framework Type',
-                            choices = ["caffe", "tensorflow", "keras", "cntk", "mxnet"])
+        parser.add_argument('-s', type=_text_type, help='Source Framework Type',
+                            choices=self.truth.keys())
 
-        parser.add_argument('-w',
-            type = _text_type, help = 'Network weights file name', required = True)
+        parser.add_argument('-w', type=_text_type, required=True,
+                            help='Network weights file name')
 
         parser.add_argument('--image', '-i',
             type = _text_type,
