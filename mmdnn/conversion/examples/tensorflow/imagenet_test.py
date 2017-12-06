@@ -25,8 +25,6 @@ class TestTF(TestKit):
 
     def print_result(self):
         with tf.Session() as sess:
-            writer = tf.summary.FileWriter('./graphs', sess.graph)
-            writer.close()
             init = tf.global_variables_initializer()
             sess.run(init)
             predict = sess.run(self.model, feed_dict = {self.input : self.data})
