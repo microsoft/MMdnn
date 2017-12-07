@@ -36,14 +36,27 @@ class NodeMapper(object):
     def get_kernel_params(cls, node, input_shape):
         kwargs = {}
 
-        o_h_caffe = node.output_shape.height
-        o_h_tf = (input_shape.height + node.kernel_parameters.p_h * 2 - node.kernel_parameters.k_h + 1) // node.kernel_parameters.s_h
+        if node.kernel_parameters.global_pooling:
+            kwargs['kernel_shape'] = [1, input_shape.height, input_shape.width, 1]
+            kwargs['pads'] = [0] * 8
 
-        o_w_caffe = node.output_shape.width
-        o_w_tf = (input_shape.width + node.kernel_parameters.p_w * 2 - node.kernel_parameters.k_w + 1) // node.kernel_parameters.s_w
+        else:
+            from mmdnn.conversion.caffe.graph import NodeKind
+            if node.kind == NodeKind.Pooling:
+                kwargs['kernel_shape'] = [1, node.kernel_parameters.k_h, node.kernel_parameters.k_w, 1]
+            elif node.kind == NodeKind.Convolution:
+                pass
+            else:
+                raise ValueError
 
-        kwargs['pads'] = [0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0] + \
-                  [0, node.kernel_parameters.p_h + o_h_caffe - o_h_tf, node.kernel_parameters.p_w + o_w_caffe - o_w_tf, 0]
+            o_h_caffe = node.output_shape.height
+            o_h_tf = (input_shape.height + node.kernel_parameters.p_h * 2 - node.kernel_parameters.k_h + 1) // node.kernel_parameters.s_h
+            o_w_caffe = node.output_shape.width
+            o_w_tf = (input_shape.width + node.kernel_parameters.p_w * 2 - node.kernel_parameters.k_w + 1) // node.kernel_parameters.s_w
+
+            kwargs['pads'] = [0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0] + \
+                    [0, node.kernel_parameters.p_h + o_h_caffe - o_h_tf, node.kernel_parameters.p_w + o_w_caffe - o_w_tf, 0]
+
         kwargs['strides'] = [1, node.kernel_parameters.s_h, node.kernel_parameters.s_w, 1]
         cls._convert_output_shape(kwargs, node)
 
@@ -117,7 +130,6 @@ class NodeMapper(object):
         else:
             # Stochastic pooling, for instance.
             raise ConversionError('Unsupported pooling type.')
-        kwargs['kernel_shape'] = [1, node.kernel_parameters.k_h, node.kernel_parameters.k_w, 1]
         cls._convert_output_shape(kwargs, node)
         return Node.create('Pool', **kwargs)
 
