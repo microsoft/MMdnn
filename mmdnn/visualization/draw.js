@@ -1,8 +1,9 @@
-var json;
+let json;
 const nodeW = 150, nodeH = 30;
 const filePath = "model.json";
 const miniW = window.innerWidth * 0.12
 const miniH = (window.innerHeight-85) * 0.98
+let rankBT = true
 
 
 /*hanle import model*/
@@ -12,6 +13,7 @@ const handleFileSelect = (evt) => {
     reader.onload = e => {
         // console.info(JSON.parse(e.target.result))
         draw(JSON.parse(e.target.result))
+        json = JSON.parse(e.target.result)
     }
     reader.readAsText(file)
 }
@@ -24,10 +26,15 @@ document.getElementById('importModel').addEventListener('change', handleFileSele
 //         draw(json)
 //     })
 // }
+function reverse(){
+    rankBT = !rankBT;
+    draw(json)
+}
+
 //generate dag
 getDag = (layers, mode, margin) => {
     let g = new dagre.graphlib.Graph();
-    g.setGraph({ranksep:20, marginx:margin, marginy:margin, rankdir:'BT'});
+    g.setGraph({ranksep:20, marginx:margin, marginy:margin, rankdir:rankBT?'BT':'TB'});
     g.setDefaultEdgeLabel(() => { return {}; });
     layers.forEach(layer => {
         label = mode == "IR" ? `${layer.name}|${layer.op}` : `${layer.name}:${layer.class_name}`
@@ -193,7 +200,6 @@ const draw = (json) => {
         .style("fill", "transparent")
         .style("stroke", "none")
         .on("click", function (d) {
-            console.info("click")
             d3.event.stopPropagation()
             d3.event.preventDefault()
             d3.selectAll('.nodeMask')
@@ -226,7 +232,6 @@ const draw = (json) => {
     function pan(e) {
         d3.event.stopPropagation()
         d3.event.preventDefault()
-        console.info('pan')
         let { k:k_, x:x_, y:y_ } = d3.zoomTransform(this)
         let { k, x, y } = transformParser(d3.select('.scene').attr('transform'))
         k = parseFloat(k)*parseFloat(k_)

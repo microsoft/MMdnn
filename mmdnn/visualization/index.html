@@ -57,6 +57,7 @@
             /* border: 2px solid var(--fg-color); */
             box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.16), 0 0 0 2px rgba(0, 0, 0, 0.08);
             border-radius: 2px;
+            align-content: center;
             /* width: 15vw; */
             width:200px;
             font-family: Arial, Helvetica, sans-serif;
@@ -67,7 +68,7 @@
         }
         #import{
             top:80px;
-            height: 60px;
+            height: 80px;
         }
         #tips{
             bottom: 5px
@@ -76,8 +77,19 @@
             padding:2px 7px;
             margin:7px 0px;
         }
+        button.r_btn{
+            padding:2px 7px;
+            margin:0px 7px 2px 7px;
+            background-color: var(--fg-color);
+            border: none;
+            border-radius: 2px;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
         #layerInfo {
-            top: 150px;
+            top: 170px;
         }
 
         #layerName {
@@ -141,7 +153,10 @@
     <div id="import" class="shadow_box">
         <h4>Choose Your Model
             <input id="importModel" type='file' label='Upload' accept='.json' } />
+            
         </h4>
+        <button class="r_btn" onclick="reverse()">Reverse Rendering</button>
+        
     </div>
     <div id="layerInfo" class="shadow_box">
         <div id="layerName">Layer Config</div>
