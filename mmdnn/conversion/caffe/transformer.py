@@ -24,7 +24,7 @@ class DataInjector(object):
         # A list containing (layer name, parameters) tuples
         self.params = None
         # Load the parameters
-        self.caffemodel = None        
+        self.caffemodel = None
         if has_pycaffe() and self.def_path:
             self.load_using_caffe()
         else:
@@ -271,9 +271,9 @@ class ParameterNamer(object):
                 if node.parameters.bias_term:
                     names += ('bias',)
             elif node.kind == NodeKind.BatchNorm:
-                names = ('mean', 'variance')
+                names = ('mean', 'var')
                 if len(node.data) == 4:
-                    names += ('scale', 'offset')
+                    names += ('scale', 'bias')
             else:
                 print_stderr('WARNING: Unhandled parameters: {}'.format(node.kind))
                 continue
@@ -322,7 +322,8 @@ class CaffeTransformer(object):
                 }),
                     ParameterNamer() # Convert parameters to dictionaries
                 ])
-        self.graph = NodeRenamer()(graph)
+        self.graph = graph
+        #  self.graph = NodeRenamer()(graph)
         print_stderr(self.graph)
 
     def gen_prototxt_from_caffemodel(self, data_path, input_shape):
@@ -354,7 +355,7 @@ class CaffeTransformer(object):
         name = get_upper_case(get_lower_case(self.graph.name))
         return Graph(name, ret)
         #return Graph(name, [self.map_node(node) for node in self.graph.nodes])
-    
+
     def get_handler(self, node_kind, prefix):
         name = get_handler_name(node_kind)
         name = '_'.join((prefix, name))
@@ -382,7 +383,7 @@ class CaffeTransformer(object):
                     cur_node.output.extend([node.name + '_' + str(idx + 1)])
 
                 self.layer_name_map[node.name] = node.name + '_' + str(len(mapped_node) - 1)
-                ret.append(cur_node)            
+                ret.append(cur_node)
             return ret
 
         else:

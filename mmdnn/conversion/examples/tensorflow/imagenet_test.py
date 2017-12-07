@@ -15,7 +15,7 @@ class TestTF(TestKit):
     def __init__(self):
         super(TestTF, self).__init__()
         self.input, self.model = self.MainModel.KitModel(self.args.w)
-        # self.input, self.model, self.testop = KitModel(os.path.abspath('.') + '/kit_imagenet.npy')
+        # self.input, self.model, self.testop = self.MainModel.KitModel(self.args.w)
 
 
     def preprocess(self, image_path):
@@ -24,7 +24,7 @@ class TestTF(TestKit):
 
 
     def print_result(self):
-        with tf.Session() as sess:            
+        with tf.Session() as sess:
             init = tf.global_variables_initializer()
             sess.run(init)
             predict = sess.run(self.model, feed_dict = {self.input : self.data})
@@ -33,20 +33,20 @@ class TestTF(TestKit):
         
     
     def print_intermediate_result(self, layer_name, if_transpose = False):
-        testop = tf.get_default_graph().get_operation_by_name(layer_name)
-        # testop = self.testop
+        # testop = tf.get_default_graph().get_operation_by_name(layer_name)
+        testop = self.testop
         with tf.Session() as sess:
             init = tf.global_variables_initializer()
             sess.run(init)
             intermediate_output = sess.run(testop, feed_dict = {self.input : self.data})
         
-        super(TestTF, self).predict(intermediate_output, if_transpose)
+        super(TestTF, self).print_intermediate_result(intermediate_output, if_transpose)
 
     
     def inference(self, image_path):
         self.preprocess(image_path)
         
-        # self.print_intermediate_result('conv1_7x7_s2_1', False)
+        # self.print_intermediate_result('conv1_7x7_s2_1', True)
         
         self.print_result()
         

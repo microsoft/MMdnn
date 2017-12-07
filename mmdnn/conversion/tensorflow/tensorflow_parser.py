@@ -266,7 +266,7 @@ class TensorflowParser(Parser):
 
         assign_IRnode_values(IR_node, kwargs)
 
-        
+
     def gen_IR(self):
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
@@ -422,9 +422,8 @@ class TensorflowParser(Parser):
 
     def rename_Reshape(self, source_node):
         IR_node = self._convert_identity_operation(source_node, 1)
-
-        # for target shape
-        IR_node.attr["shape"].shape.MergeFromString(source_node.get_attr('_output_shapes').shape[0].SerializeToString())
+        kwargs = {'shape' : self.tensor_shape_to_list(source_node.get_attr('_output_shapes'))[0]}
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_MatMul(self, source_node):
@@ -442,21 +441,28 @@ class TensorflowParser(Parser):
         if self.weight_loaded:
             self.set_weight(source_node.name, 'weights', self.ckpt_data[W.name])
 
-        add_node = self.tf_graph.get_node(source_node.out_edges[0])
-        if add_node.type == 'Add':
-            add_node.covered = True
-            add_node.real_name = source_node.real_name
-            # FullyConnected Layer
-            # name, op
-            TensorflowParser._copy_and_reop(source_node, IR_node, 'FullyConnected')
+        if source_node.out_edges:
+            add_node = self.tf_graph.get_node(source_node.out_edges[0])
+            if add_node.type == 'Add':
+                add_node.covered = True
+                add_node.real_name = source_node.real_name
+                # FullyConnected Layer
+                # name, op
+                TensorflowParser._copy_and_reop(source_node, IR_node, 'FullyConnected')
 
-            # get Bias
-            B = self.tf_graph.get_node(self.tf_graph.get_node(source_node.out_edges[0]).in_edges[1]).in_edges[0]
-            if self.weight_loaded:
-                self.set_weight(source_node.name, 'bias', self.ckpt_data[B])
-            IR_node.attr['use_bias'].b = True
+                # get Bias
+                B = self.tf_graph.get_node(self.tf_graph.get_node(source_node.out_edges[0]).in_edges[1]).in_edges[0]
+                if self.weight_loaded:
+                    self.set_weight(source_node.name, 'bias', self.ckpt_data[B])
+                IR_node.attr['use_bias'].b = True
+
+            else:
+                raise NotImplementedError("Not implemented yet. Please submit a issue in github and provide your models for reproduce.")
+
         else:
-            assert False
+            # Matmul Layer
+            TensorflowParser._copy_and_reop(source_node, IR_node, 'FullyConnected')
+            assign_IRnode_values(IR_node, {'use_bias' : False})
 
 
     def rename_RealDiv(self, source_node):

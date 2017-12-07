@@ -105,15 +105,16 @@ def KitModel(weight_file = None):
         self.used_layers.add(IR_node.type)
         strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides')[1:-1])
         input_node, padding = self._defuse_padding(IR_node)
-        self.add_body(1, "{:<15} = convolution({}, strides = [{}], padding = '{}', name = '{}')".format(
+        self.add_body(1, "{:<15} = convolution({}, group={}, strides=[{}], padding='{}', name='{}')".format(
             IR_node.variable_name,
             input_node,
+            IR_node.get_attr('group', 1),
             strides_str,
             padding,
             IR_node.name))
 
 
-    def _defuse_padding(self, IR_node):
+    def _defuse_padding(self, IR_node, extra_str=""):
         auto_pad = IR_node.get_attr('auto_pad')
         if auto_pad:
             input_node = self.parent_variable_name(IR_node)
@@ -122,7 +123,8 @@ def KitModel(weight_file = None):
             elif auto_pad.startswith("SAME"):
                 padding = 'SAME'
             else:
-                assert False
+                raise ValueError("Unknown padding type [{}].".format(auto_pad))
+
             return input_node, padding
 
         else:
@@ -130,10 +132,12 @@ def KitModel(weight_file = None):
             padding = convert_onnx_pad_to_tf(padding)
             if is_valid_padding(padding) == False:
                 input_node = IR_node.variable_name + '_pad'
-                self.add_body(1, "{:<15} = tf.pad({}, paddings = {})".format(
+                self.add_body(1, "{:<15} = tf.pad({}, paddings = {}{})".format(
                     input_node,
                     self.parent_variable_name(IR_node),
-                    padding))
+                    padding,
+                    extra_str
+                    ))
             else:
                 input_node = self.parent_variable_name(IR_node)
 
@@ -141,7 +145,16 @@ def KitModel(weight_file = None):
 
 
     def emit_Pool(self, IR_node):
-        op = 'max_pool' if IR_node.layer.attr['pooling_type'].s == b'MAX' else 'avg_pool'
+        pooling_type = IR_node.get_attr('pooling_type')
+        if pooling_type == 'MAX':
+            op = 'max_pool'
+            padding_const = ", constant_values=float('-Inf')"
+        elif pooling_type == 'AVG':
+            op = 'avg_pool'
+            padding_const = ""
+        else:
+            raise ValueError("unknown pooling type [{}].".format(pooling_type))
+
         arrlen = len(IR_node.get_attr('strides'))
         dim_str = '3d' if arrlen == 5 else ""
 
@@ -159,7 +172,7 @@ def KitModel(weight_file = None):
             kernel_shape_str = ', '.join('%s' % i for i in IR_node.get_attr('kernel_shape'))
             strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides'))
 
-            input_node, padding = self._defuse_padding(IR_node)
+            input_node, padding = self._defuse_padding(IR_node, padding_const)
 
             self.add_body(1, "{:<15} = tf.nn.{}{}({}, [{}], [{}], padding='{}', name='{}')".format(
                 IR_node.variable_name,
@@ -393,11 +406,19 @@ def KitModel(weight_file = None):
 
     def _layer_Conv(self):
         self.add_body(0, """
-def convolution(input, name, **kwargs):
-    w = tf.Variable(__weights_dict[name]['weights'], trainable = is_train, name = name + "_weight")
-    layer = tf.nn.convolution(input, w, **kwargs)
+def convolution(input, name, group, **kwargs):
+    w = tf.Variable(__weights_dict[name]['weights'], trainable=is_train, name=name + "_weight")
+    if group == 1:
+        layer = tf.nn.convolution(input, w, **kwargs)
+    else:
+        weight_groups = tf.split(w, num_or_size_splits=group, axis=-1)
+        xs = tf.split(input, num_or_size_splits=group, axis=-1)
+        convolved = [tf.nn.convolution(x, weight, **kwargs) for
+                    (x, weight) in zip(xs, weight_groups)]
+        layer = tf.concat(convolved, axis=-1)
+
     if 'bias' in __weights_dict[name]:
-        b = tf.Variable(__weights_dict[name]['bias'], trainable = is_train, name = name + "_bias")
+        b = tf.Variable(__weights_dict[name]['bias'], trainable=is_train, name=name + "_bias")
         layer = layer + b
     return layer""")
 

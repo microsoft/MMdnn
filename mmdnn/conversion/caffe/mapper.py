@@ -33,20 +33,34 @@ class NodeMapper(object):
         kwargs['_output_shapes'] = [shape]
 
     @classmethod
-    def get_kernel_params(cls, node):
+    def get_kernel_params(cls, node, input_shape):
         kwargs = {}
-        if node.kernel_parameters.p_h > 0 or node.kernel_parameters.p_w > 0:
-            padding = [0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0, 0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0]
-        elif node.kernel_parameters.s_h > 1 or node.kernel_parameters.s_w > 1:
-            padding = [0, (node.kernel_parameters.s_h - 1) // 2, (node.kernel_parameters.s_w - 1) // 2, 0, 0, node.kernel_parameters.s_h // 2, node.kernel_parameters.s_w // 2, 0]
-        else:
-            padding = None
 
-        kwargs['auto_pad'] = 'VALID'
+        if node.kernel_parameters.global_pooling:
+            kwargs['kernel_shape'] = [1, input_shape.height, input_shape.width, 1]
+            kwargs['pads'] = [0] * 8
+
+        else:
+            from mmdnn.conversion.caffe.graph import NodeKind
+            if node.kind == NodeKind.Pooling:
+                kwargs['kernel_shape'] = [1, node.kernel_parameters.k_h, node.kernel_parameters.k_w, 1]
+            elif node.kind == NodeKind.Convolution:
+                pass
+            else:
+                raise ValueError
+
+            o_h_caffe = node.output_shape.height
+            o_h_tf = (input_shape.height + node.kernel_parameters.p_h * 2 - node.kernel_parameters.k_h + 1) // node.kernel_parameters.s_h
+            o_w_caffe = node.output_shape.width
+            o_w_tf = (input_shape.width + node.kernel_parameters.p_w * 2 - node.kernel_parameters.k_w + 1) // node.kernel_parameters.s_w
+
+            kwargs['pads'] = [0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0] + \
+                    [0, node.kernel_parameters.p_h + o_h_caffe - o_h_tf, node.kernel_parameters.p_w + o_w_caffe - o_w_tf, 0]
+
         kwargs['strides'] = [1, node.kernel_parameters.s_h, node.kernel_parameters.s_w, 1]
         cls._convert_output_shape(kwargs, node)
 
-        return kwargs, {'pads' : padding, 'mode' : 'constant', 'constant_values' : 0.0}
+        return kwargs
 
 
     @classmethod
@@ -72,30 +86,22 @@ class NodeMapper(object):
 
     @classmethod
     def map_convolution(cls, node):
-        kwargs, padding = cls.get_kernel_params(node)
         parent, _ = node.get_only_parent()
+        kwargs = cls.get_kernel_params(node, parent.output_shape)
         kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]
         kwargs['use_bias'] = node.parameters.bias_term
-        group = node.parameters.group
-        if group != 1:
-            kwargs['group'] = group
-
-        if padding['pads'] != None:
-            return [Node.create('Pad', **padding), Node.create('Conv', **kwargs)]
-        else:
-            kwargs['pads'] = [0] * 8
-            return Node.create('Conv', **kwargs)
+        kwargs['group'] = node.parameters.group
+        return Node.create('Conv', **kwargs)
 
 
     @classmethod
     def map_deconvolution(cls, node):
         raise NotImplementedError()
-        kwargs = cls.get_kernel_params(node)
         parent, _ = node.get_only_parent()
+        kwargs = cls.get_kernel_params(node, parent.output_shape)
+
         kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]
-        group = node.parameters.group
-        if group != 1:
-            kwargs['group'] = group
+        kwargs['group'] = node.parameters.group
         return Node.create('deconv', **kwargs)
 
     @classmethod
@@ -115,7 +121,8 @@ class NodeMapper(object):
 
     @classmethod
     def map_pooling(cls, node):
-        kwargs, padding = cls.get_kernel_params(node)
+        parent, _ = node.get_only_parent()
+        kwargs = cls.get_kernel_params(node, parent.output_shape)
         if node.parameters.pool == 0:
             kwargs['pooling_type'] = 'MAX'
         elif node.parameters.pool == 1:
@@ -123,14 +130,8 @@ class NodeMapper(object):
         else:
             # Stochastic pooling, for instance.
             raise ConversionError('Unsupported pooling type.')
-        kwargs['kernel_shape'] = [1, node.kernel_parameters.k_h, node.kernel_parameters.k_w, 1]
         cls._convert_output_shape(kwargs, node)
-
-        if padding['pads'] != None:
-            return [Node.create('Pad', **padding), Node.create('Pool', **kwargs)]
-        else:
-            kwargs['pads'] = [0] * 8
-            return Node.create('Pool', **kwargs)
+        return Node.create('Pool', **kwargs)
 
 
     @classmethod
@@ -156,8 +157,9 @@ class NodeMapper(object):
         # check if need the Flatten layer
         parent, _ = node.get_only_parent()
         ret = []
-        if parent.output_shape.height > 1 or parent.output_shape.width > 1:
-            ret.append(cls._add_flatten_layer(parent))
+
+        # if parent.output_shape.height > 1 or parent.output_shape.width > 1:
+        ret.append(cls._add_flatten_layer(parent))
         ret.append(Node.create('FullyConnected', **kwargs))
         return ret
 
@@ -187,16 +189,15 @@ class NodeMapper(object):
 
     @classmethod
     def map_batch_norm(cls, node):
-        scale_offset = len(node.data) == 4
-        kwargs = {} if scale_offset else {'scale_offset': False}
+        kwargs = {'scale' : len(node.data) >= 3, 'bias' : len(node.data) == 4}
         epsilon = node.parameters.eps
         kwargs['epsilon'] = epsilon
         cls._convert_output_shape(kwargs, node)
-        return Node.create('batch_normalization', **kwargs)
+        return Node.create('BatchNorm', **kwargs)
 
     @classmethod
     def map_eltwise(cls, node):
-        operations = {0: 'mul', 1: 'sum', 2: 'max'}
+        operations = {0: 'Mul', 1: 'Add', 2: 'Max'}
         op_code = node.parameters.operation
         try:
             return Node.create(operations[op_code])

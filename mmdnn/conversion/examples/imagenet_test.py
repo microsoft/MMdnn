@@ -6,27 +6,23 @@
 from __future__ import absolute_import
 import argparse
 import numpy as np
-import sys
-import os
 from six import text_type as _text_type
-
-# work for tf 1.4 in windows & linux
 from tensorflow.contrib.keras.api.keras.preprocessing import image
-
-# work for tf 1.3 & 1.4 in linux
-# from tensorflow.contrib.keras.python.keras.preprocessing import image
 
 
 class TestKit(object):
 
     truth = {
         'caffe' : {
+            'alexnet'        : [(821, 0.25088307), (657, 0.20857951), (744, 0.096812263), (595, 0.066312768), (847, 0.053720973)],
             'vgg19'          : [(21, 0.37522122), (144, 0.28500062), (23, 0.099720284), (134, 0.036305398), (22, 0.033559237)],
-            'inception_v1'   : [(21, 0.93591732), (23, 0.037170019), (22, 0.014315935), (128, 0.005050648), (749, 0.001965977)]
+            'inception_v1'   : [(21, 0.93591732), (23, 0.037170019), (22, 0.014315935), (128, 0.005050648), (749, 0.001965977)],
+            'resnet152'      : [(144, 0.93159181), (23, 0.033074539), (21, 0.028599562), (99, 0.001878676), (146, 0.001557963)]
         },
         'tensorflow' : {
             'vgg19'             : [(21, 11.285443), (144, 10.240093), (23, 9.1792336), (22, 8.1113129), (128, 8.1065922)],
             'resnet'            : [(22, 11.756789), (147, 8.5718527), (24, 6.1751032), (88, 4.3121386), (141, 4.1778097)],
+            'resnet_v1_101'     : [(21, 14.384739), (23, 14.262486), (144, 14.068737), (94, 12.17205), (134, 12.064575)],
             'inception_v3'      : [(22, 9.4921198), (24, 4.0932288), (25, 3.700398), (23, 3.3715961), (147, 3.3620636)],
             'mobilenet'         : [(22, 16.223597), (24, 14.54775), (147, 13.173758), (145, 11.36431), (728, 11.083847)]
         },
@@ -44,19 +40,26 @@ class TestKit(object):
             'resnet'         : [(21, 0.84012794), (144, 0.097428247), (23, 0.039757393), (146, 0.010432643), (99, 0.0023797606)],
             'squeezenet'     : [(21, 0.36026478), (128, 0.084114805), (835, 0.07940048), (144, 0.057378717), (749, 0.053491514)],
             'inception_bn'   : [(21, 0.84332663), (144, 0.041747514), (677, 0.021810319), (973, 0.02054958), (115, 0.008529461)]
+        },
+        'pytorch' :{
+            'resnet152' : [(21, 13.080057), (141, 12.32998), (94, 9.8761454), (146, 9.3761511), (143, 8.9194641)],
+            'vgg19'     : [(821, 8.4734678), (562, 8.3472366), (835, 8.2712851), (749, 7.792901), (807, 6.6604013)],
         }
     }
 
     preprocess_func = {
         'caffe' : {
+            'alexnet'       : lambda path : TestKit.ZeroCenter(path, 227, True),
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True)
+            'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'resnet152'     : lambda path : TestKit.ZeroCenter(path, 224, True)
         },
 
         'tensorflow' : {
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
             'inception_v3'  : lambda path : TestKit.Standard(path, 299),
             'resnet'        : lambda path : TestKit.Standard(path, 299),
+            'resnet_v1_101' : lambda path : TestKit.ZeroCenter(path, 224, False),
             'resnet152'     : lambda path : TestKit.Standard(path, 299),
             'mobilenet'     : lambda path : TestKit.Standard(path, 224)
         },
@@ -76,6 +79,12 @@ class TestKit(object):
             'resnet'        : lambda path : TestKit.Identity(path, 224, True),
             'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 224, False),
             'inception_bn'  : lambda path : TestKit.Identity(path, 224, False)
+        },
+
+        'pytorch' : {
+            'vgg19'         : lambda path : TestKit.Normalize(path),
+            'resnet152'     : lambda path : TestKit.Normalize(path),
+            'inception_v3'  : lambda path : TestKit.Normalize(path),
         }
     }
 
@@ -87,11 +96,11 @@ class TestKit(object):
         parser.add_argument('-n', type=_text_type, default='kit_imagenet',
                             help='Network structure file name.')
 
-        parser.add_argument('-s', type = _text_type, help = 'Source Framework Type',
-                            choices = ["caffe", "tensorflow", "keras", "cntk", "mxnet"])
+        parser.add_argument('-s', type=_text_type, help='Source Framework Type',
+                            choices=self.truth.keys())
 
-        parser.add_argument('-w',
-            type = _text_type, help = 'Network weights file name', required = True)
+        parser.add_argument('-w', type=_text_type, required=True,
+                            help='Network weights file name')
 
         parser.add_argument('--image', '-i',
             type = _text_type,
@@ -119,6 +128,17 @@ class TestKit(object):
         x[..., 0] -= 103.939
         x[..., 1] -= 116.779
         x[..., 2] -= 123.68
+        return x
+
+
+    @staticmethod
+    def Normalize(path, size=224, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+        img = image.load_img(path, target_size=(size, size))
+        x = image.img_to_array(img)
+        x /= 255.0
+        for i in range(0, 3):
+            x[..., i] -= mean[i]
+            x[..., i] /= std[i]
         return x
 
 

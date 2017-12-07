@@ -4,10 +4,13 @@
 #----------------------------------------------------------------------------------------------
 
 from __future__ import division
+import os
 import math
+import sys
+import requests
 import numpy as np
 
-__all__ = ["assign_IRnode_values", "convert_onnx_pad_to_tf", 'convert_tf_pad_to_onnx', 'compute_tf_same_padding', 'is_valid_padding']
+__all__ = ["assign_IRnode_values", "convert_onnx_pad_to_tf", 'convert_tf_pad_to_onnx', 'compute_tf_same_padding', 'is_valid_padding', 'download_file']
 
 def assign_attr_value(attr, val):
     from mmdnn.conversion.common.IR.graph_pb2 import TensorShape
@@ -100,17 +103,101 @@ def compute_tf_same_padding(input_shape, kernel_shape, strides, data_format='NHW
     # print ([0] + up_list + [0] + down_list if data_format.startswith('NC') else up_list + [0] + down_list + [0])
     # print ('-----------------------------------------------------')
     return [0] + up_list + [0] + down_list if data_format.startswith('NC') else up_list + [0] + down_list + [0]
+
+
+
+# network library
+def _progress_check(count, block_size, total_size):
+    progress_size = int(count * block_size) / 1024
+    percent = int(count * block_size * 100 / total_size)
+    percent = min(percent, 100)
+    sys.stdout.write("\rprogress: {} KB downloaded, {}%".format(progress_size, percent))
+    sys.stdout.flush()
+
+
+def _single_thread_download(url, file_name):
+    from six.moves import urllib
+    result, _ = urllib.request.urlretrieve(url, file_name, _progress_check)
+    print ("")
+    return result
+
+
+def _downloader(start, end, url, filename):
+    headers = {'Range': 'bytes=%d-%d' % (start, end)}
+    r = requests.get(url, headers=headers, stream=True)
+
+    with open(filename, "r+b") as fp:
+        fp.seek(start)
+        var = fp.tell()
+        fp.write(r.content)
+
+
+def _multi_thread_download(url, file_name, file_size, thread_count):
+    import threading
+    fp = open(file_name, "wb")
+    fp.truncate(file_size)
+    fp.close()
+
+    part = file_size // thread_count
+    for i in range(thread_count):
+        start = part * i
+        if i == thread_count - 1:
+            end = file_size
+        else:
+            end = start + part
+
+        t = threading.Thread(target=_downloader, kwargs={'start': start, 'end': end, 'url': url, 'filename': file_name})
+        t.setDaemon(True)
+        t.start()
+
+    main_thread = threading.current_thread()
+    for t in threading.enumerate():
+        if t is main_thread:
+            continue
+        t.join()
+
+    return file_name
+
+
+def download_file(url, directory='./', local_fname=None, force_write=False):
+    """Download the data from source url, unless it's already here.
+
+    Args:
+        filename: string, name of the file in the directory.
+        work_directory: string, path to working directory.
+        source_url: url to download from if file doesn't exist.
+
+    Returns:
+        Path to resulting file.
+    """
+
+    if not os.path.isdir(directory):
+        os.mkdir(directory)
+
+    if local_fname is None:
+        local_fname = url.split('/')[-1]
+    local_fname = os.path.join(directory, local_fname)
+
+    if os.path.exists(local_fname) and not force_write:
+        print ("File [{}] existed!".format(local_fname))
+        return local_fname
+
+    print ("Downloading file [{}] from [{}]".format(local_fname, url))
+
+    try:
+        import wget
+        return wget.download(url, local_fname)
+    except:
+        return _single_thread_download(url, local_fname)
 """
-int64 effective_filter_size = (filter_size - 1) * dilation_rate + 1;
-  switch (padding_type) {
-    case Padding::SAME:
-      *output_size = (input_size + stride - 1) / stride;
-      const int64 padding_needed =
-          std::max(0LL, (*output_size - 1) * stride + effective_filter_size -
-                            input_size);
-      // For odd values of total padding, add more padding at the 'right'
-      // side of the given dimension.
-      *padding_before = padding_needed / 2;
-      *padding_after = padding_needed - *padding_before;
-      break;
+    r = requests.head(url)
+    try:
+        file_size = int(r.headers['content-length'])
+        return _multi_thread_download(url, local_fname, file_size, 5)
+
+    except:
+        # not support multi-threads download
+        return _single_thread_download(url, local_fname)
+
+    return result
 """

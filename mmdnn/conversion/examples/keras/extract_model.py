@@ -32,16 +32,16 @@ def _main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-n', '--network',
-        type = _text_type, help='Model Type', required = True,
-        choices = ['vgg16', 'vgg19', 'inception_v3', 'resnet', 'mobilenet', 'xception', 'inception_resnet'])
+                        type=_text_type, help='Model Type', required=True,
+                        choices=networks_map.keys())
 
     parser.add_argument('-i', '--image',
-        type = _text_type, help = 'Test Image Path')
+                        type=_text_type, help='Test Image Path')
 
     args = parser.parse_args()
-    
+
     model = networks_map.get(args.network)
-    if model == None:
+    if model is None:
         raise NotImplementedError("Unknown keras application [{}]".format(args.network))
 
     model = model()
@@ -50,22 +50,22 @@ def _main():
     with open("imagenet_{}.json".format(args.network), "w") as of:
         of.write(json_string)
 
-    print ("Network structure is saved as [imagenet_{}.json].".format(args.network))
+    print("Network structure is saved as [imagenet_{}.json].".format(args.network))
 
     model.save_weights('imagenet_{}.h5'.format(args.network))
-    
-    print ("Network weights are saved as [imagenet_{}.h5].".format(args.network))
+
+    print("Network weights are saved as [imagenet_{}.h5].".format(args.network))
 
     if args.image:
         import numpy as np
         func = TestKit.preprocess_func['keras'][args.network]
         img = func(args.image)
-        img = np.expand_dims(img, axis = 0)
+        img = np.expand_dims(img, axis=0)
         predict = model.predict(img)
         predict = np.squeeze(predict)
         top_indices = predict.argsort()[-5:][::-1]
         result = [(i, predict[i]) for i in top_indices]
-        print (result)
+        print(result)
 
         # layer_name = 'block2_pool'
         # intermediate_layer_model = keras.Model(inputs=model.input,
@@ -76,5 +76,5 @@ def _main():
         # print ("%.30f" % np.sum(intermediate_output))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     _main()

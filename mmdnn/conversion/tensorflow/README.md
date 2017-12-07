@@ -6,9 +6,9 @@ Tensorflow parser (Tensorflow-IR part) is an experimental product, since the gra
 
 We tested the [slim pre-trained models](https://github.com/tensorflow/models/tree/master/research/slim) and the parser works. Any contribution is welcome.
 
-### Extract Tensorflow model
+### Extract Tensorflow models
 
-You can refer */conversion/example/tensorflow/extract_model.py* to extract your tensorflow model, which is a example tool to extract both architecture and weights from slim pre-trained models.
+You can refer [slim model extractor](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/tensorflow/extract_model.py) to extract your tensorflow model, which is a example tool to extract both architecture and weights from slim pre-trained models.
 
 We will use the **resnet_v2_152** model as an example.
 

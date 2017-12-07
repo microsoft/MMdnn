@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from setuptools import setup, find_packages
 
 # Get the long description from the README file
-with open('README.md', encoding='utf-8') as f:
+with open('README.md') as f:
     long_description = f.read()
 
 setup(
@@ -11,7 +11,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.0',
+    version='0.1.1',
 
     description='Deep learning model converter, visualization and editor.',
     long_description=long_description,
