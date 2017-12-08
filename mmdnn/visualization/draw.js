@@ -113,6 +113,7 @@ const selectLayer = (layer, info, mode) => {
 //draw
 const draw = (json) => {
     d3.select('.shiftMargin').remove() //remove previous graph
+    d3.select('.miniMap').remove() //remove previous graph
 
 
     let mode;

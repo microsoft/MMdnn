@@ -4,144 +4,10 @@
 
 <head>
     <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
     <!-- force reload every 30 seconds -->
     <!-- <meta http-equiv="refresh" content="30" /> -->
-    <style>
-        :root {
-            --bk-color: #ffffff;
-            --fg-color: #00bcd4;
-            --scroll-bar: #71c9d3;
-        }
 
-        body {
-            background-color: var(--bk-color);
-            overflow: hidden;
-            padding: 0px;
-            margin: 0px;
-        }
-
-        svg {
-            background-color: var(--bk-color);
-        }
-
-        p {
-            padding: 0px;
-            margin: 0px;
-        }
-
-        .title {
-            background-color: var(--fg-color);
-            font-family: Impact, Geneva, sans-serif;
-            font-size: 38px;
-            color: white;
-            line-height: 50px;
-            padding: 10px;
-            width: 100%;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, .26);
-        }
-
-        .titleWrapper {
-            height: 5px;
-            width: 100%;
-        }
-
-        .labels {
-            font-size: 13px;
-            font-family: cursive;
-        }
-
-        .tempclass {
-            font-size: 1px;
-        }
-        .shadow_box{
-            /* border: 2px solid var(--fg-color); */
-            box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.16), 0 0 0 2px rgba(0, 0, 0, 0.08);
-            border-radius: 2px;
-            align-content: center;
-            /* width: 15vw; */
-            width:200px;
-            font-family: Arial, Helvetica, sans-serif;
-            position: absolute;
-            left: 5px;
-            background-color: var(--bk-color);
-            color: gray;
-        }
-        #import{
-            top:80px;
-            height: 80px;
-        }
-        #tips{
-            bottom: 5px
-        }
-        h4 {
-            padding:2px 7px;
-            margin:7px 0px;
-        }
-        button.r_btn{
-            padding:2px 7px;
-            margin:0px 7px 2px 7px;
-            background-color: var(--fg-color);
-            border: none;
-            border-radius: 2px;
-            color: white;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-        }
-        #layerInfo {
-            top: 170px;
-        }
-
-        #layerName {
-            font-size: 0.9em;
-            padding: 5px 7px;
-            border-radius: 2px 2px 0px 0px;
-        }
-
-        #layerConfig {
-            padding: 2px 7px;
-            border-radius: 0px 0px 2px 2px;
-            font-size: 0.7em;
-            max-height: 60vh;
-            overflow-y: auto;
-            border-top: 1px solid rgba(0, 0, 0, 0.3);
-        }
-        
-        /* Use -webkit- only if supporting: Chrome < 54, iOS < 9.3, Android < 4.4.4 */
-        /* .shadow {
-            
-            -webkit-filter: drop-shadow( -5px -5px 5px #000);
-            filter: drop-shadow( -5px -5px 5px #000);
-        }*/
-
-        /*scroll bar*/
-
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        /* Track */
-
-        ::-webkit-scrollbar-track {
-            -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
-            -webkit-border-radius: 6px;
-            border-radius: 3px;
-        }
-
-        /* Handle */
-
-        ::-webkit-scrollbar-thumb {
-            -webkit-border-radius: 6px;
-            border-radius: 3px;
-            background: var(--scroll-bar);
-            opacity: 0.5;
-            -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.25);
-        }
-
-        /* ::-webkit-scrollbar-thumb:window-inactive {
-            background:var(--scroll-bar);
-        } */
-    </style>
 </head>
 
 <body>
@@ -155,7 +21,12 @@
             <input id="importModel" type='file' label='Upload' accept='.json' } />
             
         </h4>
-        <button class="r_btn" onclick="reverse()">Reverse Rendering</button>
+        <!-- <button id="r_btn" onclick="reverse()">BT</button> -->
+        <label class="switch">
+            <input type="checkbox" checked onchange="reverse()">
+            <span class="slider round"></span>
+        </label>
+        <!-- <span id="order" >BT</span> -->
         
     </div>
     <div id="layerInfo" class="shadow_box">
