@@ -153,7 +153,9 @@ The file *cntk_inception_v3.dnn* can be loaded by CNTK directly.
 
 ### Model Visualization
 
-Some tools are provided to visualize the model network structure and settings. Take [Keras "inception_v3" model] as an example again.
+You can use the [MMdnn model visualizer](http://mmdnn.eastasia.cloudapp.azure.com:8080/) and submit your IR json file to visualize your model.
+
+Use the [Keras "inception_v3" model] as an example again.
 
 1. Download the pre-trained models
 
@@ -167,7 +169,7 @@ python -m mmdnn.conversion.examples.keras.extract_model -n inception_v3
 python3 -m mmdnn.conversion._script.convertToIR -f keras -d converted -n imagenet_inception_v3.json -w imagenet_inception_v3.h5
 ```
 
-3. Open the simple model visualizater [*visualization/index.html*] and choose file *converted.json*
+3. Open the [MMdnn model visualizer](http://mmdnn.eastasia.cloudapp.azure.com:8080/) and choose file *converted.json*
 
 ![Inception_v3](https://opacdq.dm2304.livefilestore.com/y4mNlERtWTEHaNad3F2mbhwFTwHdSI2qXXG4fR-a46E4b0bjCUuXle49NeOuUO3Lntx9FsGq3tBK3krGtUmJsCcpijsNjggjptKlCYewvu-75k0m3UhsPZflWs7ouGrxOEJqq1RqovWM-xm9hOYGoW0FWK18RuBXyRBwGIbj4F-iy8ASLm4qDbS1UPP_VfiPOgKWMXOk6Bw6EhCpQZJvblpsw?width=1024&height=833&cropmode=none)
 
