@@ -171,7 +171,7 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d converted -n imagene
 
 3. Open the [MMdnn model visualizer](http://mmdnn.eastasia.cloudapp.azure.com:8080/) and choose file *converted.json*
 
-![Inception_v3](https://opacdq.dm2304.livefilestore.com/y4mNlERtWTEHaNad3F2mbhwFTwHdSI2qXXG4fR-a46E4b0bjCUuXle49NeOuUO3Lntx9FsGq3tBK3krGtUmJsCcpijsNjggjptKlCYewvu-75k0m3UhsPZflWs7ouGrxOEJqq1RqovWM-xm9hOYGoW0FWK18RuBXyRBwGIbj4F-iy8ASLm4qDbS1UPP_VfiPOgKWMXOk6Bw6EhCpQZJvblpsw?width=1024&height=833&cropmode=none)
+![Inception_v3](https://npd8fa.dm2304.livefilestore.com/y4m7KYf7_pPQkijj0qwY-35ZkSwhL3o2CzSRv5WtbZIFnmZDYBHRQ3atBMvqnK-oIqBdIiO4grUTQ3cwxDULNSN9OydRzebqXI-tumcIajDb6sIn9tyaQfrSDDkW0V-3z_fOhxa4nsO0shTNS5ix1SHnuPBBJsorNUNAJSjtT5QZWZAd2LilqiIv4zntlANLp_gL_rSwvlSzC4ATXzSnvrOdg?width=660&height=449&cropmode=none)
 
 # Contributing
 
