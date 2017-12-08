@@ -199,16 +199,15 @@ const draw = (json) => {
         .attr("transform", d => { return `translate( ${-d.width * 0.6},${-nodeH * 0.6})` })
         .style("fill", "transparent")
         .style("stroke", "none")
-        .on("click", function (d) {
-            d3.event.stopPropagation()
+        .on("mousedown", function (d) {
             d3.event.preventDefault()
+            d3.event.stopPropagation()
             d3.selectAll('.nodeMask')
                 .style('stroke', "none")
 
             d3.select(this)
                 .style("stroke", "red")
                 .style("stroke-width", 5)
-
             selectLayer(d, info, mode)
         })
     
@@ -220,7 +219,6 @@ const draw = (json) => {
     svg.call(d3.zoom().on('zoom', pan))
     .on("wheel.zoom", scroll)
     .on("dblclick.zoom", null)
-    
     // svg.on('keydown', ()=>{console.info('ddd')})
     // .on('mouseover', ()=>{console.info('mouse over')})
     let shiftDown = false
@@ -230,24 +228,24 @@ const draw = (json) => {
    .on("keyup", ()=>{shiftDown=false})
     
     function pan(e) {
-        d3.event.stopPropagation()
-        d3.event.preventDefault()
-        let { k:k_, x:x_, y:y_ } = d3.zoomTransform(this)
+        let { movementX:x_, movementY:y_ } = d3.event.sourceEvent
         let { k, x, y } = transformParser(d3.select('.scene').attr('transform'))
-        k = parseFloat(k)*parseFloat(k_)
-        x = x_
-        y = y_
+        
+        // k = parseFloat(k)*parseFloat(k_)
+        x = parseFloat(x_) + parseFloat(x)
+        y = parseFloat(y_) + parseFloat(y)
         // limit x, y
         x = Math.max(-width*k*0.3, Math.min(x, width*k*0.7))
         y= Math.min(0.4 * window.innerHeight, Math.max(-height*k + 0.4 * window.innerHeight, y))
         g.attr('transform', `translate(${x}, ${y}) scale(${k})`);
+
         d3.select(".mapMask")
             .attr("y", (-y) / k *miniScale)
             .attr("height", miniH*miniScale / k)
 
-        // a trick to make text svg transform in MS Edge
-        d3.selectAll(".labels").classed("tempclass", true);
-        setTimeout(function () { d3.selectAll(".labels").classed("tempclass", false); }, 40);
+        // // a trick to make text svg transform in MS Edge
+        // d3.selectAll(".labels").classed("tempclass", true);
+        // setTimeout(function () { d3.selectAll(".labels").classed("tempclass", false); }, 40);
     }
     function scroll(e){
         let { k, x, y } = transformParser(d3.select('.scene').attr('transform'))
