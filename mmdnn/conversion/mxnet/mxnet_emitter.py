@@ -390,7 +390,7 @@ def predict(model, labels, url):
             num_group = num_filter
             pattern = "Convolution"
         else:
-            num_group = IR_node.IR_layer.attr["group"].i
+            num_group = IR_node.get_attr('group', 1)
 
         # layout = IR_node.IR_layer.attr["data_format"].s
         if dim == 1:
