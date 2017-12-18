@@ -65,6 +65,7 @@ class MXNetEmitter(Emitter):
     def header_code(self):
         return """import mxnet as mx
 import numpy as np
+import math
 
 # mxnet-cpu only support channel first, default convert the model and weight as channel first
 
@@ -293,11 +294,17 @@ def predict(model, labels, url):
         return data
 
 
-    def set_pad(self, IR_node, code, pad):
-        code = "{:<15} = mx.sym.pad(data = {}, mode = 'constant', pad_width = ({}), constant_value = 0, name = '{}')".format(
+    def set_pad(self, IR_node, code, pad, _max_pool):
+        if _max_pool:
+            constant_value = "-math.inf"
+        else:
+            constant_value = "0.0"
+
+        code = "{:<15} = mx.sym.pad(data = {}, mode = 'constant', pad_width={}, constant_value = {}, name = '{}')".format(
                 IR_node.variable_name + "_pad",
                 self.parent_variable_name(IR_node),
-                pad,
+                tuple(pad),
+                constant_value,
                 IR_node.name + "_pad")
 
         for e in IR_node.in_edges:
@@ -371,10 +378,6 @@ def predict(model, labels, url):
 
             # print("Warning: MXNet Convolution Layer pad does not match IR Convolution Layer pad")
             defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["pads"].list.i)
-        pad = ', '.join('%s' % i for i in pad)
-
-        kernel = ', '.join('%s' % i for i in kernel)
-        stride = ', '.join('%s' % i for i in stride)
 
         num_filter = 0
         if pattern == "Deconvolution":
@@ -407,27 +410,27 @@ def predict(model, labels, url):
 
         code = ""
         if not defuse_pad:
-            code += "{:<15} = mx.sym.{}(data = {}, kernel = ({}), stride = ({}), dilate = ({}), pad = ({}), num_filter = {}, num_group = {}, no_bias = {}, layout = '{}', name = '{}')".format(
+            code += "{:<15} = mx.sym.{}(data={}, kernel={}, stride={}, dilate = ({}), pad={}, num_filter = {}, num_group = {}, no_bias = {}, layout = '{}', name = '{}')".format(
                 IR_node.variable_name,
                 pattern,
                 self.parent_variable_name(IR_node),
-                kernel,
-                stride,
+                tuple(kernel),
+                tuple(stride),
                 dilate,
-                pad,
+                tuple(pad),
                 num_filter,
                 num_group,
                 no_bias,
                 layout,
                 IR_node.name)
         else:
-            code += self.set_pad(IR_node, code, pad)
-            code += "\n    {:<15} = mx.sym.{}(data = {}, kernel = ({}), stride = ({}), dilate = ({}), num_filter = {}, num_group = {}, no_bias = {}, layout = '{}', name = '{}')".format(
+            code += self.set_pad(IR_node, code, pad, False)
+            code += "\n    {:<15} = mx.sym.{}(data={}, kernel={}, stride={}, dilate = ({}), num_filter = {}, num_group = {}, no_bias = {}, layout = '{}', name = '{}')".format(
                 IR_node.variable_name,
                 pattern,
                 IR_node.variable_name + "_pad",
-                kernel,
-                stride,
+                tuple(kernel),
+                tuple(stride),
                 dilate,
                 num_filter,
                 num_group,
@@ -525,7 +528,7 @@ def predict(model, labels, url):
             for e in IR_node.IR_layer.attr["kernel_shape"].list.i[1:-1]:
                 kernel.append(e)
 
-        pool_type = IR_node.IR_layer.attr["pooling_type"].s.lower().decode()
+        pool_type = IR_node.get_attr('pooling_type').lower()
 
         stride = list()
         for e in IR_node.IR_layer.attr["strides"].list.i[1:-1]:
@@ -540,31 +543,26 @@ def predict(model, labels, url):
 
             # print("Warning: MXNet Pooling Layer pad does not match IR Pooling Layer pad")
             defuse_pad, pad = MXNetEmitter.transfer_pad(IR_node.IR_layer.attr["pads"].list.i)
-        pad = ', '.join('%s' % i for i in pad)
-
-        kernel = ', '.join('%s' % i for i in kernel)
-        stride = ', '.join('%s' % i for i in stride)
-
         code = ""
         if not defuse_pad:
-            code += "{:<15} = mx.sym.Pooling(data = {}, global_pool = {}, kernel = ({}), pool_type = '{}', stride = ({}), pad = ({}), name = '{}')".format(
+            code += "{:<15} = mx.sym.Pooling(data = {}, global_pool = {}, kernel={}, pool_type = '{}', stride={}, pad={}, name = '{}')".format(
                     IR_node.variable_name,
                     self.parent_variable_name(IR_node),
                     global_pool,
-                    kernel,
+                    tuple(kernel),
                     pool_type,
-                    stride,
-                    pad,
+                    tuple(stride),
+                    tuple(pad),
                     IR_node.name)
         else:
-            code += self.set_pad(IR_node, code, pad)
-            code += "\n    {:<15} = mx.sym.Pooling(data = {}, global_pool = {}, kernel = ({}), pool_type = '{}', stride = ({}), name = '{}')". format(
+            code += self.set_pad(IR_node, code, pad, pool_type == "max")
+            code += "\n    {:<15} = mx.sym.Pooling(data = {}, global_pool = {}, kernel={}, pool_type = '{}', stride={}, name = '{}')".format(
                     IR_node.variable_name,
                     IR_node.variable_name + "_pad",
                     global_pool,
-                    kernel,
+                    tuple(kernel),
                     pool_type,
-                    stride,
+                    tuple(stride),
                     IR_node.name)
 
         return code
