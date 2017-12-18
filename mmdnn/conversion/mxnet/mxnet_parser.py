@@ -12,16 +12,17 @@ from mmdnn.conversion.mxnet.mxnet_graph import MXNetGraph
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.DataStructure.parser import Parser
+from mmdnn.conversion.common.utils import *
 
 class MXNetParser(Parser):
-    
+
     dtype_map = {
         "int8"      : graph_pb2.DT_INT8,
         "int16"     : graph_pb2.DT_INT16,
         "int32"     : graph_pb2.DT_INT32,
         "int64"     : graph_pb2.DT_INT64,
         "uint8"     : graph_pb2.DT_UINT8,
-        "uint16"    : graph_pb2.DT_UINT16,  
+        "uint16"    : graph_pb2.DT_UINT16,
         "uint32"    : graph_pb2.DT_UINT32,
         "uint64"    : graph_pb2.DT_UINT64,
         "float16"   : graph_pb2.DT_FLOAT16,
@@ -33,12 +34,12 @@ class MXNetParser(Parser):
         "relu"      : "Relu",
         "sigmoid"   : "Sigmoid",
         "tanh"      : "Tanh",
-        # Not support yet 
+        # Not support yet
         # "softrelu"  : "SoftReLU"
     }
 
-    channels_last = ['NDHWC', 'NHWC']
-
+    channels_last = ['NDHWC', 'NHWC', 'NWC']
+    channels_first = ['NCDHW', 'NCHW', 'NCW']
 
     @property
     def src_graph(self):
@@ -58,7 +59,7 @@ class MXNetParser(Parser):
         else:
             return [int(s) for s in v.split(',')]
 
-        
+
     @staticmethod
     def transpose(data, dim):
         if dim == 1:
@@ -73,6 +74,17 @@ class MXNetParser(Parser):
         return data
 
 
+    @staticmethod
+    def _convert_axis(IR_node, axis):
+        ndim = len(IR_node.attr['_output_shapes'].list.shape[0].dim)
+        if axis == 0:
+            return 0
+        elif axis == 1:
+            return ndim - 1
+        else:
+            return axis - 1
+
+
     def trace_shape(self, source_node, IR_node):
         while (not IR_node.op == "Flatten"):
             IR_node = self.IR_layer_map[IR_node.input[0]]
@@ -80,10 +92,9 @@ class MXNetParser(Parser):
         input_shape = list()
         for e in IR_node.attr["_output_shapes"].list.shape[0].dim:
             input_shape.append(e.size)
-        C = input_shape[-1]
-        H = input_shape[1]
-        W = input_shape[2]
-        return C, H, W
+        C = input_shape.pop()
+        ret = [C] + input_shape[1:]
+        return ret
 
 
     def check_pad_mode(self, source_node, IR_node):
@@ -123,14 +134,14 @@ class MXNetParser(Parser):
         else:
             for e in self.IR_layer_map[IR_node.input[0]].attr["_output_shapes"].list.shape[0].dim:
                 input_shape.append(e.size)
- 
+
         valid_flag = True
         same_flag = True
 
         for i in range(dim):
             if not pad[i] == 0:
                 valid_flag = False
-            output_shape = int(math.floor(float(input_shape[i] + 2 * pad[i] - dilate[i] * (kernel[i] - 1) - 1) / float(stride[i])) + 1) 
+            output_shape = int(math.floor(float(input_shape[i] + 2 * pad[i] - dilate[i] * (kernel[i] - 1) - 1) / float(stride[i])) + 1)
             same_pad_shape = int(math.ceil(float(input_shape[i]) / float(stride[i])))
             if not output_shape == same_pad_shape:
                 same_flag = False
@@ -142,9 +153,7 @@ class MXNetParser(Parser):
         else:
             return "None"
 
-        # raise NotImplementedError
 
-        
     @staticmethod
     def _load_model(weights, epoch):
         """Load a mxnet model from disk
@@ -165,14 +174,14 @@ class MXNetParser(Parser):
         model: A mxnet model
         params: A pair of dictionaries each mapping parameter names to NDArray values
         """
-        
+
         # Load the model network and weights
         sym, arg_params, aux_params = mx.model.load_checkpoint(weights, int(epoch))
-        
+
         model = mx.mod.Module(symbol = sym)
         arg_params.update(aux_params)
         return model, arg_params
-        
+
         '''
         MXNet new api does not support load data without data_shapes
         '''
@@ -181,8 +190,6 @@ class MXNetParser(Parser):
 
         # mod.load(model_path, epoch_num)
         # return mod.get_params()
-        
-        # raise NotImplementedError
 
 
     @staticmethod
@@ -197,28 +204,26 @@ class MXNetParser(Parser):
         (Deleted)
         prefix: str
             prefix for json file, e.g. prefix-symbol.json
-        
+
         Returns
         -------
         data["nodes"]: all the layer information(including weights, bias) with format
-            data["nodes"][layer_num][params = {"name", "op", "attr", "inputs"}] 
+            data["nodes"][layer_num][params = {"name", "op", "attr", "inputs"}]
 
         """
         import json
 
         # load the model network
         with open(model_path, 'r') as data_file:
-            data = json.load(data_file)	
+            data = json.load(data_file)
 
         # adjust the data format
         assert isinstance(data["nodes"], list)
         return data["nodes"]
 
-        # raise NotImplementedError
-
 
     def __init__(self, input_arg):
-    
+
         super(MXNetParser, self).__init__()
 
         json_data = list()
@@ -233,7 +238,7 @@ class MXNetParser(Parser):
                 self.model = mx.mod.Module(symbol = symbol)
             json_data = MXNetParser._load_json_file(input_arg[0])
             self.data_shape = tuple([1] + list(map(int, input_arg[1])))
-        
+
         elif len(input_arg) == 4:
             self.model, self.weight_data = MXNetParser._load_model(input_arg[1], input_arg[2])
             json_data = MXNetParser._load_json_file(input_arg[0])
@@ -243,13 +248,11 @@ class MXNetParser(Parser):
 
         else:
             raise ValueError("the # of input arguments [{}] is not supported" % len(input_arg))
-        
+
         # Build network graph
         self.data_format = 'None'
         self.mxnet_graph = MXNetGraph(self.model)
         self.mxnet_graph.build(json_data)
-
-        # raise NotImplementedError
 
 
     def gen_IR(self):
@@ -265,9 +268,6 @@ class MXNetParser(Parser):
             else:
                 self.rename_UNKNOWN(current_node)
 
-        # for i, j in self.weights.items():
-        #     print ("parameter [{}] have weights [{}]".format(i, len(j)))
-
 
     def _copy_and_reop(self, source_node, IR_node, new_op = None):
         new_op = source_node.type if new_op == None else new_op
@@ -276,12 +276,6 @@ class MXNetParser(Parser):
         IR_node.name = source_node.real_name
         IR_node.op = new_op
         self.IR_layer_map[IR_node.name] = IR_node
-
-    
-    def _convert_inedge(self, source_node, IR_node, start_idx = 0, end_idx = None):        
-        if end_idx == None: end_idx = len(source_node.in_edges)        
-        for idx in range(start_idx, end_idx):
-            IR_node.input.append(self.src_graph.get_node(source_node.in_edges[idx]).real_name)
 
 
     def set_output_shape(self, source_node, IR_node):
@@ -307,7 +301,7 @@ class MXNetParser(Parser):
                             new_dim.size = -1
                         else:
                             new_dim.size = dim
-                        
+
                     IR_node.attr["_output_shapes"].list.shape.extend([shape])
                 break
 
@@ -322,10 +316,10 @@ class MXNetParser(Parser):
             self._copy_and_reop(source_node, IR_node, new_op)
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # output shape
-        self.set_output_shape(source_node, IR_node)        
+        self.set_output_shape(source_node, IR_node)
 
 
     def _defuse_padding(self, source_node):
@@ -333,12 +327,12 @@ class MXNetParser(Parser):
         IR_node.name = source_node.name + "_pad"
         IR_node.op = "Pad"
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         self.IR_layer_map[IR_node.name] = IR_node
 
         # attr
-        IR_node.attr["mode"].s = b"CONSTANT"
+        assign_IRnode_values(IR_node, {'mode' : 'CONSTANT'})
         # print("Warning: MXNet symbol pad does not support channel last")
 
         assert "attr" in source_node.layer or "param" in source_node.layer
@@ -350,18 +344,19 @@ class MXNetParser(Parser):
 
         assert "pad" in layer_attr
         pad = MXNetParser.str2intList(layer_attr.get("pad"))
-        IR_node.attr["paddings"].list.i.extend([0, 0])
+        args['pads'] = [0, 0]
         for e in pad:
-            IR_node.attr["paddings"].list.i.extend([e, e])
-        IR_node.attr["paddings"].list.i.extend([0, 0])
+            args['pads'].extend([e, e])
+        args['pads'] += [0, 0]
+        args['pads'] = convert_tf_pad_to_onnx(args['pads'])
+        IR_node.set_attrs(args)
+
+        # IR_node.attr["pads"].list.i.extend([0, 0])
+        # for e in pad:
+        #     IR_node.attr["pads"].list.i.extend([e, e])
+        # IR_node.attr["pads"].list.i.extend([0, 0])
 
         IR_node.attr["constant_values"].f = 0.
-
-        # output shape
-        # self.set_output_shape(source_node, IR_node)
-
-        # self.mxnet_graph.layer_name_map[source_node.name] = IR_node.name
-        # raise NotImplementedError
 
 
     @staticmethod
@@ -378,7 +373,7 @@ class MXNetParser(Parser):
 
 
     def rename_UNKNOWN(self, source_node):
-        print("Warning: MXNet Parser has not supported operator %s with name %s." 
+        print("Warning: MXNet Parser has not supported operator %s with name %s."
             % (source_node.type, source_node.name))
         if source_node.type == "null":
             print("Warning: convert the null operator with name [%s] into input layer." % source_node.name)
@@ -388,11 +383,10 @@ class MXNetParser(Parser):
             self._copy_and_reop(source_node, IR_node, "DataInput")
 
             # input edge
-            self._convert_inedge(source_node, IR_node)
+            self.convert_inedge(source_node, IR_node)
 
             self.set_output_shape(source_node, IR_node)
-        return 
-        # raise NotImplementedError
+        return
 
 
     """
@@ -406,7 +400,7 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "FullyConnected")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # attr
         assert "attr" in source_node.layer or "param" in source_node.layer
@@ -416,7 +410,7 @@ class MXNetParser(Parser):
         elif "param" in source_node.layer:
             layer_attr = source_node.layer["param"]
 
-        # units 
+        # units
         IR_node.attr["units"].i = int(layer_attr.get("num_hidden"))
 
         # use bias (no_bias default = False)
@@ -431,31 +425,31 @@ class MXNetParser(Parser):
                 self.set_weight(source_node.name, "weights", self.weight_data.get(source_node.name + "_weight").asnumpy().transpose((1, 0)))
             else:
                 weight = self.weight_data.get(source_node.name + "_weight").asnumpy().transpose((1, 0))
-                input_channel, input_height, input_width = self.trace_shape(source_node, IR_node)
-                output_shape = int(layer_attr.get("num_hidden"))
-                weight = weight.reshape((input_channel, input_height, input_width, output_shape))
-                weight = weight.transpose((1, 2, 0, 3))
-                weight = weight.reshape((input_channel* input_height* input_width, output_shape))
+                original_shape = weight.shape
+                channel_first_list = self.trace_shape(source_node, IR_node)
+                dim = len(channel_first_list) + 1
+                weight = weight.reshape(channel_first_list + [original_shape[1]])
+                assert dim > 2
+                weight = weight.transpose(list(range(1, dim-1)) + [0, dim-1])
+                weight = weight.reshape(original_shape)
                 self.set_weight(source_node.name, "weights", weight)
 
             if IR_node.attr["use_bias"].b:
                 self.set_weight(source_node.name, "bias", self.weight_data.get(source_node.name + "_bias").asnumpy())
-        
+
         if not self.data_format == 'NM':
             # print("Warning: Layer [{}] has changed model data format from [{}] to [NM]".format(source_node.name, self.data_format))
             self.data_format = 'NM'
-
-        # raise NotImplementedError
 
 
     def rename_Convolution(self, source_node):
         IR_node = self.IR_graph.node.add()
 
-        # name, op
-        self._copy_and_reop(source_node, IR_node, "Convolution")
-
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
+
+        # output shape
+        self.set_output_shape(source_node, IR_node)
 
         dim = 0
         layout = 'None'
@@ -467,13 +461,12 @@ class MXNetParser(Parser):
         elif "param" in source_node.layer:
             layer_attr = source_node.layer["param"]
 
-        # filter
+        # kernel_shape
         assert "kernel" in layer_attr
         kernel = MXNetParser.str2intList(layer_attr.get("kernel"))
         dim = len(kernel)
-        IR_node.attr["filter"].list.i.extend(kernel)
+        IR_node.attr["kernel_shape"].list.i.extend(kernel)
 
-        in_channel = 0
         layout = layer_attr.get("layout")
         if layout == None or layout == 'None':
             if dim == 1:
@@ -485,18 +478,14 @@ class MXNetParser(Parser):
 
         if not self.data_format == layout:
             # print("Warning: Layer [{}] has changed model data format from [{}] to [{}]".format(source_node.name, self.data_format, layout))
-            self.data_format = layout.encode('utf-8')
+            self.data_format = layout
 
-        if self.weight_loaded:
-            if layout in MXNetParser.channels_last:
-                in_channel = self.weight_data.get(source_node.name + "_weight").shape[-1]
-            else:
-                in_channel = self.weight_data.get(source_node.name + "_weight").shape[1]
+        in_channel = self.IR_layer_map[IR_node.input[0]].attr["_output_shapes"].list.shape[0].dim[-1].size
 
         assert "num_filter" in layer_attr
         out_channel = int(layer_attr.get("num_filter"))
 
-        IR_node.attr["filter"].list.i.extend([in_channel, out_channel])
+        IR_node.attr["kernel_shape"].list.i.extend([in_channel, out_channel])
 
         # use_bias (no_bias default = False)
         IR_node.attr["use_bias"].b = not MXNetParser.str2bool(layer_attr.get("no_bias", "False"))
@@ -510,36 +499,26 @@ class MXNetParser(Parser):
 
         # dilations
         dilate = layer_attr.get("dilate")
-        IR_node.attr["dilation_rate"].list.i.append(1)
+        IR_node.attr["dilations"].list.i.append(1)
         if not dilate == None:
-            IR_node.attr["dilation_rate"].list.i.extend(MXNetParser.str2intList(dilate))
-        IR_node.attr["dilation_rate"].list.i.append(1)
+            IR_node.attr["dilations"].list.i.extend(MXNetParser.str2intList(dilate))
+        IR_node.attr["dilations"].list.i.append(1)
 
         # data_format
-        IR_node.attr["data_format"].s = layout.encode()
+        assign_IRnode_values(IR_node, {'data_format' : layout})
+
+        # groups
+        group = int(layer_attr.get("num_group", "1"))
+        IR_node.attr["group"].i = group
+        if group == in_channel:
+            self._copy_and_reop(source_node, IR_node, "DepthwiseConv")
+        else:
+            self._copy_and_reop(source_node, IR_node, "Conv")
 
         # padding
-        # IR only support pad = "SAME" or "VALID"
-        # Using Padding Layer API
         if "pad" in layer_attr:
-            # pad = self.check_pad_mode(source_node, IR_node)
-            # if pad == "SAME":
-            #     IR_node.attr["padding"].s = b"SAME"
-            # elif pad == "VALID":
-            #     IR_node.attr["padding"].s = b"VALID"
-            # else:
-            #     self._defuse_padding(source_node)
-            #     del IR_node.input[:]
-            #     IR_node.input.append(source_node.name + "_pad")
-
-            IR_node.attr["padding"].s = b"VALID"
-            self._defuse_padding(source_node)
-            del IR_node.input[:]
-            IR_node.input.append(source_node.name + "_pad")
-
-
-        # output shape
-        self.set_output_shape(source_node, IR_node)
+            pad = MXNetParser.str2intList(layer_attr.get("pad"))
+            IR_node.attr["pads"].list.i.extend(([0]+pad+[0])*2)
 
         # weights
         if self.weight_loaded:
@@ -547,24 +526,13 @@ class MXNetParser(Parser):
             if not layout in MXNetParser.channels_last:
                 weight = MXNetParser.transpose(weight, dim)
             self.set_weight(source_node.name, "weights", weight)
-            
+
             if IR_node.attr["use_bias"].b:
                 self.set_weight(source_node.name, "bias", self.weight_data.get(source_node.name + "_bias").asnumpy())
-        
-        # raise NotImplementedError
 
 
     def rename_Activation(self, source_node):
         IR_node = self.IR_graph.node.add()
-
-        # if source_node.layer.act_type == "relu":
-        #     MXNetParser._copy_and_reop(source_node, IR_node, "Relu")
-        # elif source_node.layer.act_type == "sigmoid":
-        #     MXNetParser._copy_and_reop(source_node, IR_node, "Sigmoid")
-        # elif source_node.layer.act_type == "tanh":
-        #     MXNetParser._copy_and_reop(source_node, IR_node, "Tanh")
-        # elif source_node.layer.act_type == "softrelu":
-        #     MXNetParser._copy_and_reop(source_node, IR_node, "SoftReLU")
 
         assert "attr" in source_node.layer or "param" in source_node.layer
         layer_attr = dict()
@@ -580,9 +548,7 @@ class MXNetParser(Parser):
         # output shape
         self.set_output_shape(source_node, IR_node)
 
-        self._convert_inedge(source_node, IR_node)
-        
-        # raise NotImplementedError
+        self.convert_inedge(source_node, IR_node)
 
 
     def rename_BatchNorm(self, source_node):
@@ -592,7 +558,10 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "BatchNorm")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
+
+        # output shape
+        self.set_output_shape(source_node, IR_node)
 
         layer_attr = dict()
         if "attr" in source_node.layer:
@@ -601,10 +570,10 @@ class MXNetParser(Parser):
             layer_attr = source_node.layer["param"]
 
         # axis
-        # if self.data_format not in MXNetParser.channels_last: 
-        # 	IR_node.attr["axis"].i = int(layer_attr.get("axis", "1"))
-        # else:
-        IR_node.attr["axis"].i = -1
+        if self.data_format in MXNetParser.channels_first or self.data_format == 'None':
+            IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("axis", "1")))
+        else:
+            IR_node.attr["axis"].i = int(layer_attr.get("axis", "1"))
 
         # scale
         IR_node.attr["scale"].b = not MXNetParser.str2bool(layer_attr.get("fix_gamma", "True"))
@@ -615,12 +584,8 @@ class MXNetParser(Parser):
         # momentum
         IR_node.attr["momentum"].f = float(layer_attr.get("momentum", "0.9"))
 
-        # output shape
-        self.set_output_shape(source_node, IR_node)
-
         # weights
         if self.weight_loaded:
-
             # gamma
             if IR_node.attr["scale"].b:
                 self.set_weight(source_node.name, "scale", self.weight_data.get(source_node.name + "_gamma").asnumpy())
@@ -635,8 +600,6 @@ class MXNetParser(Parser):
 
             # var
             self.set_weight(source_node.name, "var", self.weight_data.get(source_node.name + "_moving_var").asnumpy())
-        
-        # raise NotImplementedError("bool type for scale and offset")
 
 
     def rename_Pooling(self, source_node):
@@ -646,7 +609,7 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "Pool")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         layer_attr = dict()
         if "attr" in source_node.layer:
@@ -657,21 +620,21 @@ class MXNetParser(Parser):
         # pooling type (sum not allowed yet)
         pool_type = layer_attr.get("pool_type")
         if pool_type == "sum":
-            print("Warning: sum pooling is not supported yet.")	
+            print("Warning: sum pooling is not supported yet.")
         elif pool_type == "max":
-            IR_node.attr['pooling_type'].s = b"MAX"
+            assign_IRnode_values(IR_node, {'pooling_type' : 'MAX'})
         elif pool_type == "avg":
-            IR_node.attr['pooling_type'].s = b"AVG"
+            assign_IRnode_values(IR_node, {'pooling_type' : 'AVG'})
         else:
             raise ValueError("Error pool_type {}.".format(pool_type))
 
         assert "kernel" in layer_attr
-        window_shape = MXNetParser.str2intList(layer_attr.get("kernel"))
+        kernel_shape = MXNetParser.str2intList(layer_attr.get("kernel"))
 
         if MXNetParser.str2bool(layer_attr.get("global_pool", "False")):
             IR_node.attr['global_pooling'].b = True
-            IR_node.attr["window_shape"].list.i[:] = [1] * (len(window_shape) + 2)
-            IR_node.attr["strides"].list.i[:] = [1] * (len(window_shape) + 2)
+            IR_node.attr["kernel_shape"].list.i[:] = [1] * (len(kernel_shape) + 2)
+            IR_node.attr["strides"].list.i[:] = [1] * (len(kernel_shape) + 2)
         else:
             IR_node.attr['global_pooling'].b = False
 
@@ -682,34 +645,18 @@ class MXNetParser(Parser):
                 IR_node.attr["strides"].list.i.extend(MXNetParser.str2intList(strides))
             IR_node.attr["strides"].list.i.append(1)
 
-            # window_shape
-            IR_node.attr["window_shape"].list.i.append(1)
-            IR_node.attr["window_shape"].list.i.extend(window_shape)
-            IR_node.attr["window_shape"].list.i.append(1)
+            # kernel_shape
+            IR_node.attr["kernel_shape"].list.i.append(1)
+            IR_node.attr["kernel_shape"].list.i.extend(kernel_shape)
+            IR_node.attr["kernel_shape"].list.i.append(1)
 
             # padding
-            # IR only support pad = "SAME" or "Valid"
             if "pad" in layer_attr:
-                # pad = self.check_pad_mode(source_node, IR_node)
-                # if pad == b"SAME":
-                #     IR_node.attr["padding"].s = b"SAME"
-                # elif pad == b"VALID":
-                #     IR_node.attr["padding"].s = b"VALID"
-                # else:
-                #     IR_node.attr["padding"].s = b"VALID"
-                #     self._defuse_padding(source_node)
-                #     del IR_node.input[:]
-                #     IR_node.input.append(source_node.name + "_pad")
-            
-                IR_node.attr["padding"].s = b"VALID"
-                self._defuse_padding(source_node)
-                del IR_node.input[:]
-                IR_node.input.append(source_node.name + "_pad")
+                pad = MXNetParser.str2intList(layer_attr.get("pad"))
+                IR_node.attr["pads"].list.i.extend(([0]+pad+[0])*2)
 
         # output shape
         self.set_output_shape(source_node, IR_node)
-
-        # raise NotImplementedError
 
 
     def rename_SoftmaxOutput(self, source_node):
@@ -719,15 +666,13 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "Softmax")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         if "attr" in source_node.layer or "param" in source_node.layer:
             print("Warning: SoftmaxOutput attrs are not supported in IR.")
-        
+
         # output shape
         self.set_output_shape(source_node, IR_node)
-
-        # raise NotImplementedError
 
 
     def rename_softmax(self, source_node):
@@ -737,7 +682,7 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "Softmax")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         layer_attr = dict()
         if "attr" in source_node.layer:
@@ -746,12 +691,13 @@ class MXNetParser(Parser):
             layer_attr = source_node.layer["param"]
 
         # dim
-        IR_node.attr["dim"].i = int(layer_attr.get("axis", "-1"))
+        if self.data_format in MXNetParser.channels_first or self.data_format == 'None':
+            IR_node.attr["dim"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("axis", "-1")))
+        else:
+            IR_node.attr["dim"].i = int(layer_attr.get("axis", "-1"))
 
         # output shape
         self.set_output_shape(source_node, IR_node)
-
-        # raise NotImplementedError
 
 
     # def rename_log_softmax(self, source_node):
@@ -766,10 +712,10 @@ class MXNetParser(Parser):
         IR_node = self.IR_graph.node.add()
 
         # name, op
-        self._copy_and_reop(source_node, IR_node, "Deconvolution")
+        self._copy_and_reop(source_node, IR_node, "ConvTranspose")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         dim = 0
         layout = 'None'
@@ -781,30 +727,18 @@ class MXNetParser(Parser):
 
         # padding
         if "pad" in layer_attr:
-            # pad = self.check_pad_mode(source_node, IR_node)
-            # if pad == "SAME":
-            #     IR_node.attr["padding"].s = "SAME"
-            # elif pad == "VALID":
-            #     IR_node.attr["padding"].s = "VALID"
-            # else:
-            #     self._defuse_padding(source_node)
-            #     del IR_node.input[:]
-            #     IR_node.input.append(source_node.name + "_pad")
-            IR_node.attr["padding"].s = b"VALID"
-            self._defuse_padding(source_node)
-            del IR_node.input[:]
-            IR_node.input.append(source_node.name + "_pad")
+            pad = MXNetParser.str2intList(layer_attr.get("pad"))
+            IR_node.attr["pads"].list.i.extend(([0]+pad+[0])*2)
 
         # output shape
         self.set_output_shape(source_node, IR_node)
 
-        # filter
+        # kernel_shape
         assert "kernel" in layer_attr
         kernel = MXNetParser.str2intList(layer_attr.get("kernel"))
         dim = len(kernel)
-        IR_node.attr["filter"].list.i.extend(kernel)
+        IR_node.attr["kernel_shape"].list.i.extend(kernel)
 
-        in_channel = 0
         layout = layer_attr.get("layout")
         if layout == None or layout == 'None':
             if dim == 1:
@@ -816,18 +750,14 @@ class MXNetParser(Parser):
 
         if not self.data_format == layout:
             # print("Warning: Layer [{}] has changed model data format from [{}] to [{}]".format(source_node.name, self.data_format, layout))
-            self.data_format = layout.encode()
-        
-        if self.weight_loaded:
-            if layout in MXNetParser.channels_last:
-                in_channel = self.weight_data.get(source_node.name + "_weight").shape[-1]
-            else:
-                in_channel = self.weight_data.get(source_node.name + "_weight").shape[1]
+            self.data_format = layout
+
+        in_channel = self.IR_layer_map[IR_node.input[0]].attr["_output_shapes"].list.shape[0].dim[-1].size
 
         assert "num_filter" in layer_attr
         out_channel = int(layer_attr.get("num_filter"))
 
-        IR_node.attr["filter"].list.i.extend([out_channel, in_channel])
+        IR_node.attr["kernel_shape"].list.i.extend([out_channel, in_channel])
 
         # use_bias (no_bias default = False)
         IR_node.attr["use_bias"].b = not MXNetParser.str2bool(layer_attr.get("no_bias", "False"))
@@ -841,13 +771,16 @@ class MXNetParser(Parser):
 
         # dilations
         dilate = layer_attr.get("dilate")
-        IR_node.attr["dilation_rate"].list.i.append(1)
+        IR_node.attr["dilations"].list.i.append(1)
         if not dilate == None:
-            IR_node.attr["dilation_rate"].list.i.extend(MXNetParser.str2intList(dilate))
-        IR_node.attr["dilation_rate"].list.i.append(1)
+            IR_node.attr["dilations"].list.i.extend(MXNetParser.str2intList(dilate))
+        IR_node.attr["dilations"].list.i.append(1)
 
         # data_format
         IR_node.attr["data_format"].s = layout
+
+        # groups
+        IR_node.attr["group"].i = int(layer_attr.get("num_group", "1"))
 
         # weights
         if self.weight_loaded:
@@ -858,8 +791,6 @@ class MXNetParser(Parser):
 
             if IR_node.attr["use_bias"].b:
                 self.set_weight(source_node.name, "bias", self.weight_data.get(source_node.name + "_bias").asnumpy())
-
-        # raise NotImplementedError
 
 
     # def rename_RNN(self, source_node):
@@ -873,7 +804,7 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node)
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # attr
         layer_attr = dict()
@@ -893,8 +824,6 @@ class MXNetParser(Parser):
 
         # output shape
         self.set_output_shape(source_node, IR_node)
-
-        # raise NotImplementedError
 
 
     # IR only support elu from {'elu', 'leaky', 'prelu', 'rrelu'}
@@ -916,14 +845,14 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "Elu")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # attr
         layer_attr = source_node.layer["attr"]
 
         # alpha [exp(x) - alpha], but mxnet attr slope [slope*(exp(x) - 1)] when x < 0
         if "slope" in layer_attr:
-            print("Warning: Attribute Slope cannot convert into IR format.")
+            raise ValueError("Attribute Slope is not supported in IR format")
         # IR_node.attr["alpha"].f = float()
 
         # output shape
@@ -947,7 +876,7 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "LRN")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         layer_attr = dict()
         if "attr" in source_node.layer:
@@ -969,7 +898,6 @@ class MXNetParser(Parser):
         self.set_output_shape(source_node, IR_node)
 
 
-
     # def rename_ROIPooling(self, source_node):
     #   raise NotImplementedError
 
@@ -981,7 +909,7 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "Dropout")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         layer_attr = dict()
         if "attr" in source_node.layer:
@@ -993,12 +921,10 @@ class MXNetParser(Parser):
         IR_node.attr["keep_prob"].f = float(layer_attr.get("p", "0.5"))
 
         # mode
-        IR_node.attr["mode"].s = layer_attr.get("mode", "training").encode()
+        assign_IRnode_values(IR_node, {'mode' : 'training'})
 
         # output shape
         self.set_output_shape(source_node, IR_node)
-
-        # raise NotImplementedError
 
 
     """
@@ -1013,7 +939,7 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "Reshape")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         layer_attr = dict()
         if "attr" in source_node.layer:
@@ -1027,7 +953,7 @@ class MXNetParser(Parser):
             shape_list = MXNetParser.str2intList(shape)
             for param in shape_list:
                 if param <= 0 and not param == -1:
-                    print("Warning: special value %d for Reshape is not pre-defined in IR." % param)
+                    raise ValueError("special value %d for Reshape is not pre-defined in IR." % param)
             IR_node.attr["shape"].list.i.extend(shape_list)
 
         # output shape
@@ -1043,25 +969,10 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "Flatten")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # output shape
         self.set_output_shape(source_node, IR_node)
-
-        # IR_node.attr["data_format"].s = self.data_format
-
-        # raise NotImplementedError
-
-
-    @staticmethod
-    def _convert_axis(IR_node, axis):
-        ndim = len(IR_node.attr['_output_shapes'].list.shape[0].dim)
-        if axis == 0:
-            return 0
-        elif axis == 1:
-            return ndim - 1
-        else:
-            return axis - 1
 
 
     def rename_Concat(self, source_node):
@@ -1074,7 +985,7 @@ class MXNetParser(Parser):
         self.set_output_shape(source_node, IR_node)
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # attr
         layer_attr = dict()
@@ -1083,8 +994,11 @@ class MXNetParser(Parser):
         elif "param" in source_node.layer:
             layer_attr = source_node.layer["param"]
 
-        # dim 
-        IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("dim", "1")))
+        # dim
+        if self.data_format in MXNetParser.channels_first or self.data_format == 'None':
+            IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("dim", "1")))
+        else:
+            IR_node.attr["axis"].i = int(layer_attr.get("dim", "1"))
 
 
     def rename_cast(self, source_node):
@@ -1094,7 +1008,7 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node, "Cast")
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
 
         # attr
         assert "attr" in source_node.layer or "param" in source_node.layer
@@ -1110,8 +1024,6 @@ class MXNetParser(Parser):
         # output shape
         self.set_output_shape(source_node, IR_node)
 
-        # raise NotImplementedError
-
 
     def rename_expand_dims(self, source_node):
         IR_node = self.IR_graph.node.add()
@@ -1120,7 +1032,10 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node)
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
+        self.convert_inedge(source_node, IR_node)
+
+        # output shape
+        self.set_output_shape(source_node, IR_node)
 
         # attr
         assert "attr" in source_node.layer or "param" in source_node.layer
@@ -1131,17 +1046,15 @@ class MXNetParser(Parser):
             layer_attr = source_node.layer["param"]
 
         # axis
-        IR_node.attr["axis"].i = int(layer_attr.get("axis"))
-
-        # output shape
-        self.set_output_shape(source_node, IR_node)
-
-        # raise NotImplementedError
+        if self.data_format in MXNetParser.channels_first or self.data_format == 'None':
+            IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(layer_attr.get("axis")))
+        else:
+            IR_node.attr["axis"].i = int(layer_attr.get("axis"))
 
 
     def rename_elemwise_add(self, source_node):
         self._convert_arithmetic(source_node, 'Add')
-        
+
 
     def rename__Plus(self, source_node):
         self._convert_arithmetic(source_node, 'Add')
@@ -1149,11 +1062,11 @@ class MXNetParser(Parser):
 
     def rename_broadcast_add(self, source_node):
         self._convert_arithmetic(source_node, 'Add')
-        
+
 
     def rename_broadcast_mul(self, source_node):
         self._convert_arithmetic(source_node, 'Mul')
-        
+
 
     def rename__mul(self, source_node):
         self._convert_arithmetic(source_node, 'Mul')
@@ -1166,8 +1079,8 @@ class MXNetParser(Parser):
         self._copy_and_reop(source_node, IR_node)
 
         # input edge
-        self._convert_inedge(source_node, IR_node)
-        
+        self.convert_inedge(source_node, IR_node)
+
         # output shape
         self.set_output_shape(source_node, IR_node)
 

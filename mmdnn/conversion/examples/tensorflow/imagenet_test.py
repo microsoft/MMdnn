@@ -14,6 +14,9 @@ class TestTF(TestKit):
 
     def __init__(self):
         super(TestTF, self).__init__()
+
+        self.truth['mxnet']['resnet152-11k'] = [(1278, 0.49070787), (1277, 0.21392652), (282, 0.12979421), (1282, 0.066355646), (1224, 0.022040566)]
+
         self.input, self.model = self.MainModel.KitModel(self.args.w)
         # self.input, self.model, self.testop = self.MainModel.KitModel(self.args.w)
 
@@ -28,10 +31,10 @@ class TestTF(TestKit):
             init = tf.global_variables_initializer()
             sess.run(init)
             predict = sess.run(self.model, feed_dict = {self.input : self.data})
-        
+
         super(TestTF, self).print_result(predict)
-        
-    
+
+
     def print_intermediate_result(self, layer_name, if_transpose = False):
         # testop = tf.get_default_graph().get_operation_by_name(layer_name)
         testop = self.testop
@@ -39,22 +42,22 @@ class TestTF(TestKit):
             init = tf.global_variables_initializer()
             sess.run(init)
             intermediate_output = sess.run(testop, feed_dict = {self.input : self.data})
-        
+
         super(TestTF, self).print_intermediate_result(intermediate_output, if_transpose)
 
-    
+
     def inference(self, image_path):
         self.preprocess(image_path)
-        
+
         # self.print_intermediate_result('conv1_7x7_s2_1', True)
-        
+
         self.print_result()
-        
+
         self.test_truth()
 
 
     def dump(self, path = None):
-        if path is None: path = self.args.dump        
+        if path is None: path = self.args.dump
         with tf.Session() as sess:
             init = tf.global_variables_initializer()
             sess.run(init)
@@ -64,7 +67,7 @@ class TestTF(TestKit):
                 save_path, self.args.n, self.args.w))
 
 
-if __name__=='__main__':       
+if __name__=='__main__':
     tester = TestTF()
     if tester.args.dump:
         tester.dump()

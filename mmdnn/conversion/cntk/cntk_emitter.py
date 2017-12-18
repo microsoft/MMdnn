@@ -250,10 +250,10 @@ def KitModel(weight_file = None):
 
 
     def emit_Reshape(self, IR_node):
-        self.add_body(1, "{:<15} = cntk.reshape({}, shape=({},), name='{}')".format(
+        self.add_body(1, "{:<15} = cntk.reshape({}, shape={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            ', '.join('%s' % i for i in IR_node.get_attr('shape')),
+            tuple(IR_node.get_attr('shape')),
             IR_node.name))
 
 

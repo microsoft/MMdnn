@@ -39,7 +39,8 @@ class TestKit(object):
             'vgg19'          : [(21, 0.54552644), (144, 0.19179004), (23, 0.066389613), (22, 0.022819581), (128, 0.02271222)],
             'resnet'         : [(21, 0.84012794), (144, 0.097428247), (23, 0.039757393), (146, 0.010432643), (99, 0.0023797606)],
             'squeezenet'     : [(21, 0.36026478), (128, 0.084114805), (835, 0.07940048), (144, 0.057378717), (749, 0.053491514)],
-            'inception_bn'   : [(21, 0.84332663), (144, 0.041747514), (677, 0.021810319), (973, 0.02054958), (115, 0.008529461)]
+            'inception_bn'   : [(21, 0.84332663), (144, 0.041747514), (677, 0.021810319), (973, 0.02054958), (115, 0.008529461)],
+            'resnet152-11k'  : [(1278, 0.49073416), (1277, 0.21393695), (282, 0.12980066), (1282, 0.0663582), (1224, 0.022041745)]
         },
         'pytorch' :{
             'resnet152' : [(21, 13.080057), (141, 12.32998), (94, 9.8761454), (146, 9.3761511), (143, 8.9194641)],
@@ -78,7 +79,8 @@ class TestKit(object):
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
             'resnet'        : lambda path : TestKit.Identity(path, 224, True),
             'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'inception_bn'  : lambda path : TestKit.Identity(path, 224, False)
+            'inception_bn'  : lambda path : TestKit.Identity(path, 224, False),
+            'resnet152-11k' : lambda path : TestKit.Identity(path, 224, True)
         },
 
         'pytorch' : {
@@ -103,9 +105,8 @@ class TestKit(object):
                             help='Network weights file name')
 
         parser.add_argument('--image', '-i',
-            type = _text_type,
-            default = "mmdnn/conversion/examples/data/seagull.jpg",
-            help = 'Test image path.'
+                            type=_text_type, help='Test image path.',
+                            default="mmdnn/conversion/examples/data/seagull.jpg"
         )
 
         parser.add_argument('--dump',
@@ -208,5 +209,5 @@ class TestKit(object):
 '''
 if __name__=='__main__':
     tester = TestKit()
-    tester.inference('examples/data/elephant.jpg')
+    tester.inference('examples/data/seagull.jpg')
 '''
