@@ -4,7 +4,6 @@
 #----------------------------------------------------------------------------------------------
 
 import os
-
 import numpy as np
 from six import string_types as _string_types
 from mmdnn.conversion.common.IR.IR_graph import IRGraph, IRGraphNode

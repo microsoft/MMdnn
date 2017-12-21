@@ -5,45 +5,44 @@ from six import text_type as _text_type
 
 
 def _convert(args):
-    if args.dstModelFormat == 'caffe':
+    if args.framework == 'caffe':
         raise NotImplementedError("Destination [Caffe] is not implemented yet.")
 
-    elif args.dstModelFormat == 'keras':
-        from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
-        emitter = Keras2Emitter(args.IRModelPath)
+    elif args.framework == 'keras':
+        raise NotImplementedError("Destination [Keras] is not implemented yet.")
 
-    elif args.dstModelFormat == 'tensorflow':
-        from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
-        if args.IRWeightPath == None:
-            emitter = TensorflowEmitter(args.IRModelPath)
-        else:
-            emitter = TensorflowEmitter((args.IRModelPath, args.IRWeightPath))
+    elif args.framework == 'tensorflow':
+        raise NotImplementedError("Destination [Tensorflow] is not implemented yet.")
 
-    elif args.dstModelFormat == 'cntk':
-        from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
-        if args.IRWeightPath == None:
-            emitter = CntkEmitter(args.IRModelPath)
-        else:
-            emitter = CntkEmitter((args.IRModelPath, args.IRWeightPath))
+    elif args.framework == 'cntk':
+        raise NotImplementedError("Destination [Tensorflow] is not implemented yet.")
 
-    elif args.dstModelFormat == 'coreml':
-        raise NotImplementedError("CoreML emitter is not finished yet.")
-        assert args.IRWeightPath != None
+    elif args.framework == 'coreml':
         from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
-        emitter = CoreMLEmitter((args.IRModelPath, args.IRWeightPath))
-        model = emitter.gen_model()
-        print ("Saving the CoreML model [{}].".format(args.dstModelPath + '.mlmodel'))
-        model.save(args.dstModelPath + '.mlmodel')
-        print ("The converted CoreML model saved as [{}].".format(args.dstModelPath + '.mlmodel'))
+        assert args.inputNetwork is not None
+        assert args.inputWeight is not None
+        emitter = CoreMLEmitter(args.inputNetwork, args.inputWeight)
+        emitter.gen_model(
+            args.inputNames,
+            args.outputNames,
+            image_input_names = set(args.imageInputNames) if args.imageInputNames else None,
+            is_bgr = args.isBGR,
+            red_bias = args.redBias,
+            blue_bias = args.blueBias,
+            green_bias = args.greenBias,
+            gray_bias = args.grayBias,
+            image_scale = args.scale,
+            class_labels = args.classInputPath if args.classInputPath else None,
+            predicted_feature_name = args.predictedFeatureName)
         return 0
 
-    elif args.dstModelFormat == 'pytorch':
+    elif args.framework == 'pytorch':
         if not args.dstWeightPath or not args.IRWeightPath:
             raise ValueError("Need to set a target weight filename.")
         from mmdnn.conversion.pytorch.pytorch_emitter import PytorchEmitter
         emitter = PytorchEmitter((args.IRModelPath, args.IRWeightPath))
 
-    elif args.dstModelFormat == 'mxnet':
+    elif args.framework == 'mxnet':
         from mmdnn.conversion.mxnet.mxnet_emitter import MXNetEmitter
         if args.IRWeightPath == None:
             emitter = MXNetEmitter(args.IRModelPath)
@@ -53,7 +52,7 @@ def _convert(args):
     else:
         assert False
 
-    emitter.run(args.dstModelPath, args.dstWeightPath, args.phase)
+    emitter.run(args.output)
 
     return 0
 
@@ -62,12 +61,6 @@ def _main():
     import argparse
 
     parser = argparse.ArgumentParser(description='Convert IR model file formats to other format.')
-
-    # For Caffe
-    parser.add_argument(
-        '--phase', type=_text_type, choices=['train', 'test'], default='test',
-        help='Convert phase (train/test) for destination toolkits.'
-    )
 
     parser.add_argument(
         '-f', '--framework', type=_text_type, choices=['coreml'], required=True,
@@ -91,6 +84,12 @@ def _main():
         type=_text_type,
         required=True,
         help='Path to save the destination model')
+
+    # Caffe
+    parser.add_argument(
+        '--phase', type=_text_type, choices=['train', 'test'], default='test',
+        help='[Caffe] Convert phase (train/test) for destination toolkits.'
+    )
 
     # For CoreML
     parser.add_argument('--inputNames', type=_text_type, nargs='*', help='Names of the feature (input) columns, in order (required for keras models).')
