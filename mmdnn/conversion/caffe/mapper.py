@@ -206,12 +206,12 @@ class NodeMapper(object):
 
     @classmethod
     def map_abs_val(cls, node):
-        return Node.create('abs_val')
+        return Node.create('Abs')
 
     @classmethod
     def map_tanh(cls, node):
-        return Node.create('tanh')
+        return Node.create('Tanh')
 
     @classmethod
     def map_sigmoid(cls, node):
-        return Node.create('sigmoid')
+        return Node.create('Sigmoid')

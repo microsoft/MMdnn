@@ -17,16 +17,16 @@ class GraphNode(object):
 
     @property
     def variable_name(self):
-        return self.name.replace('/', '_')
+        return self.name.replace('/', '_').replace('-', '_')
 
     @property
     def real_variable_name(self):
-        return self.real_name.replace('/', '_')
+        return self.real_name.replace('/', '_').replace('-', '_')
 
 
 
 class Graph(object):
-     
+
     def __init__(self, model):
         # key: layer_name    value: keras layer
         self.layer_map = {}
@@ -36,7 +36,7 @@ class Graph(object):
         self.topological_sort = list()
         self.model = model
 
- 
+
     def build(self):
         self._make_input_layers()
         self._make_output_layers()
@@ -56,19 +56,19 @@ class Graph(object):
                 self.output_layers.append(name)
 
 
-    
+
     def get_node(self, name):
         if not name in self.layer_map:
             print ("Error: Graph doesn't have node [%s]." % name)
             return None
         else:
             return self.layer_map[name]
-          
+
 
     def get_son(self, name, path, set_flag = False):
         if name == None: return None
-        current_node = self.get_node(name)        
-        for idx in path:            
+        current_node = self.get_node(name)
+        for idx in path:
             if len(current_node.out_edges) <= idx: return None
             son_name = current_node.out_edges[idx]
             current_node = self.get_node(son_name)
@@ -99,7 +99,7 @@ class Graph(object):
                 current_node.covered = True
         return self.layer_name_map[current_node.name]
 
-    
+
     # private functions
     def _get_topological_sort(self):
         self.topological_sort = self.input_layers[:]
