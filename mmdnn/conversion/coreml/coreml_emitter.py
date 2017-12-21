@@ -1,12 +1,18 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+#----------------------------------------------------------------------------------------------
+#  Copyright (c) Microsoft Corporation. All rights reserved.
+#  Licensed under the MIT License. See License.txt in the project root for license information.
+#----------------------------------------------------------------------------------------------
 
 import os
 
-from dlconv.common.IR.IR_graph import IRGraph, IRGraphNode
-import dlconv.common.graph_pb2 as graph_pb2
-from dlconv.common.graph_pb2 import NodeDef, GraphDef, DataType
+import os
+import numpy as np
+from six import string_types as _string_types
+from mmdnn.conversion.common.IR.IR_graph import IRGraph, IRGraphNode
+import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
+from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
+from mmdnn.conversion.common.DataStructure.emitter import Emitter
+from mmdnn.conversion.common.utils import *
 
 from coremltools.models.neural_network import NeuralNetworkBuilder as _NeuralNetworkBuilder
 from coremltools.models import datatypes
@@ -16,7 +22,7 @@ from coremltools.models.utils import save_spec as _save_spec
 
 
 class CoreMLEmitter(object):
-   
+
     dtype_map = {
         graph_pb2.DT_FLOAT16 : "np.float16",
         graph_pb2.DT_FLOAT32 : "np.float32",
@@ -29,21 +35,22 @@ class CoreMLEmitter(object):
         }
 
 
-    def __init__(self, model):
-        from six import string_types as _string_types
-        if isinstance(model, _string_types):
-            assert False
-        else:
-            network_path = model[0]
-            weight_path = model[1]
-
+    def __init__(self, architecture, weight):
         import numpy as np
-        self.IR_graph = IRGraph(network_path)
-        self.IR_graph.build()
-        self.weights = np.load(weight_path).item()
+        super(CoreMLEmitter, self).__init__()
+        if os.path.exists(architecture) == False:
+            assert ValueError("IR architecture file [{}] is not found.".format(architecture))
+        else:
+            self.IR_graph = IRGraph(architecture)
+            self.IR_graph.build()
+
+        if os.path.exists(weight) == False:
+            assert ValueError("IR weight file [{}] is not found.".format(weight))
+        else:
+            self._load_weights(weight_path)
 
 
-    def _get_builder(self, is_classifier = True):
+    def _get_builder(self, is_classifier=True):
         # Keras -> Core ML input dimension dictionary
         # (None, None) -> [1, 1, 1, 1, 1]
         # (None, D) -> [D] or [D, 1, 1, 1, 1]
@@ -54,16 +61,16 @@ class CoreMLEmitter(object):
         # (Batch, Sequence, D) -> [D]
 
         # Retrieve input shapes from model
-        
+
         input_names = self.weights['_input_names']
         input_shapes = self.weights['_input_shapes']
         if type(input_shapes) is list:
-            input_dims = [filter(lambda x:x > 0, x) for x in input_shapes]            
+            input_dims = [filter(lambda x:x > 0, x) for x in input_shapes]
             unfiltered_shapes = input_shapes
         else:
-            input_dims = [filter(lambda x:x > 0, model.input_shapes)]            
+            input_dims = [filter(lambda x:x > 0, model.input_shapes)]
             unfiltered_shapes = [input_shapes]
-            
+
         for idx, dim in enumerate(input_dims):
             unfiltered_shape = unfiltered_shapes[idx]
             dim = list(dim)
@@ -111,7 +118,7 @@ class CoreMLEmitter(object):
         # Some of the feature handling is sensitive about string vs. unicode
         input_names = map(str, input_names)
         output_names = map(str, output_names)
-                
+
         # Kit TODO: set running mode
         #is_classifier = class_labels is not None
         if is_classifier:
@@ -128,8 +135,21 @@ class CoreMLEmitter(object):
         return builder
 
 
-
-    def gen_model(self):
+    def gen_model(self,
+                  input_names = None,
+                  output_names = None,
+                  image_input_names = None,
+                  is_bgr = False,
+                  red_bias = 0.0,
+                  green_bias = 0.0,
+                  blue_bias = 0.0,
+                  gray_bias = 0.0,
+                  image_scale = 1.0,
+                  class_labels = None,
+                  predicted_feature_name = None,
+                  predicted_probabilities_output = '',
+                  add_custom_layers = False,
+                  custom_conversion_functions = None):
         self.builder = self._get_builder()
 
         for layer in self.IR_graph.topological_sort:
@@ -142,7 +162,7 @@ class CoreMLEmitter(object):
                 func(current_node)
             else:
                 print("CntkEmitter has not supported operator [%s]." % (node_type))
-                self.emit_UNKNOWN(current_node)            
+                self.emit_UNKNOWN(current_node)
 
         '''
         # Set the right inputs and outputs on the model description (interface)
@@ -175,15 +195,15 @@ class CoreMLEmitter(object):
                 builder.set_class_labels(classes)
 
         # Set pre-processing paramsters
-        builder.set_pre_processing_parameters(image_input_names = image_input_names, 
-                                            is_bgr = is_bgr, 
-                                            red_bias = red_bias, 
-                                            green_bias = green_bias, 
-                                            blue_bias = blue_bias, 
-                                            gray_bias = gray_bias, 
-                                            image_scale = image_scale)        
+        builder.set_pre_processing_parameters(image_input_names = image_input_names,
+                                            is_bgr = is_bgr,
+                                            red_bias = red_bias,
+                                            green_bias = green_bias,
+                                            blue_bias = blue_bias,
+                                            gray_bias = gray_bias,
+                                            image_scale = image_scale)
 
-        '''        
+        '''
 
         return _MLModel(self.builder.spec)
 
@@ -200,27 +220,27 @@ class CoreMLEmitter(object):
         code = "{:<15} = layers.{}(name = '{}', inputs = [{}])".format(
                 IR_node.name,
                 func,
-                IR_node.name, 
+                IR_node.name,
                 inputs)
         return code
 
-        
-    def emit_Convolution(self, IR_node):        
+
+    def emit_Convolution(self, IR_node):
         strides = IR_node.IR_layer.attr["strides"].list.i[1:-1]
 
         padding = IR_node.IR_layer.attr["padding"].s
         padding = padding.lower()
 
         weight_dict = self.weights[IR_node.name]
-        
-        # Get input and output names        
+
+        # Get input and output names
         input_name, output_name = self._get_in_out_names(IR_node)
-        
+
         # Get weights
         # Dimensions and weights
         W = weight_dict['weights']
         height, width, channels, n_filters = W.shape
-        
+
         # Bias
         has_bias = IR_node.IR_layer.attr['use_bias'].b
         b = weight_dict['bias'] if has_bias else None
@@ -241,7 +261,7 @@ class CoreMLEmitter(object):
                 width = width,
                 stride_height = stride_height,
                 stride_width = stride_width,
-                border_mode = padding, 
+                border_mode = padding,
                 groups = 1,
                 W = W,
                 b = b,
@@ -249,11 +269,11 @@ class CoreMLEmitter(object):
                 is_deconv = False,
                 output_shape = None,
                 input_name = input_name,
-                output_name = output_name, 
+                output_name = output_name,
                 dilation_factors = dilations)
 
-    
-    def emit_Pool(self, IR_node):        
+
+    def emit_Pool(self, IR_node):
         """
         Convert pooling layer from keras to coreml.
 
@@ -265,14 +285,14 @@ class CoreMLEmitter(object):
         builder: NeuralNetworkBuilder
             A neural network builder object.
         """
-        # Get input and output names        
+        # Get input and output names
         input_name = self.IR_graph.layer_name_map[IR_node.in_edges[0]]
         output_name = self.IR_graph.layer_name_map[IR_node.out_edges[0]]
 
-        # Pooling layer type        
+        # Pooling layer type
         if IR_node.layer.attr['pooling_type'].s == b'MAX':
             layer_type_str = 'MAX'
-        elif IR_node.layer.attr['pooling_type'].s == b'AVG':        
+        elif IR_node.layer.attr['pooling_type'].s == b'AVG':
             layer_type_str = 'AVERAGE'
         else:
             assert False
@@ -288,7 +308,7 @@ class CoreMLEmitter(object):
                 padding_type = 'VALID'
             else:
                 assert dim == 1
-                # 1D global pooling: 1D global pooling seems problematic in the backend, 
+                # 1D global pooling: 1D global pooling seems problematic in the backend,
                 # use this work-around
                 global_pooling = False
                 _, width, channels = keras_layer.input_shape
@@ -306,10 +326,10 @@ class CoreMLEmitter(object):
             # 2D cases:
             else:
                 assert dim == 2
-                height, width = IR_node.IR_layer.attr['window_shape'].list.i[1:-1]                
+                height, width = IR_node.IR_layer.attr['window_shape'].list.i[1:-1]
                 stride_height, stride_width = IR_node.IR_layer.attr['strides'].list.i[1:-1]
 
-            # Padding            
+            # Padding
             padding_type = IR_node.IR_layer.attr["padding"].s
 
         self.builder.add_pooling(name = IR_node.name,
@@ -329,7 +349,7 @@ class CoreMLEmitter(object):
         print(IR_node.IR_layer.name)
 
 
-    def emit_DataInput(self, IR_node):        
+    def emit_DataInput(self, IR_node):
         """ Layers that can be skipped (because they are train time only. """
         return
 
@@ -383,11 +403,11 @@ class CoreMLEmitter(object):
 
     def emit_Reshape(self, IR_node):
         assert False
-        shape_str = IRGraph.shapeToStr(IR_node.IR_layer.attr["shape"].shape, True)                
+        shape_str = IRGraph.shapeToStr(IR_node.IR_layer.attr["shape"].shape, True)
         code = "{:<15} = Reshape(name = \"{}\", target_shape = ({}))({})".format(
-            IR_node.replace_scope(IR_node.name), 
-            IR_node.name, 
-            shape_str, 
+            IR_node.replace_scope(IR_node.name),
+            IR_node.name,
+            shape_str,
             IR_node.replace_scope(IR_node.in_edges[0]))
         return code
 
@@ -412,7 +432,7 @@ class CoreMLEmitter(object):
     def emit_Softmax(self, IR_node):
         assert False
         code = "{:<15} = Activation(name = '{}', activation = 'softmax')({})".format(
-                IR_node.replace_scope(IR_node.name), 
+                IR_node.replace_scope(IR_node.name),
                 IR_node.name,
                 IR_node.replace_scope(IR_node.in_edges[0]))
         return code
@@ -421,7 +441,7 @@ class CoreMLEmitter(object):
     def emit_Sigmoid(self, IR_node):
         assert False
         code = "{:<15} = Activation(name = '{}', activation = 'sigmoid')({})".format(
-                IR_node.replace_scope(IR_node.name), 
+                IR_node.replace_scope(IR_node.name),
                 IR_node.name,
                 IR_node.replace_scope(IR_node.in_edges[0]))
         return code
@@ -430,7 +450,7 @@ class CoreMLEmitter(object):
     def emit_Embedding(self, IR_node):
         assert False
         ret = "{:<15} = Embedding(input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
-                IR_node.name, 
+                IR_node.name,
                 IR_node.IR_layer.attr['input_dim'].i,
                 IR_node.IR_layer.attr['output_dim'].i,
                 IR_node.IR_layer.attr['mask_zero'].b,
@@ -448,9 +468,9 @@ class CoreMLEmitter(object):
                     IR_node.IR_layer.attr['recurrent_dropout'].f)
         else:
             dropout_str = ""
-        
+
         code = "{:<15} = {}(units = {}, use_bias = {} {})({})".format(
-                IR_node.name, 
+                IR_node.name,
                 func,
                 IR_node.IR_layer.attr['units'].i,
                 IR_node.IR_layer.attr['use_bias'].b,
@@ -484,7 +504,7 @@ class CoreMLEmitter(object):
         assert False
         code = "{:<15} = BatchNormalization(name = '{}', axis = {}, center = {}, scale = {})({})".format(
                 IR_node.replace_scope(IR_node.name),
-                IR_node.name,                
+                IR_node.name,
                 IR_node.IR_layer.attr['axis'].i,
                 IR_node.IR_layer.attr['center'].b,
                 IR_node.IR_layer.attr['scale' ].b,
