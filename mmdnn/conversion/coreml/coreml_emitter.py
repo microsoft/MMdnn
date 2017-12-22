@@ -13,6 +13,7 @@ import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.DataStructure.emitter import Emitter
 from mmdnn.conversion.common.utils import *
+from mmdnn.conversion.coreml.coreml_utils import _infer_coreml_input_shape
 
 from coremltools.models.neural_network import NeuralNetworkBuilder as _NeuralNetworkBuilder
 from coremltools.models import datatypes
@@ -21,7 +22,8 @@ from coremltools.models.utils import save_spec as _save_spec
 
 
 
-class CoreMLEmitter(object):
+
+class CoreMLEmitter(Emitter):
 
     dtype_map = {
         graph_pb2.DT_FLOAT16 : "np.float16",
@@ -36,120 +38,59 @@ class CoreMLEmitter(object):
 
 
     def __init__(self, architecture, weight):
-        import numpy as np
         super(CoreMLEmitter, self).__init__()
         if os.path.exists(architecture) == False:
-            assert ValueError("IR architecture file [{}] is not found.".format(architecture))
+            raise ValueError("IR architecture file [{}] is not found.".format(architecture))
         else:
             self.IR_graph = IRGraph(architecture)
             self.IR_graph.build()
 
         if os.path.exists(weight) == False:
-            assert ValueError("IR weight file [{}] is not found.".format(weight))
+            raise ValueError("IR weight file [{}] is not found.".format(weight))
         else:
-            self._load_weights(weight_path)
+            self._load_weights(weight)
 
 
-    def _get_builder(self, is_classifier=True):
-        # Keras -> Core ML input dimension dictionary
-        # (None, None) -> [1, 1, 1, 1, 1]
-        # (None, D) -> [D] or [D, 1, 1, 1, 1]
-        # (None, Seq, D) -> [Seq, 1, D, 1, 1]
-        # (None, H, W, C) -> [C, H, W]
-        # (D) -> [D]
-        # (Seq, D) -> [Seq, 1, 1, D, 1]
-        # (Batch, Sequence, D) -> [D]
+    def _get_inout(self):
+        input_features = []
+        output_features = []
+        for input_node in self.IR_graph.input_layers:
+            shape = shape_to_list(self.IR_graph.get_node(input_node).get_attr('shape'))
+            shape = _infer_coreml_input_shape(shape)
+            input_features.append((input_node.encode(), shape))
+            print ("CoreML Model Input Layer: [{}] {}".format(input_node, shape))
 
-        # Retrieve input shapes from model
+        for output_node in self.IR_graph.output_layers:
+            print (self.IR_graph.get_node(output_node).layer)
+            shape = self.IR_graph.get_node(output_node).get_attr('_output_shapes', [[1]])[0]
+            print(shape)
+            shape = shape_to_list(shape)
+            shape = _infer_coreml_input_shape(shape)
+            output_features.append((output_node.encode(), shape))
+            print ("CoreML Model Input Layer: [{}] {}".format(output_node, shape))
 
-        input_names = self.weights['_input_names']
-        input_shapes = self.weights['_input_shapes']
-        if type(input_shapes) is list:
-            input_dims = [filter(lambda x:x > 0, x) for x in input_shapes]
-            unfiltered_shapes = input_shapes
-        else:
-            input_dims = [filter(lambda x:x > 0, model.input_shapes)]
-            unfiltered_shapes = [input_shapes]
-
-        for idx, dim in enumerate(input_dims):
-            unfiltered_shape = unfiltered_shapes[idx]
-            dim = list(dim)
-            if len(dim) == 0:
-                # Used to be [None, None] before filtering; indicating unknown sequence length
-                input_dims[idx] = tuple([1])
-            elif len(dim) == 1:
-                s = graph.get_successors(inputs[idx])[0]
-                if isinstance(graph.get_keras_layer(s), _keras.layers.embeddings.Embedding):
-                    # Embedding layer's special input (None, D) where D is actually sequence length
-                    input_dims[idx] = (1,)
-                else:
-                    input_dims[idx] = dim # dim is just a number
-            elif len(dim) == 2:  # [Seq, D]
-                input_dims[idx] = (dim[1],)
-            elif len(dim) == 3: #H,W,C
-                if (len(unfiltered_shape) > 3):
-                    # keras uses the reverse notation from us
-                    input_dims[idx] = (dim[2], dim[0], dim[1])
-                else: # keras provided fixed batch and sequence length, so the input was (batch, sequence, channel)
-                    input_dims[idx] = (dim[2],)
-            else:
-                raise ValueError('Input' + input_names[idx] + 'has input shape of length' + str(len(dim)))
-
-        # Retrieve output shapes from model
-        output_shapes = self.weights['_output_shapes']
-        output_names = self.weights['_output_names']
-        if type(output_shapes) is list:
-            output_dims = [filter(lambda x:x > 0, x) for x in output_shapes]
-        else:
-            output_dims = [filter(lambda x:x > 0, output_shapes[1:])]
-
-        for idx, dim in enumerate(output_dims):
-            dim = list(dim)
-            if len(dim) == 1:
-                output_dims[idx] = dim
-            elif len(dim) == 2:  # [Seq, D]
-                output_dims[idx] = (dim[1],)
-            elif len(dim) == 3:
-                output_dims[idx] = (dim[2], dim[1], dim[0])
-
-        input_types = [datatypes.Array(*dim) for dim in input_dims]
-        output_types = [datatypes.Array(*dim) for dim in output_dims]
-
-        # Some of the feature handling is sensitive about string vs. unicode
-        input_names = map(str, input_names)
-        output_names = map(str, output_names)
-
-        # Kit TODO: set running mode
-        #is_classifier = class_labels is not None
-        if is_classifier:
-            mode = 'classifier'
-        else:
-            mode = None
-
-        # assuming these match
-        input_features = list(zip(input_names, input_types))
-        output_features = list(zip(output_names, output_types))
-
-        builder = _NeuralNetworkBuilder(input_features, output_features, mode = mode)
-
-        return builder
+        return list(input_features), list(output_features)
 
 
     def gen_model(self,
-                  input_names = None,
-                  output_names = None,
-                  image_input_names = None,
-                  is_bgr = False,
-                  red_bias = 0.0,
-                  green_bias = 0.0,
-                  blue_bias = 0.0,
-                  gray_bias = 0.0,
-                  image_scale = 1.0,
-                  class_labels = None,
-                  predicted_feature_name = None,
-                  predicted_probabilities_output = '',
-                  add_custom_layers = False,
-                  custom_conversion_functions = None):
+                  input_names=None,
+                  output_names=None,
+                  image_input_names=None,
+                  is_bgr=False,
+                  red_bias=0.0,
+                  green_bias=0.0,
+                  blue_bias=0.0,
+                  gray_bias=0.0,
+                  image_scale=1.0,
+                  class_labels=None,
+                  predicted_feature_name=None,
+                  predicted_probabilities_output=''):
+
+        input_features, output_features = self._get_inout()
+        is_classifier = class_labels is not None
+        mode = 'classifier' if is_classifier else None
+        self.builder = _NeuralNetworkBuilder(input_features, output_features, mode=mode)
+
         self.builder = self._get_builder()
 
         for layer in self.IR_graph.topological_sort:
@@ -207,11 +148,6 @@ class CoreMLEmitter(object):
 
         return _MLModel(self.builder.spec)
 
-
-    def _get_in_out_names(self, IR_node):
-        input_name = self.IR_graph.layer_name_map[IR_node.in_edges[0]] if len(IR_node.in_edges) > 0 else ""
-        output_name = self.IR_graph.layer_name_map[IR_node.out_edges[0]] if len(IR_node.out_edges) > 0 else ""
-        return (input_name, output_name)
 
     @staticmethod
     def _emit_merge(IR_node, func):
