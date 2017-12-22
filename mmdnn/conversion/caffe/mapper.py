@@ -165,7 +165,9 @@ class NodeMapper(object):
 
     @classmethod
     def map_softmax(cls, node):
-        return Node.create('Softmax')
+        kwargs = {}
+        cls._convert_output_shape(kwargs, node)
+        return Node.create('Softmax', **kwargs)
 
     @classmethod
     def map_lrn(cls, node):

@@ -58,16 +58,17 @@ class CoreMLEmitter(Emitter):
             shape = shape_to_list(self.IR_graph.get_node(input_node).get_attr('shape'))
             shape = _infer_coreml_input_shape(shape)
             input_features.append((input_node.encode(), shape))
-            print ("CoreML Model Input Layer: [{}] {}".format(input_node, shape))
+            print("CoreML Model Input Layer: [{}] {}".format(input_node, shape))
 
         for output_node in self.IR_graph.output_layers:
-            print (self.IR_graph.get_node(output_node).layer)
-            shape = self.IR_graph.get_node(output_node).get_attr('_output_shapes', [[1]])[0]
-            print(shape)
-            shape = shape_to_list(shape)
+            shape = self.IR_graph.get_node(input_node).get_attr('shape')
+            if shape:
+                shape = shape_to_list(shape)
+            else:
+                shape = [1]
             shape = _infer_coreml_input_shape(shape)
             output_features.append((output_node.encode(), shape))
-            print ("CoreML Model Input Layer: [{}] {}".format(output_node, shape))
+            print("CoreML Model Input Layer: [{}] {}".format(output_node, shape))
 
         return list(input_features), list(output_features)
 
@@ -91,8 +92,6 @@ class CoreMLEmitter(Emitter):
         mode = 'classifier' if is_classifier else None
         self.builder = _NeuralNetworkBuilder(input_features, output_features, mode=mode)
 
-        self.builder = self._get_builder()
-
         for layer in self.IR_graph.topological_sort:
             current_node = self.IR_graph.get_node(layer)
             print ("Converting the layer [{}]".format(current_node.name))
@@ -104,15 +103,6 @@ class CoreMLEmitter(Emitter):
             else:
                 print("CntkEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
-
-        '''
-        # Set the right inputs and outputs on the model description (interface)
-        builder.set_input(input_names, input_dims)
-        builder.set_output(output_names, output_dims)
-
-        # Since we aren't mangling anything the user gave us, we only need to update
-        # the model interface here
-        builder.add_optionals(graph.optional_inputs, graph.optional_outputs)
 
         # Add classifier classes (if applicable)
         if is_classifier:
@@ -130,22 +120,21 @@ class CoreMLEmitter(Emitter):
                 raise ValueError('Class labels must be a list of integers / strings, or a file path')
 
             if predicted_feature_name is not None:
-                builder.set_class_labels(classes, predicted_feature_name = predicted_feature_name,
+                self.builder.set_class_labels(classes, predicted_feature_name = predicted_feature_name,
                                         prediction_blob = predicted_probabilities_output)
             else:
-                builder.set_class_labels(classes)
+                self.builder.set_class_labels(classes)
 
         # Set pre-processing paramsters
-        builder.set_pre_processing_parameters(image_input_names = image_input_names,
-                                            is_bgr = is_bgr,
-                                            red_bias = red_bias,
-                                            green_bias = green_bias,
-                                            blue_bias = blue_bias,
-                                            gray_bias = gray_bias,
-                                            image_scale = image_scale)
+        builder.set_pre_processing_parameters(image_input_names=image_input_names,
+                                            is_bgr=is_bgr,
+                                            red_bias=red_bias,
+                                            green_bias=green_bias,
+                                            blue_bias=blue_bias,
+                                            gray_bias=gray_bias,
+                                            image_scale=image_scale)
 
-        '''
-
+        # Return the protobuf spec
         return _MLModel(self.builder.spec)
 
 
@@ -161,7 +150,7 @@ class CoreMLEmitter(Emitter):
         return code
 
 
-    def emit_Convolution(self, IR_node):
+    def emit_Conv(self, IR_node):
         strides = IR_node.IR_layer.attr["strides"].list.i[1:-1]
 
         padding = IR_node.IR_layer.attr["padding"].s
