@@ -61,9 +61,9 @@ class CoreMLEmitter(Emitter):
             print("CoreML Model Input Layer: [{}] {}".format(input_node, shape))
 
         for output_node in self.IR_graph.output_layers:
-            shape = self.IR_graph.get_node(input_node).get_attr('shape')
+            shape = self.IR_graph.get_node(output_node).get_attr('_output_shapes')
             if shape:
-                shape = shape_to_list(shape)
+                shape = shape_to_list(shape[0])
             else:
                 shape = [1]
             shape = _infer_coreml_input_shape(shape)
