@@ -40,7 +40,7 @@ IR weights are saved as [resnet50.npy].
 
 We need to generate both MXNet architecture code snippet and weights file to build the MXNet network.
 
-> Arugment 'dw' is used to specify the converted MXNet model file name for next step use.
+> [Note!] Argument 'dw' is used to specify the converted MXNet model file name for next step use.
 
 ```bash
 $ python -m mmdnn.conversion._script.IRToCode -f mxnet --IRModelPath inception_v3.pb --dstModelPath mxnet_inception_v3.py --IRWeightPath inception_v3.npy -dw mxnet_inception_v3-0000.params
