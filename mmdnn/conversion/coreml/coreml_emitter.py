@@ -21,18 +21,6 @@ from coremltools.models.utils import save_spec as _save_spec
 
 class CoreMLEmitter(Emitter):
 
-    dtype_map = {
-        graph_pb2.DT_FLOAT16 : "np.float16",
-        graph_pb2.DT_FLOAT32 : "np.float32",
-        graph_pb2.DT_FLOAT64 : "np.float64",
-        graph_pb2.DT_INT16 : "np.int16",
-        graph_pb2.DT_INT32 : "np.int32",
-        graph_pb2.DT_INT64 : "np.int64",
-        graph_pb2.DT_UINT8 : "np.uint8",
-        graph_pb2.DT_UINT16 : "np.uint16"
-        }
-
-
     def __init__(self, architecture, weight):
         super(CoreMLEmitter, self).__init__()
         if os.path.exists(architecture) == False:
@@ -57,17 +45,24 @@ class CoreMLEmitter(Emitter):
             print("CoreML Model Input Layer: [{}] {}".format(input_node, shape))
 
         for output_node in self.IR_graph.output_layers:
-            shape = self.IR_graph.get_node(output_node).get_attr('_output_shapes')
+            node = self.IR_graph.get_node(output_node)
+            node.out_edges.append(node.name)
+            shape = node.get_attr('_output_shapes')
             if shape:
                 shape = shape_to_list(shape[0])
             else:
                 shape = [1]
             shape = _infer_coreml_input_shape(shape)
+
             output_features.append((output_node.encode(), shape))
-            print("CoreML Model Input Layer: [{}] {}".format(output_node, shape))
+            print("CoreML Model Output Layer: [{}] {}".format(output_node, shape))
 
         return list(input_features), list(output_features)
 
+    def _connect_coreml_layers(self):
+        for layer in self.builder.nn_spec.layers:
+            for i, out_node in enumerate(layer.output):
+                layer.output[i] = self.IR_graph.get_node(out_node).real_name
 
     def gen_model(self,
                   input_names=None,
@@ -90,7 +85,7 @@ class CoreMLEmitter(Emitter):
 
         for layer in self.IR_graph.topological_sort:
             current_node = self.IR_graph.get_node(layer)
-            print ("Converting the layer [{}]".format(current_node.name))
+            print("Converting layer {}({})".format(current_node.name, current_node.type))
             node_type = current_node.type
 
             if hasattr(self, "emit_" + node_type):
@@ -100,13 +95,13 @@ class CoreMLEmitter(Emitter):
                 print("CntkEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
 
+            self._connect_coreml_layers()
         # Add classifier classes (if applicable)
         if is_classifier:
             classes_in = class_labels
             if isinstance(classes_in, _string_types):
-                import os
                 if not os.path.isfile(classes_in):
-                    raise ValueError("Path to class labels (%s) does not exist." % classes_in)
+                    raise ValueError("Path to class labels [{}] does not exist.".format(classes_in))
                 with open(classes_in, 'r') as f:
                     classes = f.read()
                 classes = classes.splitlines()
@@ -122,7 +117,7 @@ class CoreMLEmitter(Emitter):
                 self.builder.set_class_labels(classes)
 
         # Set pre-processing paramsters
-        builder.set_pre_processing_parameters(image_input_names=image_input_names,
+        self.builder.set_pre_processing_parameters(image_input_names=image_input_names,
                                             is_bgr=is_bgr,
                                             red_bias=red_bias,
                                             green_bias=green_bias,
@@ -135,6 +130,20 @@ class CoreMLEmitter(Emitter):
 
 
     @staticmethod
+    def _get_padding(IR_node):
+        auto_pads = IR_node.get_attr('auto_pads')
+        if auto_pads is not None:
+            if auto_pads == 'VALID':
+                return auto_pads
+            else:
+                return 'SAME'
+
+        pads = IR_node.get_attr('pads')
+        if is_valid_padding(pads):
+            return 'VALID'
+        else:
+            return 'SAME'
+
     def _emit_merge(IR_node, func):
         assert False
         inputs = listToStr(IR_node.in_edges)
@@ -150,146 +159,115 @@ class CoreMLEmitter(Emitter):
         """
         Convert convolution layer to coreml.
         """
-
         # Get input and output names
-        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
-        output_name = self.IR_graph
-        (self.IR_graph.get_parent(IR_node.name, [0]).real_name, output_names[0])
+        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+        output_name = IR_node.out_edges[0]
 
-        has_bias = keras_layer.use_bias
-        is_deconv = isinstance(keras_layer,
-                _keras.layers.convolutional.Conv2DTranspose)
+        has_bias = IR_node.get_attr('use_bias')
+        is_deconv = False # TODO: Deconv
 
-        # Get the weights from _keras.
-        weightList = keras_layer.get_weights()
-        output_blob_shape = list(filter(None, keras_layer.output_shape))
-        output_channels = output_blob_shape[-1]
+        # Get the weights.
+        output_channels = IR_node.get_attr('kernel_shape')[-1]
 
         # Dimensions and weights
         if is_deconv:
+            raise NotImplementedError()
             height, width, n_filters, channels = weightList[0].shape
             W = weightList[0].transpose([0,1,3,2])
             output_shape = output_blob_shape[:-1]
         else:
-            height, width, channels, n_filters = weightList[0].shape
-            W = weightList[0]
+            W = self.weights_dict[IR_node.name]['weights']
+            height, width, channels, n_filters = W.shape
             output_shape = None
-        b = weightList[1] if has_bias else None
+        b = self.weights_dict[IR_node.name]['bias'] if has_bias else None
 
-        stride_height, stride_width = keras_layer.strides
+        stride_height, stride_width = IR_node.get_attr('strides')[1], IR_node.get_attr('strides')[2]
 
         # Dilations
-        dilations = [1,1]
-        if (type(keras_layer.dilation_rate) is list) or (type(keras_layer.dilation_rate) is tuple):
-            dilations = [keras_layer.dilation_rate[0], keras_layer.dilation_rate[1]]
-        else:
-            dilations = [keras_layer.dilation_rate, keras_layer.dilation_rate]
-        if is_deconv and not dilations == [1,1]:
+        dilations = IR_node.get_attr('dilations', [1, 1])
+        if is_deconv and not dilations == [1, 1]:
             raise ValueError("Unsupported non-unity dilation for Deconvolution layer")
 
-        groups = 1
+        groups = IR_node.get_attr('groups', 1)
         kernel_channels = channels
-        # depth-wise convolution
-        if isinstance(keras_layer,_keras.applications.mobilenet.DepthwiseConv2D):
-            groups = channels
-            kernel_channels = 1
-            depth_multiplier = keras_layer.depth_multiplier
-            W = _np.reshape(W,(height, width,1,channels * depth_multiplier))
 
-        builder.add_convolution(name = layer,
-                kernel_channels = kernel_channels,
-                output_channels = output_channels,
-                height = height,
-                width = width,
-                stride_height = stride_height,
-                stride_width = stride_width,
-                border_mode = keras_layer.padding,
-                groups = groups,
-                W = W,
-                b = b,
-                has_bias = has_bias,
-                is_deconv = is_deconv,
-                output_shape = output_shape,
-                input_name = input_name,
-                output_name = output_name,
-                dilation_factors = dilations)
+        padding = self._get_padding(IR_node).lower()
 
+        self.builder.add_convolution(name=IR_node.real_name,
+                                     kernel_channels=kernel_channels,
+                                     output_channels=output_channels,
+                                     height=height,
+                                     width=width,
+                                     stride_height=stride_height,
+                                     stride_width=stride_width,
+                                     border_mode=padding,
+                                     groups=groups,
+                                     W=W,
+                                     b=b,
+                                     has_bias=has_bias,
+                                     is_deconv=is_deconv,
+                                     output_shape=output_shape,
+                                     input_name=input_name,
+                                     output_name=output_name,
+                                     dilation_factors=dilations)
 
 
     def emit_Pool(self, IR_node):
         """
-        Convert pooling layer from keras to coreml.
-
-        Parameters
-        ----------
-        keras_layer: layer
-            A keras layer object.
-
-        builder: NeuralNetworkBuilder
-            A neural network builder object.
+        Convert pooling layer to coreml.
         """
         # Get input and output names
-        input_name = self.IR_graph.layer_name_map[IR_node.in_edges[0]]
-        output_name = self.IR_graph.layer_name_map[IR_node.out_edges[0]]
+        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+        output_name = IR_node.out_edges[0]
 
         # Pooling layer type
-        if IR_node.layer.attr['pooling_type'].s == b'MAX':
+        pooling_type = IR_node.get_attr('pooling_type')
+        if pooling_type == 'MAX':
             layer_type_str = 'MAX'
-        elif IR_node.layer.attr['pooling_type'].s == b'AVG':
+        elif pooling_type == 'AVG':
             layer_type_str = 'AVERAGE'
         else:
-            assert False
+            raise TypeError("Pooling type %s not supported" % pooling_type)
 
-        dim = len(IR_node.layer.attr['strides'].list.i) - 2
         # if it's global, set the global flag
-        if IR_node.layer.attr['global_pooling'].b:
+        global_pooling = IR_node.get_attr('global_pooling', False)
+        dim = len(IR_node.get_attr('strides')) - 2
+        if global_pooling:
             if dim == 2:
-                # 2D global pooling
-                global_pooling = True
                 height, width = (0, 0)
-                stride_height, stride_width = (0,0)
+                stride_height = stride_width = 0
                 padding_type = 'VALID'
-            else:
-                assert dim == 1
-                # 1D global pooling: 1D global pooling seems problematic in the backend,
-                # use this work-around
+            elif dim == 1:
+                raise NotImplementedError()
                 global_pooling = False
                 _, width, channels = keras_layer.input_shape
                 height = 1
                 stride_height, stride_width = height, width
                 padding_type = 'VALID'
-        else:
-            global_pooling = False
-            # Set pool sizes and strides
-            # 1D cases:
-            if dim == 1:
-                pool_size = IR_node.IR_layer.attr['window_shape'].list.i[1]
-                height, width = 1, pool_size
-                stride_height, stride_width = 1, IR_node.IR_layer.attr['strides'].list.i[1]
-            # 2D cases:
             else:
-                assert dim == 2
-                height, width = IR_node.IR_layer.attr['window_shape'].list.i[1:-1]
-                stride_height, stride_width = IR_node.IR_layer.attr['strides'].list.i[1:-1]
+                raise NotImplementedError()
+
+        else:
+            height, width = tuple(IR_node.get_attr('kernel_shape')[1:-1])
+            stride_height, stride_width = tuple(IR_node.get_attr('strides')[1:-1])
 
             # Padding
-            padding_type = IR_node.IR_layer.attr["padding"].s
-
-        self.builder.add_pooling(name = IR_node.name,
-            height = height,
-            width = width,
-            stride_height = stride_height,
-            stride_width = stride_width,
-            layer_type = layer_type_str,
-            padding_type = padding_type,
-            input_name = input_name,
-            output_name = output_name,
-            exclude_pad_area = True,
-            is_global = global_pooling)
+            padding = self._get_padding(IR_node)
+            self.builder.add_pooling(name=IR_node.name,
+                                     height=height,
+                                     width=width,
+                                     stride_height=stride_height,
+                                     stride_width=stride_width,
+                                     layer_type=layer_type_str,
+                                     padding_type=padding,
+                                     input_name=input_name,
+                                     output_name=output_name,
+                                     exclude_pad_area=True,
+                                     is_global=global_pooling)
 
 
     def emit_UNKNOWN(self, IR_node):
-        print(IR_node.IR_layer.name)
+        print(IR_node.name)
 
 
     def emit_DataInput(self, IR_node):
@@ -299,49 +277,55 @@ class CoreMLEmitter(Emitter):
 
     def emit_Dropout(self, IR_node):
         """ Layers that can be skipped (because they are train time only. """
-        self.IR_graph.layer_name_map[IR_node.name] = self.IR_graph.layer_name_map[IR_node.in_edges[0]]
+        IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
 
 
     def emit_FullyConnected(self, IR_node):
-        assert False
-        units = IR_node.IR_layer.attr["units"].i
-        use_bias = IR_node.IR_layer.attr["use_bias"].b
+        """
+        Convert a dense layer to coreml.
+        """
+        # Get input and output names
+        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+        output_name = IR_node.out_edges[0]
 
-        ret = "{:<15} = Dense(name = '{}', units = {}, use_bias = {})({})".format(
-                IR_node.replace_scope(IR_node.name),
-                IR_node.name,
-                units,
-                use_bias,
-                IR_node.replace_scope(IR_node.in_edges[0]))
+        has_bias = IR_node.get_attr('use_bias')
 
-        return ret
+        # Get the weights from keras
+        W = self.weights_dict[IR_node.name]['weights'].T
+        Wb = self.weights_dict[IR_node.name]['bias'].T if has_bias else None
+        output_channels, input_channels = W.shape
+
+        self.builder.add_inner_product(name=IR_node.name,
+                                       W=W,
+                                       b=Wb,
+                                       input_channels=input_channels,
+                                       output_channels=output_channels,
+                                       has_bias=has_bias,
+                                       input_name=input_name,
+                                       output_name=output_name)
 
 
     def emit_Flatten(self, IR_node):
         """
         Convert a flatten layer from keras to coreml.
-        ----------
-        Parameters
-        keras_layer: layer
-            A keras layer object.
-
-        builder: NeuralNetworkBuilder
-            A neural network builder object.
         """
-        input_name, output_name = self._get_in_out_names(IR_node)
+        # Get input and output names
+        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+        output_name = IR_node.out_edges[0]
 
+        """
         # blob_order == 0 if the input blob needs not be rearranged
         # blob_order == 1 if the input blob needs to be rearranged
-        # Kit TODO: set blob_order
-        blob_order = 1
-        '''
+        blob_order = 0
+
         # using keras_layer.input.shape have a "?" (Dimension[None] at the front),
         # making a 3D tensor with unknown batch size 4D
         if len(keras_layer.input.shape) == 4:
             blob_order = 1
-        '''
+        """
 
-        self.builder.add_flatten(name = IR_node.name, mode = blob_order, input_name = input_name, output_name = output_name)
+        self.builder.add_flatten(name=IR_node.name, mode=1,
+                                 input_name=input_name, output_name=output_name)
 
 
     def emit_Reshape(self, IR_node):
@@ -364,21 +348,27 @@ class CoreMLEmitter(Emitter):
         return code
 
 
+    def _emit_activation(self, IR_node, act, params=None):
+        # Get input and output names
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        output_name = IR_node.out_edges[0]
+        self.builder.add_activation(name=IR_node.name,
+                                    non_linearity=act,
+                                    input_name=input_name,
+                                    output_name=output_name,
+                                    params=params)
+
+
     def emit_Relu(self, IR_node):
-        input_name, output_name = self._get_in_out_names(IR_node)
-        self.builder.add_activation(name = IR_node.name,
-            non_linearity = "RELU",
-            input_name = input_name, output_name = output_name,
-            params = None)
+        self._emit_activation(IR_node, 'RELU')
 
 
     def emit_Softmax(self, IR_node):
-        assert False
-        code = "{:<15} = Activation(name = '{}', activation = 'softmax')({})".format(
-                IR_node.replace_scope(IR_node.name),
-                IR_node.name,
-                IR_node.replace_scope(IR_node.in_edges[0]))
-        return code
+        # Get input and output names
+        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+        output_name = IR_node.out_edges[0]
+        self.builder.add_softmax(name=IR_node.name, input_name=input_name,
+                                 output_name=output_name)
 
 
     def emit_Sigmoid(self, IR_node):

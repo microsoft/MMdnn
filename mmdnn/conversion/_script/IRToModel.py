@@ -22,7 +22,7 @@ def _convert(args):
         assert args.inputNetwork is not None
         assert args.inputWeight is not None
         emitter = CoreMLEmitter(args.inputNetwork, args.inputWeight)
-        emitter.gen_model(
+        model = emitter.gen_model(
             args.inputNames,
             args.outputNames,
             image_input_names = set(args.imageInputNames) if args.imageInputNames else None,
@@ -34,6 +34,7 @@ def _convert(args):
             image_scale = args.scale,
             class_labels = args.classInputPath if args.classInputPath else None,
             predicted_feature_name = args.predictedFeatureName)
+        model.save(args.output)
         return 0
 
     elif args.framework == 'pytorch':
