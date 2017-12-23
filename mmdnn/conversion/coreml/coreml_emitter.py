@@ -4,8 +4,6 @@
 #----------------------------------------------------------------------------------------------
 
 import os
-
-import os
 import numpy as np
 from six import string_types as _string_types
 from mmdnn.conversion.common.IR.IR_graph import IRGraph, IRGraphNode
@@ -19,8 +17,6 @@ from coremltools.models.neural_network import NeuralNetworkBuilder as _NeuralNet
 from coremltools.models import datatypes
 from coremltools.models import MLModel as _MLModel
 from coremltools.models.utils import save_spec as _save_spec
-
-
 
 
 class CoreMLEmitter(Emitter):
@@ -151,51 +147,73 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_Conv(self, IR_node):
-        strides = IR_node.IR_layer.attr["strides"].list.i[1:-1]
-
-        padding = IR_node.IR_layer.attr["padding"].s
-        padding = padding.lower()
-
-        weight_dict = self.weights[IR_node.name]
+        """
+        Convert convolution layer to coreml.
+        """
 
         # Get input and output names
-        input_name, output_name = self._get_in_out_names(IR_node)
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        output_name = self.IR_graph
+        (self.IR_graph.get_parent(IR_node.name, [0]).real_name, output_names[0])
 
-        # Get weights
+        has_bias = keras_layer.use_bias
+        is_deconv = isinstance(keras_layer,
+                _keras.layers.convolutional.Conv2DTranspose)
+
+        # Get the weights from _keras.
+        weightList = keras_layer.get_weights()
+        output_blob_shape = list(filter(None, keras_layer.output_shape))
+        output_channels = output_blob_shape[-1]
+
         # Dimensions and weights
-        W = weight_dict['weights']
-        height, width, channels, n_filters = W.shape
+        if is_deconv:
+            height, width, n_filters, channels = weightList[0].shape
+            W = weightList[0].transpose([0,1,3,2])
+            output_shape = output_blob_shape[:-1]
+        else:
+            height, width, channels, n_filters = weightList[0].shape
+            W = weightList[0]
+            output_shape = None
+        b = weightList[1] if has_bias else None
 
-        # Bias
-        has_bias = IR_node.IR_layer.attr['use_bias'].b
-        b = weight_dict['bias'] if has_bias else None
-
-        stride_height, stride_width = strides
+        stride_height, stride_width = keras_layer.strides
 
         # Dilations
-        dilations = [1, 1]
-        if len(IR_node.IR_layer.attr["dilation_rate"].list.i) > 0:
-            dilations = IR_node.IR_layer.attr["dilation_rate"].list.i[1:-1]
+        dilations = [1,1]
+        if (type(keras_layer.dilation_rate) is list) or (type(keras_layer.dilation_rate) is tuple):
+            dilations = [keras_layer.dilation_rate[0], keras_layer.dilation_rate[1]]
         else:
-            dilations = [1, 1]
+            dilations = [keras_layer.dilation_rate, keras_layer.dilation_rate]
+        if is_deconv and not dilations == [1,1]:
+            raise ValueError("Unsupported non-unity dilation for Deconvolution layer")
 
-        self.builder.add_convolution(name = IR_node.name,
-                kernel_channels = channels,
-                output_channels = n_filters,
+        groups = 1
+        kernel_channels = channels
+        # depth-wise convolution
+        if isinstance(keras_layer,_keras.applications.mobilenet.DepthwiseConv2D):
+            groups = channels
+            kernel_channels = 1
+            depth_multiplier = keras_layer.depth_multiplier
+            W = _np.reshape(W,(height, width,1,channels * depth_multiplier))
+
+        builder.add_convolution(name = layer,
+                kernel_channels = kernel_channels,
+                output_channels = output_channels,
                 height = height,
                 width = width,
                 stride_height = stride_height,
                 stride_width = stride_width,
-                border_mode = padding,
-                groups = 1,
+                border_mode = keras_layer.padding,
+                groups = groups,
                 W = W,
                 b = b,
                 has_bias = has_bias,
-                is_deconv = False,
-                output_shape = None,
+                is_deconv = is_deconv,
+                output_shape = output_shape,
                 input_name = input_name,
                 output_name = output_name,
                 dilation_factors = dilations)
+
 
 
     def emit_Pool(self, IR_node):
@@ -275,7 +293,7 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_DataInput(self, IR_node):
-        """ Layers that can be skipped (because they are train time only. """
+        """ Layers that can be skipped. """
         return
 
 

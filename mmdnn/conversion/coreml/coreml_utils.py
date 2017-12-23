@@ -14,7 +14,7 @@ def _infer_coreml_input_shape(IR_shape, if_convert=True):
     elif len(IR_shape) == 1:
         # TODO - remove style transfer 1D hack
         # Input is 1D but it goes to the width dimension: (1,1,W)
-        shape = [1, 1, shape[0]]  #(C,H,W)
+        shape = [1, 1, IR_shape[0]]  #(C,H,W)
     elif len(IR_shape) == 2:
         # assume (Batch, Channels) - Batch dimension should be dropped
         shape = [IR_shape[1]]
