@@ -34,7 +34,10 @@ def _convert(args):
             image_scale = args.scale,
             class_labels = args.classInputPath if args.classInputPath else None,
             predicted_feature_name = args.predictedFeatureName)
-        model.save(args.output)
+        with open(args.output, 'wb') as f:
+            model = model.SerializeToString()
+            f.write(model)
+
         return 0
 
     elif args.framework == 'pytorch':

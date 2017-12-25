@@ -61,6 +61,9 @@ class CoreMLEmitter(Emitter):
 
     def _connect_coreml_layers(self):
         for layer in self.builder.nn_spec.layers:
+            # for i, in_node in enumerate(layer.input):
+            #     layer.input[i] = self.IR_graph.get_node(in_node).real_name
+
             for i, out_node in enumerate(layer.output):
                 layer.output[i] = self.IR_graph.get_node(out_node).real_name
 
@@ -83,6 +86,8 @@ class CoreMLEmitter(Emitter):
         mode = 'classifier' if is_classifier else None
         self.builder = _NeuralNetworkBuilder(input_features, output_features, mode=mode)
 
+        i = 0
+
         for layer in self.IR_graph.topological_sort:
             current_node = self.IR_graph.get_node(layer)
             print("Converting layer {}({})".format(current_node.name, current_node.type))
@@ -94,8 +99,11 @@ class CoreMLEmitter(Emitter):
             else:
                 print("CntkEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
+            # self._connect_coreml_layers()
+            i = i + 1
+            if i == 3: break
 
-            self._connect_coreml_layers()
+        # self._connect_coreml_layers()
         # Add classifier classes (if applicable)
         if is_classifier:
             classes_in = class_labels
@@ -126,7 +134,19 @@ class CoreMLEmitter(Emitter):
                                             image_scale=image_scale)
 
         # Return the protobuf spec
-        return _MLModel(self.builder.spec)
+        # for layer in self.builder.nn_spec.layers:
+        #     found = False
+        #     for i in layer.input:
+        #         for pp in self.builder.nn_spec.layers:
+        #             if i == pp.name:
+        #                 found = True
+        #             else: print ("input = {}, layer = {}". format(i,pp.name))
+        #     if not found:
+        #         print ("Error!")
+
+        model = _MLModel(self.builder.spec)
+
+        return self.builder.spec
 
 
     @staticmethod
