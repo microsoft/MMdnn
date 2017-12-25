@@ -101,7 +101,7 @@ class CoreMLEmitter(Emitter):
                 self.emit_UNKNOWN(current_node)
             # self._connect_coreml_layers()
             i = i + 1
-            if i == 3: break
+            # if i == 2: break
 
         # self._connect_coreml_layers()
         # Add classifier classes (if applicable)
@@ -125,26 +125,20 @@ class CoreMLEmitter(Emitter):
                 self.builder.set_class_labels(classes)
 
         # Set pre-processing paramsters
-        self.builder.set_pre_processing_parameters(image_input_names=image_input_names,
-                                            is_bgr=is_bgr,
-                                            red_bias=red_bias,
-                                            green_bias=green_bias,
-                                            blue_bias=blue_bias,
-                                            gray_bias=gray_bias,
-                                            image_scale=image_scale)
+        self.builder.set_pre_processing_parameters(
+            image_input_names=[input_features[0][0]],
+        #image_input_names,
+            is_bgr=is_bgr,
+            red_bias=red_bias,
+            green_bias=green_bias,
+            blue_bias=blue_bias,
+            gray_bias=gray_bias,
+            image_scale=image_scale)
 
         # Return the protobuf spec
-        # for layer in self.builder.nn_spec.layers:
-        #     found = False
-        #     for i in layer.input:
-        #         for pp in self.builder.nn_spec.layers:
-        #             if i == pp.name:
-        #                 found = True
-        #             else: print ("input = {}, layer = {}". format(i,pp.name))
-        #     if not found:
-        #         print ("Error!")
+        # model = _MLModel(self.builder.spec)
 
-        model = _MLModel(self.builder.spec)
+        print (self.builder.spec.description)
 
         return self.builder.spec
 
@@ -164,16 +158,15 @@ class CoreMLEmitter(Emitter):
         else:
             return 'SAME'
 
-    def _emit_merge(IR_node, func):
-        assert False
-        inputs = listToStr(IR_node.in_edges)
-        code = "{:<15} = layers.{}(name = '{}', inputs = [{}])".format(
-                IR_node.name,
-                func,
-                IR_node.name,
-                inputs)
-        return code
+    def _emit_merge(self, IR_node, func):
+        """
+        Convert concat layer to coreml.
+        """
+        # Get input and output names
+        input_names = [self.IR_graph.get_node(inp).real_name for inp in IR_node.in_edges]
 
+        self.builder.add_elementwise(name=IR_node.name, input_names=input_names,
+            output_name=IR_node.name, mode=func)
 
     def emit_Conv(self, IR_node):
         """
@@ -181,7 +174,6 @@ class CoreMLEmitter(Emitter):
         """
         # Get input and output names
         input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
-        output_name = IR_node.out_edges[0]
 
         has_bias = IR_node.get_attr('use_bias')
         is_deconv = False # TODO: Deconv
@@ -228,7 +220,7 @@ class CoreMLEmitter(Emitter):
                                      is_deconv=is_deconv,
                                      output_shape=output_shape,
                                      input_name=input_name,
-                                     output_name=output_name,
+                                     output_name=IR_node.real_name,
                                      dilation_factors=dilations)
 
 
@@ -281,7 +273,7 @@ class CoreMLEmitter(Emitter):
                                      layer_type=layer_type_str,
                                      padding_type=padding,
                                      input_name=input_name,
-                                     output_name=output_name,
+                                     output_name=IR_node.name,
                                      exclude_pad_area=True,
                                      is_global=global_pooling)
 
@@ -322,7 +314,7 @@ class CoreMLEmitter(Emitter):
                                        output_channels=output_channels,
                                        has_bias=has_bias,
                                        input_name=input_name,
-                                       output_name=output_name)
+                                       output_name=IR_node.name)
 
 
     def emit_Flatten(self, IR_node):
@@ -345,7 +337,7 @@ class CoreMLEmitter(Emitter):
         """
 
         self.builder.add_flatten(name=IR_node.name, mode=1,
-                                 input_name=input_name, output_name=output_name)
+                                 input_name=input_name, output_name=IR_node.name)
 
 
     def emit_Reshape(self, IR_node):
@@ -375,7 +367,7 @@ class CoreMLEmitter(Emitter):
         self.builder.add_activation(name=IR_node.name,
                                     non_linearity=act,
                                     input_name=input_name,
-                                    output_name=output_name,
+                                    output_name=IR_node.name,
                                     params=params)
 
 
@@ -388,7 +380,7 @@ class CoreMLEmitter(Emitter):
         input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
         output_name = IR_node.out_edges[0]
         self.builder.add_softmax(name=IR_node.name, input_name=input_name,
-                                 output_name=output_name)
+                                 output_name=IR_node.name)
 
 
     def emit_Sigmoid(self, IR_node):
@@ -442,9 +434,7 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_Add(self, IR_node):
-        assert False
-        code = Keras2Emitter._emit_merge(IR_node, "add")
-        return code
+        self._emit_merge(IR_node, 'ADD')
 
 
     def emit_Concat(self, IR_node):
@@ -454,15 +444,41 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_BatchNorm(self, IR_node):
-        assert False
-        code = "{:<15} = BatchNormalization(name = '{}', axis = {}, center = {}, scale = {})({})".format(
-                IR_node.replace_scope(IR_node.name),
-                IR_node.name,
-                IR_node.IR_layer.attr['axis'].i,
-                IR_node.IR_layer.attr['center'].b,
-                IR_node.IR_layer.attr['scale' ].b,
-                IR_node.replace_scope(IR_node.in_edges[0]))
-        return code
+        """
+        Convert a Batch Normalization layer.
+        """
+
+        # Get input and output names
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+
+        axis = IR_node.get_attr('axis', -1)
+        nb_channels = IR_node.get_attr('_output_shapes')[0].dim[axis].size
+
+        # Set parameters
+        # Parameter arrangement in Keras: gamma, beta, mean, variance
+        weights = self.weights_dict[IR_node.name]
+        mean = weights['mean']
+        std = weights['var']
+        gamma = weights.get('scale', np.ones(mean.shape))
+        beta = weights.get('bias', np.zeros(mean.shape))
+
+        # compute adjusted parameters
+        variance = std * std
+        f = 1.0 / np.sqrt(std + IR_node.get_attr('epsilon'))
+        gamma1 = gamma*f
+        beta1 = beta - gamma*mean*f
+        mean[:] = 0.0 #mean
+        variance[:] = 1.0 - .00001 #stddev
+
+        self.builder.add_batchnorm(
+            name=IR_node.name,
+            channels = nb_channels,
+            gamma = gamma1,
+            beta = beta1,
+            mean = mean,
+            variance = variance,
+            input_name = input_name,
+            output_name=IR_node.name)
 
 
     def emit_pad(self, IR_node):

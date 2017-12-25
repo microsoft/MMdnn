@@ -28,42 +28,46 @@ class TestCoreML(TestKit):
                             type=_text_type, help='Test image path.',
                             default="mmdnn/conversion/examples/data/seagull.jpg")
 
+        parser.add_argument('-input', type=_text_type,
+                            required=True, help='CoreML Input Node')
+
+        parser.add_argument('-output', type=_text_type,
+                            required=True, help='CoreML Output Node')
+
         self.args = parser.parse_args()
 
         print("Loading model [{}].".format(self.args.model))
 
         self.model = coremltools.models.MLModel(self.args.model.encode())
 
+        print("Model loading success.")
 
     def preprocess(self, image_path):
-        x = super(TestCoreML, self).preprocess(image_path)
+        from tensorflow.contrib.keras.api.keras.preprocessing import image
+        self.data = image.load_img(image_path, target_size = (224, 224))
+        # x = super(TestCoreML, self).preprocess(image_path)
         # self.data = np.expand_dims(x, 0)
-        self.data = x
+        # self.data = np.transpose(x, (2, 0, 1))
 
     def print_result(self):
-        coreml_inputs = {'data': self.data}
-        coreml_output = self.model.predict(coreml_inputs, useCPUOnly=True)
-        predict = coreml_output['prob']
+        coreml_inputs = {self.args.input: self.data}
+        print("Here!")
+        self.coreml_output = self.model.predict(coreml_inputs, useCPUOnly=False)
+        print("finish")
+        predict = self.coreml_output[self.args.output]
         super(TestCoreML, self).print_result(predict)
 
 
     def print_intermediate_result(self, layer_name, if_transpose = False):
-        # testop = tf.get_default_graph().get_operation_by_name(layer_name)
-        testop = self.testop
-        with tf.Session() as sess:
-            init = tf.global_variables_initializer()
-            sess.run(init)
-            intermediate_output = sess.run(testop, feed_dict = {self.input : self.data})
-
-        super(TestTF, self).print_intermediate_result(intermediate_output, if_transpose)
+        super(TestCoreML, self).print_intermediate_result(self.coreml_output[layer_name], if_transpose)
 
 
     def inference(self, image_path):
         self.preprocess(image_path)
 
-        # self.print_intermediate_result('conv1_7x7_s2_1', True)
-
         self.print_result()
+
+        # self.print_intermediate_result('conv1_7x7_s2_1', True)
 
         self.test_truth()
 

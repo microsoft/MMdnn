@@ -9,8 +9,8 @@ import tensorflow as tf
 from tensorflow.core.framework import graph_pb2
 import tfcoreml as tf_converter
 
-TMP_MODEL_DIR = '/home/kit/tmp/tfcoreml'
-TEST_IMAGE = '/home/kit/github/MMdnn/mmdnn/conversion/examples/data/seagull.jpg'
+TMP_MODEL_DIR = '/Users/kit/tmp/tfcoreml'
+TEST_IMAGE = '/Users/kit/github/MMdnn/mmdnn/conversion/examples/data/seagull.jpg'
 
 def _download_file(url):
   """Download the file.
@@ -623,7 +623,7 @@ if __name__=='__main__':
         image_scale = 2.0/255.0)
 
     #Test predictions on an image
-    self._test_coreml_model_image_input(
+    _test_coreml_model_image_input(
         tf_model_path = tf_model_path,
         coreml_model = mlmodel,
         input_tensor_name = 'input:0',
