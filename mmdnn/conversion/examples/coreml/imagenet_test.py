@@ -43,17 +43,18 @@ class TestCoreML(TestKit):
         print("Model loading success.")
 
     def preprocess(self, image_path):
-        from tensorflow.contrib.keras.api.keras.preprocessing import image
-        self.data = image.load_img(image_path, target_size = (224, 224))
-        # x = super(TestCoreML, self).preprocess(image_path)
-        # self.data = np.expand_dims(x, 0)
-        # self.data = np.transpose(x, (2, 0, 1))
+        # from tensorflow.contrib.keras.api.keras.preprocessing import image
+        # import cv2
+        # img = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_RGB2BGR)
+        # img = cv2.resize(img, (224, 224))
+        from PIL import Image as pil_image
+        img = pil_image.open(image_path)
+        img = img.resize((224, 224))
+        self.data = img
 
     def print_result(self):
         coreml_inputs = {self.args.input: self.data}
-        print("Here!")
         self.coreml_output = self.model.predict(coreml_inputs, useCPUOnly=False)
-        print("finish")
         predict = self.coreml_output[self.args.output]
         super(TestCoreML, self).print_result(predict)
 
