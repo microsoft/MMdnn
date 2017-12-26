@@ -370,7 +370,7 @@ class KitModel(nn.Module):
         self.used_layers.add(IR_node.type)
         dim = len(IR_node.layer.attr['_output_shapes'].list.shape[0].dim) - 2
 
-        self.add_init(2, "self.{} = self.__batch_normalization({}, '{}', num_features = {}, eps = {}, momentum = {})".format(
+        self.add_init(2, "self.{} = self.__batch_normalization({}, '{}', num_features={}, eps={}, momentum={})".format(
              IR_node.variable_name,
              dim,
              IR_node.name,

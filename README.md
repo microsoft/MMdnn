@@ -96,7 +96,7 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 
 ## Examples
 
-- [Keras "inception_v3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
+- [Keras "inception_v3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
 
 - [MXNet "resnet 152 11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
 
@@ -104,11 +104,12 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 
 - [Tensorflow "mnist mlp model" to CNTK](https://github.com/Microsoft/MMdnn/issues/11)
 
+- [Tensorflow "Inception_v3" to MXNet](https://github.com/Microsoft/MMdnn/issues/30)
+
 - [Caffe "inception_v4" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/26)
 
 - [Caffe "VGG16_SOD" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/27)
 
-- [Tensorflow "Inception_v3" to MXNet](https://github.com/Microsoft/MMdnn/issues/30)
 ---
 
 ## Contributing
@@ -141,4 +142,4 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 ## Acknowledgements
 
-Thanks to [Saumitro Dasgupta](https://github.com/ethereon), the initial codes of *caffe-to-tensorflow* are references to his project [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow).
+Thanks to [Saumitro Dasgupta](https://github.com/ethereon), the initial code of *caffe -> IR converting* is references to his project [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow).

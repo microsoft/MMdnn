@@ -1,34 +1,116 @@
 op {
-  name: "DataInput"    
-  attr {
-    name: "dtype"
-    type: "type"
-    description: "The type of elements in the tensor."
+  name: "Add"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+  }
+  input_arg {
+    name: "y"
+    type_attr: "T"
+  }
+  output_arg {
+    name: "z"
+    type_attr: "T"
   }
   attr {
-    name: "shape"
-    type: "shape"    
-    description: "(Optional) The shape of the tensor. If the shape has 0 dimensions, the shape is unconstrained."
+    name: "axis"
+    type: "int"
   }
-  summary: "For Data Input."
+  summary: "Returns x + y element-wise."
+  description: "*NOTE*: `Add` supports broadcasting."
 }
 
+
 op {
-  name: "Convolution"
+  name: "BatchNorm"
   attr {
-    name: "dilation_rate"
+      name: "axis"
+      type: "int"
+      description: "The axis that should be normalized (typically the features axis). For instance, after a Convolution2D layer with data_format="channels_first", set axis=1 in BatchNormalization"
+  }
+  attr {
+      name: "momentum"
+      type: "float"
+      default_value {
+        f: 0.99
+      }
+      description: "Momentum for the moving average."
+  }
+  attr {
+    name: "epsilon"
+    type: "float"
+    default_value {
+      f: 0.0001
+    }
+  }
+  attr {
+      name: "scale"
+      type: "bool"
+      default_value {
+        b: True
+      }
+      description: "If True, multiply by gamma. If False, gamma is not used. When the next layer is linear (also e.g. nn.relu), this can be disabled since the scaling can be done by the next layer."
+  }
+  attr {
+    name: "bias"
+    type: "bool"
+    default_value {
+        b: True
+      }
+    description: " If True, add offset of beta to normalized tensor. If False, beta is ignored."
+  }
+  attr {
+    name: "data_format"
+    type: "string"
+    default_value {
+      s: "NHWC"
+    }
+    description: "The data format for x and y. Either 'NHWC' (default) or 'NCHW'."
+  }
+  attr {
+    name: "is_training"
+    type: "bool"
+    default_value {
+      b: true
+    }
+    description: "A bool value to indicate the operation is for training (default) or inference."
+  }
+  summary: "tf.layers.batch_normalization"
+  description: "Follow Keras FusedBatchNorm, parameters are [scale], [bias], [mean], [var]."
+}
+
+
+op {
+  name: "Concat"
+  attr {
+    name: "axis"
+    type: "int"
+  }
+  summary: "Concatenates tensors along one dimension."
+}
+
+
+op {
+  name: "Conv"
+  attr {
+    name: "dilations"
     type: "list(int)"
     description: "Sequence of N ints >= 1. Specifies the filter upsampling/input downsampling rate. [1, dilation_depth, dilation_height, dilation_width, 1]"
   }
   attr {
-    name: "filter"
-    description: "Shape `[filter_depth, filter_height, filter_width, in_channels, out_channels]`."
+    name: "kernel_shape"
+    description: "The shape of the convolution kernel. [filter_depth, filter_height, filter_width, in_channels, out_channels]"
     type: "list(int)"
   }
   attr {
     name: "strides"
     type: "list(int)"
     description: "1-D tensor of length N.  [1, stride_deep, stride_height, stride_width, 1]"
+  }
+  attr {
+    name: "pads"
+    type: "list(int)"
+    description: "1-D tensor of length N*2. [x1_begin, x2_begin...x1_end, x2_end,...]"
   }
   attr {
     name: "group"
@@ -39,12 +121,13 @@ op {
     description: "If g > 1, we restrict the connectivity of each filter to a subset of the input. Specifically, the input and output channels are separated into g groups, and the iith output group channels will be only connected to the iith input group channels."
   }
   attr {
-    name: "padding"
+    name: "auto_pad"
     type: "string"
-    description: "The type of padding algorithm to use."
+    description: "The type of padding algorithm to use. Where SAME_UPPER or SAME_LOWER mean pad the input so that the output size match the input.In case of odd number add the extra padding at the end for SAME_UPPER and at the beginning for SAME_LOWER. VALID mean no padding."
     allowed_values {
       list {
-        s: "SAME"
+        s: "SAME_UPPER"
+        s: "SAME_LOWER"
         s: "VALID"
       }
     }
@@ -63,18 +146,18 @@ op {
         s: "NHWC"
         s: "NCHW"
         s: "NDHWC"
-        s: "NCDHW"        
+        s: "NCDHW"
       }
     }
   }
   summary: "Computes a (N-2)-D convolution given N-D `input` and `filter` tensors."
-  description: "Given an input tensor of shape `[batch, in_depth, in_height, in_width, in_channels]` and a filter / kernel tensor of shape `[filter_height, filter_width, in_channels, out_channels]`, this op performs the following:1. Flattens the filter to a 2-D matrix with shape `[filter_height * filter_width * in_channels, output_channels]`. 2. Extracts image patches from the input tensor to form a *virtual* tensor of shape `[batch, out_height, out_width, filter_height * filter_width * in_channels]`. 3. For each patch, right-multiplies the filter matrix and the image patch vector. In detail, with the default NHWC format, output[b, i, j, k] = sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] * filter[di, dj, q, k] Must have `strides[0] = strides[3] = 1`.  For the most common case of the same horizontal and vertices strides, `strides = [1, stride, stride, 1]`."
+  description: "Parameters are [weights] and [bias]. Given an input tensor of shape `[batch, in_depth, in_height, in_width, in_channels]` and a filter kernel tensor of shape `[filter_height, filter_width, in_channels, out_channels]`, this op performs the following:1. Flattens the filter to a 2-D matrix with shape `[filter_height * filter_width * in_channels, output_channels]`. 2. Extracts image patches from the input tensor to form a *virtual* tensor of shape `[batch, out_height, out_width, filter_height * filter_width * in_channels]`. 3. For each patch, right-multiplies the filter matrix and the image patch vector. In detail, with the default NHWC format, output[b, i, j, k] = sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] * filter[di, dj, q, k] Must have `strides[0] = strides[3] = 1`.  For the most common case of the same horizontal and vertices strides, `strides = [1, stride, stride, 1]`."
 }
 
 op {
-  name: "Deconvolution"  
+  name: "ConvTranspose"
   attr {
-    name: "filter"
+    name: "kernel_shape"
     description: "Shape [filter_depth, filter_height, filter_width, out_channels, in_channels]. Follow tensorflow conv2d_transpose args."
     type: "list(int)"
   }
@@ -92,15 +175,21 @@ op {
     description: "If g > 1, we restrict the connectivity of each filter to a subset of the input. Specifically, the input and output channels are separated into g groups, and the iith output group channels will be only connected to the iith input group channels."
   }
   attr {
-    name: "padding"
+    name: "auto_pad"
     type: "string"
-    description: "The type of padding algorithm to use."
+    description: "The type of padding algorithm to use. Where SAME_UPPER or SAME_LOWER mean pad the input so that the output size match the input.In case of odd number add the extra padding at the end for SAME_UPPER and at the beginning for SAME_LOWER. VALID mean no padding."
     allowed_values {
       list {
-        s: "SAME"
+        s: "SAME_UPPER"
+        s: "SAME_LOWER"
         s: "VALID"
       }
     }
+  }
+  attr {
+    name: "pads"
+    type: "list(int)"
+    description: "1-D tensor of length N*2. [x1_begin, x2_begin...x1_end, x2_end,...]"
   }
   attr {
     name: "data_format"
@@ -116,7 +205,7 @@ op {
         s: "NHWC"
         s: "NCHW"
         s: "NDHWC"
-        s: "NCDHW"        
+        s: "NCDHW"
       }
     }
   }
@@ -124,11 +213,64 @@ op {
   description: "Given an input tensor of shape `[batch, in_depth, in_height, in_width, in_channels]` and a filter / kernel tensor of shape `[filter_height, filter_width, in_channels, out_channels]`, this op performs the following:1. Flattens the filter to a 2-D matrix with shape `[filter_height * filter_width * in_channels, output_channels]`. 2. Extracts image patches from the input tensor to form a *virtual* tensor of shape `[batch, out_height, out_width, filter_height * filter_width * in_channels]`. 3. For each patch, right-multiplies the filter matrix and the image patch vector. In detail, with the default NHWC format, output[b, i, j, k] = sum_{di, dj, q} input[b, strides[1] * i + di, strides[2] * j + dj, q] * filter[di, dj, q, k] Must have `strides[0] = strides[3] = 1`.  For the most common case of the same horizontal and vertices strides, `strides = [1, stride, stride, 1]`."
 }
 
+
 op {
-  name: "FullyConnected"    
+  name: "DataInput"
+  attr {
+    name: "dtype"
+    type: "type"
+    description: "The type of elements in the tensor."
+  }
+  attr {
+    name: "shape"
+    type: "shape"
+    description: "The shape of the tensor."
+  }
+  summary: "Input Data Layer."
+}
+
+
+op {
+  name: "Div"
+  attr {
+    name: "axis"
+    type: "int"
+  }
+  summary: "Performs element-wise binary division."
+}
+
+
+op {
+  name: "Dropout"
+  attr {
+    name: "keep_prob"
+    type: "float"
+  }
+  attr {
+    name: "seed"
+    type: "int"
+  }
+  attr {
+    name: "noise_shape"
+    type: "list(int)"
+  }
+  summary: "Dropout Layer"
+  description: "With probability keep_prob, outputs the input element scaled up by 1 / keep_prob, otherwise outputs 0. The scaling is so that the expected sum is unchanged."
+}
+
+
+op {
+  name: "Flatten"
+  summary: "Flatten Layer."
+  description: "Not directly mapping in Tensorflow. Flatten tensor with shape [batch_size, k]."
+}
+
+
+op {
+  name: "FullyConnected"
   attr {
     name: "units"
-    type: "int"    
+    type: "int"
   }
   attr {
     name: "use_bias"
@@ -136,22 +278,40 @@ op {
     default_value {
       b: true
     }
-    description: "If use bias"    
+    description: "If use bias"
     }
   }
   summary: "Y = W * X + b"
-  description: "Not in Tensorflow. Dense operator in Keras."
+  description: "Not in Tensorflow. Dense operator in Keras. parameters are [weights], [bias]."
 }
 
+
 op {
-  name: "Relu"  
+  name: "Matmul"
+  summary: "Matrix product that behaves like numpy.matmul."
+}
+
+
+op {
+  name: "Mul"
+  attr {
+    name: "axis"
+    type: "int"
+  }
+  summary: "Performs element-wise binary multiplication."
+}
+
+
+op {
+  name: "Relu"
   summary: "Computes rectified linear: `max(features, 0)`."
 }
 
 op {
-  name: "Relu6"  
+  name: "Relu6"
   summary: "Computes rectified linear 6: `min(max(features, 0), 6)`."
 }
+
 
 op {
   name: "Softmax"
@@ -167,18 +327,18 @@ op {
 }
 
 op {
-  name: "Sigmoid" 
+  name: "Sigmoid"
   summary: "Computes sigmoid of `x` element-wise."
   description: "Specifically, `y = 1 / (1 + exp(-x))`."
 }
 
 op {
-  name: "Tanh"  
+  name: "Tanh"
   summary: "Computes hyperbolic tangent of `x` element-wise."
 }
 
 op {
-  name: "Elu"  
+  name: "Elu"
   attr {
     name: "alpha"
     type: "float"
@@ -190,29 +350,6 @@ op {
   description: "Not directly supported alpha in Tensorflow. See [Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs)](http://arxiv.org/abs/1511.07289)"
 }
 
-op {
-  name: "Dropout"
-  attr { 
-    name: "keep_prob"
-    type: "float"  
-  }
-  attr {
-    name: "seed"
-    type: "int"  
-  }
-  attr {
-    name: "noise_shape"
-    type: "list(int)"
-  }
-  summary: "Dropout Layer"
-  description: "With probability keep_prob, outputs the input element scaled up by 1 / keep_prob, otherwise outputs 0. The scaling is so that the expected sum is unchanged."
-}
-
-op {
-  name: "Flatten"  
-  summary: "Flatten Layer."
-  description: "Not directly mapping in Tensorflow. Flatten tensor with shape [batch_size, k]."
-}
 
 op {
   name: "Pad"
@@ -236,7 +373,7 @@ op {
       name: "constant_values"
       type: "float"
     }
-  }  
+  }
   summary: "Padding Layer."
   description: "Not directly mapping in Tensorflow. Pads a tensor."
 }
@@ -302,7 +439,7 @@ op {
         s: "NHWC"
         s: "NCHW"
         s: "NDHWC"
-        s: "NCDHW"        
+        s: "NCDHW"
       }
     }
   }
@@ -311,109 +448,21 @@ op {
 }
 
 op {
-  name: "Add"
-  input_arg {
-    name: "x"
-    type_attr: "T"
-  }
-  input_arg {
-    name: "y"
-    type_attr: "T"
-  }
-  output_arg {
-    name: "z"
-    type_attr: "T"
-  }
-  attr {
-    name: "axis"
-    type: "int"    
-  }  
-  summary: "Returns x + y element-wise."
-  description: "*NOTE*: `Add` supports broadcasting."
-}
-
-op {
-  name: "Mul"  
+  name: "Mul"
   summary: "Returns x * y element-wise."
-  description: "*NOTE*: `Mul` supports broadcasting. More about broadcasting[here](http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html)"  
+  description: "*NOTE*: `Mul` supports broadcasting. More about broadcasting[here](http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html)"
 }
 
 op {
-  name: "Concat"  
-  attr {
-    name: "axis"
-    type: "int"    
-  }  
-  summary: "Concatenates tensors along one dimension."
-}
-
-op {
-  name: "BatchNorm"
-  attr {
-      name: "axis"
-      type: "int"
-      description: "The axis that should be normalized (typically the features axis). For instance, after a Convolution2D layer with data_format="channels_first", set axis=1 in BatchNormalization"
-  }
-  attr {
-      name: "momentum"
-      type: "float"
-      default_value {
-        f: 0.99
-      }
-      description: "Momentum for the moving average."
-  }
-  attr {
-    name: "epsilon"
-    type: "float"
-    default_value {
-      f: 0.0001
-    }
-  }
-  attr {
-      name: "scale"
-      type: "bool"
-      default_value {
-        b: True
-      }
-      description: "If True, multiply by gamma. If False, gamma is not used. When the next layer is linear (also e.g. nn.relu), this can be disabled since the scaling can be done by the next layer."
-  }
-  attr {
-    name: "center"
-    type: "bool"
-    default_value {
-        b: True
-      }
-    description: " If True, add offset of beta to normalized tensor. If False, beta is ignored."
-  }
-  attr {
-    name: "data_format"
-    type: "string"
-    default_value {
-      s: "NHWC"
-    }
-    description: "The data format for x and y. Either 'NHWC' (default) or 'NCHW'."
-  }
-  attr {
-    name: "is_training"
-    type: "bool"
-    default_value {
-      b: true
-    }
-    description: "A bool value to indicate the operation is for training (default) or inference."
-  }
-  summary: "tf.layers.batch_normalization"
-  description: "Follow Keras FusedBatchNorm, parameters are gamma, beta, mean, std."
-}
-
-op {
-  name: "Reshape"  
+  name: "Reshape"
   attr {
     name: "shape"
-    type: "shape"    
+    type: "shape"
     description: "The target shape of the tensor."
   }
   summary: "Reshapes a tensor."
 }
+
 
 op {
   name: "RNN"
@@ -432,22 +481,38 @@ op {
 
 op {
   name: "SeparableConvolution"
-}
-
-op {
-  name: "Squeeze"
   attr {
-    name: "squeeze_dims"
+    name: "strides"
     type: "list(int)"
-    default_value {
+    description: "1-D of length 4.  The stride of the sliding window for each dimension\nof `input`."
+  }
+  attr {
+    name: "padding"
+    type: "string"
+    description: "The type of padding algorithm to use."
+    allowed_values {
       list {
+        s: "SAME"
+        s: "VALID"
       }
     }
-    description: "If specified, only squeezes the dimensions listed. The dimension index starts at 0. It is an error to squeeze a dimension that is not 1."    
   }
-  summary: "Removes dimensions of size 1 from the shape of a tensor."
-  description: "Given a tensor `input`, this operation returns a tensor of the same type with\nall dimensions of size 1 removed. If you don\'t want to remove all size 1\ndimensions, you can remove specific size 1 dimensions by specifying\n`squeeze_dims`.\n\nFor example:\n\n```\n# \'t\' is a tensor of shape [1, 2, 1, 3, 1, 1]\nshape(squeeze(t)) ==> [2, 3]\n```\n\nOr, to remove specific size 1 dimensions:\n\n```\n#      \'t\' is a tensor of shape [1, 2, 1, 3, 1, 1]\nshape(squeeze(t, [2, 4])) ==> [1, 2, 3, 1]\n```"
+  attr {
+    name: "data_format"
+    type: "string"
+    default_value {
+      s: "NHWC"
+    }
+    description: "Specify the data format of the input and output data. With the\ndefault format \"NHWC\", the data is stored in the order of:\n    [batch, height, width, channels].\nAlternatively, the format could be \"NCHW\", the data storage order of:\n    [batch, channels, height, width]."
+    allowed_values {
+      list {
+        s: "NHWC"
+        s: "NCHW"
+      }
+    }
+  }
 }
+
 
 op {
   name: "LRN"
@@ -472,13 +537,25 @@ op {
   }
 }
 
-op {
-  name: "Relu6"  
-  summary: "Computes rectified linear 6: `min(max(features, 0), 6)`."
-}
 
 op {
-  name: "DepthwiseConv"  
+  name: "Squeeze"
+  attr {
+    name: "squeeze_dims"
+    type: "list(int)"
+    default_value {
+      list {
+      }
+    }
+    description: "If specified, only squeezes the dimensions listed. The dimension index starts at 0. It is an error to squeeze a dimension that is not 1."
+  }
+  summary: "Removes dimensions of size 1 from the shape of a tensor."
+  description: "Given a tensor `input`, this operation returns a tensor of the same type with\nall dimensions of size 1 removed. If you don\'t want to remove all size 1\ndimensions, you can remove specific size 1 dimensions by specifying\n`squeeze_dims`.\n\nFor example:\n\n```\n# \'t\' is a tensor of shape [1, 2, 1, 3, 1, 1]\nshape(squeeze(t)) ==> [2, 3]\n```\n\nOr, to remove specific size 1 dimensions:\n\n```\n#      \'t\' is a tensor of shape [1, 2, 1, 3, 1, 1]\nshape(squeeze(t, [2, 4])) ==> [1, 2, 3, 1]\n```"
+}
+
+
+op {
+  name: "DepthwiseConv"
   attr {
     name: "strides"
     type: "list(int)"
