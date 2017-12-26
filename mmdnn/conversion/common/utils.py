@@ -9,7 +9,9 @@ import sys
 import numpy as np
 from six import text_type, binary_type, integer_types
 
-__all__ = ["assign_IRnode_values", "convert_onnx_pad_to_tf", 'convert_tf_pad_to_onnx', 'compute_tf_same_padding', 'is_valid_padding', 'download_file']
+__all__ = ["assign_IRnode_values", "convert_onnx_pad_to_tf", 'convert_tf_pad_to_onnx',
+           'compute_tf_same_padding', 'is_valid_padding', 'download_file',
+           'shape_to_list']
 
 def assign_attr_value(attr, val):
     from mmdnn.conversion.common.IR.graph_pb2 import TensorShape
@@ -64,6 +66,10 @@ def is_valid_padding(pads):
     return sum(np.reshape(pads, -1)) == 0
 
 
+def shape_to_list(shape):
+    return [dim.size for dim in shape.dim]
+
+
 def compute_tf_same_padding(input_shape, kernel_shape, strides, data_format='NHWC'):
     """ Convert [SAME] padding in tensorflow, keras to onnx pads,
         i.e. [x1_begin, x2_begin...x1_end, x2_end,...] """
@@ -115,6 +121,7 @@ def _progress_check(count, block_size, total_size):
 
 def _single_thread_download(url, file_name):
     from six.moves import urllib
+    import requests
     result, _ = urllib.request.urlretrieve(url, file_name, _progress_check)
     print ("")
     return result
@@ -124,7 +131,6 @@ def _downloader(start, end, url, filename):
     import requests
     headers = {'Range': 'bytes=%d-%d' % (start, end)}
     r = requests.get(url, headers=headers, stream=True)
-
     with open(filename, "r+b") as fp:
         fp.seek(start)
         var = fp.tell()
