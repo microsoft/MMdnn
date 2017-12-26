@@ -5,10 +5,9 @@
 
 from __future__ import division
 import os
-import math
 import sys
-import requests
 import numpy as np
+from six import text_type, binary_type, integer_types
 
 __all__ = ["assign_IRnode_values", "convert_onnx_pad_to_tf", 'convert_tf_pad_to_onnx', 'compute_tf_same_padding', 'is_valid_padding', 'download_file']
 
@@ -17,25 +16,24 @@ def assign_attr_value(attr, val):
     '''Assign value to AttrValue proto according to data type.'''
     if isinstance(val, bool):
         attr.b = val
-    elif isinstance(val, int):
+    elif isinstance(val, integer_types):
         attr.i = val
     elif isinstance(val, float):
         attr.f = val
-    elif isinstance(val, str):
-        attr.s = val.encode('utf-8')
-    elif isinstance(val, bytes):
+    elif isinstance(val, binary_type) or isinstance(val, text_type):
+        if hasattr(val, 'encode'):
+            val = val.encode()
         attr.s = val
     elif isinstance(val, TensorShape):
         attr.shape.MergeFromString(val.SerializeToString())
     elif isinstance(val, list):
-        if not val:
-            return
-        if isinstance(val[0], int):
+        if not val: return
+        if isinstance(val[0], integer_types):
             attr.list.i.extend(val)
         elif isinstance(val[0], TensorShape):
             attr.list.shape.extend(val)
         else:
-            raise NotImplementedError('AttrValue cannot be of %s %s' % (type(val), type(val[0])))
+            raise NotImplementedError('AttrValue cannot be of list[{}].'.format(val[0]))
     else:
         raise NotImplementedError('AttrValue cannot be of %s' % type(val))
 
@@ -123,6 +121,7 @@ def _single_thread_download(url, file_name):
 
 
 def _downloader(start, end, url, filename):
+    import requests
     headers = {'Range': 'bytes=%d-%d' % (start, end)}
     r = requests.get(url, headers=headers, stream=True)
 
