@@ -149,7 +149,7 @@ def KitModel(weight_file = None):
                 IR_node.variable_name,
                 IR_node.name,
                 IR_node.get_attr('kernel_shape')[-1],
-                ', '.join('%s' % i for i in IR_node.layer.attr["kernel_shape"].list.i[-2]),
+                ', '.join('%s' % i for i in IR_node.layer.attr["kernel_shape"].list.i[:-2]),
                 ', '.join('%s' % i for i in IR_node.layer.attr['strides'].list.i[1:-1]),
                 IR_node.get_attr('auto_pad') != 'VALID',
                 IR_node.get_attr('use_bias'),

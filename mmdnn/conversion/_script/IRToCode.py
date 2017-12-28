@@ -6,7 +6,11 @@ from six import text_type as _text_type
 
 def _convert(args):
     if args.dstModelFormat == 'caffe':
-        raise NotImplementedError("Destination [Caffe] is not implemented yet.")
+        from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
+        if args.IRWeightPath == None:        
+            emitter = CaffeEmitter(args.IRModelPath)
+        else:
+            emitter = CaffeEmitter((args.IRModelPath, args.IRWeightPath))
 
     elif args.dstModelFormat == 'keras':
         from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
