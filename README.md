@@ -6,57 +6,12 @@ A comprehensive, cross-framework solution to convert, visualize and diagnosis de
 
 Basically it converts many DNN models that trained by one framework into others. The major features include:
 
-- **Model File Converter** Converting DNN models between many frameworks
-- **Model Code Snippet Generator** Generating training or inference code snippet for any frameworks
-- **Model Visualization** Visualizing dnn network structure and parameters for any framework
+- **Model File Converter** Converting DNN models between frameworks
+- **Model Code Snippet Generator** Generating training or inference code snippet for frameworks
+- **Model Visualization** Visualizing DNN network architecture and parameters for frameworks
 - **Model compatibility testing** (On-going)
 
-## Features
-
-### Model Conversion
-
-Across the industry and academia, there are a number of existing frameworks available for developers and researchers to design a model, where each framework has its own network structure definition and saving model format. The gaps between frameworks impede the inter-operation of the models.
-
-![Supported](https://mxtw2g.dm2304.livefilestore.com/y4m4pZSqv6iifJyuIpPQ22Z1d4IzQqZYUYRqk418Y9_0s564LrHQH4fhRUnLBjBP_VbrIrgzaXqxIJxm6LymIywnqBNyrU41sDB33lq2pEMb8KC5djkAhVQ3EE7eVM3XPs_XLpNoqNbkUbtKbQxEdx-0O5XOuoOqea_BUK4XL6JWJcSWF2FEB-5U-tHjqLpl5OiztJ_8M8n57ZCjnhBb1wSHA?width=303&height=300&cropmode=none)
-
-We provide a model converter to help developers convert models between frameworks, through an intermediate format.
-
-The intermediate representation will store the network structures as a protobuf binary and pre-trained weights as NumPy native format.
-
-> [Note] Currently the IR weights data is in NHWC (channel last) format.
-
-#### Support frameworks
-
-> [Note] You can click the links to get detail README of each framework
-
-- [Caffe](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/caffe/README.md) (Source only)
-- [Keras](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/keras/README.md)
-- [MXNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/mxnet/README.md)
-- [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental)
-- [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md) (Destination only)
-- [PyTorch](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/pytorch/README.md) (Destination only)
-
-#### Tested models
-
-The model conversion between current supported frameworks is tested on some **ImageNet** models.
-
-Models                                              | Caffe | Keras | Tensorflow | CNTK | MXNet | PyTorch |
-:--------------------------------------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:-------:|
-[Inception V1](http://arxiv.org/abs/1409.4842v1)    |   √   |   √   |     √      |   √  |   √   | x (No LRN)
-[Inception V3](http://arxiv.org/abs/1512.00567)     |   ×   |   √   |     √      |   √  |   √   |    √
-[ResNet V1 50](https://arxiv.org/abs/1512.03385)    |   ×   |   √   |     √      |   o  |   √   |    √
-[ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   √   |   √   |     √      |   √  |   √   |    √
-[VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √
-[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (No Relu6) | × | ×
-[Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      |   ×  |   ×   |    ×
-[SqueezeNet](https://arxiv.org/pdf/1602.07360)      |       |   √   |     √      |   √  |   √   |    ×
-
-#### On-going frameworks
-
-- [Caffe2](https://caffe2.ai/)
-- [CoreML](https://developer.apple.com/documentation/coreml)
-
-#### Installation
+## Installation
 
 You can get stable version of MMdnn by
 ```bash
@@ -68,88 +23,52 @@ or you can try newest version by
 pip install -U git+https://github.com/Microsoft/MMdnn.git@master
 ```
 
-#### Usage
+## Features
 
-We will use the conversion from [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-models) to CNTK as an example.
+### Model Conversion
 
-Install [Keras](https://keras.io/#installation) and [Tensorflow](https://www.tensorflow.org/install/) in case
+Across the industry and academia, there are a number of existing frameworks available for developers and researchers to design a model, where each framework has its own network structure definition and saving model format. The gaps between frameworks impede the inter-operation of the models.
 
-```bash
-$ pip install keras
-$ pip install tensorflow
-```
+![Supported](https://mxtw2g.dm2304.livefilestore.com/y4m4pZSqv6iifJyuIpPQ22Z1d4IzQqZYUYRqk418Y9_0s564LrHQH4fhRUnLBjBP_VbrIrgzaXqxIJxm6LymIywnqBNyrU41sDB33lq2pEMb8KC5djkAhVQ3EE7eVM3XPs_XLpNoqNbkUbtKbQxEdx-0O5XOuoOqea_BUK4XL6JWJcSWF2FEB-5U-tHjqLpl5OiztJ_8M8n57ZCjnhBb1wSHA)
 
-1. The example will download the pre-trained models at first, then use a simple model extractor for [Keras applications](https://keras.io/applications/#applications), you can refer it to extract your Keras model structure and weights.
+We provide a model converter to help developers convert models between frameworks, through an intermediate representation format.
 
-```bash
-$ python -m mmdnn.conversion.examples.keras.extract_model -n inception_v3
+#### Support frameworks
 
-Using TensorFlow backend.
-Downloading data from https://github.com/fchollet/deep-learning-models/releases/download/v0.5/inception_v3_weights_tf_dim_ordering_tf_kernels.h5
-96075776/96112376 [============================>.] - ETA: 0s
-.
-.
-.
-Network structure is saved as [imagenet_inception_v3.json].
-Network weights are saved as [imagenet_inception_v3.h5].
-```
+> [Note] You can click the links to get detail README of each framework
 
-The structure file *imagenet_inception_v3.json* and weights file *imagenet_inception_v3.h5* are downloaded to current working directory.
+- [Caffe](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/caffe/README.md) (Source only)
+- [Keras](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/keras/README.md)
+- [MXNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/mxnet/README.md)
+- [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental)
+- [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md) (Destination only)
+- [PyTorch](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/pytorch/README.md) (Destination only)
+- CoreML (Experimental, Destination only)
 
-2. Convert the pre-trained model files to intermediate representation
+#### Tested models
 
-```bash
-$ python -m mmdnn.conversion._script.convertToIR -f keras -d converted -n imagenet_inception_v3.json -w imagenet_inception_v3.h5
+The model conversion between current supported frameworks is tested on some **ImageNet** models.
 
-Using TensorFlow backend.
-.
-.
-.
-Network file [imagenet_inception_v3.json] is loaded successfully.
-IR network structure is saved as [converted.json].
-IR network structure is saved as [converted.pb].
-IR weights are saved as [converted.npy].
-```
+Models                                              | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML
+:--------------------------------------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|
+[Inception V1](http://arxiv.org/abs/1409.4842v1)    |   √   |   √   |     √      |   √  |   √   | x (No LRN)
+[Inception V3](http://arxiv.org/abs/1512.00567)     |   ×   |   √   |     √      |   √  |   √   |    √
+[Inception V4](http://arxiv.org/abs/1512.00567)     |   √   |       |            |      |       |
+[ResNet V1 50](https://arxiv.org/abs/1512.03385)    |   ×   |   √   |     √      |   o  |   √   |    √
+[ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   √   |   √   |     √      |   √  |   √   |    √
+[VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √       |    √
+[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (No Relu6) | × | ×
+[Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      |   ×  |   ×   |    ×
+[SqueezeNet](https://arxiv.org/pdf/1602.07360)      |       |   √   |     √      |   √  |   √   |    ×
 
-The Command will take *imagenet_inception_v3.json* as network structure description file, *imagenet_inception_v3.h5* as pre-trained weights, and you will get the intermediate representation files *converted.json* for visualization, *converted.proto* and *converted.npy* for next steps.
+#### On-going frameworks
 
+- Caffe (Destination)
+- PyTorch (Source)
+- CNTK (Source)
+- [Caffe2](https://caffe2.ai/)
 
-3. Convert the IR files to CNTK models
-
-```bash
-$ python -m mmdnn.conversion._script.IRToCode -f cntk -d converted_cntk.py -n converted.pb -w converted.npy
-
-Parse file [converted.pb] with binary format successfully.
-Target network code snippet is saved as [converted_cntk.py].
-```
-
-And you will get a file name *converted_cntk.py*, which contains the **original CNTK** codes to build the *Inception V3* network.
-
-With the three steps, you have already converted the pre-trained Keras Inception_v3 models to CNTK network file *converted_cntk.py* and weight file *converted.npy*. You can use these two files to fine-tune training or inference.
-
-4. Test the converted model
-
-```bash
-$ python -m mmdnn.conversion.examples.cntk.imagenet_test -p inception_v3 -s keras -n converted_cntk -w converted.npy
-.
-.
-.
-[(386, 0.94166422), (101, 0.029935161), (385, 0.0025184231), (340, 0.0001713269), (684, 0.00014733501)]
-Test model [inception_v3] from [keras] passed.
-```
-
-The converted model has been tested.
-
-5. Dump the original CNTK model
-
-```bash
-$ python -m mmdnn.conversion.examples.cntk.imagenet_test -n converted_cntk -w converted.npy --dump cntk_inception_v3.dnn
-.
-.
-.
-CNTK model file is saved as [cntk_inception_v3.dnn], generated by [converted_cntk.py] and [converted.npy].
-```
-The file *cntk_inception_v3.dnn* can be loaded by CNTK directly.
+---
 
 ### Model Visualization
 
@@ -173,11 +92,41 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 
 ![Inception_v3](https://npd8fa.dm2304.livefilestore.com/y4m7KYf7_pPQkijj0qwY-35ZkSwhL3o2CzSRv5WtbZIFnmZDYBHRQ3atBMvqnK-oIqBdIiO4grUTQ3cwxDULNSN9OydRzebqXI-tumcIajDb6sIn9tyaQfrSDDkW0V-3z_fOhxa4nsO0shTNS5ix1SHnuPBBJsorNUNAJSjtT5QZWZAd2LilqiIv4zntlANLp_gL_rSwvlSzC4ATXzSnvrOdg?width=1024&height=696&cropmode=none)
 
-# Contributing
+---
 
-We are working on other frameworks conversion and visualization, such as PyTorch and CoreML. And more RNN related operators are investigating. Any contributions and suggestions are welcome!
+## Examples
 
-Thanks to [Saumitro Dasgupta](https://github.com/ethereon), the initial codes of *caffe-to-tensorflow* are references to his project [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow).
+- [Keras "inception_v3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
+
+- [MXNet "resnet 152 11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
+
+- [Caffe "AlexNet" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/10)
+
+- [Tensorflow "mnist mlp model" to CNTK](https://github.com/Microsoft/MMdnn/issues/11)
+
+- [Tensorflow "Inception_v3" to MXNet](https://github.com/Microsoft/MMdnn/issues/30)
+
+- [Caffe "inception_v4" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/26)
+
+- [Caffe "VGG16_SOD" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/27)
+
+---
+
+## Contributing
+
+### Intermediate Representation
+
+The intermediate representation stores the **network architecture** in **protobuf binary** and **pre-trained weights** in **NumPy** native format.
+
+> [Note!] Currently the IR weights data is in NHWC (channel last) format.
+
+Details are in [ops.txt](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/common/IR/ops.pbtxt) and [graph.proto](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/common/IR/graph.proto). New operators and any comments are welcome.
+
+### Frameworks
+
+We are working on other frameworks conversion and visualization, such as Caffe2, PyTorch, CoreML and so on. And more RNN related operators are investigating. Any contributions and suggestions are welcome!
+
+### License
 
 Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
@@ -190,3 +139,7 @@ provided by the bot. You will only need to do this once across all repos using o
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+## Acknowledgements
+
+Thanks to [Saumitro Dasgupta](https://github.com/ethereon), the initial code of *caffe -> IR converting* is references to his project [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow).

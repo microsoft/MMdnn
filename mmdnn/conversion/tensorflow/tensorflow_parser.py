@@ -608,3 +608,16 @@ class TensorflowParser(Parser):
             self.set_weight(source_node.name, 'mean', self.ckpt_data[mean.name])
             self.set_weight(source_node.name, 'var', self.ckpt_data[var.name])
 
+
+    def rename_Transpose(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, 1)
+        perm = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
+        perm = tensor_util.MakeNdarray(perm).tolist()
+        assign_IRnode_values(IR_node, {'perm' : perm})
+
+    def rename_Sigmoid(self, source_node):
+        IR_node = self._convert_identity_operation(source_node)
+
+
+    def rename_Mul(self, source_node):
+        IR_node = self._convert_identity_operation(source_node)

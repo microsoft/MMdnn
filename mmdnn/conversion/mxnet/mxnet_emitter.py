@@ -46,11 +46,10 @@ class MXNetEmitter(Emitter):
         if isinstance(model, _string_types):
             network_path = model
             self.weight_loaded = False
-        elif len(model) == 4:
+        elif len(model) == 3:
             network_path = model[0]
             weight_path = model[1]
-            self.input_shape = model[2]
-            self.output_weights_file = model[3]
+            self.output_weights_file = model[2]
             self.weights = np.load(weight_path).item()
             self.weight_loaded = True
             self.output_weights = dict()
@@ -206,9 +205,6 @@ def predict(model, labels, url):
 
 
     def gen_weight_code(self, shape, phase):
-        if len(shape) == 0:
-            # var = raw_input("Input layer not detected, please type data shape manually(i.e. X, X, X, X): ")
-            shape['data'] = ', '.join('%s' % i for i in self.input_shape)
         str = "def deploy_weight(model, weight_file):\n"
         str += """
     if weight_file == None:
