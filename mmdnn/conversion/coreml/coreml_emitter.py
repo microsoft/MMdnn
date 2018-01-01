@@ -341,7 +341,7 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_Reshape(self, IR_node):
-        assert False
+        # assert False
         shape_str = IRGraph.shapeToStr(IR_node.IR_layer.attr["shape"].shape, True)
         code = "{:<15} = Reshape(name = \"{}\", target_shape = ({}))({})".format(
             IR_node.replace_scope(IR_node.name),
@@ -438,8 +438,8 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_Concat(self, IR_node):
-        assert False
-        code = Keras2Emitter._emit_merge(IR_node, "concatenate")
+        # assert False
+        code = self._emit_merge(IR_node, "CONCAT")
         return code
 
 
