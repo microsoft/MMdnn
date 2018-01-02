@@ -44,7 +44,7 @@ class NodeMapper(object):
             from mmdnn.conversion.caffe.graph import NodeKind
             if node.kind == NodeKind.Pooling:
                 kwargs['kernel_shape'] = [1, node.kernel_parameters.k_h, node.kernel_parameters.k_w, 1]
-            elif node.kind == NodeKind.Convolution:
+            elif node.kind in [NodeKind.Convolution, NodeKind.Deconvolution]:
                 pass
             else:
                 raise ValueError
@@ -53,6 +53,17 @@ class NodeMapper(object):
             o_h_tf = (input_shape.height + node.kernel_parameters.p_h * 2 - node.kernel_parameters.k_h + 1) // node.kernel_parameters.s_h
             o_w_caffe = node.output_shape.width
             o_w_tf = (input_shape.width + node.kernel_parameters.p_w * 2 - node.kernel_parameters.k_w + 1) // node.kernel_parameters.s_w
+
+            if node.kind == NodeKind.Deconvolution:
+                dilation = 1
+                ko_h = dilation * (int(node.kernel_parameters.k_h) - 1) + 1
+                ko_w = dilation * (int(node.kernel_parameters.k_w) - 1) + 1
+                o_h_tf = int(node.kernel_parameters.s_h) * (input_shape.height - 1) + ko_h - 2 * int(node.kernel_parameters.p_h)
+                o_w_tf = int(node.kernel_parameters.s_w) * (input_shape.width - 1) + ko_w - 2 * int(node.kernel_parameters.p_w)
+            else:
+                o_h_tf = (input_shape.height + node.kernel_parameters.p_h * 2 - node.kernel_parameters.k_h + 1) // node.kernel_parameters.s_h
+                o_w_tf = (input_shape.width + node.kernel_parameters.p_w * 2 - node.kernel_parameters.k_w + 1) // node.kernel_parameters.s_w
+                
 
             kwargs['pads'] = [0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0] + \
                     [0, node.kernel_parameters.p_h + o_h_caffe - o_h_tf, node.kernel_parameters.p_w + o_w_caffe - o_w_tf, 0]
@@ -96,13 +107,12 @@ class NodeMapper(object):
 
     @classmethod
     def map_deconvolution(cls, node):
-        raise NotImplementedError()
         parent, _ = node.get_only_parent()
         kwargs = cls.get_kernel_params(node, parent.output_shape)
 
-        kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]
+        kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, node.parameters.num_output, parent.output_shape.channels]
         kwargs['group'] = node.parameters.group
-        return Node.create('deconv', **kwargs)
+        return Node.create('ConvTranspose', **kwargs)
 
     @classmethod
     def map_crop(cls, node):
@@ -165,9 +175,7 @@ class NodeMapper(object):
 
     @classmethod
     def map_softmax(cls, node):
-        kwargs = {}
-        cls._convert_output_shape(kwargs, node)
-        return Node.create('Softmax', **kwargs)
+        return Node.create('Softmax')
 
     @classmethod
     def map_lrn(cls, node):
@@ -198,6 +206,12 @@ class NodeMapper(object):
         return Node.create('BatchNorm', **kwargs)
 
     @classmethod
+    def map_scale(cls, node):
+        scale_value = float(node.parameters.filler.value)
+        kwargs = {'scale' : True, 'bias' : False, 'gamma' : scale_value, 'epsilon': 0}
+        return Node.create('BatchNorm', **kwargs)
+
+    @classmethod
     def map_eltwise(cls, node):
         operations = {0: 'Mul', 1: 'Add', 2: 'Max'}
         op_code = node.parameters.operation
@@ -208,12 +222,12 @@ class NodeMapper(object):
 
     @classmethod
     def map_abs_val(cls, node):
-        return Node.create('Abs')
+        return Node.create('abs_val')
 
     @classmethod
     def map_tanh(cls, node):
-        return Node.create('Tanh')
+        return Node.create('tanh')
 
     @classmethod
     def map_sigmoid(cls, node):
-        return Node.create('Sigmoid')
+        return Node.create('sigmoid')

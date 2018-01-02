@@ -65,7 +65,7 @@ LAYER_DESCRIPTORS = {
     'ContrastiveLoss': shape_scalar,
     'Convolution': shape_convolution,
     'Crop': shape_not_implemented,
-    'Deconvolution': shape_not_implemented,
+    'Deconvolution': shape_deconvolution,
     'Data': shape_data,
     'Dropout': shape_identity,
     'DummyData': shape_data,
@@ -91,7 +91,7 @@ LAYER_DESCRIPTORS = {
     'Scale': shape_identity,
     'Sigmoid': shape_identity,
     'SigmoidCrossEntropyLoss': shape_scalar,
-    'Silence': shape_not_implemented,
+    'Silence': shape_identity,
     'Softmax': shape_identity,
     'SoftmaxWithLoss': shape_scalar,
     'Split': shape_not_implemented,
@@ -195,7 +195,7 @@ class CaffeNode(object):
             k_h = k_w = 0
             s_h = s_w = 1
         p_h = self.get_kernel_value(params.pad_h, params.pad, 0, default=0)
-        p_w = self.get_kernel_value(params.pad_w, params.pad, 1, default=0)
+        p_w = self.get_kernel_value(params.pad_h, params.pad, 1, default=0)
         return KernelParameters(global_pooling, k_h, k_w, s_h, s_w, p_h, p_w)
 
     def __str__(self):
@@ -381,6 +381,8 @@ class GraphBuilder(object):
             # filter them out here.
             if (not exclude) and (phase == 'test'):
                 exclude = (layer.type == LayerType.Dropout)
+            if (not exclude):
+                exclude = (layer.type == LayerType.Silence)
             if not exclude:
                 if layer.name in filtered_layer_names:
                     for i in range(1, len(filtered_layer_names)):
