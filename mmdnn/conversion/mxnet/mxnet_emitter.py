@@ -25,6 +25,7 @@ class MXNetEmitter(Emitter):
     }
 
     activation_map = {
+        "relu6"   : "Relu",
         "relu"    : "Relu",
         "sigmoid" : "Sigmoid",
         "tanh"    : "Tanh",
