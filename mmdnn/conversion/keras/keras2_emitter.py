@@ -203,7 +203,7 @@ def KitModel(weight_file = None):
         if not dilations:
             dilations = [1] * len(IR_node.get_attr('kernel_shape'))
 
-        self.add_body(1, "{:<15} = layers.Conv2DTranpose(name='{}', {}, kernel_size=({}), strides=({}), dilation_rate=({}), padding='{}', use_bias={})({})".format(
+        self.add_body(1, "{:<15} = layers.Conv2DTranspose(name='{}', {}, kernel_size=({}), strides=({}), dilation_rate=({}), padding='{}', use_bias={})({})".format(
             IR_node.variable_name,
             IR_node.name,
             filters_str,
