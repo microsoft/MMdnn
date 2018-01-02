@@ -101,6 +101,10 @@ class NodeMapper(object):
         kwargs = cls.get_kernel_params(node, parent.output_shape)
         kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, parent.output_shape.channels, node.parameters.num_output]
         kwargs['use_bias'] = node.parameters.bias_term
+        if node.parameters.dilation:
+            dilation = node.parameters.dilation[0]
+            if dilation != 1:
+                kwargs['dilations'] = [1, dilation, dilation, dilation, 1]
         kwargs['group'] = node.parameters.group
         return Node.create('Conv', **kwargs)
 
@@ -111,6 +115,10 @@ class NodeMapper(object):
         kwargs = cls.get_kernel_params(node, parent.output_shape)
 
         kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, node.parameters.num_output, parent.output_shape.channels]
+        if node.parameters.dilation:
+            dilation = node.parameters.dilation[0]
+            if dilation != 1:
+                kwargs['dilations'] = [1, dilation, dilation, dilation, 1]
         kwargs['group'] = node.parameters.group
         return Node.create('ConvTranspose', **kwargs)
 
