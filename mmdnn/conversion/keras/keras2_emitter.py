@@ -71,8 +71,6 @@ def load_weights(model, weight_file):
                 current_layer_parameters = [cur_dict['depthwise_filter'], cur_dict['pointwise_filter']]
                 if 'bias' in cur_dict:
                     current_layer_parameters.append(cur_dict['bias'])
-            elif layer.__class__.__name__ == "Conv2DTranspose":
-                current_layer_parameters = cur_dict
             else:
                 # rot weights
                 current_layer_parameters = [cur_dict['weights']]
