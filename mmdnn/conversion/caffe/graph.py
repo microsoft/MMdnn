@@ -195,7 +195,7 @@ class CaffeNode(object):
             k_h = k_w = 0
             s_h = s_w = 1
         p_h = self.get_kernel_value(params.pad_h, params.pad, 0, default=0)
-        p_w = self.get_kernel_value(params.pad_h, params.pad, 1, default=0)
+        p_w = self.get_kernel_value(params.pad_w, params.pad, 1, default=0)
         return KernelParameters(global_pooling, k_h, k_w, s_h, s_w, p_h, p_w)
 
     def __str__(self):
