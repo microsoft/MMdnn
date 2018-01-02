@@ -129,6 +129,10 @@ class TensorflowParser(Parser):
 
 
     def _convert_layers_batchnorm(self, source_node):
+        # check existence in checkpoint data
+        if source_node.name not in self.ckpt_data.keys():
+            return
+        
         # name, op
         IR_node = self.IR_graph.node.add()
         TensorflowParser._copy_and_reop(source_node, IR_node, 'BatchNorm')
