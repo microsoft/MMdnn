@@ -115,6 +115,7 @@ class NodeMapper(object):
         kwargs = cls.get_kernel_params(node, parent.output_shape)
 
         kwargs['kernel_shape'] = [node.kernel_parameters.k_h, node.kernel_parameters.k_w, node.parameters.num_output, parent.output_shape.channels]
+        kwargs['use_bias'] = node.parameters.bias_term
         if node.parameters.dilation:
             dilation = node.parameters.dilation[0]
             if dilation != 1:
