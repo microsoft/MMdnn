@@ -264,18 +264,19 @@ class CoreMLEmitter(Emitter):
             stride_height, stride_width = tuple(IR_node.get_attr('strides')[1:-1])
 
             # Padding
-            padding = self._get_padding(IR_node)
-            self.builder.add_pooling(name=IR_node.name,
-                                     height=height,
-                                     width=width,
-                                     stride_height=stride_height,
-                                     stride_width=stride_width,
-                                     layer_type=layer_type_str,
-                                     padding_type=padding,
-                                     input_name=input_name,
-                                     output_name=IR_node.name,
-                                     exclude_pad_area=True,
-                                     is_global=global_pooling)
+            padding_type = self._get_padding(IR_node)
+
+        self.builder.add_pooling(name=IR_node.name,
+                                    height=height,
+                                    width=width,
+                                    stride_height=stride_height,
+                                    stride_width=stride_width,
+                                    layer_type=layer_type_str,
+                                    padding_type=padding_type,
+                                    input_name=input_name,
+                                    output_name=IR_node.name,
+                                    exclude_pad_area=True,
+                                    is_global=global_pooling)
 
 
     def emit_UNKNOWN(self, IR_node):
@@ -341,7 +342,7 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_Reshape(self, IR_node):
-        # assert False
+        assert False
         shape_str = IRGraph.shapeToStr(IR_node.IR_layer.attr["shape"].shape, True)
         code = "{:<15} = Reshape(name = \"{}\", target_shape = ({}))({})".format(
             IR_node.replace_scope(IR_node.name),
@@ -438,9 +439,7 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_Concat(self, IR_node):
-        # assert False
-        code = self._emit_merge(IR_node, "CONCAT")
-        return code
+        self._emit_merge(IR_node, "CONCAT")
 
 
     def emit_BatchNorm(self, IR_node):

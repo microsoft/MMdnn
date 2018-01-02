@@ -43,13 +43,9 @@ class TestCoreML(TestKit):
         print("Model loading success.")
 
     def preprocess(self, image_path):
-        # from tensorflow.contrib.keras.api.keras.preprocessing import image
-        # import cv2
-        # img = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_RGB2BGR)
-        # img = cv2.resize(img, (224, 224))
         from PIL import Image as pil_image
         img = pil_image.open(image_path)
-        img = img.resize((224, 224))
+        img = img.resize((299, 299))
         self.data = img
 
     def print_result(self):
