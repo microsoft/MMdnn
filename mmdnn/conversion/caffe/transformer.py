@@ -318,6 +318,7 @@ class CaffeTransformer(object):
             if target_toolkit not in ('caffe', 'caffe2'):
                 graph = graph.transformed([DataReshaper({ # Reshape the parameters to TensorFlow's ordering
                     NodeKind.Convolution: (2, 3, 1, 0), # (c_o, c_i, h, w) -> (h, w, c_i, c_o)
+                    NodeKind.Deconvolution: (2, 3, 1, 0), # (c_o, c_i, h, w) -> (h, w, c_i, c_o)
                     NodeKind.InnerProduct: (1, 0) # (c_o, c_i) -> (c_i, c_o)
                 }),
                     ParameterNamer() # Convert parameters to dictionaries
