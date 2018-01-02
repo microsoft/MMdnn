@@ -59,7 +59,7 @@ class Graph(object):
 
     def get_node(self, name):
         if not name in self.layer_map:
-            print ("Error: Graph doesn't have node [%s]." % name)
+            raise IOError("Graph doesn't have node [%s]." % name)
             return None
         else:
             return self.layer_map[name]
