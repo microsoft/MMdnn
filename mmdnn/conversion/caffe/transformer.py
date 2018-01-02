@@ -250,7 +250,8 @@ class BatchNormPreprocessor(object):
 
             if len(np.squeeze(mean) == 1):
                 mean = np.squeeze(mean)
-                variance = np.squeeze(mean)
+                variance = np.squeeze(variance)
+                scaling_factor = np.squeeze(scaling_factor)
 
             mean *= scaling_factor
             variance *= scaling_factor

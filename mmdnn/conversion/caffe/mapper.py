@@ -215,6 +215,9 @@ class NodeMapper(object):
 
     @classmethod
     def map_scale(cls, node):
+        raise NotImplementedError
+        # TODO: The gamma parameter has to be set (in node.data?) and this should work.
+        # Also, mean should be set to 0, and var to 1, just to be safe.
         scale_value = float(node.parameters.filler.value)
         kwargs = {'scale' : True, 'bias' : False, 'gamma' : scale_value, 'epsilon': 0}
         return Node.create('BatchNorm', **kwargs)
