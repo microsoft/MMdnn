@@ -29,7 +29,7 @@ pip install -U git+https://github.com/Microsoft/MMdnn.git@master
 
 Across the industry and academia, there are a number of existing frameworks available for developers and researchers to design a model, where each framework has its own network structure definition and saving model format. The gaps between frameworks impede the inter-operation of the models.
 
-![Supported](https://mxtw2g.dm2304.livefilestore.com/y4m4pZSqv6iifJyuIpPQ22Z1d4IzQqZYUYRqk418Y9_0s564LrHQH4fhRUnLBjBP_VbrIrgzaXqxIJxm6LymIywnqBNyrU41sDB33lq2pEMb8KC5djkAhVQ3EE7eVM3XPs_XLpNoqNbkUbtKbQxEdx-0O5XOuoOqea_BUK4XL6JWJcSWF2FEB-5U-tHjqLpl5OiztJ_8M8n57ZCjnhBb1wSHA)
+![Supported](https://github.com/Microsoft/MMdnn/blob/master/docs/supported.jpg)
 
 We provide a model converter to help developers convert models between frameworks, through an intermediate representation format.
 
@@ -37,7 +37,7 @@ We provide a model converter to help developers convert models between framework
 
 > [Note] You can click the links to get detail README of each framework
 
-- [Caffe](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/caffe/README.md) (Source only)
+- [Caffe](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/caffe/README.md)
 - [Keras](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/keras/README.md)
 - [MXNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/mxnet/README.md)
 - [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental)
@@ -63,7 +63,6 @@ Models                                              | Caffe | Keras | Tensorflow
 
 #### On-going frameworks
 
-- Caffe (Destination)
 - PyTorch (Source)
 - CNTK (Source)
 - [Caffe2](https://caffe2.ai/)
@@ -97,17 +96,11 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 ## Examples
 
 - [Keras "inception_v3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
-
 - [MXNet "resnet 152 11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
-
-- [Caffe "AlexNet" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/10)
-
 - [Tensorflow "mnist mlp model" to CNTK](https://github.com/Microsoft/MMdnn/issues/11)
-
 - [Tensorflow "Inception_v3" to MXNet](https://github.com/Microsoft/MMdnn/issues/30)
-
+- [Caffe "AlexNet" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/10)
 - [Caffe "inception_v4" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/26)
-
 - [Caffe "VGG16_SOD" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/27)
 
 ---
