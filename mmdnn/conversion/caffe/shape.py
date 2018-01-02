@@ -25,6 +25,21 @@ def get_strided_kernel_output_shape(node, round_func):
 def shape_not_implemented(node):
     raise NotImplementedError
 
+def shape_deconvolution(node):
+    input_shape = node.get_only_parent()[0].output_shape
+    params = node.kernel_parameters
+    dilation = node.parameters.dilation[0]
+
+    # Kernel extents
+    ko_h = dilation * (int(params.k_h) - 1) + 1
+    ko_w = dilation * (int(params.k_w) - 1) + 1
+    # Output height and with
+    o_h = int(params.s_h) * (input_shape.height - 1) + ko_h - 2 * int(params.p_h)
+    o_w = int(params.s_w) * (input_shape.width - 1) + ko_w - 2 * int(params.p_w)
+
+    has_c_o = hasattr(node.parameters, 'num_output')
+    c = node.parameters.num_output if has_c_o else input_shape.channels
+    return TensorShape(input_shape.batch_size, c, o_h, o_w)
 
 def shape_identity(node):
     assert len(node.parents) > 0
