@@ -245,7 +245,7 @@ class BatchNormPreprocessor(object):
             assert len(node.data) == 3
             mean, variance, scale = node.data
             # Prescale the stats
-            scaling_factor = 1.0 / scale if scale != 0 else 0
+            scaling_factor = float(1.0 / scale) if float(scale) != 0 else 0
             mean *= scaling_factor
             variance *= scaling_factor
             # Replace with the updated values
