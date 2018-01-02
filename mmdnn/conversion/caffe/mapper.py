@@ -49,22 +49,19 @@ class NodeMapper(object):
             else:
                 raise ValueError
 
+            dilation = node.parameters.dilation[0] if node.parameters.dilation else 1
             o_h_caffe = node.output_shape.height
-            o_h_tf = (input_shape.height + node.kernel_parameters.p_h * 2 - node.kernel_parameters.k_h + 1) // node.kernel_parameters.s_h
             o_w_caffe = node.output_shape.width
-            o_w_tf = (input_shape.width + node.kernel_parameters.p_w * 2 - node.kernel_parameters.k_w + 1) // node.kernel_parameters.s_w
+            ko_h = dilation * (int(node.kernel_parameters.k_h) - 1) + 1
+            ko_w = dilation * (int(node.kernel_parameters.k_w) - 1) + 1
 
             if node.kind == NodeKind.Deconvolution:
-                dilation = 1
-                ko_h = dilation * (int(node.kernel_parameters.k_h) - 1) + 1
-                ko_w = dilation * (int(node.kernel_parameters.k_w) - 1) + 1
                 o_h_tf = int(node.kernel_parameters.s_h) * (input_shape.height - 1) + ko_h - 2 * int(node.kernel_parameters.p_h)
                 o_w_tf = int(node.kernel_parameters.s_w) * (input_shape.width - 1) + ko_w - 2 * int(node.kernel_parameters.p_w)
             else:
-                o_h_tf = (input_shape.height + node.kernel_parameters.p_h * 2 - node.kernel_parameters.k_h + 1) // node.kernel_parameters.s_h
-                o_w_tf = (input_shape.width + node.kernel_parameters.p_w * 2 - node.kernel_parameters.k_w + 1) // node.kernel_parameters.s_w
+                o_h_tf = (input_shape.height + node.kernel_parameters.p_h * 2 - ko_h + 1) // node.kernel_parameters.s_h
+                o_w_tf = (input_shape.width + node.kernel_parameters.p_w * 2 - ko_w + 1) // node.kernel_parameters.s_w
                 
-
             kwargs['pads'] = [0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0] + \
                     [0, node.kernel_parameters.p_h + o_h_caffe - o_h_tf, node.kernel_parameters.p_w + o_w_caffe - o_w_tf, 0]
 
@@ -104,7 +101,7 @@ class NodeMapper(object):
         if node.parameters.dilation:
             dilation = node.parameters.dilation[0]
             if dilation != 1:
-                kwargs['dilations'] = [1, dilation, dilation, dilation, 1]
+                kwargs['dilations'] = [1, dilation, dilation, 1]
         kwargs['group'] = node.parameters.group
         return Node.create('Conv', **kwargs)
 
@@ -119,7 +116,7 @@ class NodeMapper(object):
         if node.parameters.dilation:
             dilation = node.parameters.dilation[0]
             if dilation != 1:
-                kwargs['dilations'] = [1, dilation, dilation, dilation, 1]
+                kwargs['dilations'] = [1, dilation, dilation, 1]
         kwargs['group'] = node.parameters.group
         return Node.create('ConvTranspose', **kwargs)
 
