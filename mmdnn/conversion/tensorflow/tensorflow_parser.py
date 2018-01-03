@@ -139,7 +139,7 @@ class TensorflowParser(Parser):
 
         # moving variance (var)
         moving_variance = self.get_parent(source_node.name, [0, 0])
-        if self.weight_loaded:
+        if self.weight_loaded and moving_variance.name in self.ckpt_data.keys():
             self.set_weight(source_node.name, 'var', self.ckpt_data[moving_variance.name])
 
         # gamma (scale)
@@ -156,7 +156,7 @@ class TensorflowParser(Parser):
 
         # mean
         mean = self.get_parent(output_node.name, [1, 1, 0, 0], True)
-        if self.weight_loaded:
+        if self.weight_loaded and mean.name in self.ckpt_data.keys():
             self.set_weight(source_node.name, 'mean', self.ckpt_data[mean.name])
 
         # bias
