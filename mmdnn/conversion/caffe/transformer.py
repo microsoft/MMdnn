@@ -128,7 +128,7 @@ class DataReshaper(object):
             if node.kind not in self.reshaped_node_types:
                 # Check for 2+ dimensional data
                 if any(len(tensor.shape) > 1 for tensor in node.data):
-                    print_stderr('Warning: parmaters not reshaped for node: {}'.format(node))
+                    print_stderr('Warning: parameters not reshaped for node: {}'.format(node))
                 continue
             transpose_order = self.map(node.kind)
             weights = node.data[0]
@@ -244,10 +244,18 @@ class BatchNormPreprocessor(object):
             assert node.data is not None
             assert len(node.data) == 3
             mean, variance, scale = node.data
+
             # Prescale the stats
             scaling_factor = 1.0 / scale if scale != 0 else 0
+
+            if len(np.squeeze(mean) == 1):
+                mean = np.squeeze(mean)
+                variance = np.squeeze(variance)
+                scaling_factor = np.squeeze(scaling_factor)
+
             mean *= scaling_factor
             variance *= scaling_factor
+
             # Replace with the updated values
             node.data = [mean, variance]
             if hasattr(node, 'scale_bias_node'):
@@ -266,7 +274,7 @@ class ParameterNamer(object):
         for node in graph.nodes:
             if node.data is None:
                 continue
-            if node.kind in (NodeKind.Convolution, NodeKind.InnerProduct):
+            if node.kind in (NodeKind.Convolution, NodeKind.Deconvolution, NodeKind.InnerProduct):
                 names = ('weights',)
                 if node.parameters.bias_term:
                     names += ('bias',)
@@ -318,6 +326,7 @@ class CaffeTransformer(object):
             if target_toolkit not in ('caffe', 'caffe2'):
                 graph = graph.transformed([DataReshaper({ # Reshape the parameters to TensorFlow's ordering
                     NodeKind.Convolution: (2, 3, 1, 0), # (c_o, c_i, h, w) -> (h, w, c_i, c_o)
+                    NodeKind.Deconvolution: (2, 3, 1, 0), # (c_o, c_i, h, w) -> (h, w, c_i, c_o)
                     NodeKind.InnerProduct: (1, 0) # (c_o, c_i) -> (c_i, c_o)
                 }),
                     ParameterNamer() # Convert parameters to dictionaries
