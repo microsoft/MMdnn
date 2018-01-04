@@ -49,7 +49,7 @@ class NodeMapper(object):
             else:
                 raise ValueError
 
-            dilation = node.parameters.dilation[0] if node.parameters.dilation else 1
+            dilation = node.parameters.dilation[0] if hasattr(node.parameters, 'dilation') and node.parameters.dilation else 1
             o_h_caffe = node.output_shape.height
             o_w_caffe = node.output_shape.width
             ko_h = dilation * (int(node.kernel_parameters.k_h) - 1) + 1
@@ -61,7 +61,7 @@ class NodeMapper(object):
             else:
                 o_h_tf = (input_shape.height + node.kernel_parameters.p_h * 2 - ko_h + 1) // node.kernel_parameters.s_h
                 o_w_tf = (input_shape.width + node.kernel_parameters.p_w * 2 - ko_w + 1) // node.kernel_parameters.s_w
-                
+
             kwargs['pads'] = [0, node.kernel_parameters.p_h, node.kernel_parameters.p_w, 0] + \
                     [0, node.kernel_parameters.p_h + o_h_caffe - o_h_tf, node.kernel_parameters.p_w + o_w_caffe - o_w_tf, 0]
 
