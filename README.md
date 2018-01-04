@@ -40,7 +40,7 @@ We provide a model converter to help developers convert models between framework
 - [Caffe](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/caffe/README.md)
 - [Keras](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/keras/README.md)
 - [MXNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/mxnet/README.md)
-- [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental)
+- [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental) (Highly recommend you read the README of tensorflow firstly)
 - [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md) (Destination only)
 - [PyTorch](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/pytorch/README.md) (Destination only)
 - CoreML (Experimental, Destination only)
@@ -97,6 +97,7 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 
 - [Keras "inception_v3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
 - [MXNet "resnet 152 11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
+- [Tensorflow "resnet 101" to PyTorch](https://github.com/Microsoft/MMdnn/issues/22)
 - [Tensorflow "mnist mlp model" to CNTK](https://github.com/Microsoft/MMdnn/issues/11)
 - [Tensorflow "Inception_v3" to MXNet](https://github.com/Microsoft/MMdnn/issues/30)
 - [Caffe "AlexNet" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/10)
