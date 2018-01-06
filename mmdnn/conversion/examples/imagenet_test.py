@@ -203,7 +203,7 @@ class TestKit(object):
 
 
     def dump(self, path = None):
-        raise NotImplementError()
+        raise NotImplementedError()
 
 
 '''
