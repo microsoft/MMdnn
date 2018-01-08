@@ -97,7 +97,7 @@ class CoreMLEmitter(Emitter):
                 func = getattr(self, "emit_" + node_type)
                 func(current_node)
             else:
-                print("CntkEmitter has not supported operator [%s]." % (node_type))
+                print("CoreMLEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
             # self._connect_coreml_layers()
             i = i + 1
@@ -224,6 +224,65 @@ class CoreMLEmitter(Emitter):
                                      dilation_factors=dilations)
 
 
+    def emit_DepthwiseConv(self, IR_node):
+        # depth-wise convolution
+        input_name, output_name = (IR_node.IR_layer.input[0], IR_node.IR_layer.name)
+
+        kernel_channels = 1
+        is_deconv = False
+        has_bias = IR_node.get_attr('use_bias')
+        print("has_bias",has_bias)
+
+        filters = IR_node.get_attr('kernel_shape')[-1]
+        filters_str = 'depth_multiplier = {}'.format(filters)
+        depth_multiplier = filters
+
+        W = self.weights_dict[IR_node.name]['weights']
+        height, width, channels, n_filters = W.shape
+        output_shape = None
+        W = np.reshape(W,(height, width,1,channels * depth_multiplier))
+        b = self.weights_dict[IR_node.name]['bias'] if has_bias else None
+        # Dilations
+        dilations = IR_node.get_attr('dilations', [1, 1])
+        padding = self._get_padding(IR_node).lower()
+        output_channels = W.shape[-1]
+        groups = W.shape[-1]
+        stride_height, stride_width = IR_node.get_attr('strides')[1], IR_node.get_attr('strides')[2]
+        # print("============================")
+        # print("name = {},kernel_channels = {},output_channels = {}, height = {},width = {} stride_height = {},stride_width = {},border_mode = {},groups = {},W = {},b = {},has_bias = {}, output_shape = {},dilation_factors = {}".format(
+        #     IR_node.real_name,
+        #     kernel_channels,
+        #     output_channels,
+        #     height,
+        #     width,
+        #     stride_height,
+        #     stride_width,
+        #     padding,
+        #     groups,
+        #     W.shape,
+        #     b,
+        #     has_bias,
+        #     output_shape,dilations))
+
+        self.builder.add_convolution(name=IR_node.real_name,
+                                     kernel_channels=kernel_channels,
+                                     output_channels=output_channels,
+                                     height=height,
+                                     width=width,
+                                     stride_height=stride_height,
+                                     stride_width=stride_width,
+                                     border_mode=padding,
+                                     groups=groups,
+                                     W=W,
+                                     b=b,
+                                     has_bias=has_bias,
+                                     is_deconv=is_deconv,
+                                     output_shape=output_shape,
+                                     input_name=input_name,
+                                     output_name=output_name,
+                                     dilation_factors=dilations)
+
+
     def emit_Pool(self, IR_node):
         """
         Convert pooling layer to coreml.
@@ -342,14 +401,51 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_Reshape(self, IR_node):
-        assert False
-        shape_str = IRGraph.shapeToStr(IR_node.IR_layer.attr["shape"].shape, True)
-        code = "{:<15} = Reshape(name = \"{}\", target_shape = ({}))({})".format(
-            IR_node.replace_scope(IR_node.name),
-            IR_node.name,
-            shape_str,
-            IR_node.replace_scope(IR_node.in_edges[0]))
-        return code
+        # print("-----------------------------")
+        def ShapetrToTuple(string, batch_none = False):
+            if batch_none == True:
+                ls = [int(item) for item in string.split(', ')]
+                ls.insert(0,None)
+                return tuple(ls)
+            else:
+                ls = [int(item) for item in string.split(', ')]
+                return tuple(ls)
+
+        input_name, output_name = (IR_node.IR_layer.input[0], IR_node.IR_layer.name)
+        # print("input_name, output_name",input_name, output_name)
+
+        last_node = self.IR_graph.get_node(IR_node.in_edges[0]).IR_layer
+        input_shape_dims = last_node.attr["_output_shapes"].list.shape
+        target_shape_dims = IR_node.IR_layer.attr["_output_shapes"].list.shape
+
+        input_shape = ShapetrToTuple(IRGraph.shapeToStr(input_shape_dims[0]),True)
+        target_shape = ShapetrToTuple(IRGraph.shapeToStr(target_shape_dims[0]))
+
+        # print("input_shape, target_shape",input_shape,target_shape)
+
+        def get_coreml_target_shape(target_shape):
+            if len(target_shape) == 1: #(D,)
+                coreml_shape = (1,target_shape[0],1,1)
+            elif len(target_shape) == 2: #(S,D)
+                coreml_shape = target_shape + (1,1)
+            elif len(target_shape) == 3: #(H,W,C)
+                coreml_shape = (1, target_shape[2], target_shape[0], target_shape[1])
+            else:
+                coreml_shape = None
+            return coreml_shape
+
+        def get_mode(input_shape, target_shape):
+            in_shape = input_shape[1:]
+            if len(in_shape) == 3 or len(target_shape) == 3:
+                    return 1
+            else:
+                return 0
+        
+        new_shape = get_coreml_target_shape(target_shape)
+        mode = get_mode(input_shape, target_shape)
+        self.builder.add_reshape(name=IR_node.name, input_name = input_name, output_name=output_name,
+                target_shape = new_shape, mode = mode)
+
 
 
     def emit_Tanh(self, IR_node):
@@ -392,18 +488,38 @@ class CoreMLEmitter(Emitter):
                 IR_node.replace_scope(IR_node.in_edges[0]))
         return code
 
+    def emit_Relu6(self, IR_node):
+        # print(IR_node.name)
+        layer = IR_node.real_name
+        input_name, output_name = (IR_node.IR_layer.input[0], IR_node.IR_layer.name)
+        relu_output_name = output_name + '_relu'
+        self.builder.add_activation(layer, 'RELU', input_name, relu_output_name)
+        # negate it
+        neg_output_name = relu_output_name + '_neg'
+        self.builder.add_activation(layer+'__neg__', 'LINEAR', relu_output_name, 
+                neg_output_name,[-1.0, 0])
+        # apply threshold
+        clip_output_name = relu_output_name + '_clip'
+        self.builder.add_unary(layer+'__clip__', neg_output_name, clip_output_name, 
+                'threshold', alpha = -6.0)
+        # negate it back
+        self.builder.add_activation(layer+'_neg2', 'LINEAR', clip_output_name, 
+                output_name,[-1.0, 0])
 
     def emit_Embedding(self, IR_node):
-        assert False
-        ret = "{:<15} = Embedding(input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
-                IR_node.name,
-                IR_node.IR_layer.attr['input_dim'].i,
-                IR_node.IR_layer.attr['output_dim'].i,
-                IR_node.IR_layer.attr['mask_zero'].b,
-                IR_node.in_edges[0])
-
-        return ret
-
+        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+        output_name = IR_node.out_edges[0]
+        W = self.weights_dict[IR_node.name]['weights']
+        vocab_size = 10
+        output_channels = W.shape[-1]
+        builder.add_embedding(name = IR_node.name,
+                      W = W,
+                      b = None,
+                      input_dim = vocab_size,
+                      output_channels = output_channels,
+                      has_bias = False,
+                      input_name = input_name,
+                      output_name = output_name)
 
     def emit_RNNs(self, IR_node, func):
         assert False
