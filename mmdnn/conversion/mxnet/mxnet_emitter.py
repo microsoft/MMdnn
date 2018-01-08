@@ -25,6 +25,7 @@ class MXNetEmitter(Emitter):
     }
 
     activation_map = {
+        "relu6"   : "Relu",
         "relu"    : "Relu",
         "sigmoid" : "Sigmoid",
         "tanh"    : "Tanh",
@@ -88,7 +89,7 @@ def RefactorModel():
 
             if node_type.lower() in MXNetEmitter.activation_map:
                 func = getattr(self, "emit_Activation")
-                line = func(current_node, node_type.lower())
+                line = func(current_node, MXNetEmitter.activation_map[node_type.lower()].lower())
                 self.add_body(1, line)
             elif hasattr(self, "emit_" + node_type):
                 func = getattr(self, "emit_" + node_type)

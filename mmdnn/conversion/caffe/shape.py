@@ -4,9 +4,16 @@ import math
 TensorShape = namedtuple('TensorShape', ['batch_size', 'channels', 'height', 'width'])
 
 
-def get_filter_output_shape(i_h, i_w, params, round_func):
-    o_h = (i_h + 2 * params.p_h - params.k_h) / float(params.s_h) + 1
-    o_w = (i_w + 2 * params.p_w - params.k_w) / float(params.s_w) + 1
+def get_kernel_extents(params, dilation):
+    ko_h = dilation * (int(params.k_h) - 1) + 1
+    ko_w = dilation * (int(params.k_w) - 1) + 1
+    return ko_h, ko_w
+
+def get_filter_output_shape(i_h, i_w, dilation, params, round_func):
+    ko_h, ko_w = get_kernel_extents(params, dilation)
+
+    o_h = (i_h + 2 * params.p_h - ko_h) / float(params.s_h) + 1
+    o_w = (i_w + 2 * params.p_w - ko_w) / float(params.s_w) + 1
     return (int(round_func(o_h)), int(round_func(o_w)))
 
 
@@ -14,8 +21,10 @@ def get_strided_kernel_output_shape(node, round_func):
     assert node.layer is not None
     input_shape = node.get_only_parent()[0].output_shape
     params = node.kernel_parameters
+    dilation = 1 if len(node.parameters.dilation) == 0 else node.parameters.dilation[0]
+
     o_h, o_w = get_filter_output_shape(input_shape.height, input_shape.width,
-                                       params, round_func)
+                                       dilation, params, round_func)
     params = node.parameters
     has_c_o = hasattr(params, 'num_output')
     c = params.num_output if has_c_o else input_shape.channels
@@ -25,6 +34,18 @@ def get_strided_kernel_output_shape(node, round_func):
 def shape_not_implemented(node):
     raise NotImplementedError
 
+def shape_deconvolution(node):
+    input_shape = node.get_only_parent()[0].output_shape
+    params = node.kernel_parameters
+    dilation = node.parameters.dilation[0]
+
+    ko_h, ko_w = get_kernel_extents(params, dilation)
+    o_h = int(params.s_h) * (input_shape.height - 1) + ko_h - 2 * int(params.p_h)
+    o_w = int(params.s_w) * (input_shape.width - 1) + ko_w - 2 * int(params.p_w)
+
+    has_c_o = hasattr(node.parameters, 'num_output')
+    c = node.parameters.num_output if has_c_o else input_shape.channels
+    return TensorShape(input_shape.batch_size, c, o_h, o_w)
 
 def shape_identity(node):
     assert len(node.parents) > 0

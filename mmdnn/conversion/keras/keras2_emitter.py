@@ -173,25 +173,40 @@ def KitModel(weight_file = None):
 
     def _emit_convolution(self, IR_node, conv_type):
         assert IR_node.get_attr('group', 1) == 1
-        filters = IR_node.get_attr('kernel_shape')[-1]
-        filters_str = 'filters = {}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier = {}'.format(filters)
+
+        if conv_type.endswith('Transpose'):
+            filters = IR_node.get_attr('kernel_shape')[-2]
+        else:
+            filters = IR_node.get_attr('kernel_shape')[-1]
+        filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier = {}'.format(filters)
 
         input_node, padding = self._defuse_padding(IR_node)
-        self.add_body(1, "{:<15} = {}(name='{}', {}, kernel_size=({}), strides=({}), padding='{}', use_bias={})({})".format(
+
+        dilations = IR_node.get_attr('dilations')
+        if not dilations:
+            dilations = [1] * len(IR_node.get_attr('kernel_shape'))
+
+        self.add_body(1, "{:<15} = {}(name='{}', {}, kernel_size={}, strides={}, dilation_rate={}, padding='{}', use_bias={})({})".format(
             IR_node.variable_name,
             conv_type,
             IR_node.name,
             filters_str,
             tuple(IR_node.get_attr('kernel_shape')[:-2]),
             tuple(IR_node.get_attr('strides')[1:-1]),
+            tuple(dilations[1:-1]),
             padding,
             IR_node.get_attr('use_bias'),
             input_node))
 
 
+    def emit_ConvTranspose(self, IR_node):
+        dim = len(IR_node.get_attr('kernel_shape')) - 2
+        self._emit_convolution(IR_node, 'layers.Conv{}DTranspose'.format(dim))
+
+
     def emit_Conv(self, IR_node):
         dim = len(IR_node.get_attr('kernel_shape')) - 2
-        return self._emit_convolution(IR_node, 'layers.Conv{}D'.format(dim))
+        self._emit_convolution(IR_node, 'layers.Conv{}D'.format(dim))
 
 
     #############
