@@ -21,7 +21,7 @@ def get_strided_kernel_output_shape(node, round_func):
     assert node.layer is not None
     input_shape = node.get_only_parent()[0].output_shape
     params = node.kernel_parameters
-    dilation = 1 if len(node.parameters.dilation) == 0 else node.parameters.dilation[0]
+    dilation = node.parameters.dilation[0] if hasattr(node.parameters, 'dilation') and node.parameters.dilation else 1
 
     o_h, o_w = get_filter_output_shape(input_shape.height, input_shape.width,
                                        dilation, params, round_func)
