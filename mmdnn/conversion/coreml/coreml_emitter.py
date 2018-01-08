@@ -86,8 +86,6 @@ class CoreMLEmitter(Emitter):
         mode = 'classifier' if is_classifier else None
         self.builder = _NeuralNetworkBuilder(input_features, output_features, mode=mode)
 
-        i = 0
-
         for layer in self.IR_graph.topological_sort:
             current_node = self.IR_graph.get_node(layer)
             print("Converting layer {}({})".format(current_node.name, current_node.type))
@@ -99,9 +97,6 @@ class CoreMLEmitter(Emitter):
             else:
                 print("CoreMLEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
-            # self._connect_coreml_layers()
-            i = i + 1
-            # if i == 2: break
 
         # self._connect_coreml_layers()
         # Add classifier classes (if applicable)
@@ -120,14 +115,14 @@ class CoreMLEmitter(Emitter):
 
             if predicted_feature_name is not None:
                 self.builder.set_class_labels(classes, predicted_feature_name = predicted_feature_name,
-                                        prediction_blob = predicted_probabilities_output)
+                    prediction_blob = predicted_probabilities_output)
             else:
                 self.builder.set_class_labels(classes)
 
         # Set pre-processing paramsters
         self.builder.set_pre_processing_parameters(
             image_input_names=[input_features[0][0]],
-        #image_input_names,
+            #image_input_names,
             is_bgr=is_bgr,
             red_bias=red_bias,
             green_bias=green_bias,
@@ -172,9 +167,6 @@ class CoreMLEmitter(Emitter):
         """
         Convert convolution layer to coreml.
         """
-        # Get input and output names
-        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
-
         has_bias = IR_node.get_attr('use_bias')
         is_deconv = False # TODO: Deconv
 
@@ -219,50 +211,32 @@ class CoreMLEmitter(Emitter):
                                      has_bias=has_bias,
                                      is_deconv=is_deconv,
                                      output_shape=output_shape,
-                                     input_name=input_name,
+                                     input_name=self.parent_variable_name(IR_node),
                                      output_name=IR_node.real_name,
                                      dilation_factors=dilations)
 
 
     def emit_DepthwiseConv(self, IR_node):
         # depth-wise convolution
-        input_name, output_name = (IR_node.IR_layer.input[0], IR_node.IR_layer.name)
-
         kernel_channels = 1
         is_deconv = False
         has_bias = IR_node.get_attr('use_bias')
-        print("has_bias",has_bias)
 
-        filters = IR_node.get_attr('kernel_shape')[-1]
-        filters_str = 'depth_multiplier = {}'.format(filters)
-        depth_multiplier = filters
+        depth_multiplier = IR_node.get_attr('kernel_shape')[-1]
 
         W = self.weights_dict[IR_node.name]['weights']
         height, width, channels, n_filters = W.shape
         output_shape = None
         W = np.reshape(W,(height, width,1,channels * depth_multiplier))
         b = self.weights_dict[IR_node.name]['bias'] if has_bias else None
+
         # Dilations
         dilations = IR_node.get_attr('dilations', [1, 1])
+
         padding = self._get_padding(IR_node).lower()
         output_channels = W.shape[-1]
         groups = W.shape[-1]
         stride_height, stride_width = IR_node.get_attr('strides')[1], IR_node.get_attr('strides')[2]
-        # print("============================")
-        # print("name = {},kernel_channels = {},output_channels = {}, height = {},width = {} stride_height = {},stride_width = {},border_mode = {},groups = {},W = {},b = {},has_bias = {}, output_shape = {},dilation_factors = {}".format(
-        #     IR_node.real_name,
-        #     kernel_channels,
-        #     output_channels,
-        #     height,
-        #     width,
-        #     stride_height,
-        #     stride_width,
-        #     padding,
-        #     groups,
-        #     W.shape,
-        #     b,
-        #     has_bias,
-        #     output_shape,dilations))
 
         self.builder.add_convolution(name=IR_node.real_name,
                                      kernel_channels=kernel_channels,
@@ -278,8 +252,8 @@ class CoreMLEmitter(Emitter):
                                      has_bias=has_bias,
                                      is_deconv=is_deconv,
                                      output_shape=output_shape,
-                                     input_name=input_name,
-                                     output_name=output_name,
+                                     input_name=self.parent_variable_name(IR_node),
+                                     output_name=IR_node.real_name,
                                      dilation_factors=dilations)
 
 
@@ -289,7 +263,6 @@ class CoreMLEmitter(Emitter):
         """
         # Get input and output names
         input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
-        output_name = IR_node.out_edges[0]
 
         # Pooling layer type
         pooling_type = IR_node.get_attr('pooling_type')
@@ -401,7 +374,6 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_Reshape(self, IR_node):
-        # print("-----------------------------")
         def ShapetrToTuple(string, batch_none = False):
             if batch_none == True:
                 ls = [int(item) for item in string.split(', ')]
@@ -411,10 +383,7 @@ class CoreMLEmitter(Emitter):
                 ls = [int(item) for item in string.split(', ')]
                 return tuple(ls)
 
-        input_name, output_name = (IR_node.IR_layer.input[0], IR_node.IR_layer.name)
-        # print("input_name, output_name",input_name, output_name)
-
-        last_node = self.IR_graph.get_node(IR_node.in_edges[0]).IR_layer
+        last_node = self.IR_graph.get_node(IR_node.in_edges[0]).layer
         input_shape_dims = last_node.attr["_output_shapes"].list.shape
         target_shape_dims = IR_node.IR_layer.attr["_output_shapes"].list.shape
 
@@ -440,11 +409,15 @@ class CoreMLEmitter(Emitter):
                     return 1
             else:
                 return 0
-        
+
         new_shape = get_coreml_target_shape(target_shape)
         mode = get_mode(input_shape, target_shape)
-        self.builder.add_reshape(name=IR_node.name, input_name = input_name, output_name=output_name,
-                target_shape = new_shape, mode = mode)
+        self.builder.add_reshape(
+            name=IR_node.real_name,
+            input_name=self.parent_variable_name(IR_node),
+            output_name=IR_node.real_name,
+            target_shape=new_shape,
+            mode=mode)
 
 
 
@@ -461,11 +434,11 @@ class CoreMLEmitter(Emitter):
         # Get input and output names
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
         output_name = IR_node.out_edges[0]
-        self.builder.add_activation(name=IR_node.name,
-                                    non_linearity=act,
-                                    input_name=input_name,
-                                    output_name=IR_node.name,
-                                    params=params)
+        self.builder.add_activation(name=IR_node.real_name,
+            non_linearity=act,
+            input_name=self.parent_variable_name(IR_node),
+            output_name=IR_node.real_name,
+            params=params)
 
 
     def emit_Relu(self, IR_node):
@@ -496,30 +469,37 @@ class CoreMLEmitter(Emitter):
         self.builder.add_activation(layer, 'RELU', input_name, relu_output_name)
         # negate it
         neg_output_name = relu_output_name + '_neg'
-        self.builder.add_activation(layer+'__neg__', 'LINEAR', relu_output_name, 
+        self.builder.add_activation(layer+'__neg__', 'LINEAR', relu_output_name,
                 neg_output_name,[-1.0, 0])
         # apply threshold
         clip_output_name = relu_output_name + '_clip'
-        self.builder.add_unary(layer+'__clip__', neg_output_name, clip_output_name, 
+        self.builder.add_unary(layer+'__clip__', neg_output_name, clip_output_name,
                 'threshold', alpha = -6.0)
         # negate it back
-        self.builder.add_activation(layer+'_neg2', 'LINEAR', clip_output_name, 
-                output_name,[-1.0, 0])
+        self.builder.add_activation(
+            layer + '_neg2',
+            'LINEAR',
+            clip_output_name,
+            output_name,
+            [-1.0, 0])
 
-    def emit_Embedding(self, IR_node):
-        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
-        output_name = IR_node.out_edges[0]
+    def emit_Gather(self, IR_node):
+        raise NotImplementedError()
         W = self.weights_dict[IR_node.name]['weights']
-        vocab_size = 10
-        output_channels = W.shape[-1]
-        builder.add_embedding(name = IR_node.name,
-                      W = W,
-                      b = None,
-                      input_dim = vocab_size,
-                      output_channels = output_channels,
-                      has_bias = False,
-                      input_name = input_name,
-                      output_name = output_name)
+        if W.ndim == 2:
+            vocab_size = W.shape[0]
+            output_channels = W.shape[1]
+            builder.add_embedding(
+                name=IR_node.real_name,
+                W = W,
+                b = None,
+                input_dim = vocab_size,
+                output_channels = output_channels,
+                has_bias=False,
+                input_name=input_name,
+                output_name=IR_node.real_name)
+        else:
+            raise NotImplementedError()
 
     def emit_RNNs(self, IR_node, func):
         assert False
