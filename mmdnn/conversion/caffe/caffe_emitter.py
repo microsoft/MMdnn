@@ -77,8 +77,15 @@ def gen_weight(weight_file, model, prototxt):
     net = caffe.Net(prototxt, caffe.TRAIN)
 
     for key in __weights_dict:
-        org_w = __weights_dict[key]['weights']
-        net.params[key][0].data.flat = __weights_dict[key]['weights']
+        if 'weights' in __weights_dict[key]:
+            net.params[key][0].data.flat = __weights_dict[key]['weights']
+        elif 'mean' in __weights_dict[key]:
+            net.params[key][0].data.flat = __weights_dict[key]['mean']
+            net.params[key][1].data.flat = __weights_dict[key]['var']
+            if 'scale' in __weights_dict[key]:
+                net.params[key][2].data.flat = __weights_dict[key]['scale']
+        elif 'scale' in __weights_dict[key]:
+            net.params[key][0].data.flat = __weights_dict[key]['scale']
         if 'bias' in __weights_dict[key]:
             net.params[key][1].data.flat = __weights_dict[key]['bias']
     net.save(model)
@@ -99,6 +106,13 @@ if __name__=='__main__':
     def gen_code(self, phase = 'test'):
         self.phase = phase
         self.add_body(0, self.header_code)
+
+        # for test
+        with open("graph.txt", 'w') as f:
+            for layer in self.IR_graph.topological_sort:
+                current_node = self.IR_graph.get_node(layer)
+                print("========current_node=========\n{}".format(current_node.layer), file=f)
+        # test end
 
         for layer in self.IR_graph.topological_sort:
             current_node = self.IR_graph.get_node(layer)
@@ -149,7 +163,6 @@ if __name__=='__main__':
 
 
     def emit_Conv(self, IR_node):
-        self.used_layers.add(IR_node.type)
         self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_size={}, stride={}, num_output={}, pad={}, group={}, \
 bias_term={}, ntop=1)".format(
             IR_node.variable_name,
@@ -164,14 +177,18 @@ bias_term={}, ntop=1)".format(
         dim = len(IR_node.get_attr('strides')) - 2
         if self.weight_loaded:
             self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], [dim + 1, dim] + list(range(0, dim)))
+            self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
+        # keys = []
+        # for key in self.weights_dict[IR_node.name].keys():
+        #     keys.append(key)
+        # print("=======Layer: {}, keys: {}".format(IR_node.name, keys))
 
     def emit_Pool(self, IR_node):
-        self.used_layers.add(IR_node.type)
         pooling_type = IR_node.get_attr('pooling_type')
         if pooling_type == 'MAX':
             pooling_type = P.Pooling.MAX
-        elif pooling_type == 'AVE':
+        elif pooling_type == 'AVG':
             pooling_type = P.Pooling.AVE
         elif pooling_type == 'STOCHASTIC':
             pooling_type = P.Pooling.STOCHASTIC
@@ -186,11 +203,13 @@ bias_term={}, ntop=1)".format(
                 pooling_type,
                 IR_node.get_attr('strides')[1]))
         else:
-            self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, kernel_size={}, stride={}, ntop=1)".format(
+            self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, kernel_size={}, pad_h={}, pad_w={}, stride={}, ntop=1)".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
                 pooling_type,
                 IR_node.get_attr('kernel_shape')[1],
+                IR_node.get_attr('pads')[1],
+                IR_node.get_attr('pads')[2],
                 IR_node.get_attr('strides')[1]))
 
 
@@ -206,9 +225,7 @@ bias_term={}, ntop=1)".format(
             shape))
 
 
-
     def emit_Dropout(self, IR_node):
-        self.used_layers.add(IR_node.type)
         in_place = True
         self.add_body(1, "n.{:<15} = L.Dropout(n.{}, dropout_ratio={} , in_place={}, ntop=1)".format(
             IR_node.variable_name,
@@ -217,9 +234,7 @@ bias_term={}, ntop=1)".format(
             in_place))
 
 
-
     def emit_FullyConnected(self, IR_node):
-        self.used_layers.add(IR_node.type)
         self.add_body(1, "n.{:<15} = L.InnerProduct(n.{}, num_output={}, bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
@@ -228,20 +243,70 @@ bias_term={}, ntop=1)".format(
         if self.weight_loaded:
             self.check_if_need_transpose(IR_node)
             self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], (1, 0))
+            self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
 
+    def emit_BatchNorm(self, IR_node):
+        self.add_body(1, "n.{:<15} = L.BatchNorm(n.{}, eps={}, use_global_stats={}, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('epsilon'),
+            self.phase == 'test'
+        ))
+        scale_layer_var_name = IR_node.variable_name + "_scale"
+        self.add_body(1, "n.{:<15} = L.Scale(n.{}, bias_term={}, ntop=1)".format(
+            scale_layer_var_name,
+            IR_node.variable_name,
+            IR_node.get_attr('bias', False)
+        ))
+        IR_node.real_name = IR_node.name + "_scale"
+        if self.weight_loaded:
+            self.weights_dict[scale_layer_var_name] = dict()
+            self.weights_dict[scale_layer_var_name]['scale'] = self.weights_dict[IR_node.name]['scale']
+            self.weights_dict[scale_layer_var_name]['bias'] = self.weights_dict[IR_node.name]['bias']
+            self.weights_dict[IR_node.name].pop('scale', None)
+            self.weights_dict[IR_node.name].pop('bias', None)
+            self.weights_dict[IR_node.name]['scale'] = 1
+            self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
+
+
+    def emit_LRN(self, IR_node):
+        self.add_body(1, "n.{:<15} = L.LRN(n.{}, local_size={}, alpha={}, beta={}, k={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('size') * 2 - 1,
+            IR_node.get_attr('alpha'),
+            IR_node.get_attr('beta'),
+            IR_node.get_attr('k')
+        ))
+
+
+    def emit_Add(self, IR_node):
+        input_layers = ', '.join(('n.' + self.IR_graph.get_parent(IR_node.name, [num]).real_variable_name) for num in range(0, len(IR_node.in_edges)))
+        self.add_body(1, "n.{:<15} = L.Eltwise({}, operation=1, ntop=1)".format(
+            IR_node.variable_name,
+            input_layers,
+        ))
 
     def emit_Flatten(self, IR_node):
         IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
 
 
+    def emit_Concat(self, IR_node):
+        axis_array = (2, 3, 1, 0)
+        axis = axis_array.index(IR_node.get_attr('axis'))
+        input_layers = ', '.join(('n.' + self.IR_graph.get_node(edge).real_variable_name) for edge in IR_node.in_edges)
+        self.add_body(1, "n.{:<15} = L.Concat({}, axis={})".format(
+            IR_node.variable_name,
+            input_layers,
+            axis
+        ))
 
     # def emit_Tanh(self, IR_node):
     #     self._emit_activation(IR_node, 'ops.tanh')
 
 
     def emit_Relu(self, IR_node):
-        self.used_layers.add(IR_node.type)
         in_place = True
         self.add_body(1, "n.{:<15} = L.ReLU(n.{}, in_place={}, ntop=1)".format(
             IR_node.variable_name,
@@ -251,9 +316,6 @@ bias_term={}, ntop=1)".format(
 
 
     def emit_Softmax(self, IR_node):
-        self.used_layers.add(IR_node.type)
         self.add_body(1, "n.{:<15} = L.Softmax(n.{}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node)))
-
-
