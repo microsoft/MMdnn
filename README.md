@@ -73,7 +73,7 @@ Models                                              | Caffe | Keras | Tensorflow
 
 You can use the [MMdnn model visualizer](http://mmdnn.eastasia.cloudapp.azure.com:8080/) and submit your IR json file to visualize your model.
 
-Use the [Keras "inception_v3" model] as an example again.
+Use the [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-models) as an example again.
 
 1. Download the pre-trained models
 
