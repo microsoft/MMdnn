@@ -43,7 +43,7 @@ We provide a model converter to help developers convert models between framework
 - [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental) (Highly recommend you read the README of tensorflow firstly)
 - [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md) (Destination only)
 - [PyTorch](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/pytorch/README.md) (Destination only)
-- [CoreML]((https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/coreml/README.md)) (Experimental, Destination only)
+- [CoreML](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/coreml/README.md) (Experimental, Destination only)
 
 #### Tested models
 
