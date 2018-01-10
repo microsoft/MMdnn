@@ -34,6 +34,10 @@ class TestCoreML(TestKit):
         parser.add_argument('-output', type=_text_type,
                             required=True, help='CoreML Output Node')
 
+        parser.add_argument('-size', type=int,
+            default=224, help='CoreML Input Image Size')
+
+
         self.args = parser.parse_args()
 
         print("Loading model [{}].".format(self.args.model))
@@ -45,7 +49,7 @@ class TestCoreML(TestKit):
     def preprocess(self, image_path):
         from PIL import Image as pil_image
         img = pil_image.open(image_path)
-        img = img.resize((299, 299))
+        img = img.resize((self.args.size, self.args.size))
         self.data = img
 
     def print_result(self):
@@ -66,7 +70,7 @@ class TestCoreML(TestKit):
 
         # self.print_intermediate_result('conv1_7x7_s2_1', True)
 
-        self.test_truth()
+        # self.test_truth()
 
 if __name__=='__main__':
     tester = TestCoreML()
