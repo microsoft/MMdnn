@@ -13,6 +13,7 @@ BASE_MODEL_URL = 'https://www.cntk.ai/Models/CNTK_Pretrained/'
 MODEL_URL = {
     'alexnet'              : BASE_MODEL_URL + 'AlexNet_ImageNet_CNTK.model',
     'inception_v3'         : BASE_MODEL_URL + 'InceptionV3_ImageNet_CNTK.model',
+    'resnet18'             : BASE_MODEL_URL + 'ResNet18_ImageNet_CNTK.model',
     'resnet50'             : BASE_MODEL_URL + 'ResNet50_ImageNet_CNTK.model',
     'resnet101'            : BASE_MODEL_URL + 'ResNet101_ImageNet_CNTK.model',
     'resnet152'            : BASE_MODEL_URL + 'ResNet152_ImageNet_CNTK.model',
