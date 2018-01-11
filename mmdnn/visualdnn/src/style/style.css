@@ -1,0 +1,226 @@
+:root{
+  --theme-color: #17a9a8;
+  --dot-size:6px;
+}
+body{
+  /*background-color: #333;
+  color: white;*/
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
+  height: 100%;
+  overflow-y: hidden;
+}
+#app{
+  margin:0px;
+  padding: 0px;
+  height: 100%;
+}
+.GraphView{
+  position: relative;
+  width:100%!important;
+  height: 75% !important;
+  padding: 0px;
+  margin: 0px;
+  overflow-y: auto;
+}
+.CodeView{
+  padding: 0px;
+  margin: 0px;
+  overflow-y: hidden;
+  overflow-x: hidden;
+}
+#ace{
+  width:100%!important;
+}
+.ace_scroller.ace_scroll-h{
+  overflow-x: scroll;
+}
+.ace_scroller.ace_scroll-left{
+  overflow-x: hidden;
+}
+#ToolBox{
+  height: 100vh!important;
+  width: 100%;
+  float: left;
+  border-left: 2px solid var(--theme-color);
+}
+.App {
+  height: 100%;
+  width: 100vw;
+  margin: 0px!important;
+  padding: 0px!important;
+}
+.row{  
+  padding: 0px;
+  margin: 0px;
+}
+.col-sm-1, .col-sm-5, .col-sm-6{
+  padding: 0px!important;
+  margin: 0px!important;
+  height: 100vh;
+  
+}
+
+.nav>li>a{
+  color: white;
+  font-size: 1.2em;
+}
+.nav>li>a:focus{
+  color: var(--theme-color);
+}
+.nav>li>a:hover{
+  color: var(--theme-color);
+  background-color: #333;
+  
+}
+.nav>li.toolBox-heading{
+  text-align: center;
+  font-size: 1.5em;
+  background-color: var(--theme-color);
+}
+.nav>li.toolBox-heading>a:hover, .nav>li.toolBox-heading>a:active, .nav>li.toolBox-heading>a:focus{
+  background-color: var(--theme-color);
+  color:white;
+}
+.navbar-inverse{
+  margin: 0px;
+  background-color: #444!important;
+  background-image: none;
+}
+.open>.dropdown-menu{
+  left: 95px;
+  border-radius: 0px;
+}
+[hidden] {
+  display: none !important;
+}   
+.dropdown-menu>li>.btn-input{
+  left:10px;
+  border: none;
+}
+
+.panel-par{
+  position: absolute;
+  bottom: 0px;
+  background-color: #555;
+  margin: 0px;
+  border-radius: 0px;
+  z-index: 100;
+  height: 25%!important;
+  width: 100%;
+  overflow-y: auto;
+}
+.panel-par>.panel-heading{
+  background: #444;
+}
+.panel-code>.panel-heading{
+  height:40px!important;
+  padding: 10px;
+}
+.panel-code>.panel-body{
+  margin: 0px;
+  padding: 0px;
+}
+#nav-par>.nav-tabs>li>a{
+  font-size:15px;
+  padding: 2px 10px;
+}
+.glyphicon-remove-sign{
+  position: absolute;
+  right: 20px;
+  top: 15px;
+  font-size: 1.2em;
+}
+.modeSelect{
+  background-color: #333;
+  border-radius: 3px;
+  font-size: 1.2em;
+  outline: none;
+}
+.btn-run{
+  position: fixed;
+  right: 25px;
+  bottom: 20px;
+  background-color: var(--theme-color)!important;
+  width: 60px;
+  height: 60px;
+  text-align: center!important;
+  line-height: 60px;
+  padding: 0px;
+  font-size: 30px;
+  border-radius: 50%;
+  outline: none;
+}
+.btn-run:hover, .btn-run:focus, .btn-run:active{
+  outline: none;
+}
+.dot-in, .dot-out{
+  width: var(--dot-size);
+  height: var(--dot-size);
+  border-radius: 50%;
+  /* border: 1px solid white; */
+  background-color: var(--theme-color);
+  margin: auto;
+  z-index: 100;
+  position: relative;
+}
+ .dot-in{
+  margin-bottom: calc(-1*var(--dot-size))
+}
+.dot-out{
+  margin-top: calc(-1*var(--dot-size))
+} 
+
+.dot-in-mask, .dot-out-mask{
+  width: calc(var(--dot-size) * 5);
+  height: calc(var(--dot-size) * 5);
+  border-radius: 50%;
+  /* border: 1px solid white; */
+  background-color: transparent;
+  margin: auto;
+  z-index: 201;
+  position: relative;
+  margin-left: calc(-2.5 *var(--dot-size));
+}
+
+ .dot-in-mask{
+  margin-bottom: calc(-2.5 *var(--dot-size))
+}
+.dot-out-mask{
+  margin-top: calc(-2.5 *var(--dot-size))
+} 
+::-webkit-scrollbar
+{
+  width: 8px;  /* for vertical scrollbars */
+  height: 8px; /* for horizontal scrollbars */
+}
+
+::-webkit-scrollbar-track
+{
+  background: rgba(150, 150, 150, 0.1);
+  /* border: 1px solid #999;
+  border-block-end: none;
+  border-block-start: none; */
+}
+
+::-webkit-scrollbar-thumb
+{
+  background: rgba(200, 200, 200, 0.5);
+  border-radius: 3px;
+}
+.pars{
+  padding: 5px;
+}
+
+svg text {
+cursor: default;
+-webkit-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+}
+
+svg text::selection {
+    background: none;
+}

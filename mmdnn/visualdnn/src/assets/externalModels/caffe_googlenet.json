@@ -1,0 +1,627 @@
+{
+  "node": [
+    {
+      "name": "data", 
+      "op": "Input"
+    }, 
+    {
+      "name": "data", 
+      "op": "Input"
+    }, 
+    {
+      "input": [
+        "data"
+      ], 
+      "name": "conv1/7x7_s2", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "conv1/7x7_s2"
+      ], 
+      "name": "pool1/3x3_s2", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "pool1/3x3_s2"
+      ], 
+      "name": "pool1/norm1", 
+      "op": "LRN"
+    }, 
+    {
+      "input": [
+        "pool1/norm1"
+      ], 
+      "name": "conv2/3x3_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "conv2/3x3_reduce"
+      ], 
+      "name": "conv2/3x3", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "conv2/3x3"
+      ], 
+      "name": "conv2/norm2", 
+      "op": "LRN"
+    }, 
+    {
+      "input": [
+        "conv2/norm2"
+      ], 
+      "name": "pool2/3x3_s2", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "pool2/3x3_s2"
+      ], 
+      "name": "inception_3a/1x1", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "pool2/3x3_s2"
+      ], 
+      "name": "inception_3a/3x3_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "pool2/3x3_s2"
+      ], 
+      "name": "inception_3a/5x5_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "pool2/3x3_s2"
+      ], 
+      "name": "inception_3a/pool", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "inception_3a/3x3_reduce"
+      ], 
+      "name": "inception_3a/3x3", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_3a/5x5_reduce"
+      ], 
+      "name": "inception_3a/5x5", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_3a/pool"
+      ], 
+      "name": "inception_3a/pool_proj", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_3a/1x1", 
+        "inception_3a/3x3", 
+        "inception_3a/5x5", 
+        "inception_3a/pool_proj"
+      ], 
+      "name": "inception_3a/output", 
+      "op": "Concat"
+    }, 
+    {
+      "input": [
+        "inception_3a/output"
+      ], 
+      "name": "inception_3b/1x1", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_3a/output"
+      ], 
+      "name": "inception_3b/3x3_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_3a/output"
+      ], 
+      "name": "inception_3b/5x5_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_3a/output"
+      ], 
+      "name": "inception_3b/pool", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "inception_3b/3x3_reduce"
+      ], 
+      "name": "inception_3b/3x3", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_3b/5x5_reduce"
+      ], 
+      "name": "inception_3b/5x5", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_3b/pool"
+      ], 
+      "name": "inception_3b/pool_proj", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_3b/1x1", 
+        "inception_3b/3x3", 
+        "inception_3b/5x5", 
+        "inception_3b/pool_proj"
+      ], 
+      "name": "inception_3b/output", 
+      "op": "Concat"
+    }, 
+    {
+      "input": [
+        "inception_3b/output"
+      ], 
+      "name": "pool3/3x3_s2", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "pool3/3x3_s2"
+      ], 
+      "name": "inception_4a/1x1", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "pool3/3x3_s2"
+      ], 
+      "name": "inception_4a/3x3_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "pool3/3x3_s2"
+      ], 
+      "name": "inception_4a/5x5_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "pool3/3x3_s2"
+      ], 
+      "name": "inception_4a/pool", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "inception_4a/3x3_reduce"
+      ], 
+      "name": "inception_4a/3x3", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4a/5x5_reduce"
+      ], 
+      "name": "inception_4a/5x5", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4a/pool"
+      ], 
+      "name": "inception_4a/pool_proj", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4a/1x1", 
+        "inception_4a/3x3", 
+        "inception_4a/5x5", 
+        "inception_4a/pool_proj"
+      ], 
+      "name": "inception_4a/output", 
+      "op": "Concat"
+    }, 
+    {
+      "input": [
+        "inception_4a/output"
+      ], 
+      "name": "inception_4b/1x1", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4a/output"
+      ], 
+      "name": "inception_4b/3x3_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4a/output"
+      ], 
+      "name": "inception_4b/5x5_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4a/output"
+      ], 
+      "name": "inception_4b/pool", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "inception_4b/3x3_reduce"
+      ], 
+      "name": "inception_4b/3x3", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4b/5x5_reduce"
+      ], 
+      "name": "inception_4b/5x5", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4b/pool"
+      ], 
+      "name": "inception_4b/pool_proj", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4b/1x1", 
+        "inception_4b/3x3", 
+        "inception_4b/5x5", 
+        "inception_4b/pool_proj"
+      ], 
+      "name": "inception_4b/output", 
+      "op": "Concat"
+    }, 
+    {
+      "input": [
+        "inception_4b/output"
+      ], 
+      "name": "inception_4c/1x1", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4b/output"
+      ], 
+      "name": "inception_4c/3x3_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4b/output"
+      ], 
+      "name": "inception_4c/5x5_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4b/output"
+      ], 
+      "name": "inception_4c/pool", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "inception_4c/3x3_reduce"
+      ], 
+      "name": "inception_4c/3x3", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4c/5x5_reduce"
+      ], 
+      "name": "inception_4c/5x5", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4c/pool"
+      ], 
+      "name": "inception_4c/pool_proj", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4c/1x1", 
+        "inception_4c/3x3", 
+        "inception_4c/5x5", 
+        "inception_4c/pool_proj"
+      ], 
+      "name": "inception_4c/output", 
+      "op": "Concat"
+    }, 
+    {
+      "input": [
+        "inception_4c/output"
+      ], 
+      "name": "inception_4d/1x1", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4c/output"
+      ], 
+      "name": "inception_4d/3x3_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4c/output"
+      ], 
+      "name": "inception_4d/5x5_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4c/output"
+      ], 
+      "name": "inception_4d/pool", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "inception_4d/3x3_reduce"
+      ], 
+      "name": "inception_4d/3x3", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4d/5x5_reduce"
+      ], 
+      "name": "inception_4d/5x5", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4d/pool"
+      ], 
+      "name": "inception_4d/pool_proj", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4d/1x1", 
+        "inception_4d/3x3", 
+        "inception_4d/5x5", 
+        "inception_4d/pool_proj"
+      ], 
+      "name": "inception_4d/output", 
+      "op": "Concat"
+    }, 
+    {
+      "input": [
+        "inception_4d/output"
+      ], 
+      "name": "inception_4e/1x1", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4d/output"
+      ], 
+      "name": "inception_4e/3x3_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4d/output"
+      ], 
+      "name": "inception_4e/5x5_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4d/output"
+      ], 
+      "name": "inception_4e/pool", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "inception_4e/3x3_reduce"
+      ], 
+      "name": "inception_4e/3x3", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4e/5x5_reduce"
+      ], 
+      "name": "inception_4e/5x5", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4e/pool"
+      ], 
+      "name": "inception_4e/pool_proj", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_4e/1x1", 
+        "inception_4e/3x3", 
+        "inception_4e/5x5", 
+        "inception_4e/pool_proj"
+      ], 
+      "name": "inception_4e/output", 
+      "op": "Concat"
+    }, 
+    {
+      "input": [
+        "inception_4e/output"
+      ], 
+      "name": "pool4/3x3_s2", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "pool4/3x3_s2"
+      ], 
+      "name": "inception_5a/1x1", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "pool4/3x3_s2"
+      ], 
+      "name": "inception_5a/3x3_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "pool4/3x3_s2"
+      ], 
+      "name": "inception_5a/5x5_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "pool4/3x3_s2"
+      ], 
+      "name": "inception_5a/pool", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "inception_5a/3x3_reduce"
+      ], 
+      "name": "inception_5a/3x3", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_5a/5x5_reduce"
+      ], 
+      "name": "inception_5a/5x5", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_5a/pool"
+      ], 
+      "name": "inception_5a/pool_proj", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_5a/1x1", 
+        "inception_5a/3x3", 
+        "inception_5a/5x5", 
+        "inception_5a/pool_proj"
+      ], 
+      "name": "inception_5a/output", 
+      "op": "Concat"
+    }, 
+    {
+      "input": [
+        "inception_5a/output"
+      ], 
+      "name": "inception_5b/1x1", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_5a/output"
+      ], 
+      "name": "inception_5b/3x3_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_5a/output"
+      ], 
+      "name": "inception_5b/5x5_reduce", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_5a/output"
+      ], 
+      "name": "inception_5b/pool", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "inception_5b/3x3_reduce"
+      ], 
+      "name": "inception_5b/3x3", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_5b/5x5_reduce"
+      ], 
+      "name": "inception_5b/5x5", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_5b/pool"
+      ], 
+      "name": "inception_5b/pool_proj", 
+      "op": "Convolution"
+    }, 
+    {
+      "input": [
+        "inception_5b/1x1", 
+        "inception_5b/3x3", 
+        "inception_5b/5x5", 
+        "inception_5b/pool_proj"
+      ], 
+      "name": "inception_5b/output", 
+      "op": "Concat"
+    }, 
+    {
+      "input": [
+        "inception_5b/output"
+      ], 
+      "name": "pool5/7x7_s1", 
+      "op": "Pooling"
+    }, 
+    {
+      "input": [
+        "pool5/7x7_s1"
+      ], 
+      "name": "loss3/classifier", 
+      "op": "InnerProduct"
+    }, 
+    {
+      "input": [
+        "loss3/classifier"
+      ], 
+      "name": "prob", 
+      "op": "Softmax"
+    }
+  ]
+}

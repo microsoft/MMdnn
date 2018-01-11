@@ -1,0 +1,57 @@
+{
+  "name": "visualDNN",
+  "version": "1.0.0",
+  "description": "An Electron application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "webpack --watch"
+  },
+  "repository": "https://bitbucket.org/porkfriday/dnntrain_manager",
+  "keywords": [
+    "Electron",
+    "keras",
+    "DNN",
+    "graph"
+  ],
+  "author": "wangqianwen",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "css-loader": "^0.28.4",
+    "electron": "^1.6.12",
+    "electron-react-devtools": "^0.4.0",
+    "json-loader": "^0.5.4",
+    "redux-logger": "^3.0.6",
+    "style-loader": "^0.18.2",
+    "webpack": "^2.7.0"
+  },
+  "dependencies": {
+    "axios": "^0.16.2",
+    "babel-loader": "^7.1.1",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "babel-register": "^6.3.13",
+    "body-parser": "^1.17.2",
+    "child-process-promise": "^2.2.1",
+    "cors": "^2.8.4",
+    "dagre": "^0.7.4",
+    "echarts-for-react": "^1.4.4",
+    "electron-devtools-installer": "^2.2.0",
+    "electron-reload": "^1.2.1",
+    "express": "^4.15.3",
+    "lodash": "^4.17.4",
+    "node-ssh": "^4.2.2",
+    "normalizr": "^3.2.3",
+    "prop-types": "^15.5.10",
+    "react": "^15.3.2",
+    "react-ace": "^5.0.1",
+    "react-addons-update": "^15.6.0",
+    "react-bootstrap": "^0.31.0",
+    "react-dom": "^15.3.2",
+    "react-redux": "^5.0.5",
+    "react-tap-event-plugin": "^2.0.1",
+    "redux": "^3.6.0",
+    "redux-thunk": "^2.2.0"
+  }
+}

@@ -103,3 +103,9 @@ ENV/
 # visualization
 node_modules/
 *.log
+.vscode/
+venv/
+logger
+code.py
+logger.py
+.vscode/
