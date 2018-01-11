@@ -11,6 +11,7 @@ Basically it converts many DNN models that trained by one framework into others.
 - **Model Visualization** Visualizing DNN network architecture and parameters for frameworks
 - **Model compatibility testing** (On-going)
 
+
 ## Installation
 
 You can get stable version of MMdnn by
@@ -59,7 +60,7 @@ Models                                              | Caffe | Keras | Tensorflow
 [VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √       |    √
 [MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (No Relu6) | × | ×
 [Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      |   ×  |   ×   |    ×
-[SqueezeNet](https://arxiv.org/pdf/1602.07360)      |       |   √   |     √      |   √  |   √   |    ×
+[SqueezeNet](https://arxiv.org/pdf/1602.07360)      |   √   |   √   |     √      |   √  |   √   |    ×
 
 #### On-going frameworks
 
@@ -103,7 +104,7 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 - [Caffe "AlexNet" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/10)
 - [Caffe "inception_v4" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/26)
 - [Caffe "VGG16_SOD" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/27)
-
+- [Caffe "Squeezenet v1.1" to CNTK](https://github.com/Microsoft/MMdnn/issues/48)
 ---
 
 ## Contributing

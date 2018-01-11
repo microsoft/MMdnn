@@ -11,20 +11,22 @@ from mmdnn.conversion.common.utils import download_file
 BASE_MODEL_URL = 'http://data.mxnet.io/models/imagenet/test/caffe/'
 # pylint: disable=line-too-long
 DEFAULT_MODEL_INFO = {
-    'alexnet'     : {'prototxt'   : 'https://raw.githubusercontent.com/BVLC/caffe/master/models/bvlc_alexnet/deploy.prototxt',
-                     'caffemodel' : 'http://dl.caffe.berkeleyvision.org/bvlc_alexnet.caffemodel'},
-    'inception_v1': {'prototxt'   : 'https://raw.githubusercontent.com/BVLC/caffe/master/models/bvlc_googlenet/deploy.prototxt',
-                     'caffemodel' : 'http://dl.caffe.berkeleyvision.org/bvlc_googlenet.caffemodel'},
-    'vgg16'       : {'prototxt'   : 'https://gist.githubusercontent.com/ksimonyan/211839e770f7b538e2d8/raw/c3ba00e272d9f48594acef1f67e5fd12aff7a806/VGG_ILSVRC_16_layers_deploy.prototxt',
-                     'caffemodel' : 'http://data.mxnet.io/models/imagenet/test/caffe/VGG_ILSVRC_16_layers.caffemodel'},
-    'vgg19'       : {'prototxt'   : 'https://gist.githubusercontent.com/ksimonyan/3785162f95cd2d5fee77/raw/bb2b4fe0a9bb0669211cf3d0bc949dfdda173e9e/VGG_ILSVRC_19_layers_deploy.prototxt',
-                     'caffemodel' : 'http://data.mxnet.io/models/imagenet/test/caffe/VGG_ILSVRC_19_layers.caffemodel'},
-    'resnet50'    : {'prototxt'   : BASE_MODEL_URL + 'ResNet-50-deploy.prototxt',
-                     'caffemodel' : BASE_MODEL_URL + 'ResNet-50-model.caffemodel'},
-    'resnet101'   : {'prototxt'   : BASE_MODEL_URL + 'ResNet-101-deploy.prototxt',
-                     'caffemodel' : BASE_MODEL_URL + 'ResNet-101-model.caffemodel'},
-    'resnet152'   : {'prototxt'   : BASE_MODEL_URL + 'ResNet-152-deploy.prototxt',
-                     'caffemodel' : BASE_MODEL_URL + 'ResNet-152-model.caffemodel'},
+    'alexnet'       : {'prototxt'   : 'https://raw.githubusercontent.com/BVLC/caffe/master/models/bvlc_alexnet/deploy.prototxt',
+                       'caffemodel' : 'http://dl.caffe.berkeleyvision.org/bvlc_alexnet.caffemodel'},
+    'inception_v1'  : {'prototxt'   : 'https://raw.githubusercontent.com/BVLC/caffe/master/models/bvlc_googlenet/deploy.prototxt',
+                       'caffemodel' : 'http://dl.caffe.berkeleyvision.org/bvlc_googlenet.caffemodel'},
+    'vgg16'         : {'prototxt'   : 'https://gist.githubusercontent.com/ksimonyan/211839e770f7b538e2d8/raw/c3ba00e272d9f48594acef1f67e5fd12aff7a806/VGG_ILSVRC_16_layers_deploy.prototxt',
+                       'caffemodel' : 'http://data.mxnet.io/models/imagenet/test/caffe/VGG_ILSVRC_16_layers.caffemodel'},
+    'vgg19'         : {'prototxt'   : 'https://gist.githubusercontent.com/ksimonyan/3785162f95cd2d5fee77/raw/bb2b4fe0a9bb0669211cf3d0bc949dfdda173e9e/VGG_ILSVRC_19_layers_deploy.prototxt',
+                       'caffemodel' : 'http://data.mxnet.io/models/imagenet/test/caffe/VGG_ILSVRC_19_layers.caffemodel'},
+    'resnet50'      : {'prototxt'   : BASE_MODEL_URL + 'ResNet-50-deploy.prototxt',
+                       'caffemodel' : BASE_MODEL_URL + 'ResNet-50-model.caffemodel'},
+    'resnet101'     : {'prototxt'   : BASE_MODEL_URL + 'ResNet-101-deploy.prototxt',
+                       'caffemodel' : BASE_MODEL_URL + 'ResNet-101-model.caffemodel'},
+    'resnet152'     : {'prototxt'   : BASE_MODEL_URL + 'ResNet-152-deploy.prototxt',
+                       'caffemodel' : BASE_MODEL_URL + 'ResNet-152-model.caffemodel'},
+    'squeezenet'    : {'prototxt' : "https://raw.githubusercontent.com/DeepScale/SqueezeNet/master/SqueezeNet_v1.1/deploy.prototxt",
+                       'caffemodel' : "https://github.com/DeepScale/SqueezeNet/raw/master/SqueezeNet_v1.1/squeezenet_v1.1.caffemodel"}
 }
 # pylint: enable=line-too-long
 
