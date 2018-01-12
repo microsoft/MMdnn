@@ -89,6 +89,11 @@ def _convert(args):
         from mmdnn.conversion.mxnet.mxnet_parser import MXNetParser
         parser = MXNetParser(model)
 
+    elif args.srcFramework == 'cntk':
+        from mmdnn.conversion.cntk.cntk_parser import CntkParser
+        model = args.network or args.weights
+        parser = CntkParser(model)
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.srcFramework))
 
