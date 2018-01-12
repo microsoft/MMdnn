@@ -6,6 +6,7 @@
 import argparse
 import os
 from six import text_type as _text_type
+import cntk as C
 from mmdnn.conversion.common.utils import download_file
 
 BASE_MODEL_URL = 'https://www.cntk.ai/Models/CNTK_Pretrained/'
@@ -41,20 +42,26 @@ def _main():
     if not fn:
         return -1
 
-    print("Model {} is saved as {}.".format(args.network, fn))
+    model = C.Function.load(fn)
+
+    if len(model.outputs) > 1:
+        for idx, output in enumerate(model.outputs):
+            if len(output.shape) > 0:
+                eval_node = idx
+                break
+
+        model = C.as_composite(model[eval_node].owner)
+        model.save(fn)
+
+        print("Model {} is saved as {}.".format(args.network, fn))
 
     if args.image:
-        import caffe
         import numpy as np
         from mmdnn.conversion.examples.imagenet_test import TestKit
-
-        net = caffe.Net(arch_fn, weight_fn, caffe.TEST)
-        func = TestKit.preprocess_func['caffe'][args.network]
+        func = TestKit.preprocess_func['cntk'][args.network]
         img = func(args.image)
         img = np.transpose(img, (2, 0, 1))
-        img = np.expand_dims(img, 0)
-        net.blobs['data'].data[...] = img
-        predict = np.squeeze(net.forward()['prob'][0])
+        predict = model.eval({model.arguments[0]:[img]})
         predict = np.squeeze(predict)
         top_indices = predict.argsort()[-5:][::-1]
         result = [(i, predict[i]) for i in top_indices]
