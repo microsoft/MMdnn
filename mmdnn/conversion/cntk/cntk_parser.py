@@ -89,26 +89,9 @@ class CntkParser(Parser):
         model = _cntk.Function.load(model)
 
         # Build network graph
-        self.tf_graph =  CntkGraph(model)
-        self.tf_graph.build()
+        self.cntk_graph =  CntkGraph(model)
+        self.cntk_graph.build()
 
-
-    @classmethod
-    def _skip_node(cls, source_node):
-        if source_node.covered:
-            return True
-
-        for prefix in cls.skip_prefix:
-            if source_node.name.startswith(prefix):
-                return True
-
-        scopes = CntkParser._get_scopes(source_node.name)
-
-        for s in scopes:
-            if s in cls.skip_scope:
-                return True
-
-        return False
 
     @staticmethod
     def tensor_shape_to_list(shapes):
@@ -165,17 +148,13 @@ class CntkParser(Parser):
     def gen_IR(self):
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
-
-            if self._skip_node(current_node):
-                continue
-
             node_type = current_node.type
-
-            if hasattr(self, "rename_" + node_type):
-                func = getattr(self, "rename_" + node_type)
-                func(current_node)
-            else:
-                self.rename_UNKNOWN(current_node)
+            # print (current_node.name, node_type)
+            # if hasattr(self, "rename_" + node_type):
+            #     func = getattr(self, "rename_" + node_type)
+            #     func(current_node)
+            # else:
+            self.rename_UNKNOWN(current_node)
 
 
     @staticmethod
@@ -198,35 +177,6 @@ class CntkParser(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
 
-    def _convert_inedge(self, source_node, IR_node, start_idx = 0, end_idx = None):
-        if end_idx == None: end_idx = len(source_node.in_edges)
-        for idx in range(start_idx, end_idx):
-            IR_node.input.append(self.src_graph.get_node(source_node.in_edges[idx]).real_name)
-
-
-    def _get_bias(self, source_node, IR_node):
-        if not source_node.out_edges:
-            return
-
-        add_node = self.tf_graph.get_node(source_node.out_edges[0])
-        if add_node.type != "Add" and add_node.type != "BiasAdd":
-            return
-
-        variable = self.tf_graph.get_node(add_node.in_edges[1])
-        variable = self.tf_graph.get_node(variable.in_edges[0])
-
-        assert variable.layer.attr['shape'].shape.dim[0].size == IR_node.attr['kernel_shape'].list.i[-1]
-
-        if self.weight_loaded:
-            assert variable.name in self.ckpt_data
-            current_layer = self.weights[source_node.name]
-            current_layer['bias'] = self.ckpt_data[variable.name]
-
-        add_node.real_name = IR_node.name
-        add_node.covered = True
-        IR_node.attr['use_bias'].b = True
-
-
     @staticmethod
     def _copy_shape(source_node, IR_node):
         assert 'shape' in source_node.layer.attr
@@ -234,18 +184,14 @@ class CntkParser(Parser):
 
 
     def rename_UNKNOWN(self, source_node):
-        if source_node.type in self.skip_type:
-            return
-        print("Tensorflow has not supported operator [%s] with name [%s]."
+        print("Cntk Parser has not supported operator [%s] with name [%s]."
               % (source_node.type, source_node.name))
-        return
+        print (source_node.layer)
+        for input in source_node.layer.inputs:
+            print (input)
+            print (dir(input))
 
-
-    def rename_Placeholder(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
-
-        # shape
-        CntkParser._copy_shape(source_node, IR_node)
+        assert False
 
 
     def rename_Conv2D(self, source_node):

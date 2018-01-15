@@ -3,7 +3,7 @@ clear
 
 # cntk
 #   resnet18
-python3 -m mmdnn.conversion._script.convertToIR -f cntk -n examples/cntk/models/ResNet18_ImageNet_CNTK.model -o kit_imagenet --inputShape 3 224 224 &&
+python3 -m mmdnn.conversion._script.convertToIR -f cntk -n examples/cntk/models/ResNet18_ImageNet_CNTK.model -o kit_imagenet &&
 
 # # mxnet
 # #   vgg19

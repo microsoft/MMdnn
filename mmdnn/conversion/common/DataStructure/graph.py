@@ -116,9 +116,10 @@ class Graph(object):
 
     def _make_connection(self, src, dst):
         if (src == dst) or (src not in self.layer_map) or (dst not in self.layer_map):
-#            print ("Warning: Graph Construct a self-loop node {}. Ignored.".format(src))
+            # print ("Warning: Graph Construct a self-loop node {}. Ignored.".format(src))
             return
 
+        # print ('{} --> {}'.format(src, dst))
         if not dst in self.layer_map[src].out_edges:
             self.layer_map[src].out_edges.append(dst)
         if not src in self.layer_map[dst].in_edges:
