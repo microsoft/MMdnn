@@ -60,7 +60,7 @@ Parse file [converted.pb] with binary format successfully.
 Target network code snippet is saved as [converted_cntk.py].
 ```
 
-And you will get a file name *converted_cntk.py*, which contains the **original CNTK** codes to build the *Inception V3* network.
+And you will get a filename *converted_cntk.py*, which contains the **original CNTK** codes to build the *Inception V3* network.
 
 With the three steps, you have already converted the pre-trained Keras Inception_v3 models to CNTK network file *converted_cntk.py* and weight file *converted.npy*. You can use these two files to fine-tune training or inference.
 

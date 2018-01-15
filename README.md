@@ -4,7 +4,7 @@
 
 A comprehensive, cross-framework solution to convert, visualize and diagnosis deep neural network models. The "MM" in MMdnn stands for model management and "dnn" is an acronym for deep neural network.
 
-Basically it converts many DNN models that trained by one framework into others. The major features include:
+Basically, it converts many DNN models that trained by one framework into others. The major features include:
 
 - **Model File Converter** Converting DNN models between frameworks
 - **Model Code Snippet Generator** Generating training or inference code snippet for frameworks
@@ -19,7 +19,7 @@ You can get stable version of MMdnn by
 pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.2/mmdnn-0.1.2-py2.py3-none-any.whl
 ```
 
-or you can try newest version by
+or you can try the newest version by
 ```bash
 pip install -U git+https://github.com/Microsoft/MMdnn.git@master
 ```
@@ -48,7 +48,7 @@ We provide a model converter to help developers convert models between framework
 
 #### Tested models
 
-The model conversion between current supported frameworks is tested on some **ImageNet** models.
+The model conversion between currently supported frameworks is tested on some **ImageNet** models.
 
 Models                                              | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML
 :--------------------------------------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|

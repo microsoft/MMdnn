@@ -2,9 +2,9 @@
 
 ## Usage
 
-Currently we only implemented the IR -> PyTorch part.
+Currently, we only implemented the IR -> PyTorch part.
 
-I am implementing the PyTorch parser in branch [pytorch](https://github.com/Microsoft/MMdnn/tree/pytorch) and have some issue in getting layer shape and jit CppOP. Waiting for JIT completion.
+I am implementing the PyTorch parser in branch [pytorch](https://github.com/Microsoft/MMdnn/tree/pytorch) and have some issue with getting layer shape and jit CppOP. Waiting for JIT completion.
 
 Any contribution to PyTorch parser (PyTorch -> IR) is welcome.
 
@@ -54,6 +54,6 @@ Ubuntu 16.04 with
 
 ## Limitation
 
-- Main dataflow in pytorch network is converted from NHWC(channel last) to NCHW(channel first) format, but some operators (like Concat) with axis may not be transform correctly. You may need to correct it manually.
+- The main dataflow in a pytorch network is converted from NHWC(channel last) to NCHW(channel first) format, but some operators (like Concat) with axis may not transform correctly. You may need to correct it manually.
 
-- Currently no RNN-related operations support
+- Currently, no RNN-related operations supported
