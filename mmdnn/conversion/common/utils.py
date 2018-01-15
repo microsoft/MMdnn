@@ -8,10 +8,12 @@ import os
 import sys
 import numpy as np
 from six import text_type, binary_type, integer_types
+import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
+
 
 __all__ = ["assign_IRnode_values", "convert_onnx_pad_to_tf", 'convert_tf_pad_to_onnx',
            'compute_tf_same_padding', 'is_valid_padding', 'download_file',
-           'shape_to_list']
+           'shape_to_list', 'list_to_shape']
 
 def assign_attr_value(attr, val):
     from mmdnn.conversion.common.IR.graph_pb2 import TensorShape
@@ -68,6 +70,14 @@ def is_valid_padding(pads):
 
 def shape_to_list(shape):
     return [dim.size for dim in shape.dim]
+
+
+def list_to_shape(shape):
+    ret = graph_pb2.TensorShape()
+    for dim in shape:
+        new_dim = ret.dim.add()
+        new_dim.size = dim
+    return ret
 
 
 def compute_tf_same_padding(input_shape, kernel_shape, strides, data_format='NHWC'):

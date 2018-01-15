@@ -33,17 +33,7 @@ class CntkGraphNode(GraphNode):
 
 
     def get_attr(self, name, default_value=None):
-        return get_attr(self, name)
-        # if name in self.layer.attr:
-        #     attr = self.layer.attr[name]
-        #     field = attr.WhichOneof('value')
-        #     val = getattr(attr, field) if field else default_value
-        #     if isinstance(val, attr_value_pb2.AttrValue.ListValue):
-        #         return list(val.ListFields()[0][1])
-        #     else:
-        #         return val.decode('utf-8') if isinstance(val, bytes) else val
-        # else:
-        #     return default_value
+        return self.layer.attributes[name]
 
 
 class CntkGraph(Graph):

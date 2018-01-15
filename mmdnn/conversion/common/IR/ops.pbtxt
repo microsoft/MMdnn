@@ -93,6 +93,15 @@ op {
 op {
   name: "Conv"
   attr {
+    name: "use_bias"
+    type: "bool"
+    default_value {
+      b: true
+    }
+    description: "If use bias"
+    }
+  }
+  attr {
     name: "dilations"
     type: "list(int)"
     description: "Sequence of N ints >= 1. Specifies the filter upsampling/input downsampling rate. [1, dilation_depth, dilation_height, dilation_width, 1]"

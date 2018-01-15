@@ -142,18 +142,18 @@ def _main():
 
     parser.add_argument(
         '--inputShape',
-        nargs = '+',
-        type = int,
-        default = None,
-        help = '[MXNet/Caffe2] Input shape of model (channel, height, width)')
+        nargs='+',
+        type=int,
+        default=None,
+        help='[MXNet/Caffe2] Input shape of model (channel, height, width)')
 
 
     # Caffe
     parser.add_argument(
         '--caffePhase',
-        type = _text_type,
-        default = 'TRAIN',
-        help = '[Caffe] Convert the specific phase of caffe model.')
+        type=_text_type,
+        default='TRAIN',
+        help='[Caffe] Convert the specific phase of caffe model.')
 
     args = parser.parse_args()
     ret = _convert(args)

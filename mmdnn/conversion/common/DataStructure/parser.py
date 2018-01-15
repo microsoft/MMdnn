@@ -3,23 +3,24 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
+import numpy as np
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 
 
 class Parser(object):
-    
+
     def __init__(self):
         self.IR_graph = GraphDef()
         self.weight_loaded = False
-        
+
         # name --> (weight_name --> ndarray)
         self.weights = dict()
 
 
     @property
     def src_graph(self):
-        raise NotImplementedError        
+        raise NotImplementedError
 
 
     def get_son(self, name, path, set_flag = False):
@@ -29,23 +30,23 @@ class Parser(object):
     def get_parent(self, name, path, set_flag = False):
         return self.src_graph.get_parent(name, path, set_flag)
 
-    
-    def set_weight(self, layer_name, weight_name, data):        
+
+    def set_weight(self, layer_name, weight_name, data):
         if not layer_name in self.weights:
             self.weights[layer_name] = dict()
         layer = self.weights[layer_name]
         layer[weight_name] = data
 
 
-    def save_to_json(self, filename):        
-        import google.protobuf.json_format as json_format        
+    def save_to_json(self, filename):
+        import google.protobuf.json_format as json_format
         json_str = json_format.MessageToJson(self.IR_graph, preserving_proto_field_name = True)
-        
+
         with open(filename, "w") as of:
             of.write(json_str)
-        
+
         print ("IR network structure is saved as [{}].".format(filename))
-        
+
         return json_str
 
 
@@ -55,22 +56,28 @@ class Parser(object):
             of.write(proto_str)
 
         print ("IR network structure is saved as [{}].".format(filename))
-        
+
         return proto_str
 
 
     def save_weights(self, filename):
         if self.weight_loaded:
-            import numpy as np
             with open(filename, 'wb') as of:
                 np.save(of, self.weights)
             print ("IR weights are saved as [{}].".format(filename))
 
         else:
             print ("Warning: weights are not loaded.")
-    
-    
+
+
     def convert_inedge(self, source_node, IR_node, start_idx = 0, end_idx = None):
-        if end_idx == None: end_idx = len(source_node.in_edges) 
+        if end_idx == None: end_idx = len(source_node.in_edges)
         for idx in range(start_idx, end_idx):
             IR_node.input.append(self.src_graph.get_node(source_node.in_edges[idx]).real_name)
+
+
+    @staticmethod
+    def channel_first_conv_kernel_to_IR(tensor):
+        dim = tensor.ndim
+        tensor = np.transpose(tensor, list(range(2, dim)) + [1, 0])
+        return tensor
