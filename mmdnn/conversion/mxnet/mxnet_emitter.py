@@ -117,9 +117,10 @@ def RefactorModel():
 
 
         if self.weight_loaded:
-            dirname = os.path.dirname(self.output_weights_file)
+            fullpath = os.path.abspath(self.output_weights_file)
+            dirname = os.path.dirname(fullpath)
             if not os.path.exists(dirname):
-                os.makedirs(self.output_weights_file)
+                os.makedirs(dirname)
             with open(self.output_weights_file, 'wb') as outfile:
                 np.save(outfile, self.output_weights)
 
