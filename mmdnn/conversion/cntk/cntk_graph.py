@@ -67,17 +67,8 @@ class CntkGraph(Graph):
                         self.layer_map[input_node.uid] = CntkGraphNode(input_node)
                     self._make_connection(input_node.uid, son_node.uid)
 
-                else:
-                    if not input_node.name in self.weights:
-                        # print ("Warning: node {} is not found.".format(input_node.name))
-                        pass
-
 
     def build(self):
-        for param in self.model.parameters:
-            self.weights[param.name] = param.asarray()
-            # print (param.name, self.weights[param.name].shape)
-
         for output in self.model.outputs:
             output = output.owner
             self.layer_map[output.uid] = CntkGraphNode(output)

@@ -66,7 +66,6 @@ class CntkParser(Parser):
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
             node_type = current_node.type
-            print (current_node.name, node_type)
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
@@ -81,15 +80,13 @@ class CntkParser(Parser):
         IR_node.op = new_op
 
         kwargs = {}
-        # if 'data_format' in source_node.layer.attr:
-        #     kwargs['data_format'] = source_node.get_attr('data_format')
 
         if hasattr(source_node.layer, 'dtype'):
             assert source_node.layer.dtype in CntkParser.dtype_map, 'type [{}] is unknown.'.format(source_node.layer.dtype)
             IR_node.attr["dtype"].type = CntkParser.dtype_map[source_node.layer.dtype]
 
         if hasattr(source_node.layer, 'shape'):
-            shape =  (-1,) + source_node.layer.shape
+            shape =  (-1,) + source_node.layer.shape[1:]
             if shape_transpose:
                 shape = CntkParser.channel_first_shape_to_IR(shape)
             shape = list_to_shape(shape)
@@ -111,25 +108,37 @@ class CntkParser(Parser):
         return True
 
 
-
     def rename_UNKNOWN(self, source_node):
         print("Cntk Parser has not supported operator [%s] with name [%s]."
               % (source_node.type, source_node.name))
 
         print (source_node.layer)
         print (source_node.layer.parameters)
-        print (source_node.attributes)
-        # for input in source_node.layer.inputs:
-        #     print (input)
-        #     print (dir(input))
+        print (source_node.layer.inputs)
 
         assert False
+
+
+    @staticmethod
+    def get_ndarray(variable):
+        if variable.is_parameter:
+            return variable.as_parameter().asarray()
+
+        elif variable.is_constant:
+            return variable.as_constant().asarray()
+
+        else:
+            raise ValueError("Unknown variable [{}].".format(variable))
 
 
     def rename_Convolution(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op="Conv")
 
-        W = source_node.layer.parameters[0].asarray()
+        for input in source_node.layer.inputs:
+            if input.name.endswith(".W"):
+                W = self.get_ndarray(input)
+                break
+
         W = self.channel_first_conv_kernel_to_IR(W)
         self.set_weight(source_node.name, 'weights', W)
 
@@ -183,8 +192,9 @@ class CntkParser(Parser):
 
 
     def rename_Reshape(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, 1)
-        kwargs = {'shape' : self.tensor_shape_to_list(source_node.get_attr('_output_shapes'))[0]}
+        IR_node = self._convert_identity_operation(source_node, shape_transpose=True)
+        new_shape = source_node.get_attr('newShape')
+        kwargs = {'shape' : self.channel_first_shape_to_IR(new_shape)}
         assign_IRnode_values(IR_node, kwargs)
 
 
@@ -279,8 +289,9 @@ class CntkParser(Parser):
 
 
     def rename_DataInput(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op='DataInput', shape_transpose=True)
-        IR_node.attr['shape'].shape.MergeFromString(IR_node.attr['_output_shapes'].list.shape[0].SerializeToString())
+        IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
+        shape = [-1] + list(source_node.layer.shape)
+        assign_IRnode_values(IR_node, {'shape' : list_to_shape(self.channel_first_shape_to_IR(shape))})
 
 
     # def rename_Pad(self, source_node):
@@ -327,21 +338,17 @@ class CntkParser(Parser):
 
     def rename_BatchNormalization(self, source_node):
         for param in source_node.layer.inputs:
-            print (param)
             if param.name.endswith('scale'):
-                self.set_weight(source_node.name, 'scale', param.as_parameter().asarray())
+                self.set_weight(source_node.name, 'scale', self.get_ndarray(param))
 
             elif param.name.endswith('bias'):
-                self.set_weight(source_node.name, 'bias', param.as_parameter().asarray())
+                self.set_weight(source_node.name, 'bias', self.get_ndarray(param))
 
             elif param.name.endswith('Mean'):
-                self.set_weight(source_node.name, 'mean', param.as_constant().asarray())
+                self.set_weight(source_node.name, 'mean', self.get_ndarray(param))
 
             elif param.name.endswith('Variance'):
-                self.set_weight(source_node.name, 'var', param.as_constant().asarray())
-
-            # else:
-            #     raise ValueError("Unknown BN layer parameter [{}].".format(param.name))
+                self.set_weight(source_node.name, 'var', self.get_ndarray(param))
 
         IR_node = self._convert_identity_operation(source_node, 1, 'BatchNorm')
 
