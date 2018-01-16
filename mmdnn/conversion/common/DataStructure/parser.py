@@ -81,3 +81,8 @@ class Parser(object):
         dim = tensor.ndim
         tensor = np.transpose(tensor, list(range(2, dim)) + [1, 0])
         return tensor
+
+
+    @staticmethod
+    def channel_first_shape_to_IR(shape):
+        return [shape[0]] + list(shape[2:]) + [shape[1]]

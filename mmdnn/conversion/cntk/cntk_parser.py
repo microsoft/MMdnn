@@ -135,7 +135,7 @@ class CntkParser(Parser):
 
 
     @staticmethod
-    def _copy_and_reop(source_node, IR_node, new_op = None):
+    def _copy_and_reop(source_node, IR_node, new_op=None, shape_transpose=False):
         if new_op == None: new_op = source_node.type
         IR_node.name = source_node.real_name
         IR_node.op = new_op
@@ -150,6 +150,8 @@ class CntkParser(Parser):
 
         if hasattr(source_node.layer, 'shape'):
             shape =  (-1,) + source_node.layer.shape
+            if shape_transpose:
+                shape = CntkParser.channel_first_shape_to_IR(shape)
             shape = list_to_shape(shape)
             kwargs['_output_shapes'] = [shape]
 
@@ -195,9 +197,9 @@ class CntkParser(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
 
-    def _convert_identity_operation(self, source_node, in_edge_count = None, new_op = None):
+    def _convert_identity_operation(self, source_node, in_edge_count=None, new_op=None, shape_transpose=False):
         IR_node = self.IR_graph.node.add()
-        CntkParser._copy_and_reop(source_node, IR_node, new_op)
+        CntkParser._copy_and_reop(source_node, IR_node, new_op, shape_transpose)
         self.convert_inedge(source_node, IR_node, 0, in_edge_count)
         return IR_node
 
@@ -326,7 +328,7 @@ class CntkParser(Parser):
 
 
     def rename_DataInput(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, 0, 'DataInput')
+        IR_node = self._convert_identity_operation(source_node, new_op='DataInput', shape_transpose=True)
         IR_node.attr['shape'].shape.MergeFromString(IR_node.attr['_output_shapes'].list.shape[0].SerializeToString())
 
 
