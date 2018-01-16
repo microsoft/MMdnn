@@ -269,6 +269,18 @@ op {
 
 
 op {
+  name: "Exp"
+  input_arg {
+    name: "x"
+  }
+  output_arg {
+    name: "y"
+  }
+  summary: "Computes exponential of x element-wise.  y = e^x."
+}
+
+
+op {
   name: "Flatten"
   summary: "Flatten Layer."
   description: "Not directly mapping in Tensorflow. Flatten tensor with shape [batch_size, k]."
@@ -330,6 +342,19 @@ op {
 
 
 op {
+  name: "Log"
+  input_arg {
+    name: "x"
+  }
+  output_arg {
+    name: "y"
+  }
+  summary: "Computes natural logarithm of x element-wise."
+  description: "I.e., y = log_e(x)."
+}
+
+
+op {
   name: "Matmul"
   summary: "Matrix product that behaves like numpy.matmul."
 }
@@ -342,6 +367,19 @@ op {
     type: "int"
   }
   summary: "Performs element-wise binary multiplication."
+}
+
+
+op {
+  name: "Reciprocal"
+  input_arg {
+    name: "x"
+  }
+  output_arg {
+    name: "y"
+  }
+  summary: "Computes the reciprocal of x element-wise."
+  description: "I.e., (y = 1 / x)."
 }
 
 

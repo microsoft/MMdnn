@@ -354,13 +354,28 @@ class CntkParser(Parser):
 
         kwargs = dict()
         kwargs['epsilon'] = source_node.get_attr('epsilon')
-        kwargs['axis'] = 1
+        kwargs['axis'] = -1
 
         assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_ElementTimes(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op='Mul')
+        self._convert_identity_operation(source_node, new_op='Mul')
+
+
+    def rename_Log(self, source_node):
+        self._convert_identity_operation(source_node)
+
+
+    def rename_Exp(self, source_node):
+        self._convert_identity_operation(source_node)
+
+
+    def rename_Reciprocal(self, source_node):
+        self._convert_identity_operation(source_node)
+
+    def rename_Dropout(self, source_node):
+        self.real_name = self.src_graph.get_parent(source_node.name, [0]).real_name
 
 
     # def rename_Transpose(self, source_node):
