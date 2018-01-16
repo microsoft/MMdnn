@@ -93,6 +93,15 @@ op {
 op {
   name: "Conv"
   attr {
+    name: "use_bias"
+    type: "bool"
+    default_value {
+      b: true
+    }
+    description: "If use bias"
+    }
+  }
+  attr {
     name: "dilations"
     type: "list(int)"
     description: "Sequence of N ints >= 1. Specifies the filter upsampling/input downsampling rate. [1, dilation_depth, dilation_height, dilation_width, 1]"
@@ -545,6 +554,29 @@ op {
       }
     }
   }
+}
+
+
+op {
+  name: "Sub"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+  }
+  input_arg {
+    name: "y"
+    type_attr: "T"
+  }
+  output_arg {
+    name: "z"
+    type_attr: "T"
+  }
+  attr {
+    name: "axis"
+    type: "int"
+  }
+  summary: "Returns x - y element-wise."
+  description: "*NOTE*: `Add` supports broadcasting."
 }
 
 
