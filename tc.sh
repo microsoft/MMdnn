@@ -5,6 +5,11 @@ clear
 #   resnet18
 python3 -m mmdnn.conversion._script.convertToIR -f cntk -n examples/cntk/models/ResNet18_ImageNet_CNTK.model -o kit_imagenet &&
 
+python3 -m mmdnn.conversion._script.IRToCode -f cntk --IRModelPath kit_imagenet.pb --dstModelPath kit_imagenet.py --IRWeightPath kit_imagenet.npy &&
+
+python3 -m mmdnn.conversion.examples.cntk.imagenet_test -p resnet18 -s cntk -n kit_imagenet.py -w kit_imagenet.npy &&
+
+
 # # mxnet
 # #   vgg19
 # python3 -m mmdnn.conversion._script.convertToIR -f mxnet -n examples/mxnet/models/vgg19-symbol.json -w examples/mxnet/models/vgg19-0000.params -d kit_imagenet --inputShape 3 224 224 &&

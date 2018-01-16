@@ -315,15 +315,22 @@ class CntkParser(Parser):
 
 
     def rename_BatchNormalization(self, source_node):
-        for param in source_node.layer.parameters:
+        for param in source_node.layer.inputs:
+            print (param)
             if param.name.endswith('scale'):
-                self.set_weight(source_node.name, 'scale', param.asarray())
+                self.set_weight(source_node.name, 'scale', param.as_parameter().asarray())
 
             elif param.name.endswith('bias'):
-                self.set_weight(source_node.name, 'bias', param.asarray())
+                self.set_weight(source_node.name, 'bias', param.as_parameter().asarray())
 
-            else:
-                raise ValueError("Unknown BN layer parameter [{}].".format(param.name))
+            elif param.name.endswith('Mean'):
+                self.set_weight(source_node.name, 'mean', param.as_constant().asarray())
+
+            elif param.name.endswith('Variance'):
+                self.set_weight(source_node.name, 'var', param.as_constant().asarray())
+
+            # else:
+            #     raise ValueError("Unknown BN layer parameter [{}].".format(param.name))
 
         IR_node = self._convert_identity_operation(source_node, 1, 'BatchNorm')
 
