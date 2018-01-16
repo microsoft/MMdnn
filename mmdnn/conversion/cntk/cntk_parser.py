@@ -18,7 +18,7 @@ class CntkParser(Parser):
     dtype_map = {
         0 : graph_pb2.DT_UNDEFINED,
         np.float32 : graph_pb2.DT_FLOAT32,
-        2 : graph_pb2.DT_FLOAT64,
+        np.float64 : graph_pb2.DT_FLOAT64,
         3 : graph_pb2.DT_INT32,
         4 : graph_pb2.DT_UINT8,
         5 : graph_pb2.DT_INT16,
@@ -33,76 +33,16 @@ class CntkParser(Parser):
         return self.cntk_graph
 
 
-    def _convert_reduction_operators(self, source_node, new_op = None):
-        IR_node = self._convert_identity_operation(source_node, 1, new_op)
-
-        # keep dims
-        IR_node.attr['keepdims'].b = source_node.layer.attr['keep_dims'].b
-
-        # axes
-        axes = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
-        axes = tensor_util.MakeNdarray(axes)
-        IR_node.attr['axes'].list.i.extend(axes)
-
-
-    def _convert_layers_batchnorm(self, source_node):
-        # name, op
-        IR_node = self.IR_graph.node.add()
-        CntkParser._copy_and_reop(source_node, IR_node, 'BatchNorm')
-
-        # epsilon
-        epsilon = self.get_parent(source_node.name, [1])
-        IR_node.attr['epsilon'].f = epsilon.layer.attr['value'].tensor.float_val[0]
-
-        # moving variance (var)
-        moving_variance = self.get_parent(source_node.name, [0, 0])
-        if self.weight_loaded and moving_variance.name in self.ckpt_data.keys():
-            self.set_weight(source_node.name, 'var', self.ckpt_data[moving_variance.name])
-
-        # gamma (scale)
-        gamma = self.get_son(source_node.name, [0, 0], True)
-        gamma = self.get_parent(gamma.name, [1, 0], True)
-        if gamma is None or not gamma.type.startswith('Variable'):
-            IR_node.attr['scale'].b = False
-            output_node = self.get_son(source_node.name, [0, 0, 0], True)
-        else:
-            IR_node.attr['scale'].b = True
-            if self.weight_loaded:
-                self.set_weight(source_node.name, 'scale', self.ckpt_data[gamma.name])
-            output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
-
-        # mean
-        mean = self.get_parent(output_node.name, [1, 1, 0, 0], True)
-        if self.weight_loaded and mean.name in self.ckpt_data.keys():
-            self.set_weight(source_node.name, 'mean', self.ckpt_data[mean.name])
-
-        # bias
-        bias = self.get_parent(output_node.name, [1, 0, 0], True)
-        if bias is None or not bias.type.startswith('Variable'):
-            IR_node.attr['bias'].b = False
-        else:
-            IR_node.attr['bias'].b = True
-            if self.weight_loaded:
-                self.set_weight(source_node.name, 'bias', self.ckpt_data[bias.name])
-
-        # input node
-        assert output_node.type == 'Add'
-        input_node = self.get_parent(output_node.name, [0, 0])
-        IR_node.input.append(input_node.real_name)
-
-        # output node
-        output_node.real_name = source_node.name
-
-
     def __init__(self, model, dest_nodes = None):
         super(CntkParser, self).__init__()
 
         if not os.path.exists(model):
             raise ValueError('Cntk model [{}] can not be found!'.format(model))
         model = _cntk.Function.load(model)
+        self.weight_loaded = True
 
         # Build network graph
-        self.cntk_graph =  CntkGraph(model)
+        self.cntk_graph = CntkGraph(model)
         self.cntk_graph.build()
 
 
@@ -288,7 +228,7 @@ class CntkParser(Parser):
 
 
     def rename_Pooling(self, source_node):
-        IR_node = self._convert_identity_operation(source_node)
+        IR_node = self._convert_identity_operation(source_node, new_op='Pool')
         kwargs = {}
 
         # strides
@@ -326,6 +266,8 @@ class CntkParser(Parser):
 
 
     def rename_DataInput(self, source_node):
+        print (source_node.layer)
+        print (source_node.layer.parameters)
         IR_node = self._convert_identity_operation(source_node, 0, 'DataInput')
         IR_node.attr['shape'].shape.MergeFromString(IR_node.attr['_output_shapes'].list.shape[0].SerializeToString())
 
