@@ -49,6 +49,7 @@ class TestKit(object):
         },
 
         'cntk' : {
+            'alexnet'  : [(836, 7.5413785), (837, 7.076382), (84, 6.9632936), (148, 6.90293), (416, 6.571906)],
             'resnet18' : [(21, 8.2490816), (22, 7.7600741), (23, 7.4341722), (148, 7.1398726), (144, 6.9187264)]
         }
     }
@@ -96,6 +97,7 @@ class TestKit(object):
         },
 
         'cntk' : {
+            'alexnet'       : lambda path : TestKit.Identity(path, 227),
             'resnet18'      : lambda path : TestKit.Identity(path, 224)
         }
     }

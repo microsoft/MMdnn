@@ -98,6 +98,20 @@ class CntkParser(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
 
+    def _fuse_bias_node(self, source_node):
+        next_node = self.src_graph.get_son(source_node.name, [0])
+        if next_node is None or next_node.type != 'Plus' or not next_node.layer.parameters:
+            return False
+
+        next_node.covered = True
+        next_node.real_name = source_node.name
+        B = next_node.layer.parameters[0].asarray()
+        self.set_weight(source_node.name, 'bias', B)
+
+        return True
+
+
+
     def rename_UNKNOWN(self, source_node):
         print("Cntk Parser has not supported operator [%s] with name [%s]."
               % (source_node.type, source_node.name))
@@ -132,7 +146,7 @@ class CntkParser(Parser):
         kwargs['auto_pad'] = 'SAME_UPPER' if padding[0] else 'VALID'
         kwargs['pads'] = self._convert_padding_to_IR(kwargs['kernel_shape'][:-2], padding)
 
-        kwargs['use_bias'] = False
+        kwargs['use_bias'] = self._fuse_bias_node(source_node)
 
         assign_IRnode_values(IR_node, kwargs)
 
@@ -158,6 +172,12 @@ class CntkParser(Parser):
             IR_node = self._convert_identity_operation(source_node, new_op='Add')
 
 
+    def rename_Minus(self, source_node):
+        if not source_node.covered:
+            assert not source_node.layer.parameters
+            IR_node = self._convert_identity_operation(source_node, new_op='Sub')
+
+
     def rename_Sub(self, source_node):
         self._convert_identity_operation(source_node)
 
@@ -178,16 +198,7 @@ class CntkParser(Parser):
         kwargs['unit'] = W.shape[-1]
         assign_IRnode_values(IR_node, kwargs)
 
-        next_node = self.src_graph.get_son(source_node.name, [0])
-        if next_node.type == 'Plus':
-            next_node.covered = True
-            next_node.real_name = source_node.name
-            kwargs['use_bias'] = True
-            B = next_node.layer.parameters[0].asarray()
-            self.set_weight(source_node.name, 'bias', B)
-
-        else:
-            kwargs['use_bias'] = False
+        kwargs['use_bias'] = self._fuse_bias_node(source_node)
 
 
     # def rename_MatMul(self, source_node):
@@ -339,6 +350,10 @@ class CntkParser(Parser):
         kwargs['axis'] = 1
 
         assign_IRnode_values(IR_node, kwargs)
+
+
+    def rename_ElementTimes(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op='Mul')
 
 
     # def rename_Transpose(self, source_node):
