@@ -3,6 +3,7 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
+import cntk as _cntk
 from mmdnn.conversion.common.DataStructure.graph import GraphNode, Graph
 
 
@@ -52,9 +53,13 @@ class CntkGraph(Graph):
             self.visited.add(son_node.uid)
 
             if son_node.is_block:
-                raise NotImplementedError("Cntk parser block node is not implemented.")
+                inputs = [input for _, input in son_node.block_arguments_mapping]
+                # for _, input in son_node.block_arguments_mapping:
+                # raise NotImplementedError("Cntk parser block node is not implemented.")
+            else:
+                inputs = son_node.inputs
 
-            for input_node in son_node.inputs:
+            for input_node in inputs:
                 if input_node.is_output:
                     input_node = input_node.owner
                     if not input_node.uid in self.layer_map:
@@ -67,6 +72,9 @@ class CntkGraph(Graph):
                         self.layer_map[input_node.uid] = CntkGraphNode(input_node)
                     self._make_connection(input_node.uid, son_node.uid)
 
+                elif input_node.is_placeholder:
+                    raise NotImplementedError("PlaceHolder of placeholder is not supported.")
+
 
     def build(self):
         for output in self.model.outputs:
@@ -75,3 +83,51 @@ class CntkGraph(Graph):
             self._traverse_graph(output)
 
         super(CntkGraph, self).build()
+
+"""
+    def __traverse_graph(self, node):
+        if node.uid in self.visited:
+            return
+
+        self.visited.add(node.uid)
+
+        if isinstance(node, _cntk.Function) and node.is_block:
+            composite = node.block_root
+
+            # BlockFunction node
+            mapping = node.block_arguments_mapping
+
+            # redirect the composite's inputs to the true inputs
+            stack.extend([(actual_input, depth-1) for _, actual_input in mapping]) # traverse into actual composite inputs
+            visited |= {comp_input.uid for comp_input, _ in mapping}    # don't traverse into the mapped-away inputs
+            stack.append((composite, depth-1))
+            # BlockFunctions are short-circuited, and not added to accum[]
+        try:
+            # Function node
+            stack = list((i, depth) for i in node.root_function.inputs) + stack
+        except AttributeError:
+            # OutputVariable node
+            try:
+                if node.is_output:
+                    stack.insert(0, (node.owner, depth))
+                    visited.add(node.uid)
+                    continue
+            except AttributeError:
+                pass
+
+        if visitor(node):
+            if isinstance(node, Variable):
+                if node.is_parameter:
+                    node = node.as_parameter()
+                elif node.is_constant:
+                    node = node.as_constant()
+
+            accum.append(node)
+
+        visited.add(node.uid)
+
+
+    # def build(self):
+    #     _traverse_graph(self, self.model.root_function)
+    #     super(CntkGraph, self).build()
+"""

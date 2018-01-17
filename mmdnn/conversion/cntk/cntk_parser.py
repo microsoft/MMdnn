@@ -142,10 +142,16 @@ class CntkParser(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op="Conv")
 
         for input in source_node.layer.inputs:
-            if input.name.endswith(".W"):
+            if input.name.endswith("W"):
                 W = self.get_ndarray(input)
                 break
 
+        print (source_node.layer, source_node.layer.is_block)
+        print (source_node.layer.parameters)
+        print (source_node.layer.attributes)
+        print (dir(source_node.layer))
+
+        print (source_node.layer.inputs)
         W = self.channel_first_conv_kernel_to_IR(W)
         self.set_weight(source_node.name, 'weights', W)
 
