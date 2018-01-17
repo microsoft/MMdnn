@@ -62,6 +62,13 @@ class CntkParser(Parser):
         return [0] + lower + [0, 0] + upper + [0]
 
 
+    def _convert_identity_operation(self, source_node, in_edge_count=None, new_op=None, shape_transpose=False):
+        IR_node = self.IR_graph.node.add()
+        CntkParser._copy_and_reop(source_node, IR_node, new_op, shape_transpose)
+        self.convert_inedge(source_node, IR_node, 0, in_edge_count)
+        return IR_node
+
+
     def gen_IR(self):
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
@@ -101,7 +108,7 @@ class CntkParser(Parser):
             return False
 
         next_node.covered = True
-        next_node.real_name = source_node.name
+        next_node.real_name = source_node.real_name
         B = next_node.layer.parameters[0].asarray()
         self.set_weight(source_node.name, 'bias', B)
 
@@ -160,13 +167,6 @@ class CntkParser(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
 
-    def _convert_identity_operation(self, source_node, in_edge_count=None, new_op=None, shape_transpose=False):
-        IR_node = self.IR_graph.node.add()
-        CntkParser._copy_and_reop(source_node, IR_node, new_op, shape_transpose)
-        self.convert_inedge(source_node, IR_node, 0, in_edge_count)
-        return IR_node
-
-
     def rename_ReLU(self, source_node):
         self._convert_identity_operation(source_node, new_op='Relu')
 
@@ -211,45 +211,6 @@ class CntkParser(Parser):
         kwargs['use_bias'] = self._fuse_bias_node(source_node)
 
 
-    # def rename_MatMul(self, source_node):
-    #     """
-    #     weights: name_weights, name_bias
-    #     """
-    #     IR_node = self._convert_identity_operation(source_node, 1)
-
-    #     # units
-    #     units = source_node.layer.attr['_output_shapes'].list.shape[-1].dim[-1].size
-    #     IR_node.attr['units'].i = units
-
-    #     # Weights
-    #     W = self.tf_graph.get_node(self.tf_graph.get_node(source_node.in_edges[1]).in_edges[0])
-    #     if self.weight_loaded:
-    #         self.set_weight(source_node.name, 'weights', self.ckpt_data[W.name])
-
-    #     if source_node.out_edges:
-    #         add_node = self.tf_graph.get_node(source_node.out_edges[0])
-    #         if add_node.type == 'Add':
-    #             add_node.covered = True
-    #             add_node.real_name = source_node.real_name
-    #             # FullyConnected Layer
-    #             # name, op
-    #             CntkParser._copy_and_reop(source_node, IR_node, 'FullyConnected')
-
-    #             # get Bias
-    #             B = self.tf_graph.get_node(self.tf_graph.get_node(source_node.out_edges[0]).in_edges[1]).in_edges[0]
-    #             if self.weight_loaded:
-    #                 self.set_weight(source_node.name, 'bias', self.ckpt_data[B])
-    #             IR_node.attr['use_bias'].b = True
-
-    #         else:
-    #             raise NotImplementedError("Not implemented yet. Please submit a issue in github and provide your models for reproduce.")
-
-    #     else:
-    #         # Matmul Layer
-    #         CntkParser._copy_and_reop(source_node, IR_node, 'FullyConnected')
-    #         assign_IRnode_values(IR_node, {'use_bias' : False})
-
-
     def rename_Pooling(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Pool')
         kwargs = {}
@@ -279,61 +240,10 @@ class CntkParser(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
 
-    # def rename_Identity(self, source_node):
-    #     source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
-
-
-    # def rename_Squeeze(self, source_node):
-    #     IR_node = self._convert_identity_operation(source_node)
-    #     IR_node.attr['axes'].MergeFromString(source_node.layer.attr['squeeze_dims'].SerializeToString())
-
-
     def rename_DataInput(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
         shape = [-1] + list(source_node.layer.shape)
         assign_IRnode_values(IR_node, {'shape' : list_to_shape(self.channel_first_shape_to_IR(shape))})
-
-
-    # def rename_Pad(self, source_node):
-    #     IR_node = self._convert_identity_operation(source_node, 1, 'Pad')
-    #     kwargs = {}
-    #     kwargs['mode'] = 'constant'
-    #     kwargs['constant_values'] = 0.0
-
-    #     # paddings
-    #     padding = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
-    #     shapes = tensor_util.MakeNdarray(padding)
-    #     kwargs['pads'] = convert_tf_pad_to_onnx(shapes)
-
-    #     assign_IRnode_values(IR_node, kwargs)
-
-
-    # def rename_Mean(self, source_node):
-    #     self._convert_reduction_operators(source_node, new_op = 'ReduceMean')
-
-
-    # def rename_ConcatV2(self, source_node):
-    #     n = len(source_node.in_edges) - 1
-    #     IR_node = self._convert_identity_operation(source_node, n, 'Concat')
-    #     axis = self.tf_graph.get_parent(source_node.name, [n])
-    #     IR_node.attr['axis'].i = axis.layer.attr['value'].tensor.int_val[0]
-
-
-    # def rename_DepthwiseConv2dNative(self, source_node):
-    #     IR_node = self._convert_identity_operation(source_node, 1, 'DepthwiseConv')
-    #     kwargs = {}
-    #     kwargs['strides'] = source_node.get_attr('strides')
-
-    #     input_node = self.src_graph.get_parent(source_node.name, [1])
-    #     kwargs['kernel_shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
-
-    #     self._convert_padding(source_node, IR_node, kwargs['kernel_shape'][:-2])
-
-    #     if self.weight_loaded:
-    #         weight = self.src_graph.get_parent(source_node.name, [1, 0])
-    #         self.set_weight(source_node.name, 'weights', self.ckpt_data[weight.name])
-
-    #     assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_BatchNormalization(self, source_node):
@@ -375,7 +285,7 @@ class CntkParser(Parser):
         self._convert_identity_operation(source_node)
 
     def rename_Dropout(self, source_node):
-        self.real_name = self.src_graph.get_parent(source_node.name, [0]).real_name
+        source_node.real_name = self.src_graph.get_parent(source_node.name, [0]).real_name
 
 
     # def rename_Transpose(self, source_node):
