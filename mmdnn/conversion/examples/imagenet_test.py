@@ -49,8 +49,9 @@ class TestKit(object):
         },
 
         'cntk' : {
-            'alexnet'  : [(836, 7.5413785), (837, 7.076382), (84, 6.9632936), (148, 6.90293), (416, 6.571906)],
-            'resnet18' : [(21, 8.2490816), (22, 7.7600741), (23, 7.4341722), (148, 7.1398726), (144, 6.9187264)]
+            'alexnet'       : [(836, 7.5413785), (837, 7.076382), (84, 6.9632936), (148, 6.90293), (416, 6.571906)],
+            'resnet18'      : [(21, 8.2490816), (22, 7.7600741), (23, 7.4341722), (148, 7.1398726), (144, 6.9187264)],
+            'inception_v3'  : [(21, 15.558625), (22, 9.7712708), (23, 9.6847782), (146, 9.188818), (144, 8.0436306)]
         }
     }
 
@@ -98,7 +99,8 @@ class TestKit(object):
 
         'cntk' : {
             'alexnet'       : lambda path : TestKit.Identity(path, 227),
-            'resnet18'      : lambda path : TestKit.Identity(path, 224)
+            'resnet18'      : lambda path : TestKit.Identity(path, 224),
+            'inception_v3'  : lambda path : TestKit.Identity(path, 299)
         }
     }
 
