@@ -34,7 +34,10 @@ class CntkGraphNode(GraphNode):
 
 
     def get_attr(self, name, default_value=None):
-        return self.layer.attributes[name]
+        if self.layer.is_block:
+            return self.layer.block_root.attributes[name]
+        else:
+            return self.layer.attributes[name]
 
 
 class CntkGraph(Graph):
@@ -54,8 +57,7 @@ class CntkGraph(Graph):
 
             if son_node.is_block:
                 inputs = [input for _, input in son_node.block_arguments_mapping]
-                # for _, input in son_node.block_arguments_mapping:
-                # raise NotImplementedError("Cntk parser block node is not implemented.")
+
             else:
                 inputs = son_node.inputs
 

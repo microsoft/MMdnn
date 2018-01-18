@@ -62,10 +62,10 @@ class CntkParser(Parser):
         return [0] + lower + [0, 0] + upper + [0]
 
 
-    def _convert_identity_operation(self, source_node, in_edge_count=None, new_op=None, shape_transpose=False):
+    def _convert_identity_operation(self, source_node, start_edge=0, end_edge=None, new_op=None, shape_transpose=False):
         IR_node = self.IR_graph.node.add()
         CntkParser._copy_and_reop(source_node, IR_node, new_op, shape_transpose)
-        self.convert_inedge(source_node, IR_node, 0, in_edge_count)
+        self.convert_inedge(source_node, IR_node, start_edge, end_edge)
         return IR_node
 
 
@@ -121,6 +121,7 @@ class CntkParser(Parser):
 
         print (source_node.layer)
         print (source_node.layer.parameters)
+        print (source_node.layer.attributes)
         print (source_node.layer.inputs)
 
         assert False
@@ -146,12 +147,6 @@ class CntkParser(Parser):
                 W = self.get_ndarray(input)
                 break
 
-        print (source_node.layer, source_node.layer.is_block)
-        print (source_node.layer.parameters)
-        print (source_node.layer.attributes)
-        print (dir(source_node.layer))
-
-        print (source_node.layer.inputs)
         W = self.channel_first_conv_kernel_to_IR(W)
         self.set_weight(source_node.name, 'weights', W)
 
@@ -217,6 +212,19 @@ class CntkParser(Parser):
         kwargs['use_bias'] = self._fuse_bias_node(source_node)
 
 
+    def rename_MaxPooling(self, source_node):
+        self.rename_Pooling(source_node)
+
+
+    def rename_AveragePooling(self, source_node):
+        self.rename_Pooling(source_node)
+
+
+    def rename_Splice(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op='Concat', shape_transpose=True)
+        assign_IRnode_values(IR_node, {'axis' : source_node.get_attr('axis')[-1]})
+
+
     def rename_Pooling(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Pool')
         kwargs = {}
@@ -266,7 +274,7 @@ class CntkParser(Parser):
             elif param.name.endswith('Variance'):
                 self.set_weight(source_node.name, 'var', self.get_ndarray(param))
 
-        IR_node = self._convert_identity_operation(source_node, 1, 'BatchNorm')
+        IR_node = self._convert_identity_operation(source_node, end_edge=1, new_op='BatchNorm')
 
         kwargs = dict()
         kwargs['epsilon'] = source_node.get_attr('epsilon')
@@ -292,3 +300,13 @@ class CntkParser(Parser):
 
     def rename_Dropout(self, source_node):
         source_node.real_name = self.src_graph.get_parent(source_node.name, [0]).real_name
+
+    def rename_Dense(self, source_node):
+        for param in source_node.layer.inputs:
+            if param.name.endswith('W'):
+                self.set_weight(source_node.name, 'weights', self.get_ndarray(param))
+
+            elif param.name.endswith('b'):
+                self.set_weight(source_node.name, 'bias', self.get_ndarray(param))
+
+        IR_node = self._convert_identity_operation(source_node, new_op='FullyConnected')
