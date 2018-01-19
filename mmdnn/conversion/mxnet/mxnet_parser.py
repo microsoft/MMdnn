@@ -519,6 +519,8 @@ class MXNetParser(Parser):
         if "pad" in layer_attr:
             pad = MXNetParser.str2intList(layer_attr.get("pad"))
             IR_node.attr["pads"].list.i.extend(([0]+pad+[0])*2)
+        else:
+            IR_node.attr["pads"].list.i.extend([0, 0] * (dim + 2))
 
         # weights
         if self.weight_loaded:
@@ -729,6 +731,8 @@ class MXNetParser(Parser):
         if "pad" in layer_attr:
             pad = MXNetParser.str2intList(layer_attr.get("pad"))
             IR_node.attr["pads"].list.i.extend(([0]+pad+[0])*2)
+        else:
+            IR_node.attr["pads"].list.i.extend([0, 0] * (dim + 2))
 
         # output shape
         self.set_output_shape(source_node, IR_node)

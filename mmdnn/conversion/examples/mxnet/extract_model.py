@@ -11,7 +11,7 @@ from mmdnn.conversion.common.utils import download_file
 from collections import namedtuple
 Batch = namedtuple('Batch', ['data'])
 
-network_name_key = ['resnet', 'vgg19', 'squeezenet', 'inception-bn']
+network_name_key = ['resnet', 'vgg19', 'squeezenet', 'inception-bn', 'resnext']
 
 _base_model_url = 'http://data.mxnet.io/models/'
 _default_model_info = {

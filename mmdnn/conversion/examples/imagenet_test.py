@@ -41,7 +41,9 @@ class TestKit(object):
             'resnet'         : [(21, 0.84012794), (144, 0.097428247), (23, 0.039757393), (146, 0.010432643), (99, 0.0023797606)],
             'squeezenet'     : [(21, 0.36026478), (128, 0.084114805), (835, 0.07940048), (144, 0.057378717), (749, 0.053491514)],
             'inception_bn'   : [(21, 0.84332663), (144, 0.041747514), (677, 0.021810319), (973, 0.02054958), (115, 0.008529461)],
-            'resnet152-11k'  : [(1278, 0.49073416), (1277, 0.21393695), (282, 0.12980066), (1282, 0.0663582), (1224, 0.022041745)]
+            'resnet152-11k'  : [(1278, 0.49073416), (1277, 0.21393695), (282, 0.12980066), (1282, 0.0663582), (1224, 0.022041745)],
+            'imagenet1k-resnext-101-64x4d' : [(21, 0.587986), (23, 0.29983738), (862, 0.044453762), (596, 0.00983246), (80, 0.00465048)]
+
         },
         'pytorch' : {
             'resnet152' : [(21, 13.080057), (141, 12.32998), (94, 9.8761454), (146, 9.3761511), (143, 8.9194641)],
@@ -88,7 +90,8 @@ class TestKit(object):
             'resnet'        : lambda path : TestKit.Identity(path, 224, True),
             'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 224, False),
             'inception_bn'  : lambda path : TestKit.Identity(path, 224, False),
-            'resnet152-11k' : lambda path : TestKit.Identity(path, 224, True)
+            'resnet152-11k' : lambda path : TestKit.Identity(path, 224, True),
+            'resnext'       : lambda path : TestKit.Identity(path, 224, False)
         },
 
         'pytorch' : {

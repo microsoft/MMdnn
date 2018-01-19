@@ -300,6 +300,21 @@ def KitModel(weight_file = None):
                 IR_node.variable_name,
                 inputs))
 
+    def emit_Sub(self, IR_node):
+        if len(IR_node.in_edges) > 1:
+            inputs = ' -'.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
+            self.add_body(1, "{:<15} = {}".format(
+                IR_node.variable_name,
+                inputs))
+
+    def emit_Mul(self, IR_node):
+        if len(IR_node.in_edges) > 1:
+            inputs = ' *'.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
+            self.add_body(1, "{:<15} = {}".format(
+                IR_node.variable_name,
+                inputs))
+
+
 
     def emit_Concat(self, IR_node):
         inputs = ', '.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
