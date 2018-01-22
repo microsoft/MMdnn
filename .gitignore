@@ -102,5 +102,6 @@ ENV/
 
 # visualization
 node_modules/
+package-lock.json
 *.log
 .vscode/
