@@ -55,6 +55,12 @@ def shape_identity(node):
 def shape_scalar(node):
     return TensorShape(1, 1, 1, 1)
 
+def shape_reshape(node):
+    last_shape = node.get_only_parent()[0].output_shape
+    shapes = []
+    for idx, shape in enumerate(node.layer.reshape_param.shape.dim):
+        shapes.append(shape if shape != 0 else last_shape[idx])
+    return TensorShape(shapes[0], shapes[1], shapes[2], shapes[3])
 
 def shape_data(node):
     if node.output_shape:

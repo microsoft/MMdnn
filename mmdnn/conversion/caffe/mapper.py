@@ -242,3 +242,13 @@ class NodeMapper(object):
     @classmethod
     def map_sigmoid(cls, node):
         return Node.create('Sigmoid')
+
+    @classmethod
+    def map_reshape(cls, node):
+        kwargs = {'shape' : [dim for dim in node.output_shape]}
+        cls._convert_output_shape(kwargs, node)
+        return Node.create('Reshape', **kwargs)
+
+    @classmethod
+    def map_flatten(cls, node):
+        return Node.create('Flatten')

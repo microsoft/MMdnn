@@ -99,6 +99,7 @@ LAYER_DESCRIPTORS = {
     'TanH': shape_identity,
     'WindowData': shape_not_implemented,
     'Threshold': shape_identity,
+    'Reshape' : shape_reshape
 }
 
 LAYER_TYPES = LAYER_DESCRIPTORS.keys()
