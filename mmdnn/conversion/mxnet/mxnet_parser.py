@@ -495,6 +495,8 @@ class MXNetParser(Parser):
         IR_node.attr["strides"].list.i.append(1)
         if not strides == None:
             IR_node.attr["strides"].list.i.extend(MXNetParser.str2intList(strides))
+        else:
+            IR_node.attr["strides"].list.i.extend([1] * dim)
         IR_node.attr["strides"].list.i.append(1)
 
         # dilations
@@ -502,6 +504,8 @@ class MXNetParser(Parser):
         IR_node.attr["dilations"].list.i.append(1)
         if not dilate == None:
             IR_node.attr["dilations"].list.i.extend(MXNetParser.str2intList(dilate))
+        else:
+            IR_node.attr["dilations"].list.i.extend([1] * dim)
         IR_node.attr["dilations"].list.i.append(1)
 
         # data_format
@@ -771,6 +775,8 @@ class MXNetParser(Parser):
         IR_node.attr["strides"].list.i.append(1)
         if not strides == None:
             IR_node.attr["strides"].list.i.extend(MXNetParser.str2intList(strides))
+        else:
+            IR_node.attr["strides"].list.i.extend([1] * dim)
         IR_node.attr["strides"].list.i.append(1)
 
         # dilations
@@ -778,6 +784,8 @@ class MXNetParser(Parser):
         IR_node.attr["dilations"].list.i.append(1)
         if not dilate == None:
             IR_node.attr["dilations"].list.i.extend(MXNetParser.str2intList(dilate))
+        else:
+            IR_node.attr["dilations"].list.i.extend([1] * dim)
         IR_node.attr["dilations"].list.i.append(1)
 
         # data_format
