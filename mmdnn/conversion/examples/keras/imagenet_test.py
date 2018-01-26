@@ -38,7 +38,7 @@ class TestKeras(TestKit):
     def inference(self, image_path):
         self.preprocess(image_path)
 
-        # self.print_intermediate_result('block2_pool', False)
+        # self.print_intermediate_result('', False)
 
         self.print_result()
 
