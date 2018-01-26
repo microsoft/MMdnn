@@ -61,8 +61,8 @@ class TestMXNet(TestKit):
 
         test_model.set_params(arg_params = arg_params, aux_params = aux_params, allow_missing = True, allow_extra = True)
         test_model.forward(Batch([mx.nd.array(self.data)]))
-        prob = self.model.get_outputs()[0].asnumpy()
-        super(TestMXNet, self).print_intermediate_result(prob, if_transpose)
+        prob = test_model.get_outputs()[0].asnumpy()
+        print(prob)
 
 
     def dump(self, path = None):
