@@ -2,12 +2,36 @@ import * as React from "react";
 import "./Graph.css";
 import { IRNode } from "../types";
 import * as dagre from 'dagre';
-import { Node, Edge, GraphEdge, NodeConfig } from 'dagre';
 import { getColor } from "../helper";
 
-// export interface Node {
-//     class?:string
-// }
+export interface Node {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    [key: string]: any;
+}
+
+export interface NodeConfig {
+    width?: number;
+    height?: number;
+    label?: string;
+    op?:string;
+    full_label?:string;
+    [key:string]:any;
+}
+
+export interface Edge {
+    v: string;
+    w: string;
+    name?: string;
+}
+
+export interface GraphEdge {
+    points: Array<{x: number, y: number}>;
+    [key: string]: any;
+}
+
 const node_w: number = 110, node_h: number = 20, margin: number = 10;
 export interface Props {
     nodes: IRNode[],
