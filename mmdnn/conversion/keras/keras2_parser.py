@@ -343,8 +343,6 @@ class Keras2Parser(Parser):
         kwargs['pads'] += [0, 0]
         kwargs['pads'] = convert_tf_pad_to_onnx(kwargs['pads'])
         IR_node.set_attrs(kwargs)
-        print (IR_node)
-        assert False
 
 
     def rename_UNKNOWN(self, source_node):
