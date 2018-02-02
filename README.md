@@ -30,7 +30,7 @@ pip install -U git+https://github.com/Microsoft/MMdnn.git@master
 
 Across the industry and academia, there are a number of existing frameworks available for developers and researchers to design a model, where each framework has its own network structure definition and saving model format. The gaps between frameworks impede the inter-operation of the models.
 
-![Supported](https://github.com/Microsoft/MMdnn/blob/master/docs/supported.jpg)
+<img src="https://github.com/Microsoft/MMdnn/blob/master/docs/supported.jpg" width="633" height="640">
 
 We provide a model converter to help developers convert models between frameworks, through an intermediate representation format.
 
@@ -58,7 +58,7 @@ Models                                              | Caffe | Keras | Tensorflow
 [ResNet V1 50](https://arxiv.org/abs/1512.03385)    |   ×   |   √   |     √      |   o  |   √   |    √ | √
 [ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   √   |   √   |     √      |   √  |   √   |    √
 [VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √       |    √
-[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (No Relu6) | × | × | √
+[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | o (only Relu) | × | × | √
 [Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      |   ×  |   ×   |    ×
 [SqueezeNet](https://arxiv.org/pdf/1602.07360)      |   √   |   √   |     √      |   √  |   √   |    ×
 
@@ -67,12 +67,13 @@ Models                                              | Caffe | Keras | Tensorflow
 - PyTorch (Source)
 - CNTK (Source)
 - [Caffe2](https://caffe2.ai/)
+- ONNX
 
 ---
 
 ### Model Visualization
 
-You can use the [MMdnn model visualizer](http://mmdnn.eastasia.cloudapp.azure.com:8080/) and submit your IR json file to visualize your model.
+You can use the [MMdnn model visualizer](http://vis.mmdnn.com/) and submit your IR json file to visualize your model.
 
 Use the [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-models) as an example again.
 
@@ -96,15 +97,30 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 
 ## Examples
 
+### Offical Tutorial
+
 - [Keras "inception_v3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
+
+### Users' Examples
+
 - [MXNet "resnet 152 11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
+
+- [MXNet "resnext" to Keras](https://github.com/Microsoft/MMdnn/issues/58)
+
 - [Tensorflow "resnet 101" to PyTorch](https://github.com/Microsoft/MMdnn/issues/22)
+
 - [Tensorflow "mnist mlp model" to CNTK](https://github.com/Microsoft/MMdnn/issues/11)
+
 - [Tensorflow "Inception_v3" to MXNet](https://github.com/Microsoft/MMdnn/issues/30)
+
 - [Caffe "AlexNet" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/10)
+
 - [Caffe "inception_v4" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/26)
+
 - [Caffe "VGG16_SOD" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/27)
+
 - [Caffe "Squeezenet v1.1" to CNTK](https://github.com/Microsoft/MMdnn/issues/48)
+
 ---
 
 ## Contributing
@@ -123,8 +139,7 @@ We are working on other frameworks conversion and visualization, such as Caffe2,
 
 ### License
 
-Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
+Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.microsoft.com.
 
 When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
