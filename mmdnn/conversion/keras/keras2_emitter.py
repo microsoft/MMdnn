@@ -183,7 +183,8 @@ def KitModel(weight_file = None):
             filters = IR_node.get_attr('kernel_shape')[-2]
         else:
             filters = IR_node.get_attr('kernel_shape')[-1]
-        filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier = {}'.format(filters)
+
+        filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier={}'.format(filters)
 
         input_node, padding = self._defuse_padding(IR_node)
 
@@ -499,9 +500,9 @@ class LRN(Layer):
 
     def _layer_Conv(self):
         self.add_body(0, """
-def convolution(weights_dict, name, input, group, conv_type, filters, **kwargs):
+def convolution(weights_dict, name, input, group, conv_type, filters=None, **kwargs):
     if not conv_type.startswith('layer'):
-        layer = keras.applications.mobilenet.DepthwiseConv2D(name = name, depth_multiplier = filters, **kwargs)(input)
+        layer = keras.applications.mobilenet.DepthwiseConv2D(name=name, **kwargs)(input)
         return layer
 
     grouped_channels = int(filters / group)
@@ -519,14 +520,14 @@ def convolution(weights_dict, name, input, group, conv_type, filters, **kwargs):
 
     for c in range(group):
         x = layers.Lambda(lambda z: z[:, :, :, c * grouped_channels:(c + 1) * grouped_channels])(input)
-        x = layers.Conv2D(name = name + "_" + str(c), filters = grouped_channels, **kwargs)(x)
+        x = layers.Conv2D(name=name + "_" + str(c), filters=grouped_channels, **kwargs)(x)
         weights_dict[name + "_" + str(c)] = dict()
-        weights_dict[name + "_" + str(c)]['weights'] = weight_groups[c] 
+        weights_dict[name + "_" + str(c)]['weights'] = weight_groups[c]
 
         group_list.append(x)
 
     layer = layers.concatenate(group_list, axis = -1)
-    
+
     if 'bias' in weights_dict[name]:
         b = K.variable(weights_dict[name]['bias'], name = name + "_bias")
         layer = layer + b
