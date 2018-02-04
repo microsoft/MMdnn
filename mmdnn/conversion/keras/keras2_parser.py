@@ -66,7 +66,7 @@ class Keras2Parser(Parser):
             'relu6': _keras.applications.mobilenet.relu6,
             'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D})
 
-        if model_weight_path != None:
+        if model_weight_path:
             if os.path.isfile(model_weight_path):
                 loaded_model.load_weights(model_weight_path)
                 self.weight_loaded = True
@@ -87,9 +87,18 @@ class Keras2Parser(Parser):
 
         # load model files into Keras graph
         if isinstance(model, _string_types):
-            model = _keras.models.load_model(model)
+            model = _keras.models.load_model(
+                model,
+                custom_objects={
+                    'relu6': _keras.applications.mobilenet.relu6,
+                    'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D
+                }
+            )
+            self.weight_loaded = True
+
         elif isinstance(model, tuple):
             model = self._load_model(model[0], model[1])
+
         else:
             assert False
 

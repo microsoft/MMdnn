@@ -375,7 +375,7 @@ class MXNetParser(Parser):
     def rename_UNKNOWN(self, source_node):
         print("Warning: MXNet Parser has not supported operator %s with name %s."
             % (source_node.type, source_node.name))
-        if source_node.type == "null":
+        if source_node.type == "null" and source_node.name != 'label':
             print("Warning: convert the null operator with name [%s] into input layer." % source_node.name)
             IR_node = self.IR_graph.node.add()
 
