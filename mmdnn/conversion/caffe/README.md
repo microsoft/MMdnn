@@ -22,6 +22,28 @@ IR network structure is saved as [vgg19.pb].
 IR weights are saved as [vgg19.npy].
 ```
 
+### Convert model from IR to Caffe code
+
+You can use following bash command to convert the IR architecture file [*vgg19.pb*] and weigths file [*vgg19.npy*] to Caffe Python code file[*caffe_vgg19.py*] and IR weights file suit for caffe model[*caffe_vgg19.npy*]
+
+```bash
+$ python -m mmdnn.conversion._script.IRToCode -f caffe -n vgg19.pb -w vgg19.npy -d caffe_vgg19.py -dw caffe_vgg19.npy
+.
+.
+.
+Parse file [vgg19.pb] with binary format successfully.
+Target network code snippet is saved as [caffe_vgg19.py].
+Target weights are saved as [caffe_vgg19.npy].
+```
+
+### Generate Caffe model from code
+
+You can use following bash command to generate caffe architecture file [*vgg19.prototxt*] and weights file [*vgg19.caffemodel*] from python code [*caffe_vgg19.py*] and weights file [*caffe_vgg19.npy*]
+
+```bash
+$ python caffe_vgg19.py -w caffe_vgg19.npy -p vgg19.prototxt -m vgg19.caffemodel
+```
+
 ## Limitation
 
 - Currently no RNN related operations support
