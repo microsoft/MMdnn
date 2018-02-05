@@ -34,7 +34,9 @@ class TestKit(object):
             'xception'          : [(21, 0.67462814), (23, 0.063138723), (87, 0.028424012), (89, 0.02484037), (88, 0.0062591862)],
             'mobilenet'         : [(21, 0.7869994), (23, 0.14728773), (146, 0.037277445), (144, 0.0061039869), (727, 0.0046111974)],
             'resnet'            : [(144, 0.80301273), (23, 0.067478567), (21, 0.046560187), (562, 0.037413299), (146, 0.015967956)],
-            'inception_resnet'  : [(21, 0.93837249), (87, 0.0021177295), (146, 0.0019775454), (23, 0.00072135136), (24, 0.00056668324)]
+            'inception_resnet_v2'  : [(21, 0.93837249), (87, 0.0021177295), (146, 0.0019775454), (23, 0.00072135136), (24, 0.00056668324)],
+            'densenet'          : [(21, 0.86279225), (146, 0.051543437), (23, 0.030489875), (144, 0.028583106), (141, 0.003564599)],
+            'nasnet'            : [(21, 0.8541155), (22, 0.0030572189), (146, 0.0026522065), (23, 0.0020259875), (88, 0.0020091296)]
         },
         'mxnet' : {
             'vgg19'                         : [(21, 0.54552644), (144, 0.19179004), (23, 0.066389613), (22, 0.022819581), (128, 0.02271222)],
@@ -83,7 +85,9 @@ class TestKit(object):
             'resnet'            : lambda path : TestKit.ZeroCenter(path, 224, True),
             'xception'          : lambda path : TestKit.Standard(path, 299),
             'mobilenet'         : lambda path : TestKit.Standard(path, 224),
-            'inception_resnet'  : lambda path : TestKit.Standard(path, 299)
+            'inception_resnet_v2'  : lambda path : TestKit.Standard(path, 299),
+            'densenet'          : lambda path : TestKit.Standard(path, 224),
+            'nasnet'              : lambda path : TestKit.Standard(path, 331),
         },
 
         'mxnet' : {
