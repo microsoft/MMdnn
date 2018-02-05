@@ -351,7 +351,7 @@ class Keras2Parser(Parser):
             kwargs['pads'].extend(padding_pair)
         kwargs['pads'] += [0, 0]
         kwargs['pads'] = convert_tf_pad_to_onnx(kwargs['pads'])
-        IR_node.set_attrs(kwargs)
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_UNKNOWN(self, source_node):
