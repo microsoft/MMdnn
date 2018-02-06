@@ -105,7 +105,7 @@ def _main():
     parser.add_argument(
         '--path', '-p',
         type=_text_type,
-        default='test/model/',
+        default='./',
         help='Path to save the model network file (e.g keras h5')
 
     args = parser.parse_args()

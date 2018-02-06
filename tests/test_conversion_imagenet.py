@@ -2,10 +2,15 @@ import os
 import unittest
 import numpy as np
 from imp import reload
+import tensorflow as tf
 from mmdnn.conversion.examples.imagenet_test import TestKit
+
 from mmdnn.conversion.examples.keras.extractor import keras_extractor
+
 from mmdnn.conversion.keras.keras2_parser import Keras2Parser
+
 from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
+from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
 
 def _compute_SNR(x,y):
     noise = x - y
@@ -28,12 +33,19 @@ def _compute_max_relative_error(x,y):
     return rerror, index
 
 
+
+def ensure_dir(f):
+    d = os.path.dirname(f)
+    if not os.path.exists(d):
+        os.makedirs(d)
+
+
 class CorrectnessTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         """ Set up the unit test by loading common utilities.
         """
-        self.err_thresh = 0.0015
+        self.err_thresh = 0.15
         self.snr_thresh = 12
         self.psnr_thresh = 30
 
@@ -96,20 +108,52 @@ class TestModels(CorrectnessTest):
         return converted_predict
 
 
+    @staticmethod
+    def TensorflowEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        print("Testing {} from {} to Tensorflow.".format(architecture_name, original_framework))
+
+        # IR to code
+        emitter = TensorflowEmitter((architecture_path, weight_path))
+        emitter.run("converted_model.py", None, 'test')
+        del emitter
+
+        # import converted model
+        import converted_model
+        reload (converted_model)
+        model_converted = converted_model.KitModel(TestModels.tmpdir + architecture_name + "_converted.npy")
+        input_tf, model_tf = model_converted
+
+        func = TestKit.preprocess_func[original_framework][architecture_name]
+        img = func(image_path)
+        input_data = np.expand_dims(img, 0)
+        with tf.Session() as sess:
+            init = tf.global_variables_initializer()
+            sess.run(init)
+            predict = sess.run(model_tf, feed_dict = {input_tf : input_data})
+        del model_converted
+        del converted_model
+        os.remove("converted_model.py")
+        converted_predict = np.squeeze(predict)
+        return converted_predict
+
+
     test_table = {
         'keras': {
-            'vgg16'        : [CntkEmit],
-            'vgg19'        : [CntkEmit],
-            'inception_v3' : [CntkEmit],
-            'resnet50'     : [CntkEmit],
+            'vgg16'        : [CntkEmit,TensorflowEmit],
+            'vgg19'        : [CntkEmit,TensorflowEmit],
+            'inception_v3' : [CntkEmit,TensorflowEmit],
+            'resnet50'     : [CntkEmit,TensorflowEmit],
             'densenet'     : [CntkEmit],
-            'xception'     : [],
+            'xception'     : [TensorflowEmit],
+            'mobilenet'    : [TensorflowEmit],
             # 'nasnet'       : [],
         }
     }
 
     def test_keras(self):
         # keras original
+        ensure_dir(self.cachedir)
+        ensure_dir(self.tmpdir)
         original_framework = 'keras'
 
         for network_name in self.test_table[original_framework].keys():
