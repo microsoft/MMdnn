@@ -4,6 +4,7 @@
 #----------------------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+import os
 import keras
 from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.examples.extractor import base_extractor
@@ -38,28 +39,32 @@ class keras_extractor(base_extractor):
 
 
     @classmethod
-    def download(cls, architecture):
+    def download(cls, architecture, path='test/model/'):
         if cls.sanity_check(architecture):
-            model = cls.architecture_map[architecture]()
+            if os.path.exists(path + 'imagenet_{}.h5'.format(architecture)) == False:
+                print("No model before")
+                model = cls.architecture_map[architecture]()
+                output_filename = path + 'imagenet_{}.h5'.format(architecture)
+                model.save(output_filename)
+                print("Keras model {} is saved in [{}]".format(architecture, output_filename))
+                return output_filename
+                # # save network structure as JSON
+                # json_string = model.to_json()
+                # with open("imagenet_{}.json".format(architecture), "w") as of:
+                #     of.write(json_string)
+                # print("Network structure is saved as [imagenet_{}.json].".format(architecture))
 
-            model.save('imagenet_{}.h5'.format(architecture))
-            print("Keras model {} is saved as [imagenet_{}.h5]".format(architecture, architecture))
-
-            # # save network structure as JSON
-            # json_string = model.to_json()
-            # with open("imagenet_{}.json".format(architecture), "w") as of:
-            #     of.write(json_string)
-            # print("Network structure is saved as [imagenet_{}.json].".format(architecture))
-
-            # model.save_weights('imagenet_{}.h5'.format(architecture))
-            # print("Network weights are saved as [imagenet_{}.h5].".format(architecture))
-
+                # model.save_weights('imagenet_{}.h5'.format(architecture))
+                # print("Network weights are saved as [imagenet_{}.h5].".format(architecture))
+            else:
+                output_filename = path + 'imagenet_{}.h5'.format(architecture)
+                return output_filename
         else:
-            return False
+            return None
 
 
     @classmethod
-    def inference(cls, architecture, image_path):
+    def inference(cls, architecture, image_path, model_path='test/model/'):
         if cls.sanity_check(architecture):
             model = cls.architecture_map[architecture]()
             import numpy as np

@@ -71,9 +71,9 @@ def extract_model(args):
     else:
         raise ValueError("Unknown framework [{}].".format(args.framework))
 
-    extractor.download(args.network)
+    files = extractor.download(args.network,args.path)
 
-    if args.image:
+    if files and args.image:
         predict = extractor.inference(args.network, args.image)
         top_indices = predict.argsort()[-5:][::-1]
         result = [(i, predict[i]) for i in top_indices]
@@ -101,6 +101,12 @@ def _main():
     parser.add_argument(
         '-i', '--image',
         type=_text_type, help='Test Image Path')
+
+    parser.add_argument(
+        '--path', '-p',
+        type=_text_type,
+        default='test/model/',
+        help='Path to save the model network file (e.g keras h5')
 
     args = parser.parse_args()
     extract_model(args)
