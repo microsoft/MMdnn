@@ -10,7 +10,6 @@ import numpy as np
 import caffe
 from caffe import layers as L
 from caffe import params as P
-import cntk
 from mmdnn.conversion.common.IR.IR_graph import IRGraph, IRGraphNode
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType

@@ -10,6 +10,11 @@ from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
 
 image_name = "mmdnn/conversion/examples/data/seagull.jpg"
 
+def ensure_dir(f):
+    d = os.path.dirname(f)
+    if not os.path.exists(d):
+        os.makedirs(d)
+
 def _compute_SNR(x,y):
     noise = x - y
     noise_var = np.sum(noise ** 2)/len(noise) + 1e-7
@@ -54,9 +59,11 @@ class CorrectnessTest(unittest.TestCase):
         self.assertLess(error, self.err_thresh)
 
 class TestModels(CorrectnessTest):         
-    def test_keras(self):
+    def test_keras_tensorflow(self):
+        filename = "test/model/"
+        ensure_dir(filename)
         # keras original        
-        network_name_list =['vgg19', 'vgg16', 'inception_v3']
+        network_name_list = ['resnet50','vgg19', 'vgg16','inception_v3'] 
         for network_name in network_name_list:
             original_predict = keras_extractor.inference(network_name, image_name)
 
@@ -89,4 +96,38 @@ class TestModels(CorrectnessTest):
             os.remove("test/model/" + network_name + "_converted.pb")
             os.remove("test/model/" + network_name + "_converted.npy")
             os.remove("converted_model.py")
-        
+    # def test_keras_cntk(self):
+    #     # keras original        
+    #     network_name_list =['vgg19', 'vgg16', 'inception_v3']
+    #     for network_name in network_name_list:
+    #         original_predict = keras_extractor.inference(network_name, image_name)
+
+    #         # target framework
+    #         keras_extractor.download(network_name)
+    #         model2parser = "test/model/imagenet_{}.h5".format(network_name)
+
+    #         # to IR
+    #         parser = Keras2Parser(model2parser)
+    #         parser.gen_IR()        
+    #         parser.save_to_proto("test/model/" + network_name + "_converted.pb")
+    #         parser.save_weights("test/model/" + network_name + "_converted.npy")
+
+    #         # to code
+    #         emitter = CntkEmitter(("test/model/" + network_name + "_converted.pb", "test/model/" + network_name + "_converted.npy"))
+    #         emitter.run("converted_model.py", None, 'test')
+
+
+    #         # import converted model
+    #         import converted_model
+    #         reload (converted_model)
+    #         model_converted = converted_model.KitModel("test/model/" + network_name + "_converted.npy")
+
+    #         func = TestKit.preprocess_func['keras'][network_name]
+    #         img = func(image_name)
+    #         predict = model_converted.eval({model_converted.arguments[0]:[img]})
+    #         converted_predict = np.squeeze(predict)
+            
+    #         self._compare_outputs(original_predict, converted_predict)
+    #         os.remove("test/model/" + network_name + "_converted.pb")
+    #         os.remove("test/model/" + network_name + "_converted.npy")
+    #         os.remove("converted_model.py")
