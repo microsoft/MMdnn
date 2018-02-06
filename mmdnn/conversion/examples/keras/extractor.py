@@ -6,6 +6,7 @@
 from __future__ import absolute_import
 import os
 import keras
+from keras import backend as K
 from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.examples.extractor import base_extractor
 
@@ -37,27 +38,20 @@ class keras_extractor(base_extractor):
     }
 
 
-
     @classmethod
-    def download(cls, architecture, path='test/model/'):
+    def download(cls, architecture, path="./"):
         if cls.sanity_check(architecture):
-            if os.path.exists(path + 'imagenet_{}.h5'.format(architecture)) == False:
-                print("No model before")
+            output_filename = path + 'imagenet_{}.h5'.format(architecture)
+            if os.path.exists(output_filename) == False:
                 model = cls.architecture_map[architecture]()
-                output_filename = path + 'imagenet_{}.h5'.format(architecture)
                 model.save(output_filename)
                 print("Keras model {} is saved in [{}]".format(architecture, output_filename))
+                K.clear_session()
+                del model
                 return output_filename
-                # # save network structure as JSON
-                # json_string = model.to_json()
-                # with open("imagenet_{}.json".format(architecture), "w") as of:
-                #     of.write(json_string)
-                # print("Network structure is saved as [imagenet_{}.json].".format(architecture))
 
-                # model.save_weights('imagenet_{}.h5'.format(architecture))
-                # print("Network weights are saved as [imagenet_{}.h5].".format(architecture))
             else:
-                output_filename = path + 'imagenet_{}.h5'.format(architecture)
+                print("File [{}] existed, skip download.".format(output_filename))
                 return output_filename
         else:
             return None
@@ -73,6 +67,8 @@ class keras_extractor(base_extractor):
             img = np.expand_dims(img, axis=0)
             predict = model.predict(img)
             predict = np.squeeze(predict)
+            K.clear_session()
+            del model
             return predict
 
         else:
