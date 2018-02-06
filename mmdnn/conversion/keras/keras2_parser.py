@@ -6,6 +6,7 @@
 import os
 from six import string_types as _string_types
 import keras as _keras
+from keras import backend as _K
 from mmdnn.conversion.keras.keras2_graph import Keras2Graph
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
@@ -121,6 +122,8 @@ class Keras2Parser(Parser):
             else:
                 print("KerasParser has not supported operator [%s]." % (node_type))
                 self.rename_UNKNOWN(current_node)
+
+        _K.clear_session()
 
 
     @staticmethod
@@ -355,6 +358,8 @@ class Keras2Parser(Parser):
 
 
     def rename_UNKNOWN(self, source_node):
+        print (source_node.layer.get_config())
+
         # only for training
         IR_node = self.IR_graph.node.add()
 
@@ -599,6 +604,13 @@ class Keras2Parser(Parser):
 
 
     def rename_Lambda(self, source_node):
+        # print (source_node.layer.function)
+        # import marshal
+        # raw_code = marshal.dumps(source_node.layer.function.__code__)
+        # print (raw_code)
+        # print (source_node.layer.get_config())
+        raise NotImplementedError("Lambda layer in keras is not supported yet.")
+
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -674,3 +686,14 @@ class Keras2Parser(Parser):
 
     def custom_relu6(x):
         return _keras.relu(x, max_value=6)
+
+
+    def rename_Cropping2D(self, source_node):
+        IR_node = self.IR_graph.node.add()
+
+        # name, op
+        Keras2Parser._copy_and_reop(source_node, IR_node)
+
+        # input edge
+        self.convert_inedge(source_node, IR_node)
+        assert False
