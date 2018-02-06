@@ -79,15 +79,15 @@ class TestKit(object):
         },
 
         'keras' : {
-            'vgg16'             : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'vgg19'             : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'inception_v3'      : lambda path : TestKit.Standard(path, 299),
-            'resnet50'          : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'xception'          : lambda path : TestKit.Standard(path, 299),
-            'mobilenet'         : lambda path : TestKit.Standard(path, 224),
+            'vgg16'                : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'vgg19'                : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'inception_v3'         : lambda path : TestKit.Standard(path, 299),
+            'resnet50'             : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'xception'             : lambda path : TestKit.Standard(path, 299),
+            'mobilenet'            : lambda path : TestKit.Standard(path, 224),
             'inception_resnet_v2'  : lambda path : TestKit.Standard(path, 299),
-            'densenet'          : lambda path : TestKit.Standard(path, 224),
-            'nasnet'              : lambda path : TestKit.Standard(path, 331),
+            'densenet'             : lambda path : TestKit.Standard(path, 224),
+            'nasnet'               : lambda path : TestKit.Standard(path, 331),
         },
 
         'mxnet' : {
