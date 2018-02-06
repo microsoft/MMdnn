@@ -688,12 +688,28 @@ class Keras2Parser(Parser):
         return _keras.relu(x, max_value=6)
 
 
-    def rename_Cropping2D(self, source_node):
+    def _convert_crop(self, source_node):
         IR_node = self.IR_graph.node.add()
 
-        # name, op
-        Keras2Parser._copy_and_reop(source_node, IR_node)
+        Keras2Parser._copy_and_reop(source_node, IR_node, "Crop")
 
-        # input edge
         self.convert_inedge(source_node, IR_node)
-        assert False
+
+        border = []
+        for i in source_node.layer.cropping:
+            for j in i:
+                border.append(j)
+        assign_IRnode_values(IR_node, {'border' : border})
+
+
+
+    def rename_Cropping1D(self, source_node):
+        self._convert_crop(source_node)
+
+
+    def rename_Cropping2D(self, source_node):
+        self._convert_crop(source_node)
+
+
+    def rename_Cropping3D(self, source_node):
+        self._convert_crop(source_node)

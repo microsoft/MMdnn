@@ -139,14 +139,14 @@ class TestModels(CorrectnessTest):
 
     test_table = {
         'keras': {
-            'vgg16'        : [CntkEmit,TensorflowEmit],
-            'vgg19'        : [CntkEmit,TensorflowEmit],
-            'inception_v3' : [CntkEmit,TensorflowEmit],
-            'resnet50'     : [CntkEmit,TensorflowEmit],
+            'vgg16'        : [CntkEmit, TensorflowEmit],
+            'vgg19'        : [CntkEmit, TensorflowEmit],
+            'inception_v3' : [CntkEmit, TensorflowEmit],
+            'resnet50'     : [CntkEmit, TensorflowEmit],
             'densenet'     : [CntkEmit],
             'xception'     : [TensorflowEmit],
             'mobilenet'    : [TensorflowEmit],
-            # 'nasnet'       : [],
+            'nasnet'       : [],
         }
     }
 
