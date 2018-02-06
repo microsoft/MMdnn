@@ -59,7 +59,7 @@ class CorrectnessTest(unittest.TestCase):
         self.assertLess(error, self.err_thresh)
 
 class TestModels(CorrectnessTest):         
-    def test_keras_tensorflow(self):
+    def test_keras_cntk(self):
         filename = "test/model/"
         ensure_dir(filename)
         # keras original        
