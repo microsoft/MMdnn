@@ -200,7 +200,7 @@ class TestModels(CorrectnessTest):
             'densenet'     : [CntkEmit, TensorflowEmit, KerasEmit],
             'xception'     : [TensorflowEmit, KerasEmit],
             'mobilenet'    : [TensorflowEmit, KerasEmit],
-            'nasnet'       : [KerasEmit],
+            'nasnet'       : [TensorflowEmit, KerasEmit],
         }
     }
 

@@ -403,6 +403,21 @@ def KitModel(weight_file = None):
             padding,
             IR_node.name))
 
+    def emit_Crop(self, IR_node):
+        border = IR_node.get_attr('border')
+        assert len(border) == 4
+
+        output_shape = IR_node.get_attr('_output_shapes')[0]
+        output_shape = shape_to_list(output_shape)
+
+        self.add_body(1, "{:<15} = tf.image.crop_to_bounding_box({}, offset_height={}, offset_width={}, target_height={}, target_width={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            border[0],
+            border[2],
+            output_shape[1],
+            output_shape[2]))
+
 
     def _layer_Conv(self):
         self.add_body(0, """
