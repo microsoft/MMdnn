@@ -58,9 +58,11 @@ Models                                              | Caffe | Keras | Tensorflow
 [ResNet V1 50](https://arxiv.org/abs/1512.03385)    |   ×   |   √   |     √      |   o  |   √   |    √ | √
 [ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   √   |   √   |     √      |   √  |   √   |    √
 [VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √       |    √
-[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | o (only Relu) | × | × | √
-[Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      |   ×  |   ×   |    ×
+[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (no DepthwiseConv) |   ×   |    ×       |    √
+[Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      | × (no SeparableConv) |   ×   |    ×
 [SqueezeNet](https://arxiv.org/pdf/1602.07360)      |   √   |   √   |     √      |   √  |   √   |    ×
+DenseNet                                            |       |   √   |     √      |   √  |       |            |
+[NASNet](https://arxiv.org/abs/1707.07012)          |       |   √   |     √      | × (no SeparableConv)
 
 #### On-going frameworks
 

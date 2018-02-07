@@ -64,7 +64,8 @@ def extract_model(args):
         pass
 
     elif args.framework == 'mxnet':
-        pass
+        from mmdnn.conversion.examples.mxnet.extractor import mxnet_extractor
+        extractor = mxnet_extractor()
 
     elif args.framework == 'cntk':
         pass
@@ -74,7 +75,7 @@ def extract_model(args):
     files = extractor.download(args.network,args.path)
 
     if files and args.image:
-        predict = extractor.inference(args.network, args.image)
+        predict = extractor.inference(args.network, args.path, args.image)
         top_indices = predict.argsort()[-5:][::-1]
         result = [(i, predict[i]) for i in top_indices]
         print(result)
@@ -103,10 +104,10 @@ def _main():
         type=_text_type, help='Test Image Path')
 
     parser.add_argument(
-        '--path', '-p',
+        '--path', '-p', '-o',
         type=_text_type,
         default='./',
-        help='Path to save the model network file (e.g keras h5')
+        help='Path to save the pre-trained model files (e.g keras h5)')
 
     args = parser.parse_args()
     extract_model(args)

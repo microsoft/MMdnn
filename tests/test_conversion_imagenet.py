@@ -1,4 +1,5 @@
 import os
+import six
 import unittest
 import numpy as np
 from six.moves import reload_module
@@ -6,8 +7,10 @@ import tensorflow as tf
 from mmdnn.conversion.examples.imagenet_test import TestKit
 
 from mmdnn.conversion.examples.keras.extractor import keras_extractor
+from mmdnn.conversion.examples.mxnet.extractor import mxnet_extractor
 
 from mmdnn.conversion.keras.keras2_parser import Keras2Parser
+from mmdnn.conversion.mxnet.mxnet_parser import MXNetParser
 
 from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
 from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
@@ -72,7 +75,7 @@ class TestModels(CorrectnessTest):
     @staticmethod
     def KerasParse(architecture_name, image_path):
         # get original model prediction result
-        original_predict = keras_extractor.inference(architecture_name, image_path)
+        original_predict = keras_extractor.inference(architecture_name, TestModels.cachedir, image_path)
 
         # download model
         model_filename = keras_extractor.download(architecture_name, TestModels.cachedir)
@@ -83,6 +86,30 @@ class TestModels(CorrectnessTest):
         parser.save_to_proto(TestModels.tmpdir + architecture_name + "_converted.pb")
         parser.save_weights(TestModels.tmpdir + architecture_name + "_converted.npy")
         del parser
+        return original_predict
+
+
+    @staticmethod
+    def MXNetParse(architecture_name, image_path):
+        # download model
+        architecture_file, weight_file = mxnet_extractor.download(architecture_name, TestModels.cachedir)
+
+        # get original model prediction result
+        original_predict = mxnet_extractor.inference(architecture_name, TestModels.cachedir, image_path)
+
+        # original to IR
+        import re
+        if re.search('.', weight_file):
+            weight_file = weight_file[:-7]
+        prefix, epoch = weight_file.rsplit('-', 1)
+        model = (architecture_file, prefix, epoch, [3, 224, 224])
+
+        parser = MXNetParser(model)
+        parser.gen_IR()
+        parser.save_to_proto(TestModels.tmpdir + architecture_name + "_converted.pb")
+        parser.save_weights(TestModels.tmpdir + architecture_name + "_converted.npy")
+        del parser
+
         return original_predict
 
 
@@ -185,8 +212,13 @@ class TestModels(CorrectnessTest):
 
         predict = model_converted.predict(input_data)
         converted_predict = np.squeeze(predict)
+
         del model_converted
         del converted_model
+
+        import keras.backend as K
+        K.clear_session()
+
         os.remove("converted_model.py")
         return converted_predict
 
@@ -201,11 +233,15 @@ class TestModels(CorrectnessTest):
             'xception'     : [TensorflowEmit, KerasEmit],
             'mobilenet'    : [TensorflowEmit, KerasEmit],
             'nasnet'       : [TensorflowEmit, KerasEmit],
+        },
+        'mxnet' : {
+            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit],
         }
     }
 
 
     def test_keras(self):
+        return
         # keras original
         ensure_dir(self.cachedir)
         ensure_dir(self.tmpdir)
@@ -216,6 +252,36 @@ class TestModels(CorrectnessTest):
 
             # get original model prediction result
             original_predict = self.KerasParse(network_name, self.image_path)
+
+            for emit in self.test_table[original_framework][network_name]:
+                converted_predict = emit.__func__(
+                    original_framework,
+                    network_name,
+                    self.tmpdir + network_name + "_converted.pb",
+                    self.tmpdir + network_name + "_converted.npy",
+                    self.image_path)
+
+                self._compare_outputs(original_predict, converted_predict)
+
+
+            os.remove(self.tmpdir + network_name + "_converted.pb")
+            os.remove(self.tmpdir + network_name + "_converted.npy")
+            print("Testing {} model {} passed.".format(original_framework, network_name))
+
+        print("Testing {} model all passed.".format(original_framework))
+
+
+    def test_mxnet(self):
+        # mxnet original
+        ensure_dir(self.cachedir)
+        ensure_dir(self.tmpdir)
+        original_framework = 'mxnet'
+
+        for network_name in self.test_table[original_framework].keys():
+            print("Testing {} model {} start.".format(original_framework, network_name))
+
+            # get original model prediction result
+            original_predict = self.MXNetParse(network_name, self.image_path)
 
             for emit in self.test_table[original_framework][network_name]:
                 converted_predict = emit.__func__(

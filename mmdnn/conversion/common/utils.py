@@ -131,9 +131,7 @@ def _progress_check(count, block_size, total_size):
 
 def _single_thread_download(url, file_name):
     from six.moves import urllib
-    import requests
     result, _ = urllib.request.urlretrieve(url, file_name, _progress_check)
-    print ("")
     return result
 
 

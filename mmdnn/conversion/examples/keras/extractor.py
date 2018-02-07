@@ -58,7 +58,7 @@ class keras_extractor(base_extractor):
 
 
     @classmethod
-    def inference(cls, architecture, image_path):
+    def inference(cls, architecture, path, image_path):
         if cls.sanity_check(architecture):
             model = cls.architecture_map[architecture]()
             import numpy as np
