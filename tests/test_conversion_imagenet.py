@@ -16,11 +16,11 @@ from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
 
 def _compute_SNR(x,y):
     noise = x - y
-    noise_var = np.sum(noise ** 2)/len(noise) + 1e-7
-    signal_energy = np.sum(y ** 2)/len(y)
+    noise_var = np.sum(noise ** 2) / len(noise) + 1e-7
+    signal_energy = np.sum(y ** 2) / len(y)
     max_signal_energy = np.amax(y ** 2)
-    SNR = 10 * np.log10(signal_energy/noise_var)
-    PSNR = 10 * np.log10(max_signal_energy/noise_var)
+    SNR = 10 * np.log10(signal_energy / noise_var)
+    PSNR = 10 * np.log10(max_signal_energy / noise_var)
     return SNR, PSNR
 
 
@@ -30,11 +30,10 @@ def _compute_max_relative_error(x,y):
     index = 0
     for i in xrange(len(x)):
         den = max(1.0, np.abs(x[i]), np.abs(y[i]))
-        if np.abs(x[i]/den - y[i]/den) > rerror:
-            rerror = np.abs(x[i]/den - y[i]/den)
+        if np.abs(x[i]/den - y[i] / den) > rerror:
+            rerror = np.abs(x[i] / den - y[i] / den)
             index = i
     return rerror, index
-
 
 
 def ensure_dir(f):
