@@ -699,6 +699,7 @@ class Keras2Parser(Parser):
         for i in source_node.layer.cropping:
             for j in i:
                 border.append(j)
+
         assign_IRnode_values(IR_node, {'border' : border})
 
 
