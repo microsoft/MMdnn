@@ -241,7 +241,6 @@ class TestModels(CorrectnessTest):
 
 
     def test_keras(self):
-        return
         # keras original
         ensure_dir(self.cachedir)
         ensure_dir(self.tmpdir)
