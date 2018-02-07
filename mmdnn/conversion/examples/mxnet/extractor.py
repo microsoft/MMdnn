@@ -4,7 +4,6 @@
 #----------------------------------------------------------------------------------------------
 
 from __future__ import absolute_import
-import os
 from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.examples.extractor import base_extractor
 from mmdnn.conversion.common.utils import download_file
@@ -38,20 +37,20 @@ class mxnet_extractor(base_extractor):
                                     'params' : _base_model_url+'imagenet/resnext/101-layers/resnext-101-0000.params'},
         'imagenet1k-resnext-101-64x4d' : {'symbol' : _base_model_url+'imagenet/resnext/101-layers/resnext-101-64x4d-symbol.json',
                                           'params' : _base_model_url+'imagenet/resnext/101-layers/resnext-101-64x4d-0000.params'},
-        'imagenet11k-resnet-152' : {'symbol'     : _base_model_url+'imagenet-11k/resnet-152/resnet-152-symbol.json',
-                                    'params'     : _base_model_url+'imagenet-11k/resnet-152/resnet-152-0000.params'},
-        'imagenet11k-place365ch-resnet-152' : {'symbol'     : _base_model_url+'imagenet-11k-place365-ch/resnet-152-symbol.json',
-                                               'params'     : _base_model_url+'imagenet-11k-place365-ch/resnet-152-0000.params'},
-        'imagenet11k-place365ch-resnet-50'  : {'symbol'     : _base_model_url+'imagenet-11k-place365-ch/resnet-50-symbol.json',
-                                            'params'     : _base_model_url+'imagenet-11k-place365-ch/resnet-50-0000.params'},
+        'imagenet11k-resnet-152' : {'symbol' : _base_model_url+'imagenet-11k/resnet-152/resnet-152-symbol.json',
+                                    'params' : _base_model_url+'imagenet-11k/resnet-152/resnet-152-0000.params'},
+        'imagenet11k-place365ch-resnet-152' : {'symbol' : _base_model_url+'imagenet-11k-place365-ch/resnet-152-symbol.json',
+                                               'params' : _base_model_url+'imagenet-11k-place365-ch/resnet-152-0000.params'},
+        'imagenet11k-place365ch-resnet-50' : {'symbol' : _base_model_url+'imagenet-11k-place365-ch/resnet-50-symbol.json',
+                                              'params' : _base_model_url+'imagenet-11k-place365-ch/resnet-50-0000.params'},
         'vgg19' : {'symbol' : _base_model_url+'imagenet/vgg/vgg19-symbol.json',
                    'params' : _base_model_url+'imagenet/vgg/vgg19-0000.params'},
         'vgg16' : {'symbol' : _base_model_url+'imagenet/vgg/vgg16-symbol.json',
                    'params' : _base_model_url+'imagenet/vgg/vgg16-0000.params'},
-        'squeezenet_v1.0' : {'symbol'     : _base_model_url+'imagenet/squeezenet/squeezenet_v1.0-symbol.json',
-                             'params'     : _base_model_url+'imagenet/squeezenet/squeezenet_v1.0-0000.params'},
-        'squeezenet_v1.1' : {'symbol'     : _base_model_url+'imagenet/squeezenet/squeezenet_v1.1-symbol.json',
-                             'params'     : _base_model_url+'imagenet/squeezenet/squeezenet_v1.1-0000.params'}
+        'squeezenet_v1.0' : {'symbol' : _base_model_url+'imagenet/squeezenet/squeezenet_v1.0-symbol.json',
+                             'params' : _base_model_url+'imagenet/squeezenet/squeezenet_v1.0-0000.params'},
+        'squeezenet_v1.1' : {'symbol' : _base_model_url+'imagenet/squeezenet/squeezenet_v1.1-symbol.json',
+                             'params' : _base_model_url+'imagenet/squeezenet/squeezenet_v1.1-0000.params'}
     }
 
 

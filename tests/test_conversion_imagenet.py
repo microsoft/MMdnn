@@ -235,7 +235,12 @@ class TestModels(CorrectnessTest):
             'nasnet'       : [TensorflowEmit, KerasEmit],
         },
         'mxnet' : {
-            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit],
+            'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit],
+            'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit],
+            'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit],
+            'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit],
+            'imagenet1k-resnext-101-64x4d' : [TensorflowEmit], # TODO: CntkEmit
+            'imagenet1k-resnext-50'        : [TensorflowEmit, KerasEmit], # TODO: CntkEmit
         }
     }
 

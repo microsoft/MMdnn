@@ -91,15 +91,16 @@ class TestKit(object):
         },
 
         'mxnet' : {
-            'vgg16'           : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'vgg19'           : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'resnet'          : lambda path : TestKit.Identity(path, 224, True),
-            'squeezenet_v1.0' : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'squeezenet_v1.1' : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'inception_bn'    : lambda path : TestKit.Identity(path, 224, False),
-            'resnet152-11k'   : lambda path : TestKit.Identity(path, 224, True),
-            'resnext'         : lambda path : TestKit.Identity(path, 224, False),
-            'imagenet1k-resnext-50' : lambda path : TestKit.Identity(path, 224, False)
+            'vgg16'                         : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'vgg19'                         : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'resnet'                        : lambda path : TestKit.Identity(path, 224, True),
+            'squeezenet_v1.0'               : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'squeezenet_v1.1'               : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'imagenet1k-inception-bn'       : lambda path : TestKit.Identity(path, 224, False),
+            'imagenet1k-resnet-152'         : lambda path : TestKit.Identity(path, 224, True),
+            'resnext'                       : lambda path : TestKit.Identity(path, 224, False),
+            'imagenet1k-resnext-50'         : lambda path : TestKit.Identity(path, 224, False),
+            'imagenet1k-resnext-101-64x4d'  : lambda path : TestKit.Identity(path, 224, False)
         },
 
         'pytorch' : {
