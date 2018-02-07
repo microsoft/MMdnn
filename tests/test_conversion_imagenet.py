@@ -11,6 +11,8 @@ from mmdnn.conversion.keras.keras2_parser import Keras2Parser
 
 from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
 from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
+from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
+from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
 
 def _compute_SNR(x,y):
     noise = x - y
@@ -137,16 +139,67 @@ class TestModels(CorrectnessTest):
         return converted_predict
 
 
+    @staticmethod
+    def CaffeEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        print("Testing {} from {} to Caffe.".format(architecture_name, original_framework))
+
+        # IR to code
+        emitter = CaffeEmitter((architecture_path, weight_path))
+        emitter.run("converted_model.py", None, 'test')
+        del emitter
+
+        # import converted model
+        import converted_model
+        reload (converted_model)
+        model_converted = converted_model.KitModel(TestModels.tmpdir + architecture_name + "_converted.npy")
+        # input_tf, model_tf = model_converted
+
+        func = TestKit.preprocess_func[original_framework][architecture_name]
+        img = func(image_path)
+        # input_data = np.expand_dims(img, 0)
+
+        # del model_converted
+        # del converted_model
+        # os.remove("converted_model.py")
+        # converted_predict = np.squeeze(predict)
+        # return converted_predict
+
+
+    @staticmethod
+    def KerasEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        print("Testing {} from {} to Keras.".format(architecture_name, original_framework))
+
+        # IR to code
+        emitter = Keras2Emitter((architecture_path, weight_path))
+        emitter.run("converted_model.py", None, 'test')
+        del emitter
+
+        # import converted model
+        import converted_model
+        reload (converted_model)
+        model_converted = converted_model.KitModel(TestModels.tmpdir + architecture_name + "_converted.npy")
+
+        func = TestKit.preprocess_func[original_framework][architecture_name]
+        img = func(image_path)
+        input_data = np.expand_dims(img, 0)
+
+        predict = model_converted.predict(input_data)
+        converted_predict = np.squeeze(predict)
+        del model_converted
+        del converted_model
+        os.remove("converted_model.py")
+        return converted_predict
+
     test_table = {
         'keras': {
-            'vgg16'        : [CntkEmit, TensorflowEmit],
-            'vgg19'        : [CntkEmit, TensorflowEmit],
-            'inception_v3' : [CntkEmit, TensorflowEmit],
-            'resnet50'     : [CntkEmit, TensorflowEmit],
-            'densenet'     : [CntkEmit],
-            'xception'     : [TensorflowEmit],
-            'mobilenet'    : [TensorflowEmit],
-            'nasnet'       : [],
+            'vgg16'        : [CntkEmit, TensorflowEmit, KerasEmit],
+            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit],
+            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit],
+            'resnet50'     : [CntkEmit, TensorflowEmit, KerasEmit],
+            'densenet'     : [CntkEmit, KerasEmit],
+            'xception'     : [TensorflowEmit, KerasEmit],
+            'mobilenet'    : [TensorflowEmit, KerasEmit],
+            'nasnet'       : [KerasEmit],
         }
     }
 
