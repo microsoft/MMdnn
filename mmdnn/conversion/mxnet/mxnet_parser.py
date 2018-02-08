@@ -489,7 +489,7 @@ class MXNetParser(Parser):
             self._copy_and_reop(source_node, IR_node, "DepthwiseConv")
         else:
             self._copy_and_reop(source_node, IR_node, "Conv")
-        in_channel = in_channel // group
+        # in_channel = in_channel // group
 
         assert "num_filter" in layer_attr
         out_channel = int(layer_attr.get("num_filter"))
