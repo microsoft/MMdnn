@@ -83,9 +83,7 @@ class TestModels(CorrectnessTest):
 
         # original to IR
         parser = Keras2Parser(model_filename)
-        parser.gen_IR()
-        parser.save_to_proto(TestModels.tmpdir + architecture_name + "_converted.pb")
-        parser.save_weights(TestModels.tmpdir + architecture_name + "_converted.npy")
+        parser.run(TestModels.tmpdir + architecture_name + "_converted")
         del parser
         return original_predict
 
@@ -106,9 +104,7 @@ class TestModels(CorrectnessTest):
         model = (architecture_file, prefix, epoch, [3, 224, 224])
 
         parser = MXNetParser(model)
-        parser.gen_IR()
-        parser.save_to_proto(TestModels.tmpdir + architecture_name + "_converted.pb")
-        parser.save_weights(TestModels.tmpdir + architecture_name + "_converted.npy")
+        parser.run(TestModels.tmpdir + architecture_name + "_converted")
         del parser
 
         return original_predict
@@ -306,6 +302,7 @@ class TestModels(CorrectnessTest):
                 self._compare_outputs(original_predict, converted_predict)
 
 
+            os.remove(self.tmpdir + network_name + "_converted.json")
             os.remove(self.tmpdir + network_name + "_converted.pb")
             os.remove(self.tmpdir + network_name + "_converted.npy")
             print("Testing {} model {} passed.".format(original_framework, network_name))
