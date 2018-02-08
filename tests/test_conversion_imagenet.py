@@ -140,7 +140,7 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def TensorflowEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
-        print("Testing {} from {} to Tensorflow.".format(architecture_name, original_framework))
+        print("Testing {} from {} to TensorFlow.".format(architecture_name, original_framework))
 
         # IR to code
         emitter = TensorflowEmitter((architecture_path, weight_path))
@@ -169,7 +169,7 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def PytorchEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
-        print("Testing {} from {} to Pytorch.".format(architecture_name, original_framework))
+        print("Testing {} from {} to PyTorch.".format(architecture_name, original_framework))
 
         # IR to code
         emitter = PytorchEmitter((architecture_path, weight_path))
@@ -247,8 +247,8 @@ class TestModels(CorrectnessTest):
             'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'imagenet1k-resnext-101-64x4d' : [TensorflowEmit, PytorchEmit], # TODO: CntkEmit
-            'imagenet1k-resnext-50'        : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
+            'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit], # Keras is too slow
+            'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
         }
     }
 
