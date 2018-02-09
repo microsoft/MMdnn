@@ -323,7 +323,7 @@ class TestModels(CorrectnessTest):
             'resnet_v2_50' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
             'resnet_v2_152' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
             'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit],
-            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit], # TODO
             # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
          },
     }
