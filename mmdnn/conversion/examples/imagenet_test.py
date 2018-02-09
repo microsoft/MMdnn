@@ -64,7 +64,7 @@ class TestKit(object):
         'caffe' : {
             'alexnet'       : lambda path : TestKit.ZeroCenter(path, 227, True),
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 227, True),
+            'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True),
             'resnet152'     : lambda path : TestKit.ZeroCenter(path, 224, True),
             'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 227, False)
         },
