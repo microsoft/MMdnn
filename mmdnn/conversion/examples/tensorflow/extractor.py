@@ -20,6 +20,14 @@ from mmdnn.conversion.common.utils import download_file
 class tensorflow_extractor(base_extractor):
 
     architecture_map = {
+        'vgg19' : {
+            'url'         : 'http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz',
+            'filename'    : 'vgg_19.ckpt',
+            'builder'     : lambda : vgg.vgg_19,
+            'arg_scope'   : vgg.vgg_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'num_classes' : 1000,
+        },
         'inception_v1' : {
             'url'         : 'http://download.tensorflow.org/models/inception_v1_2016_08_28.tar.gz',
             'filename'    : 'inception_v1.ckpt',
