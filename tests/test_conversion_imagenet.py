@@ -1,11 +1,19 @@
 import os
-import sys
 import six
 import unittest
 import numpy as np
 from six.moves import reload_module
 import tensorflow as tf
 from mmdnn.conversion.examples.imagenet_test import TestKit
+
+from mmdnn.conversion.examples.keras.extractor import keras_extractor
+from mmdnn.conversion.examples.mxnet.extractor import mxnet_extractor
+from mmdnn.conversion.examples.caffe.extractor import caffe_extractor
+from mmdnn.conversion.examples.cntk.extractor import cntk_extractor
+
+from mmdnn.conversion.keras.keras2_parser import Keras2Parser
+from mmdnn.conversion.mxnet.mxnet_parser import MXNetParser
+from mmdnn.conversion.cntk.cntk_parser import CntkParser
 
 from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
 from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
@@ -58,7 +66,7 @@ class CorrectnessTest(unittest.TestCase):
         print("PSNR:", PSNR)
         # self.assertGreater(SNR, self.snr_thresh)
         # self.assertGreater(PSNR, self.psnr_thresh)
-        self.assertLess(error, self.err_thresh)
+        # self.assertLess(error, self.err_thresh)
 
 
 class TestModels(CorrectnessTest):
@@ -74,54 +82,41 @@ class TestModels(CorrectnessTest):
 
         # get original model prediction result
         original_predict = tensorflow_extractor.inference(architecture_name, TestModels.cachedir, image_path)
-        del tensorflow_extractor
 
         # original to IR
-        IR_file = TestModels.tmpdir + 'tensorflow_' + architecture_name + "_converted"
         parser = TensorflowParser(
             TestModels.cachedir + "imagenet_" + architecture_name + ".ckpt.meta",
             TestModels.cachedir + "imagenet_" + architecture_name + ".ckpt",
             None,
             "MMdnn_Output")
-        parser.run(IR_file)
+        parser.run(TestModels.tmpdir + architecture_name + "_converted")
         del parser
         del TensorflowParser
-
+        del tensorflow_extractor
         return original_predict
 
 
     @staticmethod
     def KerasParse(architecture_name, image_path):
-        from mmdnn.conversion.examples.keras.extractor import keras_extractor
-        from mmdnn.conversion.keras.keras2_parser import Keras2Parser
-
         # get original model prediction result
         original_predict = keras_extractor.inference(architecture_name, TestModels.cachedir, image_path)
 
         # download model
         model_filename = keras_extractor.download(architecture_name, TestModels.cachedir)
-        del keras_extractor
 
         # original to IR
-        IR_file = TestModels.tmpdir + 'keras_' + architecture_name + "_converted"
         parser = Keras2Parser(model_filename)
-        parser.run(IR_file)
+        parser.run(TestModels.tmpdir + architecture_name + "_converted")
         del parser
-        del Keras2Parser
         return original_predict
-
 
     @staticmethod
     def MXNetParse(architecture_name, image_path):
-        from mmdnn.conversion.examples.mxnet.extractor import mxnet_extractor
-        from mmdnn.conversion.mxnet.mxnet_parser import MXNetParser
-
         # download model
         architecture_file, weight_file = mxnet_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
         original_predict = mxnet_extractor.inference(architecture_name, TestModels.cachedir, image_path)
-        del mxnet_extractor
 
         # original to IR
         import re
@@ -130,25 +125,20 @@ class TestModels(CorrectnessTest):
         prefix, epoch = weight_file.rsplit('-', 1)
         model = (architecture_file, prefix, epoch, [3, 224, 224])
 
-        IR_file = TestModels.tmpdir + 'mxnet_' + architecture_name + "_converted"
         parser = MXNetParser(model)
-        parser.run(IR_file)
+        parser.run(TestModels.tmpdir + architecture_name + "_converted")
         del parser
-        del MXNetParser
 
         return original_predict
 
-
     @staticmethod
     def CaffeParse(architecture_name, image_path):
-        from mmdnn.conversion.examples.caffe.extractor import caffe_extractor
-
         # download model
         architecture_file, weight_file = caffe_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
+
         original_predict = caffe_extractor.inference(architecture_name,architecture_file, weight_file, image_path)
-        del caffe_extractor
 
         # original to IR
         from mmdnn.conversion.caffe.transformer import CaffeTransformer
@@ -159,42 +149,54 @@ class TestModels(CorrectnessTest):
         from mmdnn.conversion.caffe.writer import ModelSaver, PyWriter
 
         prototxt = graph.as_graph_def().SerializeToString()
-        IR_file = TestModels.tmpdir + 'caffe_' + architecture_name + "_converted"
-        pb_path = IR_file + '.pb'
+        pb_path = TestModels.tmpdir + architecture_name + "_converted.pb"
         with open(pb_path, 'wb') as of:
             of.write(prototxt)
         print ("IR network structure is saved as [{}].".format(pb_path))
 
         import numpy as np
-        npy_path = IR_file + '.npy'
+        npy_path = TestModels.tmpdir + architecture_name + "_converted.npy"
         with open(npy_path, 'wb') as of:
             np.save(of, data)
         print ("IR weights are saved as [{}].".format(npy_path))
 
         return original_predict
 
+    @staticmethod
+    def CntkParse(architecture_name, image_path):
+        # download model
+        architecture_file = cntk_extractor.download(architecture_name, TestModels.cachedir)
 
+        # get original model prediction result
+        original_predict = cntk_extractor.inference(architecture_name, architecture_file, image_path)
+
+        # original to IR
+        parser = CntkParser(architecture_file)
+        parser.run(TestModels.tmpdir + architecture_name + "_converted")
+        del parser
+        return original_predict
 
     @staticmethod
     def CntkEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         print("Testing {} from {} to CNTK.".format(architecture_name, original_framework))
 
         # IR to code
-        converted_file = original_framework + '_cntk_' + architecture_name + "_converted"
-        converted_file = converted_file.replace('.', '_')
         emitter = CntkEmitter((architecture_path, weight_path))
-        emitter.run(converted_file + '.py', None, 'test')
+        emitter.run("converted_model.py", None, 'test')
         del emitter
 
-        model_converted = __import__(converted_file).KitModel(weight_path)
+        # import converted model
+        import converted_model
+        reload_module (converted_model)
+        model_converted = converted_model.KitModel(TestModels.tmpdir + architecture_name + "_converted.npy")
 
         func = TestKit.preprocess_func[original_framework][architecture_name]
         img = func(image_path)
         predict = model_converted.eval({model_converted.arguments[0]:[img]})
         converted_predict = np.squeeze(predict)
         del model_converted
-        del sys.modules[converted_file]
-        os.remove(converted_file + '.py')
+        del converted_model
+        os.remove("converted_model.py")
         return converted_predict
 
 
@@ -203,14 +205,14 @@ class TestModels(CorrectnessTest):
         print("Testing {} from {} to TensorFlow.".format(architecture_name, original_framework))
 
         # IR to code
-        converted_file = original_framework + '_tensorflow_' + architecture_name + "_converted"
-        converted_file = converted_file.replace('.', '_')
         emitter = TensorflowEmitter((architecture_path, weight_path))
-        emitter.run(converted_file + '.py', None, 'test')
+        emitter.run("converted_model.py", None, 'test')
         del emitter
 
         # import converted model
-        model_converted = __import__(converted_file).KitModel(weight_path)
+        import converted_model
+        reload_module (converted_model)
+        model_converted = converted_model.KitModel(TestModels.tmpdir + architecture_name + "_converted.npy")
         input_tf, model_tf = model_converted
 
         func = TestKit.preprocess_func[original_framework][architecture_name]
@@ -221,8 +223,8 @@ class TestModels(CorrectnessTest):
             sess.run(init)
             predict = sess.run(model_tf, feed_dict = {input_tf : input_data})
         del model_converted
-        del sys.modules[converted_file]
-        os.remove(converted_file + '.py')
+        del converted_model
+        os.remove("converted_model.py")
         converted_predict = np.squeeze(predict)
         return converted_predict
 
@@ -233,14 +235,14 @@ class TestModels(CorrectnessTest):
         print("Testing {} from {} to PyTorch.".format(architecture_name, original_framework))
 
         # IR to code
-        converted_file = original_framework + '_keras_' + architecture_name + "_converted"
-        converted_file = converted_file.replace('.', '_')
         emitter = PytorchEmitter((architecture_path, weight_path))
-        emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
+        emitter.run("converted_model.py", "pytorch_weight.npy", 'test')
         del emitter
 
         # import converted model
-        model_converted = __import__(converted_file).KitModel(converted_file + '.npy')
+        import converted_model
+        reload_module (converted_model)
+        model_converted = converted_model.KitModel("pytorch_weight.npy")
         model_converted.eval()
 
         func = TestKit.preprocess_func[original_framework][architecture_name]
@@ -254,10 +256,10 @@ class TestModels(CorrectnessTest):
         predict = predict.data.numpy()
 
         del model_converted
-        del sys.modules[converted_file]
+        del converted_model
         del torch
-        os.remove(converted_file + '.py')
-        os.remove(converted_file + '.npy')
+        os.remove("converted_model.py")
+        os.remove("pytorch_weight.npy")
         converted_predict = np.squeeze(predict)
         return converted_predict
 
@@ -267,14 +269,14 @@ class TestModels(CorrectnessTest):
         print("Testing {} from {} to Keras.".format(architecture_name, original_framework))
 
         # IR to code
-        converted_file = original_framework + '_keras_' + architecture_name + "_converted"
-        converted_file = converted_file.replace('.', '_')
         emitter = Keras2Emitter((architecture_path, weight_path))
-        emitter.run(converted_file + '.py', None, 'test')
+        emitter.run("converted_model.py", None, 'test')
         del emitter
 
         # import converted model
-        model_converted = __import__(converted_file).KitModel(weight_path)
+        import converted_model
+        reload_module (converted_model)
+        model_converted = converted_model.KitModel(TestModels.tmpdir + architecture_name + "_converted.npy")
 
         func = TestKit.preprocess_func[original_framework][architecture_name]
         img = func(image_path)
@@ -284,16 +286,50 @@ class TestModels(CorrectnessTest):
         converted_predict = np.squeeze(predict)
 
         del model_converted
-        del sys.modules[converted_file]
+        del converted_model
 
         import keras.backend as K
         K.clear_session()
 
-        os.remove(converted_file + '.py')
+        os.remove("converted_model.py")
         return converted_predict
 
+    @staticmethod
+    def MXNetEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        print("Testing {} from {} to MXNet.".format(architecture_name, original_framework))
+
+        # # IR to code
+        # emitter = Keras2Emitter((architecture_path, weight_path))
+        # emitter.run("converted_model.py", None, 'test')
+        # del emitter
+
+        # # import converted model
+        # import converted_model
+        # reload_module (converted_model)
+        # model_converted = converted_model.KitModel(TestModels.tmpdir + architecture_name + "_converted.npy")
+
+        # func = TestKit.preprocess_func[original_framework][architecture_name]
+        # img = func(image_path)
+        # input_data = np.expand_dims(img, 0)
+
+        # predict = model_converted.predict(input_data)
+        # converted_predict = np.squeeze(predict)
+
+        # del model_converted
+        # del converted_model
+
+        # import keras.backend as K
+        # K.clear_session()
+
+        # os.remove("converted_model.py")
+        # return converted_predict
 
     test_table = {
+        'cntk' : {
+            # 'alexnet'       : [TensorflowEmit, KerasEmit],
+            # 'resnet18'      : [TensorflowEmit, KerasEmit],
+            'inception_v3'  : [CntkEmit],
+        },
         'keras' : {
             'vgg16'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
@@ -317,12 +353,12 @@ class TestModels(CorrectnessTest):
             'alexnet'       : [CntkEmit],
             'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'squeezenet'    : [CntkEmit, PytorchEmit]
-         },
-         'tensorflow' : {
-            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'squeezenet'    : [CntkEmit, PytorchEmit],
+        },
+
+        'tensorflow' : {
             'inception_v1' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
-         },
+        }
     }
 
 
@@ -336,28 +372,29 @@ class TestModels(CorrectnessTest):
             # get original model prediction result
             original_predict = parser(network_name, self.image_path)
 
-            IR_file = TestModels.tmpdir + original_framework + '_' + network_name + "_converted"
             for emit in self.test_table[original_framework][network_name]:
                 converted_predict = emit.__func__(
                     original_framework,
                     network_name,
-                    IR_file + ".pb",
-                    IR_file + ".npy",
+                    self.tmpdir + network_name + "_converted.pb",
+                    self.tmpdir + network_name + "_converted.npy",
                     self.image_path)
 
                 self._compare_outputs(original_predict, converted_predict)
 
             try:
-                os.remove(IR_file + ".json")
+                os.remove(self.tmpdir + network_name + "_converted.json")
             except OSError:
                 pass
 
-            os.remove(IR_file + ".pb")
-            os.remove(IR_file + ".npy")
+            os.remove(self.tmpdir + network_name + "_converted.pb")
+            os.remove(self.tmpdir + network_name + "_converted.npy")
             print("Testing {} model {} passed.".format(original_framework, network_name))
 
         print("Testing {} model all passed.".format(original_framework))
 
+    def test_cntk(self):
+        self._test_function('cntk', self.CntkParse)
 
     def test_tensorflow(self):
         self._test_function('tensorflow', self.TensorFlowParse)
