@@ -64,7 +64,7 @@ class TestKit(object):
         'caffe' : {
             'alexnet'       : lambda path : TestKit.ZeroCenter(path, 227, True),
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 227, True),
             'resnet152'     : lambda path : TestKit.ZeroCenter(path, 224, True),
             'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 227, False)
         },
@@ -74,7 +74,12 @@ class TestKit(object):
             'inception_v1'  : lambda path : TestKit.Standard(path, 224),
             'inception_v3'  : lambda path : TestKit.Standard(path, 299),
             'resnet'        : lambda path : TestKit.Standard(path, 299),
+            'resnet_v1_50'  : lambda path : TestKit.ZeroCenter(path, 224, False),
             'resnet_v1_101' : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'resnet_v1_152' : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'resnet_v2_50'  : lambda path : TestKit.Standard(path, 299),
+            'resnet_v2_152' : lambda path : TestKit.Standard(path, 299),
+            'resnet_v2_200' : lambda path : TestKit.Standard(path, 299),
             'resnet152'     : lambda path : TestKit.Standard(path, 299),
             'mobilenet'     : lambda path : TestKit.Standard(path, 224)
         },
