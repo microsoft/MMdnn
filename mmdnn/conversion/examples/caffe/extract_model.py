@@ -60,9 +60,11 @@ def _main():
         import numpy as np
         from mmdnn.conversion.examples.imagenet_test import TestKit
 
-        net = caffe.Net(arch_fn, weight_fn, caffe.TEST)
+        net = caffe.Net(arch_fn.encode("utf-8"), weight_fn.encode("utf-8"), caffe.TEST)
+        # net = caffe.Net(arch_fn, weight_fn, caffe.TEST)
         func = TestKit.preprocess_func['caffe'][args.network]
         img = func(args.image)
+        print(img.size)
         img = np.transpose(img, (2, 0, 1))
         img = np.expand_dims(img, 0)
         net.blobs['data'].data[...] = img

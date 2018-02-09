@@ -63,6 +63,7 @@ Models                                              | Caffe | Keras | Tensorflow
 [SqueezeNet](https://arxiv.org/pdf/1602.07360)      |   √   |   √   |     √      |   √  |   √   |    ×
 DenseNet                                            |       |   √   |     √      |   √  |       |            |
 [NASNet](https://arxiv.org/abs/1707.07012)          |       |   √   |     √      | × (no SeparableConv)
+[ResNext]                                           |       |   √   |     √      |   √  |   √   |
 
 #### On-going frameworks
 

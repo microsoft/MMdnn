@@ -61,7 +61,8 @@ def extract_model(args):
         extractor = keras_extractor()
 
     elif args.framework == 'tensorflow' or args.framework == 'tf':
-        pass
+        from mmdnn.conversion.examples.tensorflow.extractor import tensorflow_extractor
+        extractor = tensorflow_extractor()
 
     elif args.framework == 'mxnet':
         from mmdnn.conversion.examples.mxnet.extractor import mxnet_extractor
@@ -72,7 +73,7 @@ def extract_model(args):
     else:
         raise ValueError("Unknown framework [{}].".format(args.framework))
 
-    files = extractor.download(args.network,args.path)
+    files = extractor.download(args.network, args.path)
 
     if files and args.image:
         predict = extractor.inference(args.network, args.path, args.image)
