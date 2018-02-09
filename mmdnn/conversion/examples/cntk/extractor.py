@@ -58,9 +58,6 @@ class cntk_extractor(base_extractor):
             predict = np.squeeze(predict)
 
             top_indices = predict.argsort()[-5:][::-1]
-            result = [(i, predict[i]) for i in top_indices]
-            print(result)
-            print(np.sum(result))
             return predict
 
         else:

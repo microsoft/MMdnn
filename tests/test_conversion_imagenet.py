@@ -347,15 +347,15 @@ class TestModels(CorrectnessTest):
         },
 
         'keras' : {
-            # 'vgg16'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'vgg19'        : [MXNetEmit],
-            # 'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            # 'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            # 'resnet50'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            # 'densenet'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            # 'xception'     : [TensorflowEmit, KerasEmit],
-            # 'mobilenet'    : [TensorflowEmit, KerasEmit],
-            # 'nasnet'       : [TensorflowEmit, KerasEmit],
+            'vgg16'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'resnet50'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'densenet'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'xception'     : [TensorflowEmit, KerasEmit],
+            'mobilenet'    : [TensorflowEmit, KerasEmit],
+            'nasnet'       : [TensorflowEmit, KerasEmit],
         },
 
         'mxnet' : {
@@ -428,17 +428,17 @@ class TestModels(CorrectnessTest):
     #     self._test_function('cntk', self.CntkParse)
 
 
-    # def test_tensorflow(self):
-    #     self._test_function('tensorflow', self.TensorFlowParse)
+    def test_tensorflow(self):
+        self._test_function('tensorflow', self.TensorFlowParse)
 
 
-    # def test_caffe(self):
-    #     self._test_function('caffe', self.CaffeParse)
+    def test_caffe(self):
+        self._test_function('caffe', self.CaffeParse)
 
 
     def test_keras(self):
         self._test_function('keras', self.KerasParse)
 
 
-    # def test_mxnet(self):
-    #     self._test_function('mxnet', self.MXNetParse)
+    def test_mxnet(self):
+        self._test_function('mxnet', self.MXNetParse)
