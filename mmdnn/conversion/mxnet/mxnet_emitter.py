@@ -391,6 +391,9 @@ def predict(model, labels, url):
             num_group = IR_node.IR_layer.attr["kernel_shape"].list.i[-2]
             num_filter = num_filter * num_group
             pattern = "Convolution"
+            if self.weight_loaded:
+                weights = np.swapaxes(weights, -1, -2)
+
         else:
             num_group = IR_node.get_attr('group', 1)
 
@@ -405,8 +408,6 @@ def predict(model, labels, url):
         if self.weight_loaded:
             # if layout not in MXNetEmitter.channels_last:
             weights = MXNetEmitter.transpose(weights, dim)
-            if num_group > 1:
-                weights = np.swapaxes(weights, 0, 1)
             self.output_weights[IR_node.name + "_weight"] = weights
 
         code = ""
