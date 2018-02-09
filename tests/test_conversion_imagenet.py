@@ -107,6 +107,7 @@ class TestModels(CorrectnessTest):
         del Keras2Parser
         return original_predict
 
+
     @staticmethod
     def MXNetParse(architecture_name, image_path):
         from mmdnn.conversion.examples.mxnet.extractor import mxnet_extractor
@@ -133,6 +134,7 @@ class TestModels(CorrectnessTest):
         del MXNetParser
 
         return original_predict
+
 
     @staticmethod
     def CaffeParse(architecture_name, image_path):
@@ -168,6 +170,7 @@ class TestModels(CorrectnessTest):
 
         return original_predict
 
+
     @staticmethod
     def CntkParse(architecture_name, image_path):
         from mmdnn.conversion.examples.cntk.extractor import cntk_extractor
@@ -186,6 +189,7 @@ class TestModels(CorrectnessTest):
         del parser
         del CntkParser
         return original_predict
+
 
     @staticmethod
     def CntkEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
@@ -305,6 +309,7 @@ class TestModels(CorrectnessTest):
         os.remove(converted_file + '.py')
         return converted_predict
 
+
     @staticmethod
     def MXNetEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         from collections import namedtuple
@@ -342,6 +347,8 @@ class TestModels(CorrectnessTest):
         os.remove(converted_file + '.py')
         os.remove(output_weights_file)
         return converted_predict
+
+
 
     test_table = {
         'cntk' : {
@@ -444,5 +451,5 @@ class TestModels(CorrectnessTest):
         self._test_function('keras', self.KerasParse)
 
 
-    # def test_mxnet(self):
-    #     self._test_function('mxnet', self.MXNetParse)
+    def test_mxnet(self):
+        self._test_function('mxnet', self.MXNetParse)
