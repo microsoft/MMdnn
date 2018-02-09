@@ -43,7 +43,47 @@ class tensorflow_extractor(base_extractor):
             'arg_scope'   : inception.inception_v3_arg_scope,
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
             'num_classes' : 1001,
-        }
+        },
+        'resnet_v1_50' : {
+            'url'         : 'http://download.tensorflow.org/models/resnet_v1_50_2016_08_28.tar.gz',
+            'filename'    : 'resnet_v1_50.ckpt',
+            'builder'     : lambda : resnet_v1.resnet_v1_50,
+            'arg_scope'   : resnet_v2.resnet_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'num_classes' : 1000,
+        },
+        'resnet_v1_152' : {
+            'url'         : 'http://download.tensorflow.org/models/resnet_v1_152_2016_08_28.tar.gz',
+            'filename'    : 'resnet_v1_152.ckpt',
+            'builder'     : lambda : resnet_v1.resnet_v1_152,
+            'arg_scope'   : resnet_v2.resnet_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'num_classes' : 1000,
+        },
+        'resnet_v2_50' : {
+            'url'         : 'http://download.tensorflow.org/models/resnet_v2_50_2017_04_14.tar.gz',
+            'filename'    : 'resnet_v2_50.ckpt',
+            'builder'     : lambda : resnet_v2.resnet_v2_50,
+            'arg_scope'   : resnet_v2.resnet_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
+            'num_classes' : 1001,
+        },
+        'resnet_v2_152' : {
+            'url'         : 'http://download.tensorflow.org/models/resnet_v2_152_2017_04_14.tar.gz',
+            'filename'    : 'resnet_v2_152.ckpt',
+            'builder'     : lambda : resnet_v2.resnet_v2_152,
+            'arg_scope'   : resnet_v2.resnet_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
+            'num_classes' : 1001,
+        },
+        'resnet_v2_200' : {
+            'url'         : 'http://download.tensorflow.org/models/resnet_v2_200_2017_04_14.tar.gz',
+            'filename'    : 'resnet_v2_200.ckpt',
+            'builder'     : lambda : resnet_v2.resnet_v2_200,
+            'arg_scope'   : resnet_v2.resnet_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
+            'num_classes' : 1001,
+        },
     }
 
 

@@ -178,8 +178,6 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def CntkEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
-        print("Testing {} from {} to CNTK.".format(architecture_name, original_framework))
-
         # IR to code
         emitter = CntkEmitter((architecture_path, weight_path))
         emitter.run("converted_model.py", None, 'test')
@@ -202,8 +200,6 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def TensorflowEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
-        print("Testing {} from {} to TensorFlow.".format(architecture_name, original_framework))
-
         # IR to code
         emitter = TensorflowEmitter((architecture_path, weight_path))
         emitter.run("converted_model.py", None, 'test')
@@ -232,9 +228,10 @@ class TestModels(CorrectnessTest):
     @staticmethod
     def PytorchEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         import torch
-        print("Testing {} from {} to PyTorch.".format(architecture_name, original_framework))
 
         # IR to code
+        converted_file = original_framework + '_pytorch_' + architecture_name + "_converted"
+        converted_file = converted_file.replace('.', '_')
         emitter = PytorchEmitter((architecture_path, weight_path))
         emitter.run("converted_model.py", "pytorch_weight.npy", 'test')
         del emitter
@@ -266,8 +263,6 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def KerasEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
-        print("Testing {} from {} to Keras.".format(architecture_name, original_framework))
-
         # IR to code
         emitter = Keras2Emitter((architecture_path, weight_path))
         emitter.run("converted_model.py", None, 'test')
@@ -340,6 +335,7 @@ class TestModels(CorrectnessTest):
             'mobilenet'    : [TensorflowEmit, KerasEmit],
             'nasnet'       : [TensorflowEmit, KerasEmit],
         },
+
         'mxnet' : {
             'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
@@ -348,17 +344,24 @@ class TestModels(CorrectnessTest):
             'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit], # Keras is too slow
             'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
         },
+
         'caffe' : {
             'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'alexnet'       : [CntkEmit],
             'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'squeezenet'    : [CntkEmit, PytorchEmit],
+            'squeezenet'    : [CntkEmit, PytorchEmit]
         },
 
         'tensorflow' : {
+            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'inception_v1' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
-        }
+            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO: PytorchEmit
+            'resnet_v1_50' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
+            'resnet_v1_152' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
+            'resnet_v2_50' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
+            'resnet_v2_152' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
+        },
     }
 
 
@@ -367,12 +370,13 @@ class TestModels(CorrectnessTest):
         ensure_dir(self.tmpdir)
 
         for network_name in self.test_table[original_framework].keys():
-            print("Testing {} model {} start.".format(original_framework, network_name))
+            print("Test {} from {} start.".format(network_name, original_framework), file=sys.stderr, flush=True)
 
             # get original model prediction result
             original_predict = parser(network_name, self.image_path)
 
             for emit in self.test_table[original_framework][network_name]:
+                print('Testing conversion {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr, flush=True)
                 converted_predict = emit.__func__(
                     original_framework,
                     network_name,
@@ -381,6 +385,8 @@ class TestModels(CorrectnessTest):
                     self.image_path)
 
                 self._compare_outputs(original_predict, converted_predict)
+
+                print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr, flush=True)
 
             try:
                 os.remove(self.tmpdir + network_name + "_converted.json")
