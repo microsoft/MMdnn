@@ -8,26 +8,8 @@ from six import text_type as _text_type
 
 def extract_model(args):
     if args.framework == 'caffe':
-        from mmdnn.conversion.caffe.transformer import CaffeTransformer
-        transformer = CaffeTransformer(args.network, args.weights, "tensorflow", args.inputShape, phase = args.caffePhase)
-        graph = transformer.transform_graph()
-        data = transformer.transform_data()
-
-        from mmdnn.conversion.caffe.writer import JsonFormatter, ModelSaver, PyWriter
-        JsonFormatter(graph).dump(args.dstPath + ".json")
-        print ("IR network structure is saved as [{}.json].".format(args.dstPath))
-
-        prototxt = graph.as_graph_def().SerializeToString()
-        with open(args.dstPath + ".pb", 'wb') as of:
-            of.write(prototxt)
-        print ("IR network structure is saved as [{}.pb].".format(args.dstPath))
-
-        import numpy as np
-        with open(args.dstPath + ".npy", 'wb') as of:
-            np.save(of, data)
-        print ("IR weights are saved as [{}.npy].".format(args.dstPath))
-
-        return 0
+        from mmdnn.conversion.examples.caffe.extractor import caffe_extractor
+        extractor = caffe_extractor()
 
     elif args.framework == 'caffe2':
         raise NotImplementedError("Caffe2 is not supported yet.")
