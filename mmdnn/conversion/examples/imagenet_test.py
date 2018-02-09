@@ -25,7 +25,7 @@ class TestKit(object):
             'resnet'            : [(22, 11.756789), (147, 8.5718527), (24, 6.1751032), (88, 4.3121386), (141, 4.1778097)],
             'resnet_v1_101'     : [(21, 14.384739), (23, 14.262486), (144, 14.068737), (94, 12.17205), (134, 12.064575)],
             'inception_v3'      : [(22, 9.4921198), (24, 4.0932288), (25, 3.700398), (23, 3.3715961), (147, 3.3620636)],
-            'mobilenet'         : [(22, 16.223597), (24, 14.54775), (147, 13.173758), (145, 11.36431), (728, 11.083847)]
+            'mobilenet_v1_1.0'         : [(22, 16.223597), (24, 14.54775), (147, 13.173758), (145, 11.36431), (728, 11.083847)]
         },
         'keras' : {
             'vgg16'             : [(21, 0.81199354), (562, 0.019326132), (23, 0.018279659), (144, 0.012460723), (22, 0.012429929)],
@@ -81,7 +81,12 @@ class TestKit(object):
             'resnet_v2_152' : lambda path : TestKit.Standard(path, 299),
             'resnet_v2_200' : lambda path : TestKit.Standard(path, 299),
             'resnet152'     : lambda path : TestKit.Standard(path, 299),
-            'mobilenet'     : lambda path : TestKit.Standard(path, 224)
+            'mobilenet_v1_1.0'  : lambda path : TestKit.Standard(path, 224),
+            'mobilenet_v1_0.50' : lambda path : TestKit.Standard(path, 224),
+            'mobilenet_v1_0.25' : lambda path : TestKit.Standard(path, 224),
+            'mobilenet'     : lambda path : TestKit.Standard(path, 224),
+            'nasnet-a_large'     : lambda path : TestKit.Standard(path, 331),
+            'inception_resnet_v2' : lambda path : TestKit.Standard(path, 299),
         },
 
         'keras' : {

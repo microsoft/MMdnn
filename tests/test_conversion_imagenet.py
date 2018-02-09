@@ -3,7 +3,6 @@ import sys
 import six
 import unittest
 import numpy as np
-from six.moves import reload_module
 import tensorflow as tf
 from mmdnn.conversion.examples.imagenet_test import TestKit
 
@@ -383,7 +382,10 @@ class TestModels(CorrectnessTest):
             'resnet_v1_152' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
             'resnet_v2_50' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
             'resnet_v2_152' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
-        },
+            'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit],
+            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+         },
     }
 
 
@@ -400,8 +402,8 @@ class TestModels(CorrectnessTest):
 
             IR_file = TestModels.tmpdir + original_framework + '_' + network_name + "_converted"
             for emit in self.test_table[original_framework][network_name]:
-                # print('Testing conversion {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr, flush=True)
-                print('Testing conversion {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]))
+                # print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr, flush=True)
+                print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]))
                 converted_predict = emit.__func__(
                     original_framework,
                     network_name,
