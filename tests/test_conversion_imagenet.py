@@ -4,11 +4,12 @@ import unittest
 import numpy as np
 from six.moves import reload_module
 import tensorflow as tf
-import torch
+# import torch
 from mmdnn.conversion.examples.imagenet_test import TestKit
 
 from mmdnn.conversion.examples.keras.extractor import keras_extractor
 from mmdnn.conversion.examples.mxnet.extractor import mxnet_extractor
+from mmdnn.conversion.examples.caffe.extractor import caffe_extractor
 
 from mmdnn.conversion.keras.keras2_parser import Keras2Parser
 from mmdnn.conversion.mxnet.mxnet_parser import MXNetParser
@@ -106,6 +107,37 @@ class TestModels(CorrectnessTest):
         parser = MXNetParser(model)
         parser.run(TestModels.tmpdir + architecture_name + "_converted")
         del parser
+
+        return original_predict
+
+    @staticmethod
+    def CaffeParse(architecture_name, image_path):
+        # download model
+        architecture_file, weight_file = caffe_extractor.download(architecture_name, TestModels.cachedir)
+
+        # get original model prediction result
+
+        original_predict = caffe_extractor.inference(architecture_name,architecture_file, weight_file, image_path)
+
+        # original to IR
+        from mmdnn.conversion.caffe.transformer import CaffeTransformer
+        transformer = CaffeTransformer(architecture_file, weight_file, "tensorflow", None, phase = 'TRAIN')
+        graph = transformer.transform_graph()
+        data = transformer.transform_data()
+
+        from mmdnn.conversion.caffe.writer import ModelSaver, PyWriter
+
+        prototxt = graph.as_graph_def().SerializeToString()
+        pb_path = TestModels.tmpdir + architecture_name + "_converted.pb"
+        with open(pb_path, 'wb') as of:
+            of.write(prototxt)
+        print ("IR network structure is saved as [{}].".format(pb_path))
+
+        import numpy as np
+        npy_path = TestModels.tmpdir + architecture_name + "_converted.npy"
+        with open(npy_path, 'wb') as of:
+            np.save(of, data)
+        print ("IR weights are saved as [{}].".format(npy_path))
 
         return original_predict
 
@@ -245,9 +277,45 @@ class TestModels(CorrectnessTest):
             'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit], # Keras is too slow
             'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+        },
+        'caffe' : {
+            'vgg19'         : [KerasEmit],
+            # 'alexnet'       : [KerasEmit],
+            'inception_v1'  : [CntkEmit],
+            'resnet152'     : [CntkEmit],
+            'squeezenet'    : [CntkEmit]
         }
     }
 
+    def test_caffe(self):
+        # mxnet original
+        ensure_dir(self.cachedir)
+        ensure_dir(self.tmpdir)
+        original_framework = 'caffe'
+
+        for network_name in self.test_table[original_framework].keys():
+            print("Testing {} model {} start.".format(original_framework, network_name))
+
+            # get original model prediction result
+            original_predict = self.CaffeParse(network_name, self.image_path)
+            # print(original_predict)
+
+            for emit in self.test_table[original_framework][network_name]:
+                converted_predict = emit.__func__(
+                    original_framework,
+                    network_name,
+                    self.tmpdir + network_name + "_converted.pb",
+                    self.tmpdir + network_name + "_converted.npy",
+                    self.image_path)
+
+                self._compare_outputs(original_predict, converted_predict)
+
+
+            os.remove(self.tmpdir + network_name + "_converted.pb")
+            os.remove(self.tmpdir + network_name + "_converted.npy")
+            print("Testing {} model {} passed.".format(original_framework, network_name))
+
+        print("Testing {} model all passed.".format(original_framework))
 
     def test_keras(self):
         # keras original
@@ -271,12 +339,9 @@ class TestModels(CorrectnessTest):
 
                 self._compare_outputs(original_predict, converted_predict)
 
-
             os.remove(self.tmpdir + network_name + "_converted.pb")
             os.remove(self.tmpdir + network_name + "_converted.npy")
             print("Testing {} model {} passed.".format(original_framework, network_name))
-
-        print("Testing {} model all passed.".format(original_framework))
 
 
     def test_mxnet(self):
@@ -300,7 +365,6 @@ class TestModels(CorrectnessTest):
                     self.image_path)
 
                 self._compare_outputs(original_predict, converted_predict)
-
 
             os.remove(self.tmpdir + network_name + "_converted.json")
             os.remove(self.tmpdir + network_name + "_converted.pb")

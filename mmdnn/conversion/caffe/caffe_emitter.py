@@ -110,7 +110,7 @@ if __name__=='__main__':
         with open("graph.txt", 'w') as f:
             for layer in self.IR_graph.topological_sort:
                 current_node = self.IR_graph.get_node(layer)
-                print("========current_node=========\n{}".format(current_node.layer), file=f)
+                print("========current_node=========\n{}".format(current_node.layer))
         # test end
 
         for layer in self.IR_graph.topological_sort:
