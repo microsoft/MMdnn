@@ -6,10 +6,13 @@
 from __future__ import absolute_import
 
 import tensorflow as tf
-from tensorflow.contrib.slim.python.slim.nets import vgg
-from tensorflow.contrib.slim.python.slim.nets import inception
-from tensorflow.contrib.slim.python.slim.nets import resnet_v1
-from tensorflow.contrib.slim.python.slim.nets import resnet_v2
+
+from tensorflow.contrib.slim.nets import vgg
+from tensorflow.contrib.slim.nets import inception
+from tensorflow.contrib.slim.nets import resnet_v1
+from tensorflow.contrib.slim.nets import resnet_v2
+from mmdnn.conversion.examples.tensorflow.models import mobilenet_v1
+from mmdnn.conversion.examples.tensorflow.models import nasnet
 slim = tf.contrib.slim
 
 from mmdnn.conversion.examples.imagenet_test import TestKit
@@ -84,6 +87,22 @@ class tensorflow_extractor(base_extractor):
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
             'num_classes' : 1001,
         },
+        'mobilenet_v1_1.0' : {
+            'url'         : 'http://download.tensorflow.org/models/mobilenet_v1_1.0_224_2017_06_14.tar.gz',
+            'filename'    : 'mobilenet_v1_1.0_224.ckpt',
+            'builder'     : lambda : mobilenet_v1.mobilenet_v1,
+            'arg_scope'   : mobilenet_v1.mobilenet_v1_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'num_classes' : 1001,
+        },
+        'nasnet-a_large' : {
+            'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/nasnet-a_large_04_10_2017.tar.gz',
+            'filename'    : 'model.ckpt',
+            'builder'     : lambda : nasnet.build_nasnet_large,
+            'arg_scope'   : nasnet.nasnet_large_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 331, 331, 3]),
+            'num_classes' : 1001,
+        }
     }
 
 

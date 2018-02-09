@@ -81,7 +81,11 @@ class TestKit(object):
             'resnet_v2_152' : lambda path : TestKit.Standard(path, 299),
             'resnet_v2_200' : lambda path : TestKit.Standard(path, 299),
             'resnet152'     : lambda path : TestKit.Standard(path, 299),
-            'mobilenet'     : lambda path : TestKit.Standard(path, 224)
+            'mobilenet_v1_1.0'  : lambda path : TestKit.Standard(path, 224),
+            'mobilenet_v1_0.50' : lambda path : TestKit.Standard(path, 224),
+            'mobilenet_v1_0.25' : lambda path : TestKit.Standard(path, 224),
+            'mobilenet'     : lambda path : TestKit.Standard(path, 224),
+            'nasnet-a_large'     : lambda path : TestKit.Standard(path, 331),
         },
 
         'keras' : {
