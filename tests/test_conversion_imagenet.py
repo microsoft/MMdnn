@@ -1,13 +1,10 @@
 import os
 import sys
-import six
 import unittest
 import numpy as np
-import tensorflow as tf
 from mmdnn.conversion.examples.imagenet_test import TestKit
 
 from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
-from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
 from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
 from mmdnn.conversion.pytorch.pytorch_emitter import PytorchEmitter
 from mmdnn.conversion.mxnet.mxnet_emitter import MXNetEmitter
@@ -213,12 +210,16 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def TensorflowEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        import tensorflow as tf
+        from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
+
         # IR to code
         converted_file = original_framework + '_tensorflow_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
         emitter = TensorflowEmitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
+        del TensorflowEmitter
 
         # import converted model
         model_converted = __import__(converted_file).KitModel(weight_path)
@@ -235,6 +236,9 @@ class TestModels(CorrectnessTest):
         del sys.modules[converted_file]
         os.remove(converted_file + '.py')
         converted_predict = np.squeeze(predict)
+
+        del tf
+
         return converted_predict
 
 
@@ -262,13 +266,14 @@ class TestModels(CorrectnessTest):
 
         predict = model_converted(input_data)
         predict = predict.data.numpy()
+        converted_predict = np.squeeze(predict)
 
         del model_converted
         del sys.modules[converted_file]
         del torch
         os.remove(converted_file + '.py')
         os.remove(converted_file + '.npy')
-        converted_predict = np.squeeze(predict)
+
         return converted_predict
 
 
@@ -342,47 +347,47 @@ class TestModels(CorrectnessTest):
         'cntk' : {
             # 'alexnet'       : [TensorflowEmit, KerasEmit],
             # 'resnet18'      : [TensorflowEmit, KerasEmit],
-            'inception_v3'  : [PytorchEmit ],
+            'inception_v3'  : [PytorchEmit],
         },
 
         'keras' : {
-            'vgg16'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'vgg16'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'resnet50'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'densenet'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'resnet50'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'densenet'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'xception'     : [TensorflowEmit, KerasEmit],
-            'mobilenet'    : [TensorflowEmit, KerasEmit],
+            'mobilenet'    : [TensorflowEmit, KerasEmit, MXNetEmit],
             'nasnet'       : [TensorflowEmit, KerasEmit],
         },
 
         'mxnet' : {
-            'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit], # Keras is too slow
-            'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is too slow
+            'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
         },
 
         'caffe' : {
-            'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'alexnet'       : [CntkEmit],
-            'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'squeezenet'    : [CntkEmit, PytorchEmit]
+            'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit], # TODO: PytorchEmit
+            'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'squeezenet'    : [CntkEmit, PytorchEmit, MXNetEmit]
         },
 
         'tensorflow' : {
-            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'inception_v1' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
-            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO: PytorchEmit
-            'resnet_v1_50' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
-            'resnet_v1_152' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
-            'resnet_v2_50' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
-            'resnet_v2_152' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
-            'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit],
+            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'inception_v1' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
+            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit], # TODO: PytorchEmit
+            'resnet_v1_50' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
+            'resnet_v1_152' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
+            'resnet_v2_50' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
+            'resnet_v2_152' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
+            'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit],
             # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit], # TODO
             # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
          },
@@ -394,16 +399,16 @@ class TestModels(CorrectnessTest):
         ensure_dir(self.tmpdir)
 
         for network_name in self.test_table[original_framework].keys():
-            # print("Test {} from {} start.".format(network_name, original_framework), file=sys.stderr, flush=True)
-            print("Test {} from {} start.".format(network_name, original_framework))
+            print("Test {} from {} start.".format(network_name, original_framework), file=sys.stderr, flush=True)
+            # print("Test {} from {} start.".format(network_name, original_framework))
 
             # get original model prediction result
             original_predict = parser(network_name, self.image_path)
 
             IR_file = TestModels.tmpdir + original_framework + '_' + network_name + "_converted"
             for emit in self.test_table[original_framework][network_name]:
-                # print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr, flush=True)
-                print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]))
+                print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr, flush=True)
+                # print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]))
                 converted_predict = emit.__func__(
                     original_framework,
                     network_name,
@@ -413,8 +418,8 @@ class TestModels(CorrectnessTest):
 
                 self._compare_outputs(original_predict, converted_predict)
 
-                # print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr, flush=True)
-                print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, emit.__func__.__name__[:-4]))
+                print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr, flush=True)
+                # print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, emit.__func__.__name__[:-4]))
             try:
                 os.remove(IR_file + ".json")
             except OSError:
@@ -442,5 +447,5 @@ class TestModels(CorrectnessTest):
         self._test_function('keras', self.KerasParse)
 
 
-    def test_mxnet(self):
-        self._test_function('mxnet', self.MXNetParse)
+    # def test_mxnet(self):
+    #     self._test_function('mxnet', self.MXNetParse)
