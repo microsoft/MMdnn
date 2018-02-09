@@ -71,6 +71,7 @@ class TestKit(object):
 
         'tensorflow' : {
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'inception_v1'  : lambda path : TestKit.Standard(path, 224),
             'inception_v3'  : lambda path : TestKit.Standard(path, 299),
             'resnet'        : lambda path : TestKit.Standard(path, 299),
             'resnet_v1_101' : lambda path : TestKit.ZeroCenter(path, 224, False),
