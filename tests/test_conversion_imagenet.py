@@ -399,16 +399,14 @@ class TestModels(CorrectnessTest):
         ensure_dir(self.tmpdir)
 
         for network_name in self.test_table[original_framework].keys():
-            print("Test {} from {} start.".format(network_name, original_framework), file=sys.stderr, flush=True)
-            # print("Test {} from {} start.".format(network_name, original_framework))
+            print("Test {} from {} start.".format(network_name, original_framework), file=sys.stderr)
 
             # get original model prediction result
             original_predict = parser(network_name, self.image_path)
 
             IR_file = TestModels.tmpdir + original_framework + '_' + network_name + "_converted"
             for emit in self.test_table[original_framework][network_name]:
-                print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr, flush=True)
-                # print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]))
+                print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr)
                 converted_predict = emit.__func__(
                     original_framework,
                     network_name,
@@ -418,8 +416,7 @@ class TestModels(CorrectnessTest):
 
                 self._compare_outputs(original_predict, converted_predict)
 
-                print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr, flush=True)
-                # print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, emit.__func__.__name__[:-4]))
+                print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr)
             try:
                 os.remove(IR_file + ".json")
             except OSError:
