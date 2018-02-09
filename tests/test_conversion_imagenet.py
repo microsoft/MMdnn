@@ -305,19 +305,19 @@ class TestModels(CorrectnessTest):
             'nasnet'       : [TensorflowEmit, KerasEmit],
         },
         'mxnet' : {
-            # 'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            # 'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            # 'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            # 'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit], # Keras is too slow
-            # 'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit], # Keras is too slow
+            'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
         },
         'caffe' : {
-            'vgg19'         : [KerasEmit],
-            # 'alexnet'       : [KerasEmit],
-            'inception_v1'  : [CntkEmit],
-            'resnet152'     : [CntkEmit],
-            'squeezenet'    : [CntkEmit]
+            # 'vgg19'         : [KerasEmit],
+            'alexnet'       : [TensorflowEmit, KerasEmit],
+            # 'inception_v1'  : [CntkEmit],
+            # 'resnet152'     : [CntkEmit],
+            # 'squeezenet'    : [CntkEmit]
          },
          'tensorflow' : {
             'inception_v1' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
