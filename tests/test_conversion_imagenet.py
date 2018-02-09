@@ -313,11 +313,11 @@ class TestModels(CorrectnessTest):
             # 'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
         },
         'caffe' : {
-            'vgg19'         : [KerasEmit],
-            # 'alexnet'       : [KerasEmit],
-            'inception_v1'  : [CntkEmit],
-            'resnet152'     : [CntkEmit],
-            'squeezenet'    : [CntkEmit]
+            'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'alexnet'       : [CntkEmit],
+            'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
+            'squeezenet'    : [CntkEmit, PytorchEmit]
          },
          'tensorflow' : {
             'inception_v1' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit

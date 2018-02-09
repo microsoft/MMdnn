@@ -36,7 +36,8 @@ class caffe_extractor(base_extractor):
     @classmethod
     def download(cls, architecture, path="./"):
         if cls.sanity_check(architecture):
-            architecture_file = download_file(cls.architecture_map[architecture]['prototxt'], directory=path)
+            prototxt_name = architecture + "-deploy.prototxt"
+            architecture_file = download_file(cls.architecture_map[architecture]['prototxt'], directory=path ,local_fname=prototxt_name)
             if not architecture_file:
                 return None
 
