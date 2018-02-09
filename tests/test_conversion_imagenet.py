@@ -275,15 +275,15 @@ class TestModels(CorrectnessTest):
             'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
             'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
-            'imagenet1k-resnext-101-64x4d' : [TensorflowEmit, PytorchEmit], # TODO: CntkEmit
-            'imagenet1k-resnext-50'        : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO: CntkEmit
+            'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit], # Keras is too slow
+            'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit],
         },
         'caffe' : {
-            # 'vgg19'         : [KerasEmit],
+            'vgg19'         : [KerasEmit],
             # 'alexnet'       : [KerasEmit],
-            # 'inception_v1'  : [CntkEmit],
-            # 'resnet152'     : [CntkEmit],
-            # 'squeezenet'    : [CntkEmit]
+            'inception_v1'  : [CntkEmit],
+            'resnet152'     : [CntkEmit],
+            'squeezenet'    : [CntkEmit]
         }
     }
 
@@ -339,7 +339,6 @@ class TestModels(CorrectnessTest):
 
                 self._compare_outputs(original_predict, converted_predict)
 
-            os.remove(self.tmpdir + network_name + "_converted.json")
             os.remove(self.tmpdir + network_name + "_converted.pb")
             os.remove(self.tmpdir + network_name + "_converted.npy")
             print("Testing {} model {} passed.".format(original_framework, network_name))
@@ -367,7 +366,7 @@ class TestModels(CorrectnessTest):
 
                 self._compare_outputs(original_predict, converted_predict)
 
-
+            os.remove(self.tmpdir + network_name + "_converted.json")
             os.remove(self.tmpdir + network_name + "_converted.pb")
             os.remove(self.tmpdir + network_name + "_converted.npy")
             print("Testing {} model {} passed.".format(original_framework, network_name))
