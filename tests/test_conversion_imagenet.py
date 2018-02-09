@@ -75,6 +75,27 @@ class TestModels(CorrectnessTest):
     tmpdir = "tests/tmp/"
 
     @staticmethod
+    def TensorFlowParse(architecture_name, image_path):
+        from mmdnn.conversion.examples.tensorflow.extractor import tensorflow_extractor
+        from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
+
+        # get original model prediction result
+        original_predict = tensorflow_extractor.inference(architecture_name, TestModels.cachedir, image_path)
+
+        # original to IR
+        parser = TensorflowParser(
+            TestModels.cachedir + "imagenet_" + architecture_name + ".ckpt.meta",
+            TestModels.cachedir + "imagenet_" + architecture_name + ".ckpt",
+            None,
+            "MMdnn_Output")
+        parser.run(TestModels.tmpdir + architecture_name + "_converted")
+        del parser
+        del TensorflowParser
+        del tensorflow_extractor
+        return original_predict
+
+
+    @staticmethod
     def KerasParse(architecture_name, image_path):
         # get original model prediction result
         original_predict = keras_extractor.inference(architecture_name, TestModels.cachedir, image_path)

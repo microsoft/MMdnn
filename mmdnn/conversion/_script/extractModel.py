@@ -31,30 +31,6 @@ def extract_model(args):
 
     elif args.framework == 'caffe2':
         raise NotImplementedError("Caffe2 is not supported yet.")
-        '''
-        assert args.inputShape != None
-        from dlconv.caffe2.conversion.transformer import Caffe2Transformer
-        transformer = Caffe2Transformer(args.network, args.weights, args.inputShape, 'tensorflow')
-
-        graph = transformer.transform_graph()
-        data = transformer.transform_data()
-
-        from dlconv.common.writer import JsonFormatter, ModelSaver, PyWriter
-        JsonFormatter(graph).dump(args.dstPath + ".json")
-        print ("IR saved as [{}.json].".format(args.dstPath))
-
-        prototxt = graph.as_graph_def().SerializeToString()
-        with open(args.dstPath + ".pb", 'wb') as of:
-            of.write(prototxt)
-        print ("IR saved as [{}.pb].".format(args.dstPath))
-
-        import numpy as np
-        with open(args.dstPath + ".npy", 'wb') as of:
-            np.save(of, data)
-        print ("IR weights saved as [{}.npy].".format(args.dstPath))
-
-        return 0
-        '''
 
     elif args.framework == 'keras':
         from mmdnn.conversion.examples.keras.extractor import keras_extractor
