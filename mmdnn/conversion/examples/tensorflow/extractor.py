@@ -11,6 +11,7 @@ from tensorflow.contrib.slim.nets import vgg
 from tensorflow.contrib.slim.nets import inception
 from tensorflow.contrib.slim.nets import resnet_v1
 from tensorflow.contrib.slim.nets import resnet_v2
+from mmdnn.conversion.examples.tensorflow.models import inception_resnet_v2
 from mmdnn.conversion.examples.tensorflow.models import mobilenet_v1
 from mmdnn.conversion.examples.tensorflow.models import nasnet
 slim = tf.contrib.slim
@@ -95,6 +96,14 @@ class tensorflow_extractor(base_extractor):
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
             'num_classes' : 1001,
         },
+        'inception_resnet_v2' : {
+            'url'         : 'http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz',
+            'filename'    : 'inception_resnet_v2_2016_08_30.ckpt',
+            'builder'     : lambda : inception_resnet_v2.inception_resnet_v2,
+            'arg_scope'   : inception_resnet_v2.inception_resnet_v2_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
+            'num_classes' : 1001,
+        },
         'nasnet-a_large' : {
             'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/nasnet-a_large_04_10_2017.tar.gz',
             'filename'    : 'model.ckpt',
@@ -102,7 +111,7 @@ class tensorflow_extractor(base_extractor):
             'arg_scope'   : nasnet.nasnet_large_arg_scope,
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 331, 331, 3]),
             'num_classes' : 1001,
-        }
+        },
     }
 
 
