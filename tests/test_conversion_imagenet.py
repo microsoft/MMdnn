@@ -348,7 +348,42 @@ class TestModels(CorrectnessTest):
         os.remove(output_weights_file)
         return converted_predict
 
+    @staticmethod
+    def CaffeEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        import caffe
+        from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
 
+        # IR to code
+        converted_file = original_framework + '_caffe_' + architecture_name + "_converted"
+        converted_file = converted_file.replace('.', '_')
+        emitter = CaffeEmitter((architecture_path, weight_path))
+        emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
+        del emitter
+        del CaffeEmitter
+
+        # import converted model
+        imported = __import__(converted_file)
+        imported.make_net(converted_file + '.prototxt')
+        imported.gen_weight(converted_file + '.npy', converted_file + '.caffemodel', converted_file + '.prototxt')
+        model_converted = caffe.Net(converted_file + '.prototxt', converted_file + '.caffemodel', caffe.TEST)
+
+        func = TestKit.preprocess_func[original_framework][architecture_name]
+        img = func(image_path)
+        img = np.transpose(img, [2, 0, 1])
+        input_data = np.expand_dims(img, 0)
+
+        model_converted.blobs['data'].data[...] = input_data
+        predict = model_converted.forward()['prob'][0]
+        converted_predict = np.squeeze(predict)
+
+        del model_converted
+        del sys.modules[converted_file]
+        os.remove(converted_file + '.py')
+        os.remove(converted_file + '.npy')
+        os.remove(converted_file + '.prototxt')
+        os.remove(converted_file + '.caffemodel')
+
+        return converted_predict
 
     test_table = {
         'cntk' : {
@@ -379,11 +414,12 @@ class TestModels(CorrectnessTest):
         },
 
         'caffe' : {
-            'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'alexnet'       : [CntkEmit],
-            'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit], # TODO: PytorchEmit
-            'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'squeezenet'    : [CntkEmit, PytorchEmit, MXNetEmit]
+            'vgg19'          : [CaffeEmit]
+            #'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            #'alexnet'       : [CntkEmit],
+            #'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit], # TODO: PytorchEmit
+            #'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            #'squeezenet'    : [CntkEmit, PytorchEmit, MXNetEmit]
         },
 
         'tensorflow' : {
@@ -435,8 +471,8 @@ class TestModels(CorrectnessTest):
 
         print("Testing {} model all passed.".format(original_framework))
 
-    # def test_cntk(self):
-    #     self._test_function('cntk', self.CntkParse)
+    def test_cntk(self):
+         self._test_function('cntk', self.CntkParse)
 
 
     def test_tensorflow(self):
