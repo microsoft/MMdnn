@@ -375,7 +375,7 @@ class MXNetParser(Parser):
     def rename_UNKNOWN(self, source_node):
         print("Warning: MXNet Parser has not supported operator %s with name %s."
             % (source_node.type, source_node.name))
-        if source_node.type == "null":
+        if source_node.type == "null" and source_node.name != 'label':
             print("Warning: convert the null operator with name [%s] into input layer." % source_node.name)
             IR_node = self.IR_graph.node.add()
 
@@ -480,7 +480,16 @@ class MXNetParser(Parser):
             # print("Warning: Layer [{}] has changed model data format from [{}] to [{}]".format(source_node.name, self.data_format, layout))
             self.data_format = layout
 
+        # groups
+        group = int(layer_attr.get("num_group", "1"))
+        IR_node.attr["group"].i = group
         in_channel = self.IR_layer_map[IR_node.input[0]].attr["_output_shapes"].list.shape[0].dim[-1].size
+
+        if group == in_channel:
+            self._copy_and_reop(source_node, IR_node, "DepthwiseConv")
+        else:
+            self._copy_and_reop(source_node, IR_node, "Conv")
+        # in_channel = in_channel // group
 
         assert "num_filter" in layer_attr
         out_channel = int(layer_attr.get("num_filter"))
@@ -510,14 +519,6 @@ class MXNetParser(Parser):
 
         # data_format
         assign_IRnode_values(IR_node, {'data_format' : layout})
-
-        # groups
-        group = int(layer_attr.get("num_group", "1"))
-        IR_node.attr["group"].i = group
-        if group == in_channel:
-            self._copy_and_reop(source_node, IR_node, "DepthwiseConv")
-        else:
-            self._copy_and_reop(source_node, IR_node, "Conv")
 
         # padding
         if "pad" in layer_attr:

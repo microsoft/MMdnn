@@ -177,16 +177,15 @@ class TensorflowParser(Parser):
         output_node.real_name = source_node.name
 
 
-    def __init__(self, input_args, dest_nodes = None):
+    def __init__(self, meta_file, checkpoint_file, frozen_file, dest_nodes = None):
         super(TensorflowParser, self).__init__()
 
-        # load model files into Keras graph
-        from six import string_types as _string_types
-        if isinstance(input_args, _string_types):
-            model = TensorflowParser._load_meta(input_args)
-        elif isinstance(input_args, tuple):
-            model = TensorflowParser._load_meta(input_args[0])
-            self.ckpt_data = TensorflowParser._load_weights(input_args[1])
+        # load model files into TensorFlow graph
+        if meta_file:
+            model = TensorflowParser._load_meta(meta_file)
+
+        if checkpoint_file:
+            self.ckpt_data = TensorflowParser._load_weights(checkpoint_file)
             self.weight_loaded = True
 
         if dest_nodes != None:
@@ -194,7 +193,7 @@ class TensorflowParser(Parser):
             model = extract_sub_graph(model, dest_nodes.split(','))
 
         # Build network graph
-        self.tf_graph =  TensorflowGraph(model)
+        self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
 
 
@@ -441,23 +440,18 @@ class TensorflowParser(Parser):
         if self.weight_loaded:
             self.set_weight(source_node.name, 'weights', self.ckpt_data[W.name])
 
-        if source_node.out_edges:
-            add_node = self.tf_graph.get_node(source_node.out_edges[0])
-            if add_node.type == 'Add':
-                add_node.covered = True
-                add_node.real_name = source_node.real_name
-                # FullyConnected Layer
-                # name, op
-                TensorflowParser._copy_and_reop(source_node, IR_node, 'FullyConnected')
+        if source_node.out_edges and self.tf_graph.get_node(source_node.out_edges[0]).type == 'Add':
+            add_node.covered = True
+            add_node.real_name = source_node.real_name
+            # FullyConnected Layer
+            # name, op
+            TensorflowParser._copy_and_reop(source_node, IR_node, 'FullyConnected')
 
-                # get Bias
-                B = self.tf_graph.get_node(self.tf_graph.get_node(source_node.out_edges[0]).in_edges[1]).in_edges[0]
-                if self.weight_loaded:
-                    self.set_weight(source_node.name, 'bias', self.ckpt_data[B])
-                IR_node.attr['use_bias'].b = True
-
-            else:
-                raise NotImplementedError("Not implemented yet. Please submit a issue in github and provide your models for reproduce.")
+            # get Bias
+            B = self.tf_graph.get_node(self.tf_graph.get_node(source_node.out_edges[0]).in_edges[1]).in_edges[0]
+            if self.weight_loaded:
+                self.set_weight(source_node.name, 'bias', self.ckpt_data[B])
+            IR_node.attr['use_bias'].b = True
 
         else:
             # Matmul Layer

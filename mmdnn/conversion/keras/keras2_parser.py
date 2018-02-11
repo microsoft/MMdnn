@@ -6,6 +6,7 @@
 import os
 from six import string_types as _string_types
 import keras as _keras
+from keras import backend as _K
 from mmdnn.conversion.keras.keras2_graph import Keras2Graph
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
@@ -66,7 +67,7 @@ class Keras2Parser(Parser):
             'relu6': _keras.applications.mobilenet.relu6,
             'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D})
 
-        if model_weight_path != None:
+        if model_weight_path:
             if os.path.isfile(model_weight_path):
                 loaded_model.load_weights(model_weight_path)
                 self.weight_loaded = True
@@ -87,9 +88,18 @@ class Keras2Parser(Parser):
 
         # load model files into Keras graph
         if isinstance(model, _string_types):
-            model = _keras.models.load_model(model)
+            model = _keras.models.load_model(
+                model,
+                custom_objects={
+                    'relu6': _keras.applications.mobilenet.relu6,
+                    'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D
+                }
+            )
+            self.weight_loaded = True
+
         elif isinstance(model, tuple):
             model = self._load_model(model[0], model[1])
+
         else:
             assert False
 
@@ -112,6 +122,8 @@ class Keras2Parser(Parser):
             else:
                 print("KerasParser has not supported operator [%s]." % (node_type))
                 self.rename_UNKNOWN(current_node)
+
+        _K.clear_session()
 
 
     @staticmethod
@@ -342,10 +354,12 @@ class Keras2Parser(Parser):
             kwargs['pads'].extend(padding_pair)
         kwargs['pads'] += [0, 0]
         kwargs['pads'] = convert_tf_pad_to_onnx(kwargs['pads'])
-        IR_node.set_attrs(kwargs)
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_UNKNOWN(self, source_node):
+        print (source_node.layer.get_config())
+
         # only for training
         IR_node = self.IR_graph.node.add()
 
@@ -590,6 +604,13 @@ class Keras2Parser(Parser):
 
 
     def rename_Lambda(self, source_node):
+        # print (source_node.layer.function)
+        # import marshal
+        # raw_code = marshal.dumps(source_node.layer.function.__code__)
+        # print (raw_code)
+        # print (source_node.layer.get_config())
+        raise NotImplementedError("Lambda layer in keras is not supported yet.")
+
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -665,3 +686,31 @@ class Keras2Parser(Parser):
 
     def custom_relu6(x):
         return _keras.relu(x, max_value=6)
+
+
+    def _convert_crop(self, source_node):
+        IR_node = self.IR_graph.node.add()
+
+        Keras2Parser._copy_and_reop(source_node, IR_node, "Crop")
+
+        self.convert_inedge(source_node, IR_node)
+
+        border = []
+        for i in source_node.layer.cropping:
+            for j in i:
+                border.append(j)
+
+        assign_IRnode_values(IR_node, {'border' : border})
+
+
+
+    def rename_Cropping1D(self, source_node):
+        self._convert_crop(source_node)
+
+
+    def rename_Cropping2D(self, source_node):
+        self._convert_crop(source_node)
+
+
+    def rename_Cropping3D(self, source_node):
+        self._convert_crop(source_node)

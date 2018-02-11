@@ -383,13 +383,17 @@ def predict(model, labels, url):
         else:
             num_filter = IR_node.IR_layer.attr["kernel_shape"].list.i[-1]
 
-        no_bias = not IR_node.IR_layer.attr["use_bias"].b
-        if not no_bias and self.weight_loaded:
+        use_bias = IR_node.get_attr('use_bias', False)
+        if use_bias and self.weight_loaded:
             self.output_weights[IR_node.name + "_bias"] = weight_dict['bias']
 
         if pattern == "DepthwiseConv":
-            num_group = num_filter
+            num_group = IR_node.IR_layer.attr["kernel_shape"].list.i[-2]
+            num_filter = num_filter * num_group
             pattern = "Convolution"
+            if self.weight_loaded:
+                weights = np.swapaxes(weights, -1, -2)
+
         else:
             num_group = IR_node.get_attr('group', 1)
 
@@ -418,7 +422,7 @@ def predict(model, labels, url):
                 tuple(pad),
                 num_filter,
                 num_group,
-                no_bias,
+                not use_bias,
                 layout,
                 IR_node.name)
         else:
@@ -432,7 +436,7 @@ def predict(model, labels, url):
                 dilate,
                 num_filter,
                 num_group,
-                no_bias,
+                not use_bias,
                 layout,
                 IR_node.name)
 

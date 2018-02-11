@@ -91,6 +91,16 @@ op {
 
 
 op {
+  name: "Crop"
+  attr {
+    name: "border"
+    type: "list(int). A 1-D values of (leftBorder, topBorder, rightBorder, bottomBorder)."
+  }
+  summary: "Crop and image to the specified spatial dimensions."
+}
+
+
+op {
   name: "Conv"
   attr {
     name: "use_bias"

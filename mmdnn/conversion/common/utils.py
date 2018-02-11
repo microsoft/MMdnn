@@ -15,6 +15,7 @@ __all__ = ["assign_IRnode_values", "convert_onnx_pad_to_tf", 'convert_tf_pad_to_
            'compute_tf_same_padding', 'is_valid_padding', 'download_file',
            'shape_to_list', 'list_to_shape']
 
+
 def assign_attr_value(attr, val):
     from mmdnn.conversion.common.IR.graph_pb2 import TensorShape
     '''Assign value to AttrValue proto according to data type.'''
@@ -131,9 +132,7 @@ def _progress_check(count, block_size, total_size):
 
 def _single_thread_download(url, file_name):
     from six.moves import urllib
-    import requests
     result, _ = urllib.request.urlretrieve(url, file_name, _progress_check)
-    print ("")
     return result
 
 
@@ -174,7 +173,7 @@ def _multi_thread_download(url, file_name, file_size, thread_count):
     return file_name
 
 
-def download_file(url, directory='./', local_fname=None, force_write=False):
+def download_file(url, directory='./', local_fname=None, force_write=False, auto_unzip=False):
     """Download the data from source url, unless it's already here.
 
     Args:
@@ -189,21 +188,43 @@ def download_file(url, directory='./', local_fname=None, force_write=False):
     if not os.path.isdir(directory):
         os.mkdir(directory)
 
-    if local_fname is None:
-        local_fname = url.split('/')[-1]
+    if not local_fname:
+        k = url.rfind('/')
+        local_fname = url[k + 1:]
+
     local_fname = os.path.join(directory, local_fname)
 
     if os.path.exists(local_fname) and not force_write:
         print ("File [{}] existed!".format(local_fname))
         return local_fname
 
-    print ("Downloading file [{}] from [{}]".format(local_fname, url))
+    else:
+        print ("Downloading file [{}] from [{}]".format(local_fname, url))
+        try:
+            import wget
+            ret = wget.download(url, local_fname)
+        except:
+            ret = _single_thread_download(url, local_fname)
 
-    try:
-        import wget
-        return wget.download(url, local_fname)
-    except:
-        return _single_thread_download(url, local_fname)
+    if auto_unzip:
+        if ret.endswith(".tar.gz") or ret.endswith(".tgz"):
+            try:
+                import tarfile
+                tar = tarfile.open(ret)
+                tar.extractall(directory)
+                tar.close()
+            except:
+                print("Unzip file [{}] failed.".format(ret))
+
+        elif ret.endswith('.zip'):
+            try:
+                import zipfile
+                zip_ref = zipfile.ZipFile(ret, 'r')
+                zip_ref.extractall(directory)
+                zip_ref.close()
+            except:
+                print("Unzip file [{}] failed.".format(ret))
+    return ret
 """
     r = requests.head(url)
     try:

@@ -4,6 +4,7 @@
 #----------------------------------------------------------------------------------------------
 
 import os
+from six.moves import xrange
 
 from mmdnn.conversion.common.IR.IR_graph import IRGraph, IRGraphNode
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
@@ -255,8 +256,8 @@ def KitModel(weight_file = None):
         self.add_body(1, "{:<15} = layers.Dense(name = '{}', units = {}, use_bias = {})({})".format(
             IR_node.variable_name,
             IR_node.name,
-            IR_node.layer.attr["units"].i,
-            IR_node.layer.attr["use_bias"].b,
+            IR_node.get_attr('units'),
+            IR_node.get_attr('use_bias'),
             self.parent_variable_name(IR_node)))
 
 
@@ -338,8 +339,8 @@ def KitModel(weight_file = None):
         self.add_body(1, "{:<15} = layers.Embedding(input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
             IR_node.variable_name,
             IR_node.get_attr('input_dim'),
-            IR_node.IR_layer.attr['output_dim'].i,
-            IR_node.IR_layer.attr['mask_zero'].b,
+            IR_node.get_attr('output_dim'),
+            IR_node.get_attr('mask_zero'),
             IR_node.in_edges[0]))
 
 
@@ -445,7 +446,21 @@ def KitModel(weight_file = None):
 
 
     def emit_DepthwiseConv(self, IR_node):
-        return self._emit_convolution(IR_node, 'keras.applications.mobilenet.DepthwiseConv2D')
+        self._emit_convolution(IR_node, 'keras.applications.mobilenet.DepthwiseConv2D')
+
+    def emit_Crop(self, IR_node):
+        border = IR_node.get_attr('border')
+        rank = len(border) // 2
+        cropping = []
+        for idx in xrange(rank):
+            cropping.append(tuple([border[idx * 2], border[idx * 2 + 1]]))
+
+        self.add_body(1, "{:<15} = layers.Cropping{}D(cropping={}, name='{}')({})".format(
+            IR_node.variable_name,
+            rank,
+            tuple(cropping),
+            IR_node.name,
+            self.parent_variable_name(IR_node)))
 
 
     def _layer_Flatten(self):

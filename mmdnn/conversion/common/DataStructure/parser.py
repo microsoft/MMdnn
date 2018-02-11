@@ -18,6 +18,13 @@ class Parser(object):
         self.weights = dict()
 
 
+    def run(self, dest_path):
+        self.gen_IR()
+        self.save_to_json(dest_path + ".json")
+        self.save_to_proto(dest_path + ".pb")
+        self.save_weights(dest_path + ".npy")
+
+
     @property
     def src_graph(self):
         raise NotImplementedError

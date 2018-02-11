@@ -26,7 +26,7 @@ class TestKit(object):
             'resnet'            : [(22, 11.756789), (147, 8.5718527), (24, 6.1751032), (88, 4.3121386), (141, 4.1778097)],
             'resnet_v1_101'     : [(21, 14.384739), (23, 14.262486), (144, 14.068737), (94, 12.17205), (134, 12.064575)],
             'inception_v3'      : [(22, 9.4921198), (24, 4.0932288), (25, 3.700398), (23, 3.3715961), (147, 3.3620636)],
-            'mobilenet'         : [(22, 16.223597), (24, 14.54775), (147, 13.173758), (145, 11.36431), (728, 11.083847)]
+            'mobilenet_v1_1.0'         : [(22, 16.223597), (24, 14.54775), (147, 13.173758), (145, 11.36431), (728, 11.083847)]
         },
         'keras' : {
             'vgg16'             : [(21, 0.81199354), (562, 0.019326132), (23, 0.018279659), (144, 0.012460723), (22, 0.012429929)],
@@ -35,7 +35,9 @@ class TestKit(object):
             'xception'          : [(21, 0.67462814), (23, 0.063138723), (87, 0.028424012), (89, 0.02484037), (88, 0.0062591862)],
             'mobilenet'         : [(21, 0.7869994), (23, 0.14728773), (146, 0.037277445), (144, 0.0061039869), (727, 0.0046111974)],
             'resnet'            : [(144, 0.80301273), (23, 0.067478567), (21, 0.046560187), (562, 0.037413299), (146, 0.015967956)],
-            'inception_resnet'  : [(21, 0.93837249), (87, 0.0021177295), (146, 0.0019775454), (23, 0.00072135136), (24, 0.00056668324)]
+            'inception_resnet_v2'  : [(21, 0.93837249), (87, 0.0021177295), (146, 0.0019775454), (23, 0.00072135136), (24, 0.00056668324)],
+            'densenet'          : [(21, 0.86279225), (146, 0.051543437), (23, 0.030489875), (144, 0.028583106), (141, 0.003564599)],
+            'nasnet'            : [(21, 0.8541155), (22, 0.0030572189), (146, 0.0026522065), (23, 0.0020259875), (88, 0.0020091296)]
         },
         'mxnet' : {
             'vgg19'                         : [(21, 0.54552644), (144, 0.19179004), (23, 0.066389613), (22, 0.022819581), (128, 0.02271222)],
@@ -70,31 +72,47 @@ class TestKit(object):
 
         'tensorflow' : {
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'inception_v1'  : lambda path : TestKit.Standard(path, 224),
             'inception_v3'  : lambda path : TestKit.Standard(path, 299),
             'resnet'        : lambda path : TestKit.Standard(path, 299),
+            'resnet_v1_50'  : lambda path : TestKit.ZeroCenter(path, 224, False),
             'resnet_v1_101' : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'resnet_v1_152' : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'resnet_v2_50'  : lambda path : TestKit.Standard(path, 299),
+            'resnet_v2_152' : lambda path : TestKit.Standard(path, 299),
+            'resnet_v2_200' : lambda path : TestKit.Standard(path, 299),
             'resnet152'     : lambda path : TestKit.Standard(path, 299),
-            'mobilenet'     : lambda path : TestKit.Standard(path, 224)
+            'mobilenet_v1_1.0'  : lambda path : TestKit.Standard(path, 224),
+            'mobilenet_v1_0.50' : lambda path : TestKit.Standard(path, 224),
+            'mobilenet_v1_0.25' : lambda path : TestKit.Standard(path, 224),
+            'mobilenet'     : lambda path : TestKit.Standard(path, 224),
+            'nasnet-a_large'     : lambda path : TestKit.Standard(path, 331),
+            'inception_resnet_v2' : lambda path : TestKit.Standard(path, 299),
         },
 
         'keras' : {
-            'vgg16'             : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'vgg19'             : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'inception_v3'      : lambda path : TestKit.Standard(path, 299),
-            'resnet'            : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'xception'          : lambda path : TestKit.Standard(path, 299),
-            'mobilenet'         : lambda path : TestKit.Standard(path, 224),
-            'inception_resnet'  : lambda path : TestKit.Standard(path, 299)
+            'vgg16'                : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'vgg19'                : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'inception_v3'         : lambda path : TestKit.Standard(path, 299),
+            'resnet50'             : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'xception'             : lambda path : TestKit.Standard(path, 299),
+            'mobilenet'            : lambda path : TestKit.Standard(path, 224),
+            'inception_resnet_v2'  : lambda path : TestKit.Standard(path, 299),
+            'densenet'             : lambda path : TestKit.Standard(path, 224),
+            'nasnet'               : lambda path : TestKit.Standard(path, 331),
         },
 
         'mxnet' : {
-            'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'resnet'        : lambda path : TestKit.Identity(path, 224, True),
-            'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'inception_bn'  : lambda path : TestKit.Identity(path, 224, False),
-            'resnet152-11k' : lambda path : TestKit.Identity(path, 224, True),
-            'resnext'       : lambda path : TestKit.Identity(path, 224, False),
-            'imagenet1k-resnext-50' : lambda path : TestKit.Identity(path, 224, False)
+            'vgg16'                         : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'vgg19'                         : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'resnet'                        : lambda path : TestKit.Identity(path, 224, True),
+            'squeezenet_v1.0'               : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'squeezenet_v1.1'               : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'imagenet1k-inception-bn'       : lambda path : TestKit.Identity(path, 224, False),
+            'imagenet1k-resnet-152'         : lambda path : TestKit.Identity(path, 224, True),
+            'resnext'                       : lambda path : TestKit.Identity(path, 224, False),
+            'imagenet1k-resnext-50'         : lambda path : TestKit.Identity(path, 224, False),
+            'imagenet1k-resnext-101-64x4d'  : lambda path : TestKit.Identity(path, 224, False)
         },
 
         'pytorch' : {
