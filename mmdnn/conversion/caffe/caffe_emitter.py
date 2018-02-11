@@ -42,7 +42,6 @@ from caffe import params as P
 from caffe import to_proto
 from six import text_type as _text_type
 
-n = caffe.NetSpec()
 
 __weights_dict = dict()
 
@@ -59,14 +58,15 @@ def load_weights(weight_file):
 
 
 def KitModel(weight_file = None):
-
+    n = caffe.NetSpec()
 """
 
     @property
     def end_code(self):
-        return """
+        return """    return n
+
 def make_net(prototxt):
-    KitModel()
+    n = KitModel()
     with open(prototxt, 'w') as fpb:
         print(n.to_proto(), file=fpb)
 
@@ -89,6 +89,7 @@ def gen_weight(weight_file, model, prototxt):
         if 'bias' in __weights_dict[key]:
             net.params[key][1].data.flat = __weights_dict[key]['bias']
     net.save(model)
+    return net
 
 
 
