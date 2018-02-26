@@ -76,7 +76,7 @@ DenseNet                                            |       |   √   |     √ 
 
 ### Model Visualization
 
-You can use the [MMdnn model visualizer](http://vis.mmdnn.com/) and submit your IR json file to visualize your model.
+You can use the [MMdnn model visualizer](http://vis.mmdnn.com/) and submit your IR json file to visualize your model.  In order to run the commands below, you will need to install [requests](https://anaconda.org/anaconda/requests), [keras](https://anaconda.org/anaconda/keras), and [Tensorflow](https://anaconda.org/anaconda/tensorflow) using your favorite package manager. 
 
 Use the [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-models) as an example again.
 
