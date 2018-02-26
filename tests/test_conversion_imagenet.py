@@ -47,7 +47,8 @@ class CorrectnessTest(unittest.TestCase):
         self.psnr_thresh = 30
 
     def _compare_outputs(self, original_predict, converted_predict):
-        self.assertEquals(len(original_predict), len(converted_predict))
+        # Function self.assertEquals has deprecated, change to assertEqual
+        self.assertEqual(len(original_predict), len(converted_predict))
         error, ind = _compute_max_relative_error(converted_predict, original_predict)
         SNR, PSNR = _compute_SNR(converted_predict, original_predict)
         print("error:", error)
@@ -348,7 +349,45 @@ class TestModels(CorrectnessTest):
         os.remove(output_weights_file)
         return converted_predict
 
+    @staticmethod
+    def CaffeEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        import caffe
+        from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
 
+        # IR to code
+        converted_file = original_framework + '_caffe_' + architecture_name + "_converted"
+        converted_file = converted_file.replace('.', '_')
+        emitter = CaffeEmitter((architecture_path, weight_path))
+        emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
+        del emitter
+        del CaffeEmitter
+
+        # import converted model
+        imported = __import__(converted_file)
+        imported.make_net(converted_file + '.prototxt')
+        imported.gen_weight(converted_file + '.npy', converted_file + '.caffemodel', converted_file + '.prototxt')
+        model_converted = caffe.Net(converted_file + '.prototxt', converted_file + '.caffemodel', caffe.TEST)
+
+        func = TestKit.preprocess_func[original_framework][architecture_name]
+        img = func(image_path)
+        img = np.transpose(img, [2, 0, 1])
+        input_data = np.expand_dims(img, 0)
+
+        model_converted.blobs['data'].data[...] = input_data
+        if 'prob' in model_converted.blobs:
+            predict = model_converted.forward()['prob'][0]
+        else:
+            predict = model_converted.forward()['softmax'][0]
+        converted_predict = np.squeeze(predict)
+
+        del model_converted
+        del sys.modules[converted_file]
+        os.remove(converted_file + '.py')
+        os.remove(converted_file + '.npy')
+        os.remove(converted_file + '.prototxt')
+        os.remove(converted_file + '.caffemodel')
+
+        return converted_predict
 
     test_table = {
         'cntk' : {
@@ -360,7 +399,6 @@ class TestModels(CorrectnessTest):
         'keras' : {
             'vgg16'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'resnet50'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'densenet'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
@@ -370,20 +408,20 @@ class TestModels(CorrectnessTest):
         },
 
         'mxnet' : {
-            'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is too slow
             'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
         },
 
         'caffe' : {
-            'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'alexnet'       : [CntkEmit],
-            'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit], # TODO: PytorchEmit
-            'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'squeezenet'    : [CntkEmit, PytorchEmit, MXNetEmit]
+            'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'alexnet'       : [CntkEmit, CaffeEmit],
+            'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit], # TODO: PytorchEmit
+            'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'squeezenet'    : [CntkEmit, PytorchEmit, MXNetEmit, CaffeEmit],
         },
 
         'tensorflow' : {
@@ -395,8 +433,8 @@ class TestModels(CorrectnessTest):
             'resnet_v2_50' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v2_152' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit],
-            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit], # TODO
-            # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
          },
     }
 
@@ -435,8 +473,8 @@ class TestModels(CorrectnessTest):
 
         print("Testing {} model all passed.".format(original_framework))
 
-    # def test_cntk(self):
-    #     self._test_function('cntk', self.CntkParse)
+    def test_cntk(self):
+         self._test_function('cntk', self.CntkParse)
 
 
     def test_tensorflow(self):
