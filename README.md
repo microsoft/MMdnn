@@ -16,7 +16,7 @@ Basically, it converts many DNN models that trained by one framework into others
 
 You can get stable version of MMdnn by
 ```bash
-pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.2/mmdnn-0.1.2-py2.py3-none-any.whl
+pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.3/mmdnn-0.1.3-py2.py3-none-any.whl
 ```
 
 or you can try the newest version by
@@ -72,11 +72,17 @@ DenseNet                                            |       |   √   |     √ 
 - [Caffe2](https://caffe2.ai/)
 - ONNX
 
+#### On-going Models
+
+- RNN
+- Image Style Transfer
+- Object Detection
+
 ---
 
 ### Model Visualization
 
-You can use the [MMdnn model visualizer](http://vis.mmdnn.com/) and submit your IR json file to visualize your model.  In order to run the commands below, you will need to install [requests](https://anaconda.org/anaconda/requests), [keras](https://anaconda.org/anaconda/keras), and [Tensorflow](https://anaconda.org/anaconda/tensorflow) using your favorite package manager. 
+You can use the [MMdnn model visualizer](http://vis.mmdnn.com/) and submit your IR json file to visualize your model.  In order to run the commands below, you will need to install [requests](https://anaconda.org/anaconda/requests), [keras](https://anaconda.org/anaconda/keras), and [Tensorflow](https://anaconda.org/anaconda/tensorflow) using your favorite package manager.
 
 Use the [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-models) as an example again.
 
