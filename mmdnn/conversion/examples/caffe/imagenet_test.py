@@ -39,7 +39,10 @@ class TestCaffe(TestKit):
 
     def print_result(self):
         self.model.blobs['data'].data[...] = self.data
-        predict = self.model.forward()['prob'][0]
+        if 'prob' in self.model.blobs:
+            predict = self.model.forward()['prob'][0]
+        else:
+            predict = self.model.forward()['softmax'][0]
         super(TestCaffe, self).print_result(predict)
 
 

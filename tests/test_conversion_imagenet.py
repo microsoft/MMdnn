@@ -47,7 +47,8 @@ class CorrectnessTest(unittest.TestCase):
         self.psnr_thresh = 30
 
     def _compare_outputs(self, original_predict, converted_predict):
-        self.assertEquals(len(original_predict), len(converted_predict))
+        # Function self.assertEquals has deprecated, change to assertEqual
+        self.assertEqual(len(original_predict), len(converted_predict))
         error, ind = _compute_max_relative_error(converted_predict, original_predict)
         SNR, PSNR = _compute_SNR(converted_predict, original_predict)
         print("error:", error)
@@ -373,7 +374,10 @@ class TestModels(CorrectnessTest):
         input_data = np.expand_dims(img, 0)
 
         model_converted.blobs['data'].data[...] = input_data
-        predict = model_converted.forward()['prob'][0]
+        if 'prob' in model_converted.blobs:
+            predict = model_converted.forward()['prob'][0]
+        else:
+            predict = model_converted.forward()['softmax'][0]
         converted_predict = np.squeeze(predict)
 
         del model_converted
@@ -395,7 +399,6 @@ class TestModels(CorrectnessTest):
         'keras' : {
             'vgg16'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'resnet50'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'densenet'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
@@ -405,21 +408,20 @@ class TestModels(CorrectnessTest):
         },
 
         'mxnet' : {
-            'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is too slow
             'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
         },
 
         'caffe' : {
-            'vgg19'          : [CaffeEmit]
-            #'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            #'alexnet'       : [CntkEmit],
-            #'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit], # TODO: PytorchEmit
-            #'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            #'squeezenet'    : [CntkEmit, PytorchEmit, MXNetEmit]
+            'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'alexnet'       : [CntkEmit, CaffeEmit],
+            'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit], # TODO: PytorchEmit
+            'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'squeezenet'    : [CntkEmit, PytorchEmit, MXNetEmit, CaffeEmit],
         },
 
         'tensorflow' : {
@@ -431,8 +433,8 @@ class TestModels(CorrectnessTest):
             'resnet_v2_50' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v2_152' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit],
-            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit], # TODO
-            # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
          },
     }
 

@@ -108,10 +108,10 @@ if __name__=='__main__':
         self.add_body(0, self.header_code)
 
         # for test
-        with open("graph.txt", 'w') as f:
-            for layer in self.IR_graph.topological_sort:
-                current_node = self.IR_graph.get_node(layer)
-                print("========current_node=========\n{}".format(current_node.layer))
+        # with open("graph.txt", 'w') as f:
+        #     for layer in self.IR_graph.topological_sort:
+        #         current_node = self.IR_graph.get_node(layer)
+        #         print("========current_node=========\n{}".format(current_node.layer), file=f)
         # test end
 
         for layer in self.IR_graph.topological_sort:
@@ -126,11 +126,7 @@ if __name__=='__main__':
                 print("CaffeEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
 
-        # self.add_body(1, "return n.{}".format(
-        #     ','.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers])))
-
         self.add_body(0, "")
-        #for test
         self.add_body(0,self.end_code)
 
         return self.body_code
@@ -197,7 +193,7 @@ bias_term={}, ntop=1)".format(
 
         if IR_node.layer.attr['global_pooling'].b:
             self.used_layers.add('GlobalPooling')
-            self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, stride={}, global_pooling=true, ntop=1)".format(
+            self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, stride={}, global_pooling=True, ntop=1)".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
                 pooling_type,
@@ -262,11 +258,12 @@ bias_term={}, ntop=1)".format(
         IR_node.real_name = IR_node.name + "_scale"
         if self.weight_loaded:
             self.weights_dict[scale_layer_var_name] = dict()
-            self.weights_dict[scale_layer_var_name]['scale'] = self.weights_dict[IR_node.name]['scale']
+            if 'scale' in self.weights_dict[IR_node.name]:
+                self.weights_dict[scale_layer_var_name]['scale'] = self.weights_dict[IR_node.name]['scale']
+                #self.weights_dict[IR_node.name].pop('scale', None)
+                self.weights_dict[IR_node.name]['scale'] = 1
             self.weights_dict[scale_layer_var_name]['bias'] = self.weights_dict[IR_node.name]['bias']
-            self.weights_dict[IR_node.name].pop('scale', None)
             self.weights_dict[IR_node.name].pop('bias', None)
-            self.weights_dict[IR_node.name]['scale'] = 1
             self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
 
