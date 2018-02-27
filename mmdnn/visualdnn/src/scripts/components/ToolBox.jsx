@@ -209,10 +209,13 @@ export default class ToolBox extends Component {
     }
     render() {
 
-        return <div ><Nav className="nav-toolbox" onSelect={this.handleSelect.bind(this)}
-            className="navbar navbar-inverse .navbar-collapse"
+        return <div id="ToolBox"><Nav 
+            bsStyle="tabs"
+            className="nav-toolbox" onSelect={this.handleSelect.bind(this)}
+            stacked
+            className="navbar navbar-inverse navbar-collapse"
             role="navigation"
-            id="ToolBox">
+            >
             <NavItem className="toolBox-heading">
                 <Glyphicon glyph="pencil" />
             </NavItem>
