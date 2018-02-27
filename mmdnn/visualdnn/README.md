@@ -7,7 +7,7 @@ first, run
 if you are in the main land of China, you might have problems to install 'electron', one of the npm packages needed.
 use cnpm instead.[see how to use here](https://npm.taobao.org/)
 
-then
+then, 
 > $ npm run dev
 
 then, open another terminal, run 

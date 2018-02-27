@@ -39,12 +39,7 @@ body{
 .ace_scroller.ace_scroll-left{
   overflow-x: hidden;
 }
-#ToolBox{
-  height: 100vh!important;
-  width: 100%;
-  float: left;
-  border-left: 2px solid var(--theme-color);
-}
+
 .App {
   height: 100%;
   width: 100vw;
@@ -61,10 +56,32 @@ body{
   height: 100vh;
   
 }
-
+#ToolBox{
+  height:100% !important;
+  background-color: #444;
+}
+.nav{
+  padding:0px;
+  width: 100%;
+  float: left;
+  border-left: 2px solid var(--theme-color);
+  border-bottom: none;
+  border-right:none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.caret{
+  display:none;
+}
+.nav>li{
+  height: auto;
+  width:100%;
+}
 .nav>li>a{
   color: white;
   font-size: 1.2em;
+  width:100%;
+  
 }
 .nav>li>a:focus{
   color: var(--theme-color);
@@ -77,6 +94,7 @@ body{
 .nav>li.toolBox-heading{
   text-align: center;
   font-size: 1.5em;
+  width:100%;
   background-color: var(--theme-color);
 }
 .nav>li.toolBox-heading>a:hover, .nav>li.toolBox-heading>a:active, .nav>li.toolBox-heading>a:focus{
