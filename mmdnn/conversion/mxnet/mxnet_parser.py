@@ -97,13 +97,20 @@ class MXNetParser(Parser):
         return ret
 
 
-    def check_pad_mode(self, source_node, IR_node):
-        assert "attr" in source_node.layer or "param" in source_node.layer
+    @staticmethod
+    def _get_layer_attr(source_node):
+        assert "attr" in source_node.layer or "attrs" in source_node.layer or "param" in source_node.layer
         layer_attr = dict()
         if "attr" in source_node.layer:
             layer_attr = source_node.layer["attr"]
         elif "param" in source_node.layer:
             layer_attr = source_node.layer["param"]
+        elif "attrs" in source_node.layer: layer_attr = source_node.layer["attrs"]
+        return layer_attr
+
+
+    def check_pad_mode(self, source_node, IR_node):
+        layer_attr = self._get_layer_attr(source_node)
 
         assert "kernel" in layer_attr
         kernel = MXNetParser.str2intList(layer_attr.get("kernel"))
@@ -335,12 +342,7 @@ class MXNetParser(Parser):
         assign_IRnode_values(IR_node, {'mode' : 'CONSTANT'})
         # print("Warning: MXNet symbol pad does not support channel last")
 
-        assert "attr" in source_node.layer or "param" in source_node.layer
-        layer_attr = dict()
-        if "attr" in source_node.layer:
-            layer_attr = source_node.layer["attr"]
-        elif "param" in source_node.layer:
-            layer_attr = source_node.layer["param"]
+        layer_attr = self._get_layer_attr(source_node)
 
         assert "pad" in layer_attr
         pad = MXNetParser.str2intList(layer_attr.get("pad"))
@@ -403,12 +405,7 @@ class MXNetParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # attr
-        assert "attr" in source_node.layer or "param" in source_node.layer
-        layer_attr = dict()
-        if "attr" in source_node.layer:
-            layer_attr = source_node.layer["attr"]
-        elif "param" in source_node.layer:
-            layer_attr = source_node.layer["param"]
+        layer_attr = self._get_layer_attr(source_node)
 
         # units
         IR_node.attr["units"].i = int(layer_attr.get("num_hidden"))
@@ -454,12 +451,7 @@ class MXNetParser(Parser):
         dim = 0
         layout = 'None'
         # attr
-        assert "attr" in source_node.layer or "param" in source_node.layer
-        layer_attr = dict()
-        if "attr" in source_node.layer:
-            layer_attr = source_node.layer["attr"]
-        elif "param" in source_node.layer:
-            layer_attr = source_node.layer["param"]
+        layer_attr = self._get_layer_attr(source_node)
 
         # kernel_shape
         assert "kernel" in layer_attr
@@ -541,12 +533,7 @@ class MXNetParser(Parser):
     def rename_Activation(self, source_node):
         IR_node = self.IR_graph.node.add()
 
-        assert "attr" in source_node.layer or "param" in source_node.layer
-        layer_attr = dict()
-        if "attr" in source_node.layer:
-            layer_attr = source_node.layer["attr"]
-        elif "param" in source_node.layer:
-            layer_attr = source_node.layer["param"]
+        layer_attr = self._get_layer_attr(source_node)
 
         assert "act_type" in layer_attr
         self._copy_and_reop(
@@ -1024,12 +1011,7 @@ class MXNetParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # attr
-        assert "attr" in source_node.layer or "param" in source_node.layer
-        layer_attr = dict()
-        if "attr" in source_node.layer:
-            layer_attr = source_node.layer["attr"]
-        else:
-            layer_attr = source_node.layer["param"]
+        layer_attr = self._get_layer_attr(source_node)
 
         # dtype
         IR_node.attr["dtype"].type = MXNetParser.dtype_map[layer_attr.get("dtype")]
@@ -1051,12 +1033,7 @@ class MXNetParser(Parser):
         self.set_output_shape(source_node, IR_node)
 
         # attr
-        assert "attr" in source_node.layer or "param" in source_node.layer
-        layer_attr = dict()
-        if "attr" in source_node.layer:
-            layer_attr = source_node.layer["attr"]
-        else:
-            layer_attr = source_node.layer["param"]
+        layer_attr = self._get_layer_attr(source_node)
 
         # axis
         if self.data_format in MXNetParser.channels_first or self.data_format == 'None':
