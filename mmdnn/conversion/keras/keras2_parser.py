@@ -530,7 +530,8 @@ class Keras2Parser(Parser):
         IR_node.attr["mask_zero"].b = source_node.keras_layer.mask_zero
 
         # weights
-        self.weight_loaded[source_node.name] = source_node.get_weights()[0]
+        if self.weight_loaded:
+            self.set_weight(source_node.name, 'embedding_weights', source_node.layer.get_weights()[0])
 
 
     def rename_LSTM(self, keras_node):
@@ -570,6 +571,13 @@ class Keras2Parser(Parser):
 
         # activation
         self._defuse_activation(source_node)
+
+        # weights
+        if self.weight_loaded:
+            self.set_weight(source_node.name, 'gru_weights', source_node.layer.get_weights()[0])
+            self.set_weight(source_node.name, 'gru_recurrent_weights', source_node.layer.get_weights()[1])
+            if source_node.layer.use_bias:
+                self.set_weight(source_node.name, "gru_bias", source_node.layer.get_weights()[2])
 
 
     def rename_Multiply(self, source_node):
