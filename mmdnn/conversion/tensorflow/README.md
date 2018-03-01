@@ -2,60 +2,67 @@
 
 ## Usage
 
-Tensorflow parser (Tensorflow-IR part) is an experimental product, since the granularity of tensorflow checkpoint graph is much finer than other platform. We have to use *graph matching*-like method to retrieve operators.
+Tensorflow parser (Tensorflow -> IR part) is an experimental product, since the granularity of tensorflow checkpoint graph is much finer than other platform. We have to use *graph matching*-like method to retrieve operators.
 
 We tested the [slim pre-trained models](https://github.com/tensorflow/models/tree/master/research/slim) and the parser works. Any contribution is welcome.
 
-### Extract Tensorflow models
+### Sample Tools
 
-You can refer [slim model extractor](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/tensorflow/extract_model.py) to extract your tensorflow model, which is a example tool to extract both architecture and weights from slim pre-trained models.
+We provide some tools to help you convert tensorflow files.
 
-We will use the **resnet_v2_152** model as an example.
+#### Slim Model Extractor
 
-1. Download the pre-trained checkpoint from [slim page](https://github.com/tensorflow/models/tree/master/research/slim).
+You can refer [Slim Model Extractor](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/tensorflow/extractor.py) to extract your own tensorflow model, which is a sample tool to extract both architecture and weights from slim pre-trained models.
 
-```bash
-$ wget http://download.tensorflow.org/models/resnet_v2_152_2017_04_14.tar.gz -P examples/tf/
-$ tar -xvf examples/tf/resnet_v2_152_2017_04_14.tar.gz
-$ rm examples/tf/resnet_v2_152_2017_04_14.tar.gz
-$ mv *.ckpt *.graph examples/tf/
-```
+Support frameworks: ['resnet_v1_152', 'inception_v3', 'resnet_v2_50', 'resnet_v2_200', 'resnet_v1_50', 'inception_resnet_v2', 'resnet_v2_152', 'vgg19', 'mobilenet_v1_1.0', 'inception_v1']
 
-Checkpoint **weights** file is stored as *examples/tf/resnet_v2_152.ckpt*
-
-2. Use python to extract both network architecture and weights
+Example:
 
 ```bash
-$ python -m mmdnn.conversion.examples.tensorflow.extract_model -n resnet152 -ckpt examples/tf/resnet_v2_152.ckpt
-.
-.
-.
-Model saved in file: imagenet_resnet152.ckpt
+$ python -m mmdnn.conversion._script.extractModel -f tensorflow -n resnet_v2_152
+
+Downloading file [./resnet_v2_152_2017_04_14.tar.gz] from [http://download.tensorflow.org/models/resnet_v2_152_2017_04_14.tar.gz]
+100% [......................................................................] 675629399 / 675629399
+Model saved in file: ./imagenet_resnet_v2_152.ckpt
 ```
 
-Then you can see files *imagenet_resnet152.ckpt.data-00000-of-00001*, *imagenet_resnet152.ckpt.index* and *imagenet_resnet152.ckpt.meta*, which can be parserd by Tensorflow parser.
+> [Note!] The extractor create a Squeeze operator named **MMdnn_Output** as the output node of the models.
 
-3. The network architecture graph is saved in *./graphs*, you can use
+Then you can see files *imagenet_resnet_v2_152.ckpt.data-00000-of-00001*, *imagenet_resnet_v2_152.ckpt.index* and *imagenet_resnet_v2_152.ckpt.meta*, which can be handled by Tensorflow parser.
+
+
+Mainly extract code like:
+
+```python
+with slim.arg_scope(...):
+    data_input = tf.placeholder(name='input', dtype=tf.float32, shape=[...])
+    logits = your_own_network_builder(data_input)
+    labels = tf.squeeze(logits, name='MMdnn_Output')
+```
+
+#### Meta File Graph Visualization
+
+When you prepared your checkpoint, you can find the output node name from the graph by Tensorboard.
 
 ```bash
-$ tensorboard --logdir graphs/
+$ python -m mmdnn.conversion.examples.tensorflow.vis_meta imagenet_resnet_v2_152.ckpt.meta ./logs/
+
+TensorBoard 0.4.0rc3 at http://kit-station:6006 (Press CTRL+C to quit)
 ```
 
-to visualize network graph, to get the output node. In this case, the output node name is [**Squeeze**], which is most the same in our slim model extractor.
+![tensorboard](https://nxtb0g.dm2304.livefilestore.com/y4mSQWnEhuXOj67Bsv-nFS7kocOD0JmGRFJsUIrZCDRfO6CIP1-wUBana8wydOM3ZHgoVe_wR_KXq_hX6sCg_D_6H93F3oQMUjfu_VjbYswl_dX2mBolqts1zG9_eA483i_BokvfQknb9JQYvOwcwJvrPVH9GI2L_0GJoxJpYGw0kFDxmzICwjc-j_wHKwdiZUyS32CBCVBS67qZlTgFuPiHA?width=1024&height=676&cropmode=none)
 
-![tensorboard](https://nxtb0g.dm2304.livefilestore.com/y4mm6MNZXBSSJ80ar7X2y5ZSzTCxZiC9dNDzv67plb4yQutUb-WBQR8bosYLtyepjxH4QE21pNqg3sIviJXEgaMOW0HVwMwMgwU2KAbW6RokO8nS0ZHy82hAivvX8JgU1yEuA-M4gBYyt8egLilIN10IgGBj-5ZMh0s18Dz4iCwKbuDX16DfqpJ-_rV50JzXEhIJkPfaFczLss0P3ItIEwWlw?width=1200&height=449&cropmode=none)
-
-### Convert architecture from Tensorflow to IR
+### Convert only architecture from Tensorflow to IR
 
 You can convert only network structure to IR for visualization or training in other frameworks.
 
-> Note: it is much better to specify the **output node name** for Tensorflow models
+We use resnet_v2_152 model as an example.
 
 ```bash
-$ python -m mmdnn.conversion._script.convertToIR -f tensorflow -d resnet152 -n imagenet_resnet152.ckpt.meta --dstNodeName Squeeze
+$ python -m mmdnn.conversion._script.convertToIR -f tensorflow -d resnet152 -n imagenet_resnet_v2_152.ckpt.meta --dstNodeName MMdnn_Output
 
-Parse file [imagenet_resnet152.ckpt.meta] with binary format successfully.
-Tensorflow model file [imagenet_resnet152.ckpt.meta] loaded successfully.
+Parse file [imagenet_resnet_v2_152.ckpt.meta] with binary format successfully.
+Tensorflow model file [imagenet_resnet_v2_152.ckpt.meta] loaded successfully.
 IR network structure is saved as [resnet152.json].
 IR network structure is saved as [resnet152.pb].
 Warning: weights are not loaded.
@@ -66,11 +73,11 @@ Warning: weights are not loaded.
 You can use following bash command to convert the checkpoint files to IR architecture file [*resnet152.pb*], [*resnet152.json*] and IR weights file [*resnet152.npy*]
 
 ```bash
-$ python -m mmdnn.conversion._script.convertToIR -f tensorflow -d resnet152 -n imagenet_resnet152.ckpt.meta -w imagenet_resnet152.ckpt  --dstNodeName Squeeze
+$ python -m mmdnn.conversion._script.convertToIR -f tensorflow -d resnet152 -n imagenet_resnet_v2_152.ckpt.meta -w imagenet_resnet_v2_152.ckpt  --dstNodeName MMdnn_Output
 
-Parse file [imagenet_resnet152.ckpt.meta] with binary format successfully.
-Tensorflow model file [imagenet_resnet152.ckpt.meta] loaded successfully.
-Tensorflow checkpoint file [imagenet_resnet152.ckpt] loaded successfully. [816] variables loaded.
+Parse file [imagenet_resnet_v2_152.ckpt.meta] with binary format successfully.
+Tensorflow model file [imagenet_resnet_v2_152.ckpt.meta] loaded successfully.
+Tensorflow checkpoint file [imagenet_resnet_v2_152.ckpt] loaded successfully. [816] variables loaded.
 IR network structure is saved as [resnet152.json].
 IR network structure is saved as [resnet152.pb].
 IR weights are saved as [resnet152.npy].
@@ -116,10 +123,12 @@ Tensorflow file is saved as [tf_resnet152.ckpt], generated by [tf_resnet152.py] 
 
 Ubuntu 16.04 with
 
-- Tensorflow gpu 1.4.0
+- Tensorflow gpu 1.4.1
 
 @ 11/22/2017
 
 ## Limitation
 
 - Currently no RNN related operations support
+
+- Currently no tensorflow frozen graph support.

@@ -46,15 +46,16 @@ class TensorflowParser(Parser):
     ])
 
     dtype_map = {
-        0 : graph_pb2.DT_UNDEFINED,
-        1 : graph_pb2.DT_FLOAT32,
-        2 : graph_pb2.DT_FLOAT64,
-        3 : graph_pb2.DT_INT32,
-        4 : graph_pb2.DT_UINT8,
-        5 : graph_pb2.DT_INT16,
-        6 : graph_pb2.DT_INT8,
-        7 : graph_pb2.DT_STRING,
-        9 : graph_pb2.DT_INT64
+        0  : graph_pb2.DT_UNDEFINED,
+        1  : graph_pb2.DT_FLOAT32,
+        2  : graph_pb2.DT_FLOAT64,
+        3  : graph_pb2.DT_INT32,
+        4  : graph_pb2.DT_UINT8,
+        5  : graph_pb2.DT_INT16,
+        6  : graph_pb2.DT_INT8,
+        7  : graph_pb2.DT_STRING,
+        9  : graph_pb2.DT_INT64,
+        10 : graph_pb2.DT_BOOL,
     }
 
 
