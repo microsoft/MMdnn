@@ -89,6 +89,23 @@ def FC(shapeX, shapeW, shapeB = None, axis = None, axis_w = None):
         axis_w = 1
     return [shapeX[0], shapeW[1]]
 
+def Flatten(shapeT, axis = None):
+    if axis is None:
+        axis = 1
+
+    firstDim = 1
+    secondDim = 1
+    for i in range(len(shapeT)):
+        if i < axis:
+            firstDim *= shapeT[i]
+        else:
+            secondDim *= shapeT[i]
+    
+    if (axis > 0):
+        return [firstDim, secondDim]
+    else:
+        return [secondDim]
+
 inference_shape = {
     'Add' : Add,
     'AveragePool' : AveragePool,
@@ -99,8 +116,47 @@ inference_shape = {
     'MaxPool' : MaxPool,
     'Mul' : Mul,
     'Relu' : Relu,
-    'FC' : FC
+    'FC' : FC,
+    'Flatten' : Flatten
 }
+
+def testByLeNet(image_shape):
+    print('\nLeNet output shape test:')
+    print('input_image_shape is : ', image_shape)
+    convLay1 = [5, 5]
+    WLay1 = [6, -1, 5, 5]
+    outputLay1 = inference_shape['Conv'](image_shape, WLay1, kernel_shape = convLay1)
+    print('1st Lay output shape is : ', outputLay1)  
+
+    poolLay2 = [2, 2]
+    stridesLay2 = [2, 2]
+    outputLay2 = inference_shape['AveragePool'](outputLay1, strides = stridesLay2)
+    print('2nd Lay output shape is : ', outputLay2)
+
+    convLay3 = [5, 5]
+    WLay3 = [16, -1, 5, 5]
+    outputLay3 = inference_shape['Conv'](outputLay2, WLay3, kernel_shape = convLay3)
+    print('3rd Lay output shape is : ', outputLay3)
+
+    poolLay4 = [2, 2]
+    stridesLay4 = [2, 2]
+    outputLay4 = inference_shape['AveragePool'](outputLay3, strides = stridesLay4)
+    print('4th Lay output shape is : ', outputLay4)
+
+    convLay5 = [5, 5]
+    WLay5 = [120, -1, 5, 5]
+    outputLay5 = inference_shape['Conv'](outputLay4, WLay5)
+    print('5th Lay output shape is : ', outputLay5)
+    
+    outputLay5Flatten = inference_shape['Flatten'](outputLay5)
+    WLay6 = [-1, 84]
+    outputLay6 = inference_shape['FC'](outputLay5Flatten, WLay6)
+    print('6th Lay output shape is : ', outputLay6)
+
+    WLay7 = [-1, 10]
+    outputLay7 = inference_shape['FC'](outputLay6, WLay7)
+    print('7th Lay output shape is : ', outputLay7)
+    return outputLay7
 
 
 if __name__ == '__main__':
@@ -136,3 +192,9 @@ if __name__ == '__main__':
 
     shape = [5, 5, 5, 5]
     print("output shape is :", GlobalAveragePool(shape))
+    
+    print('LeNet-5 output shape is : ', testByLeNet(image_shape = [-1, 1, 32, 32]))
+    print('LeNet-5 output shape is : ', testByLeNet(image_shape = [5, 1, 32, 32]))
+
+
+
