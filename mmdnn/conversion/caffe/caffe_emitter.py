@@ -107,12 +107,12 @@ if __name__=='__main__':
         self.phase = phase
         self.add_body(0, self.header_code)
 
-        # for test
+        #for test
         # with open("graph.txt", 'w') as f:
         #     for layer in self.IR_graph.topological_sort:
         #         current_node = self.IR_graph.get_node(layer)
         #         print("========current_node=========\n{}".format(current_node.layer), file=f)
-        # test end
+        #test end
 
         for layer in self.IR_graph.topological_sort:
             current_node = self.IR_graph.get_node(layer)
@@ -286,6 +286,10 @@ bias_term={}, ntop=1)".format(
         ))
 
     def emit_Flatten(self, IR_node):
+        IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+
+
+    def emit_Squeeze(self, IR_node):
         IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
 
 

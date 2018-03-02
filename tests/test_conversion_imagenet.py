@@ -373,11 +373,8 @@ class TestModels(CorrectnessTest):
         img = np.transpose(img, [2, 0, 1])
         input_data = np.expand_dims(img, 0)
 
-        model_converted.blobs['data'].data[...] = input_data
-        if 'prob' in model_converted.blobs:
-            predict = model_converted.forward()['prob'][0]
-        else:
-            predict = model_converted.forward()['softmax'][0]
+        model_converted.blobs[model_converted._layer_names[0]].data[...] = input_data
+        predict = model_converted.forward()[model_converted._layer_names[-1]][0]
         converted_predict = np.squeeze(predict)
 
         del model_converted
@@ -425,7 +422,7 @@ class TestModels(CorrectnessTest):
         },
 
         'tensorflow' : {
-            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'inception_v1' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit], # TODO: PytorchEmit
             'resnet_v1_50' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
