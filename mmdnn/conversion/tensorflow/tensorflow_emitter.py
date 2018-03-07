@@ -278,6 +278,14 @@ def KitModel(weight_file = None):
         self._emit_unary_operation(IR_node, 'nn.crelu')
 
 
+    def emit_PRelu(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        self.add_body(1, "{:<15} = prelu({}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name))
+
+
     def emit_Softmax(self, IR_node):
         self._emit_unary_operation(IR_node, 'nn.softmax')
 
@@ -436,6 +444,13 @@ def convolution(input, name, group, **kwargs):
         b = tf.Variable(__weights_dict[name]['bias'], trainable=is_train, name=name + "_bias")
         layer = layer + b
     return layer""")
+
+    def _layer_PRelu(self):
+        self.add_body(0, """
+def prelu(input, name):
+    gamma = tf.Variable(__weights_dict[name]['gamma'], name=name + "_gamma", trainable=is_train)
+    return tf.maximum(0.0, input) + gamma * tf.minimum(0.0, input)
+    """)
 
 
     def _layer_BatchNorm(self):
