@@ -809,7 +809,7 @@ class MXNetParser(Parser):
         self.set_output_shape(source_node, IR_node)
 
 
-    # IR only support elu from {'elu', 'leaky', 'prelu', 'rrelu'}
+    # IR only support elu and prelu from {'elu', 'leaky', 'prelu', 'rrelu'}
     def rename_LeakyReLU(self, source_node):
         # judge whether meaningful
         assert "attr"
