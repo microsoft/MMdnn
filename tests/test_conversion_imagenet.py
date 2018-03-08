@@ -400,7 +400,7 @@ class TestModels(CorrectnessTest):
             'resnet50'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'densenet'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'xception'     : [TensorflowEmit, KerasEmit],
-            'mobilenet'    : [TensorflowEmit, KerasEmit, MXNetEmit],
+            'mobilenet'    : [TensorflowEmit, KerasEmit], # TODO: MXNetEmit
             'nasnet'       : [TensorflowEmit, KerasEmit],
         },
 
