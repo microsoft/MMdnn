@@ -389,8 +389,8 @@ class TestModels(CorrectnessTest):
     test_table = {
         'cntk' : {
             # 'alexnet'       : [TensorflowEmit, KerasEmit],
-            # 'resnet18'      : [TensorflowEmit, KerasEmit],
-            'inception_v3'  : [PytorchEmit],
+            'resnet18'      : [CntkEmit, TensorflowEmit, KerasEmit],
+            # 'inception_v3'  : [CntkEmit, TensorflowEmit],
         },
 
         'keras' : {
@@ -470,8 +470,9 @@ class TestModels(CorrectnessTest):
 
         print("Testing {} model all passed.".format(original_framework))
 
-    def test_cntk(self):
-         self._test_function('cntk', self.CntkParse)
+
+    # def test_cntk(self):
+    #      self._test_function('cntk', self.CntkParse)
 
 
     def test_tensorflow(self):

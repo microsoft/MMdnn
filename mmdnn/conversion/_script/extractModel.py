@@ -27,7 +27,9 @@ def extract_model(args):
         extractor = mxnet_extractor()
 
     elif args.framework == 'cntk':
-        pass
+        from mmdnn.conversion.examples.cntk.extractor import cntk_extractor
+        extractor = cntk_extractor()
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.framework))
 

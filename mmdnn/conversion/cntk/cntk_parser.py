@@ -93,7 +93,7 @@ class CntkParser(Parser):
             IR_node.attr["dtype"].type = CntkParser.dtype_map[source_node.layer.dtype]
 
         if hasattr(source_node.layer, 'shape'):
-            shape =  (-1,) + source_node.layer.shape[1:]
+            shape =  (-1,) + source_node.layer.shape
             if shape_transpose:
                 shape = CntkParser.channel_first_shape_to_IR(shape)
             shape = list_to_shape(shape)
@@ -206,10 +206,9 @@ class CntkParser(Parser):
         self.set_weight(source_node.name, 'weights', W)
 
         kwargs = dict()
-        kwargs['unit'] = W.shape[-1]
-        assign_IRnode_values(IR_node, kwargs)
-
+        kwargs['units'] = W.shape[-1]
         kwargs['use_bias'] = self._fuse_bias_node(source_node)
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_MaxPooling(self, source_node):
@@ -255,31 +254,33 @@ class CntkParser(Parser):
 
 
     def rename_DataInput(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
+        IR_node = self._convert_identity_operation(source_node, new_op='DataInput', shape_transpose=True)
         shape = [-1] + list(source_node.layer.shape)
         assign_IRnode_values(IR_node, {'shape' : list_to_shape(self.channel_first_shape_to_IR(shape))})
 
 
     def rename_BatchNormalization(self, source_node):
+        kwargs = dict()
+        kwargs['scale'] = False
+        kwargs['bias'] = False
         for param in source_node.layer.inputs:
             if param.name.endswith('scale'):
-                self.set_weight(source_node.name, 'scale', self.get_ndarray(param))
+                self.set_weight(source_node.name, 'scale', self.get_ndarray(param).flatten())
+                kwargs['scale'] = True
 
             elif param.name.endswith('bias'):
-                self.set_weight(source_node.name, 'bias', self.get_ndarray(param))
+                self.set_weight(source_node.name, 'bias', self.get_ndarray(param).flatten())
+                kwargs['bias'] = True
 
             elif param.name.endswith('Mean'):
-                self.set_weight(source_node.name, 'mean', self.get_ndarray(param))
+                self.set_weight(source_node.name, 'mean', self.get_ndarray(param).flatten())
 
             elif param.name.endswith('Variance'):
-                self.set_weight(source_node.name, 'var', self.get_ndarray(param))
+                self.set_weight(source_node.name, 'var', self.get_ndarray(param).flatten())
 
         IR_node = self._convert_identity_operation(source_node, end_edge=1, new_op='BatchNorm')
-
-        kwargs = dict()
         kwargs['epsilon'] = source_node.get_attr('epsilon')
         kwargs['axis'] = -1
-
         assign_IRnode_values(IR_node, kwargs)
 
 
@@ -298,8 +299,10 @@ class CntkParser(Parser):
     def rename_Reciprocal(self, source_node):
         self._convert_identity_operation(source_node)
 
+
     def rename_Dropout(self, source_node):
         source_node.real_name = self.src_graph.get_parent(source_node.name, [0]).real_name
+
 
     def rename_Dense(self, source_node):
         for param in source_node.layer.inputs:
