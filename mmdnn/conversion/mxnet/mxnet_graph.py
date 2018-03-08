@@ -9,8 +9,19 @@ from mmdnn.conversion.common.DataStructure.graph import GraphNode, Graph
 
 class MXNetGraphNode(GraphNode):
 
+
+
     def __init__(self, layer):
         super(MXNetGraphNode, self).__init__(layer)
+
+        if "attr" in layer:
+            self.attr = layer["attr"]
+        elif "param" in layer:
+            self.attr = layer["param"]
+        elif "attrs" in layer:
+            self.attr = layer["attrs"]
+        else:
+            self.attr = None
 
 
     @property
@@ -28,17 +39,22 @@ class MXNetGraphNode(GraphNode):
         return self.layer
 
 
+    def get_attr(self, name, default_value=None):
+        assert self.attr
+        return self.attr.get(name, default_value)
+
+
 class MXNetGraph(Graph):
 
     def __init__(self, model):
         # sanity check non-sense always input module.Module
-        # if not (type(model) == mx.module.Module 
+        # if not (type(model) == mx.module.Module
         #     or type(model) == mx.module.SequentialModule
         #     or type(model) == mx.model)
         #     raise TypeError("MXNet layer of type %s is not supported." % type(model))
 
         super(MXNetGraph, self).__init__(model)
-        
+
 
     def build(self, json_data):
 
@@ -73,5 +89,5 @@ class MXNetGraph(Graph):
                     self._make_connection(pred, layer["name"])
 
         super(MXNetGraph, self).build()
-        
+
         # raise NotImplementedError("Cannot support multi-input")

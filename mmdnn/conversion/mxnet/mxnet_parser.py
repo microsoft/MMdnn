@@ -86,15 +86,20 @@ class MXNetParser(Parser):
 
 
     def trace_shape(self, source_node, IR_node):
-        while (not IR_node.op == "Flatten"):
+        # TODO: Need to re-implement
+        if IR_node.input:
+            while (not IR_node.op == "Flatten") and len(self.IR_layer_map[IR_node.input[0]].input) > 0:
+                IR_node = self.IR_layer_map[IR_node.input[0]]
+            # print(IR_node) # TO DEL
             IR_node = self.IR_layer_map[IR_node.input[0]]
-        IR_node = self.IR_layer_map[IR_node.input[0]]
-        input_shape = list()
-        for e in IR_node.attr["_output_shapes"].list.shape[0].dim:
-            input_shape.append(e.size)
-        C = input_shape.pop()
-        ret = [C] + input_shape[1:]
-        return ret
+            input_shape = list()
+            for e in IR_node.attr["_output_shapes"].list.shape[0].dim:
+                input_shape.append(e.size)
+            C = input_shape.pop()
+            ret = [C] + input_shape[1:]
+            return ret
+        else:
+            return None
 
 
     @staticmethod
@@ -184,6 +189,9 @@ class MXNetParser(Parser):
 
         # Load the model network and weights
         sym, arg_params, aux_params = mx.model.load_checkpoint(weights, int(epoch))
+
+        # digraph = mx.viz.plot_network(sym, save_format='jpg') # For debugging
+        # digraph.render()
 
         model = mx.mod.Module(symbol = sym)
         arg_params.update(aux_params)
@@ -312,15 +320,11 @@ class MXNetParser(Parser):
                     IR_node.attr["_output_shapes"].list.shape.extend([shape])
                 break
 
-
-    def _convert_arithmetic(self, source_node, new_op = None):
+    def _convert_identity_operation(self, source_node, new_op=None):
         IR_node = self.IR_graph.node.add()
 
         # name, op
-        if new_op == None:
-            self._copy_and_reop(source_node, IR_node)
-        else:
-            self._copy_and_reop(source_node, IR_node, new_op)
+        self._copy_and_reop(source_node, IR_node, new_op)
 
         # input edge
         self.convert_inedge(source_node, IR_node)
@@ -328,6 +332,7 @@ class MXNetParser(Parser):
         # output shape
         self.set_output_shape(source_node, IR_node)
 
+        return IR_node
 
     def _defuse_padding(self, source_node):
         IR_node = self.IR_graph.node.add()
@@ -423,12 +428,18 @@ class MXNetParser(Parser):
             else:
                 weight = self.weight_data.get(source_node.name + "_weight").asnumpy().transpose((1, 0))
                 original_shape = weight.shape
+
+                # TO DEL
+                # print(source_node.layer)
+                # print(IR_node)
+
                 channel_first_list = self.trace_shape(source_node, IR_node)
-                dim = len(channel_first_list) + 1
-                weight = weight.reshape(channel_first_list + [original_shape[1]])
-                assert dim > 2
-                weight = weight.transpose(list(range(1, dim-1)) + [0, dim-1])
-                weight = weight.reshape(original_shape)
+                if channel_first_list:
+                    dim = len(channel_first_list) + 1
+                    weight = weight.reshape(channel_first_list + [original_shape[1]])
+                    assert dim > 2
+                    weight = weight.transpose(list(range(1, dim-1)) + [0, dim-1])
+                    weight = weight.reshape(original_shape)
                 self.set_weight(source_node.name, "weights", weight)
 
             if IR_node.attr["use_bias"].b:
@@ -811,8 +822,6 @@ class MXNetParser(Parser):
 
     # IR only support elu and prelu from {'elu', 'leaky', 'prelu', 'rrelu'}
     def rename_LeakyReLU(self, source_node):
-        # judge whether meaningful
-        assert "attr"
         # attr
         layer_attr = self._get_layer_attr(source_node)
 
@@ -857,13 +866,7 @@ class MXNetParser(Parser):
 
 
     def rename_LRN(self, source_node):
-        IR_node = self.IR_graph.node.add()
-
-        # name, op
-        self._copy_and_reop(source_node, IR_node, "LRN")
-
-        # input edge
-        self.convert_inedge(source_node, IR_node)
+        IR_node = self._convert_identity_operation(source_node)
 
         # attr
         layer_attr = self._get_layer_attr(source_node)
@@ -878,22 +881,13 @@ class MXNetParser(Parser):
         assert "nsize" in layer_attr
         IR_node.attr["size"].i = float(layer_attr["nsize"])
 
-        # output shape
-        self.set_output_shape(source_node, IR_node)
 
-
-    # def rename_ROIPooling(self, source_node):
-    #   raise NotImplementedError
+    def rename_ROIPooling(self, source_node):
+        raise NotImplementedError()
 
 
     def rename_Dropout(self, source_node):
-        IR_node = self.IR_graph.node.add()
-
-        # name, op
-        self._copy_and_reop(source_node, IR_node, "Dropout")
-
-        # input edge
-        self.convert_inedge(source_node, IR_node)
+        IR_node = self._convert_identity_operation(source_node)
 
         # attr
         layer_attr = self._get_layer_attr(source_node)
@@ -914,13 +908,7 @@ class MXNetParser(Parser):
 
     # reverse cannot support yet
     def rename_reshape(self, source_node):
-        IR_node = self.IR_graph.node.add()
-
-        # name, op
-        self._copy_and_reop(source_node, IR_node, "Reshape")
-
-        # input edge
-        self.convert_inedge(source_node, IR_node)
+        IR_node = self._convert_identity_operation(source_node, new_op='Reshape')
 
         # attr
         layer_attr = self._get_layer_attr(source_node)
@@ -941,29 +929,11 @@ class MXNetParser(Parser):
 
 
     def rename_Flatten(self, source_node):
-        IR_node = self.IR_graph.node.add()
-
-        # name, op
-        self._copy_and_reop(source_node, IR_node, "Flatten")
-
-        # input edge
-        self.convert_inedge(source_node, IR_node)
-
-        # output shape
-        self.set_output_shape(source_node, IR_node)
+        self._convert_identity_operation(source_node, new_op='Flatten')
 
 
     def rename_Concat(self, source_node):
-        IR_node = self.IR_graph.node.add()
-
-        # name, op
-        self._copy_and_reop(source_node, IR_node, "Concat")
-
-        # output shape
-        self.set_output_shape(source_node, IR_node)
-
-        # input edge
-        self.convert_inedge(source_node, IR_node)
+        IR_node = self._convert_identity_operation(source_node, new_op='Concat')
 
         # attr
         layer_attr = self._get_layer_attr(source_node)
@@ -976,13 +946,7 @@ class MXNetParser(Parser):
 
 
     def rename_cast(self, source_node):
-        IR_node = self.IR_graph.node.add()
-
-        # name, op
-        self._copy_and_reop(source_node, IR_node, "Cast")
-
-        # input edge
-        self.convert_inedge(source_node, IR_node)
+        IR_node = self._convert_identity_operation(source_node, new_op='Cast')
 
         # attr
         layer_attr = self._get_layer_attr(source_node)
@@ -1017,35 +981,44 @@ class MXNetParser(Parser):
 
 
     def rename_elemwise_add(self, source_node):
-        self._convert_arithmetic(source_node, 'Add')
+        self._convert_identity_operation(source_node, new_op='Add')
 
 
     def rename__Plus(self, source_node):
-        self._convert_arithmetic(source_node, 'Add')
+        self._convert_identity_operation(source_node, new_op='Add')
 
 
     def rename_broadcast_add(self, source_node):
-        self._convert_arithmetic(source_node, 'Add')
+        self._convert_identity_operation(source_node, new_op='Add')
 
 
     def rename_broadcast_mul(self, source_node):
-        self._convert_arithmetic(source_node, 'Mul')
+        self._convert_identity_operation(source_node, new_op='Mul')
 
 
     def rename__mul(self, source_node):
-        self._convert_arithmetic(source_node, 'Mul')
+        self._convert_identity_operation(source_node, new_op='Mul')
 
 
     def rename__copy(self, source_node):
-        IR_node = self.IR_graph.node.add()
-
-        # name, op
-        self._copy_and_reop(source_node, IR_node)
-
-        # input edge
-        self.convert_inedge(source_node, IR_node)
-
-        # output shape
-        self.set_output_shape(source_node, IR_node)
-
+        self._convert_identity_operation(source_node)
         # raise NotImplementedError("No matching IR api")
+
+
+    def _convert_scalar_operator(self, source_node, new_op):
+        value = source_node.get_attr('scalar')
+        value_node = self.IR_graph.node.add()
+        value_node.name = source_node.real_name + "_second"
+        value_node.op = 'Constant'
+        self.set_weight(value_node.name, 'value', np.array([value], np.float32))
+
+        IR_node = self._convert_identity_operation(source_node, new_op)
+        IR_node.input.append(value_node.name)
+        return IR_node
+
+
+    def rename__mul_scalar(self, source_node):
+        self._convert_scalar_operator(source_node, 'Mul')
+
+    def rename__minus_scalar(self, source_node):
+        self._convert_scalar_operator(source_node, 'Sub')
