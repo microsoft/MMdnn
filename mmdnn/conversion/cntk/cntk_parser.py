@@ -278,7 +278,7 @@ class CntkParser(Parser):
             elif param.name.endswith('Variance'):
                 self.set_weight(source_node.name, 'var', self.get_ndarray(param).flatten())
 
-        IR_node = self._convert_identity_operation(source_node, end_edge=1, new_op='BatchNorm')
+        IR_node = self._convert_identity_operation(source_node, end_edge=1, new_op='BatchNorm', shape_transpose=True)
         kwargs['epsilon'] = source_node.get_attr('epsilon')
         kwargs['axis'] = -1
         assign_IRnode_values(IR_node, kwargs)
