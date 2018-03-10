@@ -42,10 +42,13 @@ def _convert(args):
         if args.dstNodeName is None:
             raise ValueError("Need to provide the output node of Tensorflow model.")
 
-        assert args.network or args.frozen_pb
-
-        from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
-        parser = TensorflowParser(args.network, args.weights, args.frozen_pb, args.dstNodeName)
+        # assert args.network or args.frozen_pb
+        if args.frozen_pb:
+            from mmdnn.conversion.tensorflow.tensorflow_frozenparser import TensorflowParser2
+            parser = TensorflowParser2(args.frozen_pb, args.inputShape, args.dstNodeName)
+        else:
+            from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
+            parser = TensorflowParser(args.network, args.weights, args.frozen_pb, args.dstNodeName)
 
     elif args.srcFramework == 'mxnet':
         assert args.inputShape != None
