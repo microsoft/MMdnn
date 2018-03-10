@@ -404,7 +404,7 @@ class TestModels(CorrectnessTest):
         'cntk' : {
             # 'alexnet'       : [TensorflowEmit, KerasEmit],
             'resnet18'      : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            # 'inception_v3'  : [CntkEmit, TensorflowEmit],
+            'inception_v3'  : [CntkEmit],
         },
 
         'keras' : {

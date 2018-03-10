@@ -185,7 +185,7 @@ class CntkParser(Parser):
     def rename_Minus(self, source_node):
         if not source_node.covered:
             assert not source_node.layer.parameters
-            IR_node = self._convert_identity_operation(source_node, new_op='Sub')
+            self._convert_binary_operator(source_node, new_op='Sub')
 
 
     def rename_Sub(self, source_node):
@@ -221,18 +221,23 @@ class CntkParser(Parser):
 
     def rename_Splice(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Concat', shape_transpose=True)
-        assign_IRnode_values(IR_node, {'axis' : source_node.get_attr('axis')[-1]})
+        assign_IRnode_values(IR_node, {'axis' : source_node.get_attr('axis')[-1] + 1})
 
 
     def rename_Pooling(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Pool')
+        dim = len(IR_node.attr['_output_shapes'].list.shape[0].dim)
         kwargs = {}
 
         # strides
-        kwargs['strides'] = [1] + list(source_node.get_attr('strides'))[1:] + [1]
+        kwargs['strides'] = list(source_node.get_attr('strides')) + [1]
+        if len(kwargs['strides']) < dim:
+            kwargs['strides'] = [1] + kwargs['strides']
 
         # window_shape
-        kwargs['kernel_shape'] = [1] + list(source_node.get_attr('poolingWindowShape'))[1:] + [1]
+        kwargs['kernel_shape'] = list(source_node.get_attr('poolingWindowShape')) + [1]
+        if len(kwargs['kernel_shape']) < dim:
+            kwargs['kernel_shape'] = [1] + kwargs['kernel_shape']
 
         # pool type
         pool_type = source_node.get_attr('poolingType')
@@ -244,9 +249,11 @@ class CntkParser(Parser):
             raise ValueError("Unknown pooling type [{}].".format(pool_type))
 
         # padding
-        padding = source_node.get_attr('autoPadding')[1:]
+        padding = source_node.get_attr('autoPadding')
+        if len(padding) >= dim - 1:
+            padding = padding[1:]
         for pad in padding:
-            assert pad == padding[0]
+            assert pad == padding[-1]
         kwargs['auto_pad'] = 'SAME_UPPER' if padding[0] else 'VALID'
         kwargs['pads'] = self._convert_padding_to_IR(kwargs['kernel_shape'][1:-1], padding)
 
@@ -272,10 +279,10 @@ class CntkParser(Parser):
                 self.set_weight(source_node.name, 'bias', self.get_ndarray(param).flatten())
                 kwargs['bias'] = True
 
-            elif param.name.endswith('Mean'):
+            elif param.name.lower().endswith('mean'):
                 self.set_weight(source_node.name, 'mean', self.get_ndarray(param).flatten())
 
-            elif param.name.endswith('Variance'):
+            elif param.name.lower().endswith('variance'):
                 self.set_weight(source_node.name, 'var', self.get_ndarray(param).flatten())
 
         IR_node = self._convert_identity_operation(source_node, end_edge=1, new_op='BatchNorm', shape_transpose=True)
@@ -284,8 +291,23 @@ class CntkParser(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
 
+    def _add_constant_node(self, constant_node, IR_node):
+        new_node = self.IR_graph.node.add()
+        new_node.name = constant_node.uid
+        new_node.op = 'Constant'
+        value = self.get_ndarray(constant_node)
+        self.set_weight(new_node.name, 'value', value)
+        IR_node.input.append(new_node.name)
+
+
+    def _convert_binary_operator(self, source_node, new_op):
+        IR_node = self._convert_identity_operation(source_node, new_op=new_op)
+        for in_node in source_node.layer.inputs:
+            if in_node.is_constant:
+                self._add_constant_node(in_node, IR_node)
+
     def rename_ElementTimes(self, source_node):
-        self._convert_identity_operation(source_node, new_op='Mul')
+        self._convert_binary_operator(source_node, 'Mul')
 
 
     def rename_Log(self, source_node):
@@ -307,7 +329,8 @@ class CntkParser(Parser):
     def rename_Dense(self, source_node):
         for param in source_node.layer.inputs:
             if param.name.endswith('W'):
-                self.set_weight(source_node.name, 'weights', self.get_ndarray(param))
+                w = np.squeeze(self.get_ndarray(param))
+                self.set_weight(source_node.name, 'weights', w)
 
             elif param.name.endswith('b'):
                 self.set_weight(source_node.name, 'bias', self.get_ndarray(param))

@@ -309,11 +309,15 @@ def KitModel(weight_file = None):
 
     def emit_Mul(self, IR_node):
         if len(IR_node.in_edges) > 1:
-            inputs = ' *'.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
+            inputs = ' * '.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
             self.add_body(1, "{:<15} = {}".format(
                 IR_node.variable_name,
                 inputs))
 
+    def emit_Constant(self, IR_node):
+        self.add_body(1, "{:<15} = cntk.Constant(value=__weights_dict['{}']['value'])".format(
+            IR_node.variable_name, IR_node.name
+        ))
 
 
     def emit_Concat(self, IR_node):
