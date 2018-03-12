@@ -293,9 +293,9 @@ class KitModel(nn.Module):
 
     def emit_Sigmoid(self, IR_node):
         code = "{:<15} = Activation(name = '{}', activation = 'sigmoid')({})".format(
-                IR_node.replace_scope(IR_node.name),
+                IR_node.variable_name,
                 IR_node.name,
-                IR_node.replace_scope(IR_node.in_edges[0]))
+                self.IR_graph.get_parent(IR_node.name, [0]).real_variable_name)
         return code
 
 
@@ -343,7 +343,28 @@ class KitModel(nn.Module):
     def emit_Add(self, IR_node):
         self.add_body(2, "{:<15} = {}".format(
             IR_node.variable_name,
-            '+ '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
+            ' + '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
+
+    def emit_Sub(self, IR_node):
+        self.add_body(2, "{:<15} = {}".format(
+            IR_node.variable_name,
+            ' - '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
+
+    def emit_Mul(self, IR_node):
+        self.add_body(2, "{:<15} = {}".format(
+            IR_node.variable_name,
+            ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
+
+
+    def emit_Constant(self, IR_node):
+        self.add_init(2, "self.{:<15} = torch.autograd.Variable(torch.Tensor(__weights_dict['{}']['value']), requires_grad=False)".format(
+            IR_node.variable_name,
+            IR_node.name))
+
+        # self.add_init(2, "self.{:<15} = torch.from_numpy(__weights_dict['{}']['value'])".format(
+        #     IR_node.variable_name,
+        #     IR_node.name))
+        IR_node.real_name = "self." + IR_node.variable_name
 
 
     @staticmethod

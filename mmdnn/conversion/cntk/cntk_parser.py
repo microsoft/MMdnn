@@ -295,7 +295,7 @@ class CntkParser(Parser):
         new_node = self.IR_graph.node.add()
         new_node.name = constant_node.uid
         new_node.op = 'Constant'
-        value = self.get_ndarray(constant_node)
+        value = np.atleast_1d(self.get_ndarray(constant_node))
         self.set_weight(new_node.name, 'value', value)
         IR_node.input.append(new_node.name)
 
@@ -327,12 +327,14 @@ class CntkParser(Parser):
 
 
     def rename_Dense(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op='FullyConnected')
         for param in source_node.layer.inputs:
             if param.name.endswith('W'):
                 w = np.squeeze(self.get_ndarray(param))
                 self.set_weight(source_node.name, 'weights', w)
+                assign_IRnode_values(IR_node, {'units' : w.shape[-1] })
 
             elif param.name.endswith('b'):
                 self.set_weight(source_node.name, 'bias', self.get_ndarray(param))
+                assign_IRnode_values(IR_node, {'use_bias' : True })
 
-        IR_node = self._convert_identity_operation(source_node, new_op='FullyConnected')

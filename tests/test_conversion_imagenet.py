@@ -1,13 +1,17 @@
+from __future__ import absolute_import
+from __future__ import print_function
+
 import os
 import sys
 import unittest
 import numpy as np
-from mmdnn.conversion.examples.imagenet_test import TestKit
 
+from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
 from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
 from mmdnn.conversion.pytorch.pytorch_emitter import PytorchEmitter
 from mmdnn.conversion.mxnet.mxnet_emitter import MXNetEmitter
+
 
 def _compute_SNR(x,y):
     noise = x - y
@@ -398,13 +402,14 @@ class TestModels(CorrectnessTest):
     exception_tabel = {
         'cntk_Keras_resnet18',          # different after the first convolution layer
         'cntk_Tensorflow_resnet18',     # different after the first convolution layer
+        'cntk_Pytorch_inception_v3',    # TODO
     }
 
     test_table = {
         'cntk' : {
             # 'alexnet'       : [TensorflowEmit, KerasEmit],
             'resnet18'      : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'inception_v3'  : [CntkEmit],
+            'inception_v3'  : [CntkEmit, TensorflowEmit, PytorchEmit], # Keras no constant layer
         },
 
         'keras' : {
@@ -462,7 +467,7 @@ class TestModels(CorrectnessTest):
 
             IR_file = TestModels.tmpdir + original_framework + '_' + network_name + "_converted"
             for emit in self.test_table[original_framework][network_name]:
-                print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr)
+                print('Testing {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr)
                 converted_predict = emit.__func__(
                     original_framework,
                     network_name,

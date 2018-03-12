@@ -104,3 +104,4 @@ class IRGraph(Graph):
 
         self.filter_node()
         super(IRGraph, self).build()
+        self.input_layers = filter(lambda x: self.layer_map[x].type != 'Constant', self.input_layers)
