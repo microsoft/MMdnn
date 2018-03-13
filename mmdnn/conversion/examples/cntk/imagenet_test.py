@@ -21,8 +21,8 @@ class TestCNTK(TestKit):
         self.truth['keras']['resnet'] = [(144, 0.77398175), (23, 0.10650793), (21, 0.081077583), (146, 0.0092755388), (562, 0.0089645367)]
         self.truth['tensorflow']['resnet'] = [(22, 13.370872), (147, 8.8040094), (24, 5.6983061), (90, 5.6143088), (95, 4.8060427)]
 
-        self.model = self.MainModel.KitModel(self.args.w)
-        # self.model, self.testop = self.MainModel.KitModel(self.args.w)
+        # self.model = self.MainModel.KitModel(self.args.w)
+        self.model, self.testop = self.MainModel.KitModel(self.args.w)
 
 
     def preprocess(self, image_path):
@@ -42,7 +42,7 @@ class TestCNTK(TestKit):
     def inference(self, image_path):
         self.preprocess(image_path)
 
-        # self.print_intermediate_result(None, False)
+        self.print_intermediate_result(None, False)
 
         self.print_result()
 

@@ -161,17 +161,27 @@ class KitModel(nn.Module):
             self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], [dim + 1, dim] + list(range(0, dim)))
 
 
+    @staticmethod
+    def is_ceil_mode(pads):
+        lens = len(pads)
+        for i in range(lens // 2 + 1, lens - 1):
+            if pads[i] == pads[i - lens // 2]:
+                return False
+        else:
+            return True
+
+
     def emit_Pool(self, IR_node):
         dim = len(IR_node.get_attr('strides')) - 2
 
         if IR_node.get_attr('pooling_type') == "MAX":
             pool_name = "max_pool{}d".format(dim)
-            exstr = ", value=float('-Inf')"
+            # exstr = ", value=float('-Inf')"
         elif IR_node.get_attr('pooling_type') == "AVG":
             pool_name = "avg_pool{}d".format(dim)
-            exstr = ""
+            # exstr = ""
         else:
-            assert False
+            raise ValueError()
 
         if IR_node.layer.attr['global_pooling'].b:
             self.add_body(2, "{:<15} = F.{}(input = {}, kernel_size = {}.size()[2:])".format(
@@ -188,13 +198,18 @@ class KitModel(nn.Module):
             pool_size = IR_node.get_attr('kernel_shape')[1:-1]
             strides = IR_node.get_attr('strides')[1:-1]
 
-            input_node = self._defuse_padding(IR_node, exstr)
-            self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={})".format(
+            padding = IR_node.get_attr('pads')[1:dim]
+            ceil_mode = self.is_ceil_mode(IR_node.get_attr('pads'))
+
+            # input_node = self._defuse_padding(IR_node, exstr)
+            self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
                 IR_node.variable_name,
                 pool_name,
-                input_node,
+                self.parent_variable_name(IR_node),
                 tuple(pool_size),
-                tuple(strides)
+                tuple(strides),
+                tuple(padding),
+                ceil_mode
                 ))
 
 
@@ -210,8 +225,9 @@ class KitModel(nn.Module):
     def emit_Dropout(self, IR_node):
         self.add_body(2, "{:<15} = F.dropout(input = {}, p = {}, training = self.training, inplace = True)".format(
             IR_node.variable_name,
-            self.IR_graph.get_parent(IR_node.name, [0]).real_variable_name,
+            self.parent_variable_name(IR_node),
             IR_node.layer.attr["keep_prob"].f))
+
 
     def check_if_need_transpose(self, IR_node):
         parent = self.IR_graph.get_parent(IR_node.name, [0])

@@ -402,14 +402,14 @@ class TestModels(CorrectnessTest):
     exception_tabel = {
         'cntk_Keras_resnet18',          # different after the first convolution layer
         'cntk_Tensorflow_resnet18',     # different after the first convolution layer
-        'cntk_Pytorch_inception_v3',    # TODO
     }
 
     test_table = {
         'cntk' : {
             # 'alexnet'       : [TensorflowEmit, KerasEmit],
             'resnet18'      : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'inception_v3'  : [CntkEmit, TensorflowEmit, PytorchEmit], # Keras no constant layer
+            'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'inception_v3'  : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras no constant layer
         },
 
         'keras' : {
