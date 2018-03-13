@@ -130,7 +130,7 @@ def KitModel(weight_file = None):
         else:
             padding = IR_node.get_attr("pads")
             padding = convert_onnx_pad_to_tf(padding)
-            if is_valid_padding(padding) == False:
+            if not is_valid_padding(padding):
                 input_node = IR_node.variable_name + '_pad'
                 self.add_body(1, "{:<15} = tf.pad({}, paddings = {}{})".format(
                     input_node,
