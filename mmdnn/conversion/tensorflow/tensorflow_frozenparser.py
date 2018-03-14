@@ -77,9 +77,9 @@ class TensorflowParser2(Parser):
         original_gdef.ParseFromString(serialized)
         model = original_gdef
 
-        if dest_nodes != None:
-            from tensorflow.python.framework.graph_util import extract_sub_graph
-            model = extract_sub_graph(model, dest_nodes.split(','))
+        # if dest_nodes != None:
+        #     from tensorflow.python.framework.graph_util import extract_sub_graph
+        #     model = extract_sub_graph(model, dest_nodes.split(','))
 
         output_shape_map = dict()
         input_shape_map = dict()

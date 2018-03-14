@@ -40,6 +40,14 @@ class tensorflow_extractor(base_extractor):
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
             'num_classes' : 1001,
         },
+        'inception_v1_frozen' : {
+            'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/inception_v1_2016_08_28_frozen.pb.tar.gz',
+            'filename'    : 'inception_v1_2016_08_28_frozen.pb',
+            'tensor_out'  : 'InceptionV1/Logits/Predictions/Reshape_1:0',
+            'tensor_in'   : 'input:0',
+            # 'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'num_classes' : 1001,
+        },
         'inception_v3' : {
             'url'         : 'http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz',
             'filename'    : 'inception_v3.ckpt',
@@ -141,7 +149,8 @@ class tensorflow_extractor(base_extractor):
 
     @classmethod
     def handle_frozen_graph(cls, architecture, path):
-        raise NotImplementedError()
+        return
+        # raise NotImplementedError()
 
 
     @classmethod
@@ -167,33 +176,57 @@ class tensorflow_extractor(base_extractor):
 
 
     @classmethod
-    def inference(cls, architecture, path, image_path):
-        if cls.download(architecture, path):
+    def inference(cls, architecture, path, image_path, is_frozen = False):
+        if is_frozen:
+            architecture_ = architecture + "_frozen"
+        else:
+            architecture_ = architecture
+
+        if cls.download(architecture_, path):
             import numpy as np
             func = TestKit.preprocess_func['tensorflow'][architecture]
             img = func(image_path)
             img = np.expand_dims(img, axis=0)
 
-            with slim.arg_scope(cls.architecture_map[architecture]['arg_scope']()):
-                data_input = cls.architecture_map[architecture]['input']()
-                logits, endpoints = cls.architecture_map[architecture]['builder']()(
-                    data_input,
-                    num_classes=cls.architecture_map[architecture]['num_classes'],
-                    is_training=False)
-                labels = tf.squeeze(logits)
+            if is_frozen:
+                tf_model_path = cls.architecture_map[architecture_]['filename']
+                with open(tf_model_path, 'rb') as f:
+                    serialized = f.read()
+                tf.reset_default_graph()
+                original_gdef = tf.GraphDef()
+                original_gdef.ParseFromString(serialized)
+                tf_output_name =  cls.architecture_map[architecture_]['tensor_out']
+                tf_input_name =  cls.architecture_map[architecture_]['tensor_in']
 
-            init = tf.global_variables_initializer()
-            with tf.Session() as sess:
-                sess.run(init)
-                saver = tf.train.Saver()
-                saver.restore(sess, path + cls.architecture_map[architecture]['filename'])
-                predict = sess.run(logits, feed_dict = {data_input : img})
+                with tf.Graph().as_default() as g:
+                    tf.import_graph_def(original_gdef, name='')
+                with tf.Session(graph = g) as sess:
+                    tf_out = sess.run(tf_output_name, feed_dict={tf_input_name: img})
+                predict = np.squeeze(tf_out)
+                return predict
+            else:
+                with slim.arg_scope(cls.architecture_map[architecture]['arg_scope']()):
+                    data_input = cls.architecture_map[architecture]['input']()
+                    logits, endpoints = cls.architecture_map[architecture]['builder']()(
+                        data_input,
+                        num_classes=cls.architecture_map[architecture]['num_classes'],
+                        is_training=False)
+                    labels = tf.squeeze(logits)
 
-            import tensorflow.contrib.keras as keras
-            keras.backend.clear_session()
 
-            predict = np.squeeze(predict)
-            return predict
+                init = tf.global_variables_initializer()
+                with tf.Session() as sess:
+                    sess.run(init)
+                    saver = tf.train.Saver()
+                    saver.restore(sess, path + cls.architecture_map[architecture]['filename'])
+                    predict = sess.run(logits, feed_dict = {data_input : img})
+
+                import tensorflow.contrib.keras as keras
+                keras.backend.clear_session()
+
+                predict = np.squeeze(predict)
+                return predict
 
         else:
             return None
+

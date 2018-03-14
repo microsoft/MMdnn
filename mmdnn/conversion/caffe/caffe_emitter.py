@@ -33,7 +33,8 @@ class CaffeEmitter(Emitter):
 
     @property
     def header_code(self):
-        return """import numpy as np
+        return """from __future__ import print_function
+import numpy as np
 import sys, argparse
 import caffe
 from caffe import layers as L
