@@ -7,9 +7,6 @@ import unittest
 import numpy as np
 
 from mmdnn.conversion.examples.imagenet_test import TestKit
-from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
-from mmdnn.conversion.pytorch.pytorch_emitter import PytorchEmitter
-from mmdnn.conversion.mxnet.mxnet_emitter import MXNetEmitter
 
 
 def _compute_SNR(x,y):
@@ -96,6 +93,30 @@ class TestModels(CorrectnessTest):
         parser.run(IR_file)
         del parser
         del TensorflowParser
+
+        return original_predict
+
+
+    @staticmethod
+    def TensorFlowFrozenParse(architecture_name, image_path):
+        from mmdnn.conversion.examples.tensorflow.extractor import tensorflow_extractor
+        from mmdnn.conversion.tensorflow.tensorflow_frozenparser import TensorflowParser2
+
+        # get original model prediction result
+        original_predict = tensorflow_extractor.inference(architecture_name, TestModels.cachedir, image_path, is_frozen = True)
+        # print(original_predict)
+        # assert False
+        del tensorflow_extractor
+
+        # original to IR
+        IR_file = TestModels.tmpdir + 'tensorflow_' + architecture_name + "_converted"
+        parser = TensorflowParser2(
+            TestModels.cachedir + "inception_v1_2016_08_28_frozen.pb",
+            [224, 224, 3],
+            "InceptionV1/Logits/Predictions/Reshape_1:0")
+        parser.run(IR_file)
+        del parser
+        del TensorflowParser2
 
         return original_predict
 
@@ -267,6 +288,7 @@ class TestModels(CorrectnessTest):
     @staticmethod
     def PytorchEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         import torch
+        from mmdnn.conversion.pytorch.pytorch_emitter import PytorchEmitter
 
         # IR to code
         converted_file = original_framework + '_pytorch_' + architecture_name + "_converted"
@@ -301,6 +323,8 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def KerasEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
+
         # IR to code
         converted_file = original_framework + '_keras_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
@@ -330,6 +354,7 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def MXNetEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        from mmdnn.conversion.mxnet.mxnet_emitter import MXNetEmitter
         from collections import namedtuple
         Batch = namedtuple('Batch', ['data'])
 
@@ -505,6 +530,7 @@ class TestModels(CorrectnessTest):
 
     def test_tensorflow(self):
         self._test_function('tensorflow', self.TensorFlowParse)
+        self._test_function('tensorflow', self.TensorFlowFrozenParse)
 
 
     def test_caffe(self):
