@@ -1,13 +1,16 @@
+from __future__ import absolute_import
+from __future__ import print_function
+
 import os
 import sys
 import unittest
 import numpy as np
-from mmdnn.conversion.examples.imagenet_test import TestKit
 
-from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
+from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
 from mmdnn.conversion.pytorch.pytorch_emitter import PytorchEmitter
 from mmdnn.conversion.mxnet.mxnet_emitter import MXNetEmitter
+
 
 def _compute_SNR(x,y):
     noise = x - y
@@ -203,6 +206,8 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def CntkEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
+
         # IR to code
         converted_file = original_framework + '_cntk_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
@@ -219,6 +224,9 @@ class TestModels(CorrectnessTest):
         del model_converted
         del sys.modules[converted_file]
         os.remove(converted_file + '.py')
+
+        del CntkEmitter
+
         return converted_predict
 
 
@@ -396,23 +404,28 @@ class TestModels(CorrectnessTest):
         return converted_predict
 
     exception_tabel = {
-        'cntk_Keras_resnet18',          # different after the first convolution layer
-        'cntk_Tensorflow_resnet18',     # different after the first convolution layer
+        'cntk_Keras_resnet18',              # different after the first convolution layer
+        'cntk_Tensorflow_resnet18',         # different after the first convolution layer
+        'cntk_Caffe_resnet18',              # TODO
+        'tensorflow_MXNet_inception_v3',    # TODO
+        'caffe_Pytorch_inception_v1',       # TODO
+        'caffe_Pytorch_alexnet',            # TODO
     }
 
     test_table = {
         'cntk' : {
             # 'alexnet'       : [TensorflowEmit, KerasEmit],
-            'resnet18'      : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            # 'inception_v3'  : [CntkEmit, TensorflowEmit],
+            'resnet18'      : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            # 'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'inception_v3'  : [CntkEmit, TensorflowEmit, PytorchEmit], # Caffe, Keras and MXNet no constant layer
         },
 
         'keras' : {
-            'vgg16'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'resnet50'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'densenet'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: Caffe
+            'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'xception'     : [TensorflowEmit, KerasEmit],
             'mobilenet'    : [TensorflowEmit, KerasEmit], # TODO: MXNetEmit
             'nasnet'       : [TensorflowEmit, KerasEmit],
@@ -429,23 +442,23 @@ class TestModels(CorrectnessTest):
 
         'caffe' : {
             'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'alexnet'       : [CntkEmit, CaffeEmit],
-            'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit], # TODO: PytorchEmit
+            'alexnet'       : [CntkEmit, TensorflowEmit, MXNetEmit, CaffeEmit, PytorchEmit], # TODO: KerasEmit
+            'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit, PytorchEmit],
             'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'squeezenet'    : [CntkEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'squeezenet'    : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
         },
 
         'tensorflow' : {
             'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'inception_v1' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit], # TODO: PytorchEmit
+            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, PytorchEmit],
             'resnet_v1_50' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v1_152' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v2_50' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v2_152' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit],
             'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit], # TODO
-            'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
          },
     }
 
@@ -462,7 +475,7 @@ class TestModels(CorrectnessTest):
 
             IR_file = TestModels.tmpdir + original_framework + '_' + network_name + "_converted"
             for emit in self.test_table[original_framework][network_name]:
-                print('Testing  {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr)
+                print('Testing {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr)
                 converted_predict = emit.__func__(
                     original_framework,
                     network_name,

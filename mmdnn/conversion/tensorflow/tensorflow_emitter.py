@@ -130,7 +130,7 @@ def KitModel(weight_file = None):
         else:
             padding = IR_node.get_attr("pads")
             padding = convert_onnx_pad_to_tf(padding)
-            if is_valid_padding(padding) == False:
+            if not is_valid_padding(padding):
                 input_node = IR_node.variable_name + '_pad'
                 self.add_body(1, "{:<15} = tf.pad({}, paddings = {}{})".format(
                     input_node,
@@ -142,6 +142,14 @@ def KitModel(weight_file = None):
                 input_node = self.parent_variable_name(IR_node)
 
             return input_node, 'VALID'
+
+
+    def emit_Constant(self, IR_node):
+        self.add_body(1, "{:<15} = tf.constant(__weights_dict['{}']['value'], name='{}')".format(
+            IR_node.variable_name,
+            IR_node.name,
+            IR_node.name
+        ))
 
 
     def emit_Pool(self, IR_node):
@@ -187,6 +195,12 @@ def KitModel(weight_file = None):
 
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.name)
+
+
+    def emit_Add(self, IR_node):
+        self.add_body(1, "{:<15} = {}".format(
+            IR_node.variable_name,
+            ' + '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
 
 
     def emit_DataInput(self, IR_node):
@@ -243,12 +257,24 @@ def KitModel(weight_file = None):
             self.parent_variable_name(IR_node)))
 
 
+    def emit_Mul(self, IR_node):
+        self.add_body(1, "{:<15} = {}".format(
+            IR_node.variable_name,
+            ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
+
+
     def emit_Reshape(self, IR_node):
         self.add_body(1, "{:<15} = tf.reshape({}, [{}], '{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             ', '.join('%s' % i for i in IR_node.get_attr('shape')),
             IR_node.name))
+
+
+    def emit_Sub(self, IR_node):
+        self.add_body(1, "{:<15} = {}".format(
+            IR_node.variable_name,
+            ' - '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
 
 
     def _emit_unary_operation(self, IR_node, op_name):
@@ -261,6 +287,7 @@ def KitModel(weight_file = None):
 
     def emit_Tanh(self, IR_node):
         self._emit_unary_operation(IR_node, 'tanh')
+
 
     def emit_Elu(self, IR_node):
         self._emit_unary_operation(IR_node, 'nn.elu')
@@ -306,7 +333,6 @@ def KitModel(weight_file = None):
         return ret
 
 
-    def emit_RNNs(self, IR_node, func):
         assert False
 
 
@@ -316,12 +342,6 @@ def KitModel(weight_file = None):
 
     def emit_GRU(self, IR_node):
         return self.emit_RNNs(IR_node, "GRU")
-
-
-    def emit_Add(self, IR_node):
-        self.add_body(1, "{:<15} = {}".format(
-            IR_node.variable_name,
-            ' +'.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
 
 
     def emit_Concat(self, IR_node):
@@ -410,6 +430,7 @@ def KitModel(weight_file = None):
             strides_str,
             padding,
             IR_node.name))
+
 
     def emit_Crop(self, IR_node):
         border = IR_node.get_attr('border')

@@ -125,6 +125,7 @@ class TestKit(object):
         'cntk' : {
             'alexnet'       : lambda path : TestKit.Identity(path, 227),
             'resnet18'      : lambda path : TestKit.Identity(path, 224),
+            'resnet152'     : lambda path : TestKit.Identity(path, 224),
             'inception_v3'  : lambda path : TestKit.Identity(path, 299)
         }
     }

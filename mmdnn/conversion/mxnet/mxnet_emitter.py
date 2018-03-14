@@ -856,3 +856,17 @@ def predict(model, labels, url):
                 IR_node.name)
 
         return code
+
+    def emit_Constant(self, IR_node):
+        raise NotImplementedError()
+        code = "{:<15} = mx.sym.identity(name='{}')".format(IR_node.variable_name, IR_node.name)
+        self.output_weights[IR_node.name + '_data'] = self.weights[IR_node.name]['value']
+        return code
+
+    def emit_Sub(self, IR_node):
+        code = "{:<15} = mx.sym.broadcast_sub({}, {})".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                self.parent_variable_name(IR_node, [1]))
+
+        return code

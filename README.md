@@ -11,6 +11,7 @@ Basically, it converts many DNN models that trained by one framework into others
 - **Model Visualization** Visualizing DNN network architecture and parameters for frameworks
 - **Model compatibility testing** (On-going)
 
+This project is designed and developed by [Microsoft Research (MSR)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/). We also encourage researchers and students leverage this project to analysis DNN models and we welcome any new ideas to extend this project.
 
 ## Installation
 

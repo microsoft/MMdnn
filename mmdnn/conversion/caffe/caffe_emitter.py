@@ -315,8 +315,10 @@ bias_term={}, ntop=1)".format(
             in_place))
 
 
-
     def emit_Softmax(self, IR_node):
         self.add_body(1, "n.{:<15} = L.Softmax(n.{}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node)))
+
+    def emit_Pad(self, IR_node):
+        IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
