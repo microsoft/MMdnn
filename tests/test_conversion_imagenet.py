@@ -430,8 +430,11 @@ class TestModels(CorrectnessTest):
 
     exception_tabel = {
         'cntk_Keras_resnet18',              # different after the first convolution layer
+        'cntk_Keras_resnet152',             # TODO
         'cntk_Tensorflow_resnet18',         # different after the first convolution layer
+        'cntk_Tensorflow_resnet152',        # TODO
         'cntk_Caffe_resnet18',              # TODO
+        'cntk_Caffe_resnet152',             # TODO
         'tensorflow_MXNet_inception_v3',    # TODO
         'caffe_Pytorch_inception_v1',       # TODO
         'caffe_Pytorch_alexnet',            # TODO
@@ -439,9 +442,9 @@ class TestModels(CorrectnessTest):
 
     test_table = {
         'cntk' : {
-            # 'alexnet'       : [TensorflowEmit, KerasEmit],
+            # 'alexnet'       : [CntkEmit, TensorflowEmit, KerasEmit],
             'resnet18'      : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            # 'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'resnet152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'inception_v3'  : [CntkEmit, TensorflowEmit, PytorchEmit], # Caffe, Keras and MXNet no constant layer
         },
 

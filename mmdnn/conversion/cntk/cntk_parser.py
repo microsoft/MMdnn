@@ -115,15 +115,20 @@ class CntkParser(Parser):
         return True
 
 
+    @staticmethod
+    def _print_layer(source_node):
+        print ("Layer: ", source_node.layer)
+        print ("Parameters: ", source_node.layer.parameters)
+        print ("Attributes: ", source_node.layer.attributes)
+        for in_node in source_node.layer.inputs:
+            print (in_node)
+
+
     def rename_UNKNOWN(self, source_node):
         print("Cntk Parser has not supported operator [%s] with name [%s]."
               % (source_node.type, source_node.name))
 
-        print (source_node.layer)
-        print (source_node.layer.parameters)
-        print (source_node.layer.attributes)
-        print (source_node.layer.inputs)
-
+        self._print_layer(source_node)
         assert False
 
 
@@ -152,6 +157,7 @@ class CntkParser(Parser):
 
         kwargs = dict()
 
+        self._print_layer(source_node)
         kwargs['strides'] = [1] + list(source_node.get_attr('strides'))[1:] + [1]
         kwargs['dilations'] = [1] + list(source_node.get_attr('dilation'))[1:] + [1]
         kwargs['kernel_shape'] = list(W.shape)
@@ -306,7 +312,12 @@ class CntkParser(Parser):
             if in_node.is_constant:
                 self._add_constant_node(in_node, IR_node)
 
+
     def rename_ElementTimes(self, source_node):
+        if source_node.layer.inputs[0] == source_node.layer.inputs[1]:
+            # TODO: Handle square
+            pass
+
         self._convert_binary_operator(source_node, 'Mul')
 
 

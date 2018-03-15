@@ -365,6 +365,27 @@ def KitModel(weight_file = None):
         IR_node.real_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
 
 
+    def emit_Log(self, IR_node):
+        self.add_body(1, "{:<15} = _cntk.log({}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name))
+
+
+    def emit_Exp(self, IR_node):
+        self.add_body(1, "{:<15} = _cntk.exp({}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name))
+
+
+    def emit_Reciprocal(self, IR_node):
+        self.add_body(1, "{:<15} = _cntk.reciprocal({}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name))
+
+
     def emit_ReduceMean(self, IR_node):
         self.add_body(1, "{:<15} = ops.reduce_mean({}, axis = ({}), name = '{}')".format(
             IR_node.variable_name,
