@@ -1,57 +1,48 @@
-# Keras "inception_v3" to CNTK conversion examples
+# Keras "inception_v3" to CNTK conversion example
 
-Model: [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-models)
+Model: ["inception_v3" for imagenet](https://github.com/fchollet/deep-learning-models)
 Source: Keras
 Destination: CNTK
 
-1. Install [Keras](https://keras.io/#installation) and [CNTK](https://docs.microsoft.com/en-us/cognitive-toolkit/Setup-CNTK-on-your-machine) in case
+0. Install [Keras](https://keras.io/#installation) and [CNTK](https://docs.microsoft.com/en-us/cognitive-toolkit/Setup-CNTK-on-your-machine) in case
 
 ```bash
 pip install keras
 
-pip install https://cntk.ai/PythonWheel/CPU-Only/cntk-2.3-cp27-cp27mu-linux_x86_64.whl
+pip install https://cntk.ai/PythonWheel/CPU-Only/cntk-2.4-cp27-cp27mu-linux_x86_64.whl
 or
-pip install
-https://cntk.ai/PythonWheel/CPU-Only/cntk-2.3-cp35-cp35m-linux_x86_64.whl
+pip install https://cntk.ai/PythonWheel/CPU-Only/cntk-2.4-cp35-cp35m-linux_x86_64.whl
 ```
 
-2. Prepare Keras model.
-The example will download the pre-trained models at first, then use a simple model extractor for [Keras applications](https://keras.io/applications/#applications), you can refer it to extract your Keras model structure and weights.
+1. Prepare the Keras model.
+You need to prepare your pre-trained keras model firstly. And there is a pre-trained model extractor for frameworks to help you. You can refer it to extract your Keras model structure and weights.
 
 ```bash
-$ python -m mmdnn.conversion.examples.keras.extract_model -n inception_v3
+$ python -m mmdnn.conversion._script.extractModel -f keras -n inception_v3
 
-Using TensorFlow backend.
-Downloading data from https://github.com/fchollet/deep-learning-models/releases/download/v0.5/inception_v3_weights_tf_dim_ordering_tf_kernels.h5
-96075776/96112376 [============================>.] - ETA: 0s
-.
-.
-.
-Network structure is saved as [imagenet_inception_v3.json].
-Network weights are saved as [imagenet_inception_v3.h5].
+Keras model inception_v3 is saved in [./imagenet_inception_v3.h5]
 ```
 
-The structure file *imagenet_inception_v3.json* and weights file *imagenet_inception_v3.h5* are downloaded to current working directory.
+The you got the Keras pre-trained inception_v3 model which is downloaded to current working directory.
 
-3. Convert the pre-trained model files to intermediate representation
+2. Convert the pre-trained model files to intermediate representation
 
 ```bash
-$ python -m mmdnn.conversion._script.convertToIR -f keras -d converted -n imagenet_inception_v3.json -w imagenet_inception_v3.h5
+$ python -m mmdnn.conversion._script.convertToIR -f keras -d converted -w imagenet_inception_v3.h5
 
 Using TensorFlow backend.
 .
 .
 .
-Network file [imagenet_inception_v3.json] is loaded successfully.
 IR network structure is saved as [converted.json].
 IR network structure is saved as [converted.pb].
 IR weights are saved as [converted.npy].
 ```
 
-The Command will take *imagenet_inception_v3.json* as network structure description file, *imagenet_inception_v3.h5* as pre-trained weights, and you will get the intermediate representation files *converted.json* for visualization, *converted.proto* and *converted.npy* for next steps.
+Then you got the **intermediate representation** files *converted.json* for visualization, *converted.proto* and *converted.npy* for next steps.
 
 
-4. Convert the IR files to CNTK models
+3. Convert the IR files to CNTK models
 
 ```bash
 $ python -m mmdnn.conversion._script.IRToCode -f cntk -d converted_cntk.py -n converted.pb -w converted.npy
@@ -64,7 +55,7 @@ And you will get a filename *converted_cntk.py*, which contains the **original C
 
 With the three steps, you have already converted the pre-trained Keras Inception_v3 models to CNTK network file *converted_cntk.py* and weight file *converted.npy*. You can use these two files to fine-tune training or inference.
 
-5. Dump the original CNTK model
+4. Dump the original CNTK model
 
 ```bash
 $ python -m mmdnn.conversion.examples.cntk.imagenet_test -n converted_cntk -w converted.npy --dump cntk_inception_v3.dnn

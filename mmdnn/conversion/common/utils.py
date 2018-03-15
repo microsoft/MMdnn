@@ -203,6 +203,7 @@ def download_file(url, directory='./', local_fname=None, force_write=False, auto
         try:
             import wget
             ret = wget.download(url, local_fname)
+            print ("")
         except:
             ret = _single_thread_download(url, local_fname)
 

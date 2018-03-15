@@ -43,7 +43,7 @@ We provide a model converter to help developers convert models between framework
 - [Keras](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/keras/README.md)
 - [MXNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/mxnet/README.md)
 - [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental) (Highly recommend you read the README of tensorflow firstly)
-- [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md) (Destination only)
+- [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md)
 - [PyTorch](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/pytorch/README.md) (Destination only)
 - [CoreML](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/coreml/README.md) (Experimental, Destination only)
 
@@ -64,20 +64,22 @@ Models                                              | Caffe | Keras | Tensorflow
 [SqueezeNet](https://arxiv.org/pdf/1602.07360)      |   √   |   √   |     √      |   √  |   √   |    ×
 DenseNet                                            |       |   √   |     √      |   √  |       |            |
 [NASNet](https://arxiv.org/abs/1707.07012)          |       |   √   |     √      | × (no SeparableConv)
-[ResNext]                                           |       |   √   |     √      |   √  |   √   |
+[ResNext](https://arxiv.org/abs/1611.05431)                                        |       |   √   |     √      |   √  |   √   |
 
 #### On-going frameworks
 
 - PyTorch (Source)
-- CNTK (Source)
 - [Caffe2](https://caffe2.ai/)
 - ONNX
+- Torch7 (Source)
+- CoreML (Source)
+- Chainer (help wants)
 
 #### On-going Models
 
-- RNN
 - Image Style Transfer
 - Object Detection
+- RNN
 
 ---
 
@@ -109,7 +111,9 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 
 ### Offical Tutorial
 
-- [Keras "inception_v3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
+- [Keras "inception V3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
+
+- [Tensorflow slim model "Resnet V2 152" to PyTorch](https://github.com/Microsoft/MMdnn/blob/master/docs/tf2pytorch.md)
 
 ### Users' Examples
 
