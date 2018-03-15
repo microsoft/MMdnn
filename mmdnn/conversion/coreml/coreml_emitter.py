@@ -444,6 +444,9 @@ class CoreMLEmitter(Emitter):
     def emit_Relu(self, IR_node):
         self._emit_activation(IR_node, 'RELU')
 
+    def emit_PRelu(self, IR_node):
+        self._emit_activation(IR_node, 'PRELU', self.weights_dict[IR_node.name]['gamma'])
+
 
     def emit_Softmax(self, IR_node):
         # Get input and output names
