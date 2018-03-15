@@ -157,7 +157,6 @@ class CntkParser(Parser):
 
         kwargs = dict()
 
-        self._print_layer(source_node)
         kwargs['strides'] = [1] + list(source_node.get_attr('strides'))[1:] + [1]
         kwargs['dilations'] = [1] + list(source_node.get_attr('dilation'))[1:] + [1]
         kwargs['kernel_shape'] = list(W.shape)

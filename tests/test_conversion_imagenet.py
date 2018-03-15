@@ -391,6 +391,7 @@ class TestModels(CorrectnessTest):
         os.remove(output_weights_file)
         return converted_predict
 
+
     @staticmethod
     def CaffeEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         import caffe
@@ -428,17 +429,19 @@ class TestModels(CorrectnessTest):
 
         return converted_predict
 
+
     exception_tabel = {
         'cntk_Keras_resnet18',              # different after the first convolution layer
-        'cntk_Keras_resnet152',             # TODO
+        'cntk_Keras_resnet152',             # different after the first convolution layer
         'cntk_Tensorflow_resnet18',         # different after the first convolution layer
-        'cntk_Tensorflow_resnet152',        # TODO
+        'cntk_Tensorflow_resnet152',        # different after the first convolution layer
         'cntk_Caffe_resnet18',              # TODO
         'cntk_Caffe_resnet152',             # TODO
         'tensorflow_MXNet_inception_v3',    # TODO
         'caffe_Pytorch_inception_v1',       # TODO
         'caffe_Pytorch_alexnet',            # TODO
     }
+
 
     test_table = {
         'cntk' : {
@@ -522,9 +525,9 @@ class TestModels(CorrectnessTest):
 
             os.remove(IR_file + ".pb")
             os.remove(IR_file + ".npy")
-            print("Testing {} model {} passed.".format(original_framework, network_name))
+            print("Testing {} model {} passed.".format(original_framework, network_name), file=sys.stderr)
 
-        print("Testing {} model all passed.".format(original_framework))
+        print("Testing {} model all passed.".format(original_framework), file=sys.stderr)
 
 
     def test_cntk(self):
