@@ -235,6 +235,7 @@ class TestModels(CorrectnessTest):
         emitter = CntkEmitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
+        del CntkEmitter
 
         model_converted = __import__(converted_file).KitModel(weight_path)
 
@@ -245,8 +246,6 @@ class TestModels(CorrectnessTest):
         del model_converted
         del sys.modules[converted_file]
         os.remove(converted_file + '.py')
-
-        del CntkEmitter
 
         return converted_predict
 
@@ -296,6 +295,7 @@ class TestModels(CorrectnessTest):
         emitter = PytorchEmitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
         del emitter
+        del PytorchEmit
 
         # import converted model
         model_converted = __import__(converted_file).KitModel(converted_file + '.npy')
@@ -331,6 +331,7 @@ class TestModels(CorrectnessTest):
         emitter = Keras2Emitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
+        del KerasEmit
 
         # import converted model
         model_converted = __import__(converted_file).KitModel(weight_path)
@@ -349,6 +350,7 @@ class TestModels(CorrectnessTest):
         K.clear_session()
 
         os.remove(converted_file + '.py')
+
         return converted_predict
 
 
@@ -368,6 +370,7 @@ class TestModels(CorrectnessTest):
         emitter = MXNetEmitter((architecture_path, weight_path, output_weights_file))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
+        del MXNetEmitter
 
         # import converted model
         imported = __import__(converted_file)
@@ -389,6 +392,7 @@ class TestModels(CorrectnessTest):
 
         os.remove(converted_file + '.py')
         os.remove(output_weights_file)
+
         return converted_predict
 
 
@@ -431,15 +435,18 @@ class TestModels(CorrectnessTest):
 
 
     exception_tabel = {
-        'cntk_Keras_resnet18',              # different after the first convolution layer
-        'cntk_Keras_resnet152',             # different after the first convolution layer
-        'cntk_Tensorflow_resnet18',         # different after the first convolution layer
-        'cntk_Tensorflow_resnet152',        # different after the first convolution layer
-        'cntk_Caffe_resnet18',              # TODO
-        'cntk_Caffe_resnet152',             # TODO
-        'tensorflow_MXNet_inception_v3',    # TODO
-        'caffe_Pytorch_inception_v1',       # TODO
-        'caffe_Pytorch_alexnet',            # TODO
+        'cntk_Keras_resnet18',                      # different after the first convolution layer
+        'cntk_Keras_resnet152',                     # different after the first convolution layer
+        'cntk_Tensorflow_resnet18',                 # different after the first convolution layer
+        'cntk_Tensorflow_resnet152',                # different after the first convolution layer
+        'cntk_Caffe_resnet18',                      # TODO
+        'cntk_Caffe_resnet152',                     # TODO
+        'tensorflow_MXNet_inception_v3',            # TODO
+        'caffe_Pytorch_inception_v1',               # TODO
+        'caffe_Pytorch_alexnet',                    # TODO
+        'mxnet_Caffe_imagenet1k-resnet-152',        # TODO
+        'mxnet_Caffe_imagenet1k-resnext-50',        # TODO
+        'mxnet_Caffe_imagenet1k-resnext-101-64x4d', # TODO
     }
 
 
@@ -463,12 +470,12 @@ class TestModels(CorrectnessTest):
         },
 
         'mxnet' : {
-            'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is too slow
-            'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'vgg19'                     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: Caffe
+            'imagenet1k-resnet-152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'squeezenet_v1.1'           : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is too slow
+            'imagenet1k-resnext-50'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
         },
 
         'caffe' : {
