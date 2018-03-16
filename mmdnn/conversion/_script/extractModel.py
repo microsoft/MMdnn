@@ -30,6 +30,10 @@ def extract_model(args):
         from mmdnn.conversion.examples.cntk.extractor import cntk_extractor
         extractor = cntk_extractor()
 
+    elif args.framework == 'pytorch':
+        from mmdnn.conversion.examples.pytorch.extractor import pytorch_extractor
+        extractor = pytorch_extractor()
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.framework))
 
@@ -51,7 +55,7 @@ def _main():
         '--framework', '-f',
         type=_text_type,
         required=True,
-        choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'tf'],
+        choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'pytorch'],
         help="Framework name")
 
     parser.add_argument(
