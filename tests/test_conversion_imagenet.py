@@ -295,7 +295,7 @@ class TestModels(CorrectnessTest):
         emitter = PytorchEmitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
         del emitter
-        del PytorchEmit
+        del PytorchEmitter
 
         # import converted model
         model_converted = __import__(converted_file).KitModel(converted_file + '.npy')
@@ -331,7 +331,7 @@ class TestModels(CorrectnessTest):
         emitter = Keras2Emitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
-        del KerasEmit
+        del Keras2Emitter
 
         # import converted model
         model_converted = __import__(converted_file).KitModel(weight_path)
@@ -441,7 +441,8 @@ class TestModels(CorrectnessTest):
         'cntk_Tensorflow_resnet152',                # different after the first convolution layer
         'cntk_Caffe_resnet18',                      # TODO
         'cntk_Caffe_resnet152',                     # TODO
-        'tensorflow_MXNet_inception_v3',            # TODO
+        'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
+        'tensorflow_MXNet_mobilenet_v1_1.0',        # TODO
         'caffe_Pytorch_inception_v1',               # TODO
         'caffe_Pytorch_alexnet',                    # TODO
         'mxnet_Caffe_imagenet1k-resnet-152',        # TODO
