@@ -294,7 +294,7 @@ def predict(model, labels, url):
 
     def set_pad(self, IR_node, code, pad, _max_pool):
         if _max_pool:
-            constant_value = "-math.inf"
+            constant_value = "float('-inf')"
         else:
             constant_value = "0.0"
 

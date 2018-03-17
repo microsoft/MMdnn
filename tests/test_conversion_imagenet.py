@@ -40,6 +40,12 @@ def ensure_dir(f):
     if not os.path.exists(d):
         os.makedirs(d)
 
+def checkfrozen(f):
+    if f == 'tensorflow_frozen':
+        return 'tensorflow'
+    else:
+        return f
+
 
 class CorrectnessTest(unittest.TestCase):
 
@@ -109,7 +115,7 @@ class TestModels(CorrectnessTest):
         del tensorflow_extractor
 
         # original to IR
-        IR_file = TestModels.tmpdir + 'tensorflow_' + architecture_name + "_converted"
+        IR_file = TestModels.tmpdir + 'tensorflow_frozen_' + architecture_name + "_converted"
         parser = TensorflowParser2(
             TestModels.cachedir + "inception_v1_2016_08_28_frozen.pb",
             [224, 224, 3],
@@ -255,9 +261,13 @@ class TestModels(CorrectnessTest):
         import tensorflow as tf
         from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
 
+        original_framework = checkfrozen(original_framework)
+
         # IR to code
         converted_file = original_framework + '_tensorflow_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
+        print(architecture_path)
+        print(weight_path)
         emitter = TensorflowEmitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
@@ -325,6 +335,8 @@ class TestModels(CorrectnessTest):
     def KerasEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
 
+        original_framework = checkfrozen(original_framework)
+
         # IR to code
         converted_file = original_framework + '_keras_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
@@ -359,6 +371,8 @@ class TestModels(CorrectnessTest):
         from mmdnn.conversion.mxnet.mxnet_emitter import MXNetEmitter
         from collections import namedtuple
         Batch = namedtuple('Batch', ['data'])
+
+        original_framework = checkfrozen(original_framework)
 
         import mxnet as mx
         print("Testing {} from {} to MXNet.".format(architecture_name, original_framework))
@@ -499,6 +513,11 @@ class TestModels(CorrectnessTest):
             # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
             # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
          },
+
+         'tensorflow_frozen' : {
+            'inception_v1' : [TensorflowEmit, KerasEmit, MXNetEmit], # TODO: CntkEmit
+         },
+
     }
 
 
@@ -544,7 +563,7 @@ class TestModels(CorrectnessTest):
 
     def test_tensorflow(self):
         self._test_function('tensorflow', self.TensorFlowParse)
-        self._test_function('tensorflow', self.TensorFlowFrozenParse)
+        self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
 
 
     def test_caffe(self):
