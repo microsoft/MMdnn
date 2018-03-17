@@ -51,6 +51,7 @@ class TestKit(object):
             'resnext'                       : [(21, 0.58798772), (23, 0.29983655), (862, 0.044453178), (596, 0.0098323636), (80, 0.0046504852)]
         },
         'pytorch' : {
+            'resnet18'  : [(394, 10.310125), (395, 9.2285385), (21, 8.9611788), (144, 8.3729601), (749, 7.9692998)],
             'resnet152' : [(21, 13.080057), (141, 12.32998), (94, 9.8761454), (146, 9.3761511), (143, 8.9194641)],
             'vgg19'     : [(821, 8.4734678), (562, 8.3472366), (835, 8.2712851), (749, 7.792901), (807, 6.6604013)],
         },
@@ -119,6 +120,7 @@ class TestKit(object):
 
         'pytorch' : {
             'vgg19'         : lambda path : TestKit.Normalize(path),
+            'resnet18'      : lambda path : TestKit.Normalize(path),
             'resnet152'     : lambda path : TestKit.Normalize(path),
             'inception_v3'  : lambda path : TestKit.Normalize(path),
         },

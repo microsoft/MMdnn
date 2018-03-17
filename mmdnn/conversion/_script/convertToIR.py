@@ -69,6 +69,11 @@ def _convert(args):
         model = args.network or args.weights
         parser = CntkParser(model)
 
+    elif args.srcFramework == 'pytorch':
+        assert args.inputShape != None
+        from mmdnn.conversion.pytorch.pytorch_parser import PyTorchParser
+        parser = PyTorchParser(args.network, args.inputShape)
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.srcFramework))
 
@@ -85,7 +90,7 @@ def _main():
     parser.add_argument(
         '--srcFramework', '-f',
         type=_text_type,
-        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf'],
+        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'pytorch'],
         help="Source toolkit name of the model to be converted.")
 
     parser.add_argument(
