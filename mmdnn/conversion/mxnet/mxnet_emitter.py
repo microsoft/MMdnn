@@ -25,7 +25,6 @@ class MXNetEmitter(Emitter):
     }
 
     activation_map = {
-        "relu6"   : "Relu",
         "relu"    : "Relu",
         "sigmoid" : "Sigmoid",
         "tanh"    : "Tanh",
@@ -870,3 +869,15 @@ def predict(model, labels, url):
                 self.parent_variable_name(IR_node, [1]))
 
         return code
+
+
+    def emit_Relu6(self, IR_node):
+        self.add_body(1, self.emit_Activation(IR_node, 'relu'))
+        old_name = IR_node.variable_name
+        IR_node.real_name = IR_node.real_name + "_clip"
+        self.add_body(1, "{:<15} = mx.sym.clip({}, a_min=0, a_max=6, name='{}')".format(
+            IR_node.real_variable_name,
+            old_name,
+            IR_node.real_name))
+
+        return ""
