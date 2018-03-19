@@ -74,6 +74,12 @@ def _convert(args):
         from mmdnn.conversion.pytorch.pytorch_parser import PyTorchParser
         parser = PyTorchParser(args.network, args.inputShape)
 
+    elif args.srcFramework == 'torch' or args.srcFramework == 'torch7':
+        from mmdnn.conversion.torch.torch_parser import TorchParser
+        model = args.network or args.weights
+        assert model != None
+        parser = TorchParser(model, args.inputShape)
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.srcFramework))
 
@@ -90,7 +96,7 @@ def _main():
     parser.add_argument(
         '--srcFramework', '-f',
         type=_text_type,
-        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'pytorch'],
+        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'torch', 'torch7'],
         help="Source toolkit name of the model to be converted.")
 
     parser.add_argument(
@@ -129,7 +135,7 @@ def _main():
         nargs='+',
         type=int,
         default=None,
-        help='[MXNet/Caffe2] Input shape of model (channel, height, width)')
+        help='[MXNet/Caffe2/Torch7] Input shape of model (channel, height, width)')
 
 
     # Caffe
