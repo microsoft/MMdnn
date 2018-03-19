@@ -82,7 +82,7 @@ def _convert(args):
     return 0
 
 
-def _main():
+def _get_parser():
     import argparse
 
     parser = argparse.ArgumentParser(description = 'Convert other model file formats to IR format.')
@@ -138,7 +138,11 @@ def _main():
         type=_text_type,
         default='TRAIN',
         help='[Caffe] Convert the specific phase of caffe model.')
+    return parser
 
+
+def _main():
+    parser = _get_parser()
     args = parser.parse_args()
     ret = _convert(args)
     _sys.exit(int(ret)) # cast to int or else the exit code is always 1

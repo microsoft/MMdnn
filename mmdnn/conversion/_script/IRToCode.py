@@ -57,7 +57,7 @@ def _convert(args):
     return 0
 
 
-def _main():
+def _get_parser():
     import argparse
 
     parser = argparse.ArgumentParser(description = 'Convert IR model file formats to other format.')
@@ -102,7 +102,11 @@ def _main():
         type=_text_type,
         default=None,
         help='[MXNet] Path to save the destination weight.')
+    return parser
 
+
+def _main():
+    parser=_get_parser()
     args = parser.parse_args()
     ret = _convert(args)
     _sys.exit(int(ret)) # cast to int or else the exit code is always 1
