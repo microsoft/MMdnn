@@ -4,6 +4,8 @@ import mmdnn.conversion._script.convertToIR as convertToIR
 import mmdnn.conversion._script.IRToCode as IRToCode
 import mmdnn.conversion._script.IRToModel as IRToModel
 from six import text_type as _text_type
+import uuid
+import os
 
 
 def _get_parser():
@@ -44,55 +46,66 @@ def _get_parser():
     return parser
 
 
-def _extract_ir_args(args, unknown_args):
+def _extract_ir_args(args, unknown_args, temp_filename):
     unknown_args.extend(['--srcFramework', args.srcFramework])
     if args.inputWeight is not None:
         unknown_args.extend(['--weights', args.inputWeight])
     if args.inputNetwork is not None:
         unknown_args.extend(['--network', args.inputNetwork])
-    unknown_args.extend(['--dstPath', 'ir'])
+    unknown_args.extend(['--dstPath', temp_filename])
 
     ir_parser = convertToIR._get_parser()
     return ir_parser.parse_known_args(unknown_args)
 
 
-def _extract_code_args(args, unknown_args):
+def _extract_code_args(args, unknown_args, temp_filename):
     unknown_args.extend(['--dstFramework', args.dstFramework])
-    unknown_args.extend(['--IRModelPath', 'ir.pb'])
-    unknown_args.extend(['--IRWeightPath', 'ir.npy'])
-    unknown_args.extend(['--dstModelPath', 'converted.py'])
-    unknown_args.extend(['--dstWeightPath', 'ir.npy'])
+    unknown_args.extend(['--IRModelPath', temp_filename + '.pb'])
+    unknown_args.extend(['--IRWeightPath', temp_filename + '.npy'])
+    unknown_args.extend(['--dstModelPath', temp_filename + '.py'])
+    unknown_args.extend(['--dstWeightPath', temp_filename + '.npy'])
     code_parser = IRToCode._get_parser()
     return code_parser.parse_known_args(unknown_args)
 
 
-def _extract_model_args(args, unknown_args):
+def _extract_model_args(args, unknown_args, temp_filename):
     unknown_args.extend(['--framework', args.dstFramework])
-    unknown_args.extend(['--inputNetwork', 'ir.pb'])
-    unknown_args.extend(['--inputWeight', 'ir.npy'])
+    unknown_args.extend(['--inputNetwork', temp_filename + '.pb'])
+    unknown_args.extend(['--inputWeight', temp_filename + '.npy'])
     unknown_args.extend(['--output', args.outputModel])
     model_parser = IRToModel._get_parser()
     return model_parser.parse_known_args(unknown_args)
 
 
+def remove_temp_files(temp_filename):
+    exts = ['.json', '.pb', '.npy', '.py']
+    for ext in exts:
+        temp_file = temp_filename + ext
+        if os.path.isfile(temp_file):
+            os.remove(temp_file)
+            print('temporary file [{}] has been removed.'.format(temp_file))
+
+
 def _main():
     parser = _get_parser()
     args, unknown_args = parser.parse_known_args()
-    ir_args, unknown_args = _extract_ir_args(args, unknown_args)
+    temp_filename = uuid.uuid4().hex
+    ir_args, unknown_args = _extract_ir_args(args, unknown_args, temp_filename)
     ret = convertToIR._convert(ir_args)
     if int(ret) != 0:
         _sys.exit(int(ret))
     if args.dstType == 'code':
-        code_args, unknown_args = _extract_code_args(args, unknown_args)
+        code_args, unknown_args = _extract_code_args(args, unknown_args, temp_filename)
         ret = IRToCode._convert(code_args)
         if int(ret) != 0:
             _sys.exit(int(ret))
         from mmdnn.conversion._script.dump_code import dump_code
-        dump_code(args.dstFramework, 'converted.py', 'ir.npy', args.outputModel)
+        dump_code(args.dstFramework, temp_filename + '.py', temp_filename + '.npy', args.outputModel)
     elif args.dstType == 'model':
-        model_args, unknown_args = _extract_model_args(args, unknown_args)
+        model_args, unknown_args = _extract_model_args(args, unknown_args, temp_filename)
         ret = IRToModel._convert(model_args)
         _sys.exit(int(ret))
+    remove_temp_files(temp_filename)
 
 
 if __name__ == '__main__':
