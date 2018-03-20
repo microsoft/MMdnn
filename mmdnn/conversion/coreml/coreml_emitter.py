@@ -135,7 +135,7 @@ class CoreMLEmitter(Emitter):
 
         print (self.builder.spec.description)
 
-        return self.builder.spec
+        return self.builder.spec, input_features, output_features
 
 
     @staticmethod

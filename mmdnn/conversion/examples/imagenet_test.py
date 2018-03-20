@@ -69,7 +69,7 @@ class TestKit(object):
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, True),
             'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True),
             'resnet152'     : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 227, False)
+            'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 227, False),
         },
 
         'tensorflow' : {
@@ -114,7 +114,7 @@ class TestKit(object):
             'imagenet1k-resnet-152'         : lambda path : TestKit.Identity(path, 224, True),
             'resnext'                       : lambda path : TestKit.Identity(path, 224, False),
             'imagenet1k-resnext-50'         : lambda path : TestKit.Identity(path, 224, False),
-            'imagenet1k-resnext-101-64x4d'  : lambda path : TestKit.Identity(path, 224, False)
+            'imagenet1k-resnext-101-64x4d'  : lambda path : TestKit.Identity(path, 224, False),
         },
 
         'pytorch' : {
@@ -127,7 +127,7 @@ class TestKit(object):
             'alexnet'       : lambda path : TestKit.Identity(path, 227),
             'resnet18'      : lambda path : TestKit.Identity(path, 224),
             'resnet152'     : lambda path : TestKit.Identity(path, 224),
-            'inception_v3'  : lambda path : TestKit.Identity(path, 299)
+            'inception_v3'  : lambda path : TestKit.Identity(path, 299),
         }
     }
 
