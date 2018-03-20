@@ -41,11 +41,6 @@ def _get_parser():
         type=_text_type,
         required=True,
         help='Path to save the destination model')
-    parser.add_argument(
-        '--outputWeight', '-ow',
-        type=_text_type,
-        default=None,
-        help='Path to save the destination weight.')
     return parser
 
 
@@ -65,9 +60,8 @@ def _extract_code_args(args, unknown_args):
     unknown_args.extend(['--dstFramework', args.dstFramework])
     unknown_args.extend(['--IRModelPath', 'ir.pb'])
     unknown_args.extend(['--IRWeightPath', 'ir.npy'])
-    unknown_args.extend(['--dstModelPath', args.outputModel])
-    if args.outputWeight is not None:
-        unknown_args.extend(['--dstWeightPath', args.outputWeight])
+    unknown_args.extend(['--dstModelPath', 'converted.py'])
+    unknown_args.extend(['--dstWeightPath', 'ir.npy'])
     code_parser = IRToCode._get_parser()
     return code_parser.parse_known_args(unknown_args)
 
@@ -91,7 +85,10 @@ def _main():
     if args.dstType == 'code':
         code_args, unknown_args = _extract_code_args(args, unknown_args)
         ret = IRToCode._convert(code_args)
-        _sys.exit(int(ret))
+        if int(ret) != 0:
+            _sys.exit(int(ret))
+        from mmdnn.conversion._script.dump_code import dump_code
+        dump_code(args.dstFramework, 'converted.py', 'ir.npy', args.outputModel)
     elif args.dstType == 'model':
         model_args, unknown_args = _extract_model_args(args, unknown_args)
         ret = IRToModel._convert(model_args)
