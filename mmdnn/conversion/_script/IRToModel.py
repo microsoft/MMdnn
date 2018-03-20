@@ -69,7 +69,7 @@ def _convert(args):
     return 0
 
 
-def _main():
+def _get_parser():
     import argparse
 
     parser = argparse.ArgumentParser(description='Convert IR model file formats to other format.')
@@ -115,7 +115,11 @@ def _main():
     parser.add_argument('--scale', type=float, default=1.0, help='Value by which the image data must be scaled (optional, default 1.0)')
     parser.add_argument('--classInputPath', type=_text_type, default='', help='Path to class labels (ordered new line separated) for treating the neural network as a classifier')
     parser.add_argument('--predictedFeatureName', type=_text_type, default='class_output', help='Name of the output feature that captures the class name (for classifiers models).')
+    return parser
 
+
+def _main():
+    parser=_get_parser()
     args = parser.parse_args()
     ret = _convert(args)
     _sys.exit(int(ret)) # cast to int or else the exit code is always 1
