@@ -39,6 +39,15 @@ class TorchGraph(Graph):
 
 
     def build(self, shape):
+        print (self.model)
+        print (dir(self.model))
+
+        output_shapes = self._infer_torch_output_shapes(
+            self.model,
+            shape
+        )
+        print (output_shapes)
+
         # """
         # build graph for pytorch 0.2.0
         # """
@@ -70,3 +79,64 @@ class TorchGraph(Graph):
         #     idx += 1
 
         super(TorchGraph, self).build()
+
+
+    @staticmethod
+    def _infer_torch_output_shapes(torch_model, input_shapes):
+        """
+        Forward torch model to infer output shape
+        """
+        return TorchGraph._forward_torch_random_input(
+                torch_model,
+                input_shapes,
+                is_batch=False)
+
+        # try:
+        #     return TorchGraph._forward_torch_random_input(
+        #         torch_model,
+        #         input_shapes,
+        #         is_batch=False
+        #     )
+        # except:
+        #     # try batch mode
+        #     # return TorchGraph._forward_torch_random_input(
+        #     #     torch_model,
+        #     #     input_shapes,
+        #     #     is_batch=True
+        #     # )
+        #     pass
+
+    @staticmethod
+    def _forward_torch_random_input(torch_model, input_shapes, is_batch=False):
+        input_tensors = []
+        for shape in input_shapes:
+            if is_batch:
+                tensor = torch.rand(1, *shape).float()
+            else:
+                tensor = torch.randn(shape)
+                # tensor = torch.rand(*shape).float()
+            input_tensors.append(tensor)
+
+        print (input_tensors[0].shape)
+        if len(input_tensors) == 1:
+            result = torch_model.forward(input_tensors[0])
+        else:
+            result = torch_model.forward(input_tensors)
+
+        print ("result", result)
+        if isinstance(result, list):
+            # multi output
+            output_shapes = []
+            for tensor in result:
+                shape = tensor.numpy().shape
+                if is_batch:
+                    shape = shape[1:]
+                output_shapes.append(shape)
+            return output_shapes
+        else:
+            # single output
+            output_shape = result.numpy().shape
+            if is_batch:
+                return [output_shape[1:]]
+            else:
+                return [output_shape]
