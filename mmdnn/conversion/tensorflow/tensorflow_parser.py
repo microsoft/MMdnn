@@ -442,6 +442,7 @@ class TensorflowParser(Parser):
             self.set_weight(source_node.name, 'weights', self.ckpt_data[W.name])
 
         if source_node.out_edges and self.tf_graph.get_node(source_node.out_edges[0]).type == 'Add':
+            add_node = self.tf_graph.get_node(source_node.out_edges[0])
             add_node.covered = True
             add_node.real_name = source_node.real_name
             # FullyConnected Layer

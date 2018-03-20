@@ -40,8 +40,7 @@ class TorchParser(Parser):
 
         # Build network graph
         self.torch_graph = TorchGraph(model)
-        self.input_shape = tuple([1] + input_shape)
-        self.torch_graph.build(self.input_shape)
+        self.torch_graph.build([[1] + input_shape])
 
 
     def gen_IR(self):
