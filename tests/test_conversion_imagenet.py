@@ -551,10 +551,10 @@ class TestModels(CorrectnessTest):
             'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
             'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
             'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'xception'     : [TensorflowEmit, KerasEmit],
+            'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
             'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
-            'nasnet'       : [TensorflowEmit, KerasEmit],
+            'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
         },
 
         'mxnet' : {

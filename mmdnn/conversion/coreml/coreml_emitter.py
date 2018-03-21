@@ -97,6 +97,7 @@ class CoreMLEmitter(Emitter):
             else:
                 print("CoreMLEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
+                assert False
 
         # self._connect_coreml_layers()
         # Add classifier classes (if applicable)
@@ -197,7 +198,9 @@ class CoreMLEmitter(Emitter):
 
         padding = self._get_padding(IR_node).lower()
 
-        self.builder.add_convolution(name=IR_node.real_name,
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
+
+        self.builder.add_convolution(name=IR_node.variable_name,
                                      kernel_channels=kernel_channels,
                                      output_channels=output_channels,
                                      height=height,
@@ -211,8 +214,8 @@ class CoreMLEmitter(Emitter):
                                      has_bias=has_bias,
                                      is_deconv=is_deconv,
                                      output_shape=output_shape,
-                                     input_name=self.parent_variable_name(IR_node),
-                                     output_name=IR_node.real_name,
+                                     input_name=input_name,
+                                     output_name=IR_node.variable_name,
                                      dilation_factors=dilations)
 
 
@@ -315,6 +318,33 @@ class CoreMLEmitter(Emitter):
         print(IR_node.name)
 
 
+    def emit_Crop(self, IR_node):
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
+        output_name=IR_node.variable_name
+
+        is_1d = False
+        border = IR_node.get_attr('border')
+
+        if is_1d:
+            raise ValueError("Unrecognized padding option: %s" % (str(border)))
+        else:
+            if type(border) is int:
+                top = left = bottom = right = border
+            elif type(border) is list:
+                top, left = border[1], border [0]
+                bottom, right = border[2], border [3]
+            else:
+                raise ValueError("Unrecognized padding option: %s" % (str(border)))
+
+        # Now add the layer
+        self.builder.add_crop(name = IR_node.name,
+            left = left, right=right, top=top, bottom=bottom, offset = [0,0],
+            input_names = [input_name], output_name=output_name
+            )
+        # assert False
+
+
+
     def emit_DataInput(self, IR_node):
         """ Layers that can be skipped. """
         return
@@ -390,8 +420,6 @@ class CoreMLEmitter(Emitter):
         input_shape = ShapetrToTuple(IRGraph.shapeToStr(input_shape_dims[0]),True)
         target_shape = ShapetrToTuple(IRGraph.shapeToStr(target_shape_dims[0]))
 
-        # print("input_shape, target_shape",input_shape,target_shape)
-
         def get_coreml_target_shape(target_shape):
             if len(target_shape) == 1: #(D,)
                 coreml_shape = (1,target_shape[0],1,1)
@@ -432,12 +460,12 @@ class CoreMLEmitter(Emitter):
 
     def _emit_activation(self, IR_node, act, params=None):
         # Get input and output names
-        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
-        output_name = IR_node.out_edges[0]
-        self.builder.add_activation(name=IR_node.real_name,
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
+        output_name = IR_node.variable_name
+        self.builder.add_activation(name=IR_node.variable_name,
             non_linearity=act,
-            input_name=self.parent_variable_name(IR_node),
-            output_name=IR_node.real_name,
+            input_name=input_name,
+            output_name=output_name,
             params=params)
 
 
@@ -547,8 +575,9 @@ class CoreMLEmitter(Emitter):
         """
 
         # Get input and output names
-        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
-
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
+        # print(input_name)
+        # print(IR_node.IR_layer.input[0])
         axis = IR_node.get_attr('axis', -1)
         nb_channels = IR_node.get_attr('_output_shapes')[0].dim[axis].size
 
@@ -567,41 +596,106 @@ class CoreMLEmitter(Emitter):
         beta1 = beta - gamma*mean*f
         mean[:] = 0.0 #mean
         variance[:] = 1.0 - .00001 #stddev
-
         self.builder.add_batchnorm(
-            name=IR_node.name,
+            name=IR_node.variable_name,
             channels = nb_channels,
             gamma = gamma1,
             beta = beta1,
             mean = mean,
             variance = variance,
             input_name = input_name,
-            output_name=IR_node.name)
+            output_name=IR_node.variable_name)
+        # assert False
 
 
-    def emit_pad(self, IR_node):
-        assert False
-        if IR_node.IR_layer.attr['mode'].s == "CONSTANT":
-            func = "ZeroPadding"
+    def emit_Pad(self, IR_node):
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
+        output_name=IR_node.variable_name
+        is_1d = False
+        padding = IR_node.get_attr('pads')
 
-        dim = len(IR_node.IR_layer.attr['padding'].list.i) // 2
+        if is_1d:
+            raise ValueError("Unrecognized padding option: %s" % (str(padding)))
+        else:
+            if type(padding) is int:
+                top = left = bottom = right = padding
+            elif type(padding) is list:
+                top, left = padding[1], padding [2]
+                bottom, right = padding[5], padding [6]
+            else:
+                raise ValueError("Unrecognized padding option: %s" % (str(padding)))
 
-        padding_str = ""
-        for idx in range(0, dim):
-            padding_str += "({}, {}),".format(
-                    IR_node.IR_layer.attr['padding'].list.i[idx + idx],
-                    IR_node.IR_layer.attr['padding'].list.i[idx + idx + 1])
-
-        code = "{:<15} = {}{}D(name = \"{}\", padding = ({}))({})".format(
-                IR_node.replace_scope(IR_node.name),
-                func,
-                dim,
-                IR_node.name,
-                padding_str,
-                IR_node.replace_scope(IR_node.in_edges[0]))
-
-        return code
+        # Now add the layer
+        self.builder.add_padding(name = IR_node.name,
+            left = left, right=right, top=top, bottom=bottom, value = 0,
+            input_name = input_name, output_name=output_name
+            )
 
 
     def emit_Squeeze(self, IR_node):
         self.emit_Flatten(IR_node)
+
+
+    def emit_SeparableConv(self, IR_node):
+
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
+        output_name = output_name=IR_node.variable_name
+
+        assert len(IR_node.get_attr("strides")) == 4
+        strides = IR_node.get_attr('strides')
+        stride_height, stride_width = (strides[1], strides[2])
+
+        # Get the weights
+        W0 = self.weights_dict[IR_node.name]['depthwise_filter']
+        W1 = self.weights_dict[IR_node.name]['pointwise_filter']
+
+        padding = IR_node.get_attr('auto_pad').split('_')[0].lower()
+        has_bias = IR_node.get_attr('use_bias')
+        b = self.weights_dict[IR_node.name]['bias'] if has_bias else None
+
+        output_blob_shape = IR_node.get_attr('_output_shapes')
+        shape = shape_to_list(output_blob_shape[0])
+        output_channels = shape[-1]
+
+        height, width, input_channels, depth_mult = W0.shape
+
+        W0 = np.reshape(W0, (height, width, 1, input_channels * depth_mult))
+
+        intermediate_name = input_name + '_intermin_'
+
+        self.builder.add_convolution(name = IR_node.name + '_step_1',
+             kernel_channels = 1,
+             output_channels = input_channels * depth_mult,
+             height = height,
+             width = width,
+             stride_height = stride_height,
+             stride_width = stride_width,
+             border_mode = padding,
+             groups = input_channels,
+             W = W0,
+             b = None,
+             has_bias = False,
+             is_deconv = False,
+             output_shape = None,
+             input_name = input_name,
+             output_name = intermediate_name,
+             dilation_factors = [1,1])
+
+        self.builder.add_convolution(name = IR_node.name + '_step_2',
+                kernel_channels = input_channels * depth_mult,
+                output_channels = output_channels,
+                height = 1,
+                width = 1,
+                stride_height = 1,
+                stride_width = 1,
+                border_mode = padding,
+                groups = 1,
+                W = W1,
+                b = b,
+                has_bias = has_bias,
+                is_deconv = False,
+                output_shape = None,
+                input_name = intermediate_name,
+                output_name = output_name,
+                dilation_factors = [1,1])
+
