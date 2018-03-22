@@ -74,7 +74,7 @@ def gen_weight(weight_file, model, prototxt):
     global __weights_dict
     __weights_dict = load_weights(weight_file)
 
-    net = caffe.Net(str(prototxt), caffe.TRAIN)
+    net = caffe.Net(prototxt, caffe.TRAIN)
 
     for key in __weights_dict:
         if 'weights' in __weights_dict[key]:
@@ -88,6 +88,8 @@ def gen_weight(weight_file, model, prototxt):
             net.params[key][0].data.flat = __weights_dict[key]['scale']
         if 'bias' in __weights_dict[key]:
             net.params[key][1].data.flat = __weights_dict[key]['bias']
+        if 'gamma' in __weights_dict[key]: # used for prelu, not sure if other layers use this too
+            net.params[key][0].data.flat = __weights_dict[key]['gamma']
     net.save(model)
     return net
 
@@ -99,8 +101,9 @@ if __name__=='__main__':
     parser.add_argument('--prototxt', '-p', type=_text_type, default='caffe_converted.prototxt')
     parser.add_argument('--model', '-m', type=_text_type, default='caffe_converted.caffemodel')
     args = parser.parse_args()
-    make_net(args.prototxt)
-    gen_weight(args.weight_file, args.model, args.prototxt)
+    # For some reason argparser gives us unicode, so we need to conver to str first
+    make_net(str(args.prototxt))
+    gen_weight(str(args.weight_file), str(args.model), str(args.prototxt))
 
 """
 
@@ -251,7 +254,8 @@ bias_term={}, ntop=1)".format(
             self.phase == 'test'
         ))
         scale_layer_var_name = IR_node.variable_name + "_scale"
-        self.add_body(1, "n.{:<15} = L.Scale(n.{}, bias_term={}, ntop=1)".format(
+        # Since the scale layer is "almost part" of the bn layer, we can safely use in_place here.
+        self.add_body(1, "n.{:<15} = L.Scale(n.{}, bias_term={}, in_place=True, ntop=1)".format(
             scale_layer_var_name,
             IR_node.variable_name,
             IR_node.get_attr('bias', False)
@@ -311,6 +315,13 @@ bias_term={}, ntop=1)".format(
     def emit_Relu(self, IR_node):
         in_place = True
         self.add_body(1, "n.{:<15} = L.ReLU(n.{}, in_place={}, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            in_place))
+
+    def emit_PRelu(self, IR_node):
+        in_place = True
+        self.add_body(1, "n.{:<15} = L.PReLU(n.{}, in_place={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             in_place))
