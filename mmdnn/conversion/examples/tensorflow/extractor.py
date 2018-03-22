@@ -155,11 +155,11 @@ class tensorflow_extractor(base_extractor):
 
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
-            writer = tf.summary.FileWriter('./graphs', sess.graph)
+            # tf.train.export_meta_graph("kit.meta", as_text=True)
+            # writer = tf.summary.FileWriter('./graphs', sess.graph)
             writer.close()
             sess.run(init)
             saver = tf.train.Saver()
-            tf.train.export_meta_graph("kit.meta", as_text=True)
             saver.restore(sess, path + cls.architecture_map[architecture]['filename'])
             save_path = saver.save(sess, path + "imagenet_{}.ckpt".format(architecture))
             print("Model saved in file: %s" % save_path)
