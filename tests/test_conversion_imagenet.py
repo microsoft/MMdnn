@@ -40,6 +40,12 @@ def ensure_dir(f):
     if not os.path.exists(d):
         os.makedirs(d)
 
+def checkfrozen(f):
+    if f == 'tensorflow_frozen':
+        return 'tensorflow'
+    else:
+        return f
+
 
 class CorrectnessTest(unittest.TestCase):
 
@@ -109,7 +115,7 @@ class TestModels(CorrectnessTest):
         del tensorflow_extractor
 
         # original to IR
-        IR_file = TestModels.tmpdir + 'tensorflow_' + architecture_name + "_converted"
+        IR_file = TestModels.tmpdir + 'tensorflow_frozen_' + architecture_name + "_converted"
         parser = TensorflowParser2(
             TestModels.cachedir + "inception_v1_2016_08_28_frozen.pb",
             [224, 224, 3],
@@ -235,6 +241,7 @@ class TestModels(CorrectnessTest):
         emitter = CntkEmitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
+        del CntkEmitter
 
         model_converted = __import__(converted_file).KitModel(weight_path)
 
@@ -246,8 +253,6 @@ class TestModels(CorrectnessTest):
         del sys.modules[converted_file]
         os.remove(converted_file + '.py')
 
-        del CntkEmitter
-
         return converted_predict
 
 
@@ -256,9 +261,13 @@ class TestModels(CorrectnessTest):
         import tensorflow as tf
         from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
 
+        original_framework = checkfrozen(original_framework)
+
         # IR to code
         converted_file = original_framework + '_tensorflow_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
+        print(architecture_path)
+        print(weight_path)
         emitter = TensorflowEmitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
@@ -296,6 +305,7 @@ class TestModels(CorrectnessTest):
         emitter = PytorchEmitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
         del emitter
+        del PytorchEmitter
 
         # import converted model
         model_converted = __import__(converted_file).KitModel(converted_file + '.npy')
@@ -325,12 +335,15 @@ class TestModels(CorrectnessTest):
     def KerasEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
 
+        original_framework = checkfrozen(original_framework)
+
         # IR to code
         converted_file = original_framework + '_keras_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
         emitter = Keras2Emitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
+        del Keras2Emitter
 
         # import converted model
         model_converted = __import__(converted_file).KitModel(weight_path)
@@ -349,6 +362,7 @@ class TestModels(CorrectnessTest):
         K.clear_session()
 
         os.remove(converted_file + '.py')
+
         return converted_predict
 
 
@@ -357,6 +371,8 @@ class TestModels(CorrectnessTest):
         from mmdnn.conversion.mxnet.mxnet_emitter import MXNetEmitter
         from collections import namedtuple
         Batch = namedtuple('Batch', ['data'])
+
+        original_framework = checkfrozen(original_framework)
 
         import mxnet as mx
         print("Testing {} from {} to MXNet.".format(architecture_name, original_framework))
@@ -368,6 +384,7 @@ class TestModels(CorrectnessTest):
         emitter = MXNetEmitter((architecture_path, weight_path, output_weights_file))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
+        del MXNetEmitter
 
         # import converted model
         imported = __import__(converted_file)
@@ -389,6 +406,7 @@ class TestModels(CorrectnessTest):
 
         os.remove(converted_file + '.py')
         os.remove(output_weights_file)
+
         return converted_predict
 
 
@@ -431,15 +449,18 @@ class TestModels(CorrectnessTest):
 
 
     exception_tabel = {
-        'cntk_Keras_resnet18',              # different after the first convolution layer
-        'cntk_Keras_resnet152',             # different after the first convolution layer
-        'cntk_Tensorflow_resnet18',         # different after the first convolution layer
-        'cntk_Tensorflow_resnet152',        # different after the first convolution layer
-        'cntk_Caffe_resnet18',              # TODO
-        'cntk_Caffe_resnet152',             # TODO
-        'tensorflow_MXNet_inception_v3',    # TODO
-        'caffe_Pytorch_inception_v1',       # TODO
-        'caffe_Pytorch_alexnet',            # TODO
+        'cntk_Keras_resnet18',                      # different after the first convolution layer
+        'cntk_Keras_resnet152',                     # different after the first convolution layer
+        'cntk_Tensorflow_resnet18',                 # different after the first convolution layer
+        'cntk_Tensorflow_resnet152',                # different after the first convolution layer
+        'cntk_Caffe_resnet18',                      # TODO
+        'cntk_Caffe_resnet152',                     # TODO
+        'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
+        'caffe_Pytorch_inception_v1',               # TODO
+        'caffe_Pytorch_alexnet',                    # TODO
+        'mxnet_Caffe_imagenet1k-resnet-152',        # TODO
+        'mxnet_Caffe_imagenet1k-resnext-50',        # TODO
+        'mxnet_Caffe_imagenet1k-resnext-101-64x4d', # TODO
     }
 
 
@@ -463,12 +484,12 @@ class TestModels(CorrectnessTest):
         },
 
         'mxnet' : {
-            'vgg19'                     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'imagenet1k-resnet-152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'squeezenet_v1.1'           : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'imagenet1k-resnext-101-64x4d' : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is too slow
-            'imagenet1k-resnext-50'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'vgg19'                     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: Caffe
+            'imagenet1k-resnet-152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'squeezenet_v1.1'           : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is too slow
+            'imagenet1k-resnext-50'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
         },
 
         'caffe' : {
@@ -480,17 +501,22 @@ class TestModels(CorrectnessTest):
         },
 
         'tensorflow' : {
-            'vgg19'        : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'inception_v1' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, PytorchEmit],
-            'resnet_v1_50' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'resnet_v1_152' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'resnet_v2_50' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'resnet_v2_152' : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit],
+            'vgg19'             : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'inception_v1'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
+            'inception_v3'      : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, PytorchEmit],
+            'resnet_v1_50'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
+            'resnet_v1_152'     : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
+            'resnet_v2_50'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
+            'resnet_v2_152'     : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
+            'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit],
             # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
             # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
          },
+
+         'tensorflow_frozen' : {
+            'inception_v1' : [TensorflowEmit, KerasEmit, MXNetEmit], # TODO: CntkEmit
+         },
+
     }
 
 
@@ -536,7 +562,7 @@ class TestModels(CorrectnessTest):
 
     def test_tensorflow(self):
         self._test_function('tensorflow', self.TensorFlowParse)
-        self._test_function('tensorflow', self.TensorFlowFrozenParse)
+        self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
 
 
     def test_caffe(self):

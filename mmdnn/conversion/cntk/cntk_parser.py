@@ -217,6 +217,9 @@ class CntkParser(Parser):
 
 
     def rename_MaxPooling(self, source_node):
+        if source_node.layer.is_block:
+            source_node.layer = source_node.layer.block_root.owner
+
         self.rename_Pooling(source_node)
 
 
@@ -257,6 +260,8 @@ class CntkParser(Parser):
         padding = source_node.get_attr('autoPadding')
         if len(padding) >= dim - 1:
             padding = padding[1:]
+        elif len(padding) < dim - 2:
+            padding.extend([padding[-1]] * (dim - len(padding) - 2))
         for pad in padding:
             assert pad == padding[-1]
         kwargs['auto_pad'] = 'SAME_UPPER' if padding[0] else 'VALID'
@@ -333,6 +338,10 @@ class CntkParser(Parser):
 
 
     def rename_Dropout(self, source_node):
+        # self._print_layer(source_node)
+        # print (source_node.name)
+        # print (self.src_graph.get_parent(source_node.name, [0]).real_name)
+        # assert False
         source_node.real_name = self.src_graph.get_parent(source_node.name, [0]).real_name
 
 
@@ -348,3 +357,68 @@ class CntkParser(Parser):
                 self.set_weight(source_node.name, 'bias', self.get_ndarray(param))
                 assign_IRnode_values(IR_node, {'use_bias' : True })
 
+
+    def rename_Convolution2D(self, source_node):
+        assert source_node.layer.is_block
+
+        # Convolution
+        kwargs = dict()
+        conv_IR_node = self.IR_graph.node.add()
+        conv_node = source_node.layer.block_root.inputs[0].owner.inputs[0].owner
+
+        conv_IR_node.name = conv_node.uid
+        conv_IR_node.op = 'Conv'
+        conv_IR_node.input.append(self.get_parent(source_node.name, [0]).real_name)
+
+        # Kernel
+        conv_weight = source_node.layer.block_root.inputs[0].owner.inputs[0].owner.inputs[0]
+        conv_weight = self.get_ndarray(conv_weight)
+        W = self.channel_first_conv_kernel_to_IR(conv_weight)
+        self.set_weight(conv_IR_node.name, 'weights', W)
+
+        # Attributes
+        conv_attr = source_node.layer.block_root.inputs[0].owner.inputs[0].owner.attributes
+
+        kwargs['strides'] = [1] + list(conv_attr['strides'])[1:] + [1]
+        kwargs['dilations'] = [1] + list(conv_attr['dilation'])[1:] + [1]
+        kwargs['kernel_shape'] = list(W.shape)
+        padding = conv_attr['autoPadding'][1:]
+
+        for pad in padding:
+            assert pad == padding[0]
+
+        kwargs['auto_pad'] = 'SAME_UPPER' if padding[0] else 'VALID'
+        kwargs['pads'] = self._convert_padding_to_IR(kwargs['kernel_shape'][:-2], padding)
+
+        kwargs['use_bias'] = True
+
+        assign_IRnode_values(conv_IR_node, kwargs)
+
+        # Bias
+        plus = source_node.layer.block_root.inputs[0].owner.inputs[1]
+        plus = np.squeeze(self.get_ndarray(plus))
+        self.set_weight(conv_IR_node.name, 'bias', plus)
+
+        # Activation
+        activation = source_node.layer.block_root.owner.op_name
+
+        activation_IR = self.IR_graph.node.add()
+        activation_IR.name = source_node.name
+        activation_IR.input.append(conv_IR_node.name)
+        if (activation == 'ReLU'):
+            activation_IR.op = 'Relu'
+        else:
+            raise ValueError()
+
+
+    def rename_Activation(self, source_node):
+        assert source_node.layer.is_block
+
+        op = source_node.layer.root_function.owner.name
+
+        if op.startswith('relu'):
+            new_op= 'Relu'
+        else:
+            raise ValueError()
+
+        self._convert_identity_operation(source_node, new_op=new_op)

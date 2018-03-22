@@ -1,7 +1,9 @@
 # Tensorflow slim "Resnet V2" to PyTorch conversion example
 
 Model: ["ResNet V2 152" for Imagenet](https://github.com/tensorflow/models/blob/master/research/slim/nets/resnet_v2.py)
+
 Source: TensorFlow
+
 Destination: PyTorch
 
 0. Prepare the TensorFlow model
@@ -33,7 +35,7 @@ TensorBoard 1.5.1 at http://kit-station:6006 (Press CTRL+C to quit)
 
 The you can open URL above to find the output node of your model,
 
-![TensorBoard](https://github.com/Microsoft/MMdnn/blob/master/docs/tensorboard.jpg)
+![TensorBoard](https://github.com/Microsoft/MMdnn/blob/master/docs/tensorboard.png)
 
 like the squeeze node named *MMdnn_Output* we setup in our tensorflow model extractor. Detail information is in [TensorFlow README](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md)
 
