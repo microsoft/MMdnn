@@ -445,6 +445,83 @@ class TestModels(CorrectnessTest):
         return converted_predict
 
 
+    @staticmethod
+    def CoreMLEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
+
+        def prep_for_coreml(prepname, BGRTranspose):
+            if prepname == 'Standard' and BGRTranspose == False:
+                return 0.00784313725490196, -1, -1, -1
+            elif prepname == 'ZeroCenter' and BGRTranspose == True:
+                return 1, -123.68, -116.779, -103.939
+            elif prepname == 'ZeroCenter' and BGRTranspose == False:
+                return 1,-103.939,-116.779,-123.68
+            elif prepname == 'Identity':
+                return 1, 1, 1, 1
+
+
+        # IR to Model
+        converted_file = original_framework + '_coreml_' + architecture_name + "_converted"
+        converted_file = converted_file.replace('.', '_')
+        print(converted_file)
+
+        func = TestKit.preprocess_func[original_framework][architecture_name]
+
+        import inspect
+        funcstr = inspect.getsource(func)
+
+        coreml_pre = funcstr.split('(')[0].split('.')[-1]
+
+        if len(funcstr.split(',')) == 3:
+            BGRTranspose = bool(0)
+            img_size = int(funcstr.split('path,')[1].split(')')[0])
+        else:
+            BGRTranspose = bool(funcstr.split(',')[-2].split(')')[0])
+            img_size = int(funcstr.split('path,')[1].split(',')[0])
+
+        print(BGRTranspose)
+        print(coreml_pre)
+        print(img_size)
+
+        prep_list = prep_for_coreml(coreml_pre, BGRTranspose )
+        print(prep_list)
+        # assert False
+
+        # print(func.__name__)
+
+        emitter = CoreMLEmitter(architecture_path, weight_path)
+        model, input_name, output_name = emitter.gen_model(
+                input_names=None,
+                output_names=None,
+                image_input_names=image_path,
+                is_bgr=BGRTranspose,
+                red_bias=prep_list[1],
+                green_bias=prep_list[2],
+                blue_bias=prep_list[3],
+                gray_bias=0.0,
+                image_scale=prep_list[0],
+                class_labels=None,
+                predicted_feature_name=None,
+                predicted_probabilities_output=''
+            )
+
+        import coremltools
+        con_model = coremltools.models.MLModel(model)
+        print("Model loading success.")
+
+        from PIL import Image as pil_image
+        img = pil_image.open(image_path)
+        img = img.resize((img_size, img_size))
+
+        input_data = img
+        coreml_inputs = {str(input_name[0][0]): input_data}
+        coreml_output = con_model.predict(coreml_inputs, useCPUOnly=False)
+        converted_predict = coreml_output[str(output_name[0][0])]
+
+        return converted_predict
+
+
+
     exception_tabel = {
         'cntk_Keras_resnet18',                      # different after the first convolution layer
         'cntk_Keras_resnet152',                     # different after the first convolution layer
@@ -470,14 +547,14 @@ class TestModels(CorrectnessTest):
         },
 
         'keras' : {
-            'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: Caffe
-            'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'xception'     : [TensorflowEmit, KerasEmit],
-            'mobilenet'    : [TensorflowEmit, KerasEmit], # TODO: MXNetEmit
-            'nasnet'       : [TensorflowEmit, KerasEmit],
+            'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
+            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
+            'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
+            'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
+            'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
         },
 
         'mxnet' : {
@@ -500,13 +577,13 @@ class TestModels(CorrectnessTest):
         'tensorflow' : {
             'vgg16'             : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'vgg19'             : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'inception_v1'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'inception_v3'      : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, PytorchEmit],
+            'inception_v1'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+            'inception_v3'      : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, PytorchEmit, CoreMLEmit],
             'resnet_v1_50'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v1_152'     : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v2_50'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v2_152'     : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit],
+            'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit],
             # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
             # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
         },
