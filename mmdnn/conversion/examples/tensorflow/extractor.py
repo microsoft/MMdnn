@@ -45,7 +45,7 @@ class tensorflow_extractor(base_extractor):
             'filename'    : 'inception_v1_2016_08_28_frozen.pb',
             'tensor_out'  : 'InceptionV1/Logits/Predictions/Reshape_1:0',
             'tensor_in'   : 'input:0',
-            # 'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'input_shape' : [224, 224, 3],
             'num_classes' : 1001,
         },
         'inception_v3' : {
@@ -54,6 +54,14 @@ class tensorflow_extractor(base_extractor):
             'builder'     : lambda : inception.inception_v3,
             'arg_scope'   : inception.inception_v3_arg_scope,
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
+            'num_classes' : 1001,
+        },
+        'inception_v3_frozen' : {
+            'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/inception_v3_2016_08_28_frozen.pb.tar.gz',
+            'filename'    : 'inception_v3_2016_08_28_frozen.pb',
+            'tensor_out'  : 'InceptionV3/Predictions/Softmax:0',
+            'tensor_in'   : 'input:0',
+            'input_shape' : [299, 299, 3],
             'num_classes' : 1001,
         },
         'resnet_v1_50' : {
@@ -152,6 +160,10 @@ class tensorflow_extractor(base_extractor):
         return
         # raise NotImplementedError()
 
+    @classmethod
+    def get_frozen_para(cls, architecture):
+        frozenname = architecture + '_frozen'
+        return cls.architecture_map[frozenname]['filename'], cls.architecture_map[frozenname]['input_shape'], cls.architecture_map[frozenname]['tensor_in'], cls.architecture_map[frozenname]['tensor_out']
 
     @classmethod
     def download(cls, architecture, path="./"):
@@ -190,7 +202,7 @@ class tensorflow_extractor(base_extractor):
 
             if is_frozen:
                 tf_model_path = cls.architecture_map[architecture_]['filename']
-                with open(tf_model_path, 'rb') as f:
+                with open(path + tf_model_path, 'rb') as f:
                     serialized = f.read()
                 tf.reset_default_graph()
                 original_gdef = tf.GraphDef()
