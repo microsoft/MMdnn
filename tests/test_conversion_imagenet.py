@@ -110,16 +110,13 @@ class TestModels(CorrectnessTest):
 
         # get original model prediction result
         original_predict = tensorflow_extractor.inference(architecture_name, TestModels.cachedir, image_path, is_frozen = True)
-        # print(original_predict)
-        # assert False
+        para = tensorflow_extractor.get_frozen_para(architecture_name)
         del tensorflow_extractor
 
         # original to IR
         IR_file = TestModels.tmpdir + 'tensorflow_frozen_' + architecture_name + "_converted"
         parser = TensorflowParser2(
-            TestModels.cachedir + "inception_v1_2016_08_28_frozen.pb",
-            [224, 224, 3],
-            "InceptionV1/Logits/Predictions/Reshape_1:0")
+            TestModels.cachedir + para[0], para[1], para[2].split(':')[0], para[3].split(':')[0])
         parser.run(IR_file)
         del parser
         del TensorflowParser2
@@ -511,11 +508,12 @@ class TestModels(CorrectnessTest):
             'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit],
             # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
             # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
-         },
+        },
 
-         'tensorflow_frozen' : {
+        'tensorflow_frozen' : {
             'inception_v1' : [TensorflowEmit, KerasEmit, MXNetEmit], # TODO: CntkEmit
-         },
+            'inception_v3' : [TensorflowEmit, KerasEmit, MXNetEmit], # TODO: CntkEmit
+        },
 
     }
 
