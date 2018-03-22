@@ -525,6 +525,10 @@ class MXNetParser(Parser):
             # gamma
             if IR_node.attr["scale"].b:
                 self.set_weight(source_node.name, "scale", self.weight_data.get(source_node.name + "_gamma").asnumpy())
+            else:
+                #We have fixed gamma. This is 1 according to the mxnet docs (https://mxnet.apache.org/api/python/symbol/symbol.html#mxnet.symbol.BatchNorm)
+                self.set_weight(source_node.name, "scale", np.array([1], np.float32))
+
 
             # beta
             if IR_node.attr["bias"].b:
