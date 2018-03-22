@@ -554,22 +554,22 @@ class TestModels(CorrectnessTest):
         print("Testing {} model all passed.".format(original_framework), file=sys.stderr)
 
 
-    # def test_cntk(self):
-    #      self._test_function('cntk', self.CntkParse)
+    def test_cntk(self):
+         self._test_function('cntk', self.CntkParse)
 
 
     def test_tensorflow(self):
-        # self._test_function('tensorflow', self.TensorFlowParse)
+        self._test_function('tensorflow', self.TensorFlowParse)
         self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
 
 
-    # def test_caffe(self):
-    #     self._test_function('caffe', self.CaffeParse)
+    def test_caffe(self):
+        self._test_function('caffe', self.CaffeParse)
 
 
-    # def test_keras(self):
-    #     self._test_function('keras', self.KerasParse)
+    def test_keras(self):
+        self._test_function('keras', self.KerasParse)
 
 
-    # def test_mxnet(self):
-    #     self._test_function('mxnet', self.MXNetParse)
+    def test_mxnet(self):
+        self._test_function('mxnet', self.MXNetParse)
