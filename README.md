@@ -17,7 +17,7 @@ This project is designed and developed by [Microsoft Research (MSR)](https://www
 
 You can get stable version of MMdnn by
 ```bash
-pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.3/mmdnn-0.1.3-py2.py3-none-any.whl
+pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.4/mmdnn-0.1.4-py2.py3-none-any.whl
 ```
 
 or you can try the newest version by
