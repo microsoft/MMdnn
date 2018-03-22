@@ -498,6 +498,7 @@ class TestModels(CorrectnessTest):
         },
 
         'tensorflow' : {
+            'vgg16'             : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'vgg19'             : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'inception_v1'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'inception_v3'      : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, PytorchEmit],

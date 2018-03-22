@@ -37,7 +37,10 @@ Mainly extract code like:
 with slim.arg_scope(...):
     data_input = tf.placeholder(name='input', dtype=tf.float32, shape=[...])
     logits = your_own_network_builder(data_input)
-    labels = tf.squeeze(logits, name='MMdnn_Output')
+    if logits.op.type == 'Squeeze':
+        labels = tf.identity(logits, name='MMdnn_Output')
+    else:
+        labels = tf.squeeze(logits, name='MMdnn_Output')
 ```
 
 #### Meta File Graph Visualization

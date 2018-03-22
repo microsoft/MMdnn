@@ -24,6 +24,14 @@ from mmdnn.conversion.common.utils import download_file
 class tensorflow_extractor(base_extractor):
 
     architecture_map = {
+        'vgg16' : {
+            'url'         : 'http://download.tensorflow.org/models/vgg_16_2016_08_28.tar.gz',
+            'filename'    : 'vgg_16.ckpt',
+            'builder'     : lambda : vgg.vgg_16,
+            'arg_scope'   : vgg.vgg_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'num_classes' : 1000,
+        },
         'vgg19' : {
             'url'         : 'http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz',
             'filename'    : 'vgg_19.ckpt',
@@ -139,7 +147,11 @@ class tensorflow_extractor(base_extractor):
                 data_input,
                 num_classes=cls.architecture_map[architecture]['num_classes'],
                 is_training=False)
-            labels = tf.squeeze(logits, name='MMdnn_Output')
+
+            if logits.op.type == 'Squeeze':
+                labels = tf.identity(logits, name='MMdnn_Output')
+            else:
+                labels = tf.squeeze(logits, name='MMdnn_Output')
 
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
@@ -147,6 +159,7 @@ class tensorflow_extractor(base_extractor):
             writer.close()
             sess.run(init)
             saver = tf.train.Saver()
+            tf.train.export_meta_graph("kit.meta", as_text=True)
             saver.restore(sess, path + cls.architecture_map[architecture]['filename'])
             save_path = saver.save(sess, path + "imagenet_{}.ckpt".format(architecture))
             print("Model saved in file: %s" % save_path)
