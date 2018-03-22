@@ -22,7 +22,7 @@ def _convert(args):
         assert args.inputNetwork is not None
         assert args.inputWeight is not None
         emitter = CoreMLEmitter(args.inputNetwork, args.inputWeight)
-        model = emitter.gen_model(
+        model, in_, out_ = emitter.gen_model(
             args.inputNames,
             args.outputNames,
             image_input_names = set(args.imageInputNames) if args.imageInputNames else None,
