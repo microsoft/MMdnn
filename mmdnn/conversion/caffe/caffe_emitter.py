@@ -74,7 +74,7 @@ def gen_weight(weight_file, model, prototxt):
     global __weights_dict
     __weights_dict = load_weights(weight_file)
 
-    net = caffe.Net(prototxt, caffe.TRAIN)
+    net = caffe.Net(str(prototxt), caffe.TRAIN)
 
     for key in __weights_dict:
         if 'weights' in __weights_dict[key]:
