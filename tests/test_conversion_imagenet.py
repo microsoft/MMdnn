@@ -266,8 +266,6 @@ class TestModels(CorrectnessTest):
         # IR to code
         converted_file = original_framework + '_tensorflow_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
-        print(architecture_path)
-        print(weight_path)
         emitter = TensorflowEmitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
@@ -587,10 +585,23 @@ class TestModels(CorrectnessTest):
             # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
          },
 
-         'tensorflow_frozen' : {
-            'inception_v1' : [TensorflowEmit, KerasEmit, MXNetEmit], # TODO: CntkEmit
-         },
+        'tensorflow_frozen' : {
+           'inception_v1' : [TensorflowEmit, KerasEmit, MXNetEmit], # TODO: CntkEmit
+        },
 
+        # 'keras' : {
+        #     'vgg16'        : [CoreMLEmit],
+        #     'vgg19'        : [CoreMLEmit],
+        #     'inception_v3' : [CoreMLEmit], # TODO: Caffe
+        #     'resnet50'     : [CoreMLEmit],
+        #     'densenet'     : [CoreMLEmit],
+        #     'xception'     : [CoreMLEmit],
+        #     'mobilenet'    : [CoreMLEmit], # TODO: MXNetEmit
+        #     'nasnet'    : [CoreMLEmit],
+        # },
+        # 'tensorflow' :{
+        #     'inception_v1' : [CoreMLEmit]
+        # }
     }
 
 
