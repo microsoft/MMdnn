@@ -88,7 +88,7 @@ With the three steps, you have already converted the pre-trained Keras Inception
 #### Dump the original CNTK model
 
 ```bash
-$ python -m mmdnn.conversion.examples.cntk.imagenet_test -n converted_cntk -w converted.npy --dump cntk_inception_v3.dnn
+$ mmtomodel -f cntk -in converted_cntk -iw converted.npy -o cntk_inception_v3.dnn
 .
 .
 .
