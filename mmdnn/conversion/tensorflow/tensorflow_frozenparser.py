@@ -51,9 +51,11 @@ class TensorflowParser2(Parser):
         # "Dequantize",
         # "RequantizationRange",
         # "Requantize",
-        # "ExpandDims",
+        "ExpandDims",
+        "Identity",
         # "Cast"
     ])
+
 
     q_type = set([
         "Dequantize",
@@ -95,8 +97,8 @@ class TensorflowParser2(Parser):
         from tensorflow.python.tools import strip_unused_lib
         from tensorflow.python.framework import dtypes
         from tensorflow.python.platform import gfile
-        input_node_names = [in_nodes]
-        output_node_names = [dest_nodes]
+        input_node_names = in_nodes.split(',')
+        output_node_names = dest_nodes.split(',')
         gdef = strip_unused_lib.strip_unused(
                 input_graph_def = original_gdef,
                 input_node_names = input_node_names,
@@ -126,7 +128,7 @@ class TensorflowParser2(Parser):
                 for x in ops[i].outputs:
                     output_shape_map[x.name] = x.get_shape()
         tensor_input = tensorflow.TensorShape([None, tensorflow.Dimension(inputshape[0]), tensorflow.Dimension(inputshape[1]), tensorflow.Dimension(inputshape[2])])
-        output_shape_map[in_nodes] = tensor_input
+        output_shape_map[input_node_names[0]] = tensor_input
         self.tf_graph = TensorflowGraph(model)
         for node in self.tf_graph.model.node:
             if node.name == 'input' and node.op == 'Placeholder':
@@ -157,6 +159,17 @@ class TensorflowParser2(Parser):
     @staticmethod
     def _get_scopes(layer_name):
         return layer_name.split('/')
+
+
+    def check_const(self, node):
+        while node:
+            if node.type == "Const":
+                return node
+            elif node.type in self.skip_type:
+                node =  self.get_parent(node.name, [0])
+            else:
+                print(node.layer)
+                assert False
 
 
     def _convert_reduction_operators(self, source_node, new_op = None):
@@ -198,27 +211,29 @@ class TensorflowParser2(Parser):
         if len(Rsqrt.out_edges) == 2:
             IR_node.attr['scale'].b = False
             output_node = self.get_son(source_node.name, [0, 0, 0], True)
+            Mul = self.get_son(source_node.name, [0, 1], True)
         else:
             IR_node.attr['scale'].b = True
-            # assert False
             son = self.get_son(source_node.name, [0, 0, 0], True)
-            gamma = self.get_parent(son.name, [1, 1, 0, 0, 0, 1], True)
+            gamma_from = self.get_parent(son.name, [1, 1], True)
+            gamma = self.check_const(gamma_from)
+            # gamma = self.get_parent(son.name, [1, 1, 0, 0, 0, 1], True)
             gamma_tensor = gamma.get_attr('value')
             scale = tensor_util.MakeNdarray(gamma_tensor)
             self.set_weight(source_node.name, 'scale', scale)
             output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
             # print(output_node.layer)
+            Mul = self.get_son(source_node.name, [0, 0, 1], True)
+            # print(Mul.layer)
 
         # beta  (bias)
-        Sub = self.get_son(source_node.name, [0, 1, 0], True)
-        beta = self.get_parent(Sub.name, [0, 0]).get_attr('value')
+        beta = self.get_parent(output_node.name, [1, 0, 0], True).get_attr('value')
         bias = tensor_util.MakeNdarray(beta)  #(96,)
         IR_node.attr['bias'].b = True
         self.set_weight(source_node.name, 'bias', bias)
 
         # moving mean (mean)
-        son2 = self.get_son(source_node.name, [0, 1], True)
-        moving_mean = self.get_parent(son2.name, [0, 0]).get_attr('value')
+        moving_mean = self.get_parent(Mul.name, [0, 0]).get_attr('value')
         mean = tensor_util.MakeNdarray(moving_mean)
         self.set_weight(source_node.name, 'mean', mean)
 
@@ -435,6 +450,26 @@ class TensorflowParser2(Parser):
         self._convert_inedge(source_node, IR_node, start_idx, end_idx)
         return IR_node
 
+
+    def rename_Relu6(self, source_node):
+        self._convert_identity_operation(source_node, new_op = 'Relu6')
+
+
+    def rename_DepthwiseConv2dNative(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, end_idx = 1, new_op = 'DepthwiseConv')
+        kwargs = {}
+        kwargs['strides'] = source_node.get_attr('strides')
+        input_node = self.src_graph.get_parent(source_node.name, [1])
+        kwargs['kernel_shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
+
+        self._convert_padding(source_node, IR_node, kwargs['kernel_shape'][:-2])
+
+        weight = self.src_graph.get_parent(source_node.name, [1, 0]).get_attr('value')
+        weight_content = tensor_util.MakeNdarray(weight)
+        self.set_weight(source_node.name, 'weights', weight_content)
+        assign_IRnode_values(IR_node, kwargs)
+
+
     def rename_BatchNormWithGlobalNormalization(self, source_node):
 
         IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='BatchNorm')
@@ -468,6 +503,7 @@ class TensorflowParser2(Parser):
     def rename_Placeholder(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
         TensorflowParser2._copy_shape(source_node, IR_node)
+        print(IR_node)
         IR_node.attr['shape'].shape.dim[0].size = -1
         IR_node.attr['_output_shapes'].list.shape[0].dim[0].size = -1
 
@@ -789,10 +825,11 @@ class TensorflowParser2(Parser):
 
 
     def rename_MatMul(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, end_idx = 1)
-
+        IR_node = self._convert_identity_operation(source_node, end_idx=1)
         input_weight_node = self.src_graph.get_parent(source_node.name, [1])
-        weight_value = input_weight_node.get_attr('value')
+        weightnode = self.check_const(input_weight_node)
+        weight_value = weightnode.get_attr('value')
+
         weight = tensor_util.MakeNdarray(weight_value)
         self.set_weight(source_node.name, 'weights', weight)
 
@@ -806,7 +843,8 @@ class TensorflowParser2(Parser):
 
             TensorflowParser2._copy_and_reop(source_node, IR_node, 'FullyConnected')
             variable = self.tf_graph.get_node(add_node.in_edges[1]) #add_bias node
-            bias_value = variable.get_attr('value')
+            biasnode = self.check_const(variable)
+            bias_value = biasnode.get_attr('value')
             bias = tensor_util.MakeNdarray(bias_value)
             self.set_weight(source_node.name, 'bias', bias)
             IR_node.attr['use_bias'].b = True

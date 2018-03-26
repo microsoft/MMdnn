@@ -589,8 +589,9 @@ class TestModels(CorrectnessTest):
         },
 
         'tensorflow_frozen' : {
-            'inception_v1' : [TensorflowEmit, KerasEmit, MXNetEmit], # TODO: CntkEmit
-            'inception_v3' : [TensorflowEmit, KerasEmit, MXNetEmit], # TODO: CntkEmit
+            'inception_v1' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+            'inception_v3' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+            'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
         },
 
     }
