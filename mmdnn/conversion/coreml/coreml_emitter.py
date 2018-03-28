@@ -53,17 +53,9 @@ class CoreMLEmitter(Emitter):
             else:
                 shape = [1]
 
-
-            if shape == []:
-                pre_output_node = self.IR_graph.get_node(node.in_edges[0])
-                pre_output_node.out_edges.append(pre_output_node.name)
-                shape = pre_output_node.get_attr('_output_shapes')
-                shape = shape_to_list(shape[0])
-            # else:
             shape = _infer_coreml_input_shape(shape)
 
-
-            output_features.append((node.in_edges[0].encode(), shape))
+            output_features.append((output_node.encode(), shape))
             print("CoreML Model Output Layer: [{}] {}".format(output_node, shape))
 
         return list(input_features), list(output_features)
