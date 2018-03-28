@@ -120,6 +120,14 @@ class tensorflow_extractor(base_extractor):
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
             'num_classes' : 1001,
         },
+        'mobilenet_v1_1.0_frozen' : {
+            'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/mobilenet_v1_1.0_224_frozen.tgz',
+            'filename'    : 'mobilenet_v1_1.0_224/frozen_graph.pb',
+            'tensor_out'  : 'MobilenetV1/Predictions/Softmax:0',
+            'tensor_in'   : 'input:0',
+            'input_shape' : [224, 224, 3],
+            'num_classes' : 1001,
+        },
         'inception_resnet_v2' : {
             'url'         : 'http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz',
             'filename'    : 'inception_resnet_v2_2016_08_30.ckpt',
@@ -157,7 +165,7 @@ class tensorflow_extractor(base_extractor):
         with tf.Session() as sess:
             # tf.train.export_meta_graph("kit.meta", as_text=True)
             # writer = tf.summary.FileWriter('./graphs', sess.graph)
-            writer.close()
+            # writer.close()
             sess.run(init)
             saver = tf.train.Saver()
             saver.restore(sess, path + cls.architecture_map[architecture]['filename'])

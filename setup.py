@@ -87,6 +87,7 @@ setup(
             'mmvismeta  = mmdnn.conversion.examples.tensorflow.vis_meta:_main',
             'mmtoir     = mmdnn.conversion._script.convertToIR:_main',
             'mmtocode   = mmdnn.conversion._script.IRToCode:_main',
+            'mmtomodel  = mmdnn.conversion._script.dump_code:_main',
         ],
     },
 )
