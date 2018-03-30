@@ -117,7 +117,7 @@ class TensorflowParser2(Parser):
         output_shape_map = dict()
         input_shape_map = dict()
         with tensorflow.Graph().as_default() as g:
-            tensorflow.import_graph_def(original_gdef, name='')
+            tensorflow.import_graph_def(model, name='')
             ops = g.get_operations()
             N = len(ops)
             p = 0
@@ -131,10 +131,7 @@ class TensorflowParser2(Parser):
         output_shape_map[input_node_names[0]] = tensor_input
         self.tf_graph = TensorflowGraph(model)
         for node in self.tf_graph.model.node:
-            if node.name == 'input' and node.op == 'Placeholder':
-                node.attr['shape'].list.shape.extend([output_shape_map[node.name + ':0'].as_proto()])
-
-            if (node.name + ':0') in output_shape_map:
+            if (node.name + ':0') in output_shape_map and node.op != 'Placeholder':
                 node.attr['_output_shapes'].list.shape.extend([output_shape_map[node.name + ':0'].as_proto()])
 
             if  node.op == 'MirrorPad':
@@ -151,8 +148,9 @@ class TensorflowParser2(Parser):
                 map_key = node.name.replace("requantize", "quantized_conv")+":0"
                 node.attr['shape'].list.shape.extend([input_shape_map[map_key].as_proto()])
 
-            if node.name == in_nodes:
+            if node.name in input_node_names:
                 node.attr['shape'].list.shape.extend([output_shape_map[node.name].as_proto()])
+                node.attr['_output_shapes'].list.shape.extend([output_shape_map[node.name].as_proto()])
 
         self.tf_graph.build()
 
@@ -367,7 +365,6 @@ class TensorflowParser2(Parser):
             IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['shape'].list.shape[0].SerializeToString())
         else:
             IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['shape'].shape.SerializeToString())
-        # print(IR_node)
 
     def rename_UNKNOWN(self, source_node):
         if source_node.type in self.skip_type:
@@ -503,7 +500,6 @@ class TensorflowParser2(Parser):
     def rename_Placeholder(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
         TensorflowParser2._copy_shape(source_node, IR_node)
-        print(IR_node)
         IR_node.attr['shape'].shape.dim[0].size = -1
         IR_node.attr['_output_shapes'].list.shape[0].dim[0].size = -1
 
