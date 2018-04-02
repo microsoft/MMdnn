@@ -69,7 +69,7 @@ class ONNXGraph(Graph):
                 if n in self._weights:
                     # n is input data
                     node.weights.append(n)
-                elif n in self._inputs:
+                if n in self._inputs:
                     node.inputs.append(n)
                 else:
                     # n is input edge
