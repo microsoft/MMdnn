@@ -17,7 +17,7 @@ This project is designed and developed by [Microsoft Research (MSR)](https://www
 
 You can get stable version of MMdnn by
 ```bash
-pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.3/mmdnn-0.1.3-py2.py3-none-any.whl
+pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.4/mmdnn-0.1.4-py2.py3-none-any.whl
 ```
 
 or you can try the newest version by
@@ -62,15 +62,15 @@ Models                                              | Caffe | Keras | Tensorflow
 [MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (no DepthwiseConv) |   ×   |    ×       |    √
 [Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      | × (no SeparableConv) |   ×   |    ×
 [SqueezeNet](https://arxiv.org/pdf/1602.07360)      |   √   |   √   |     √      |   √  |   √   |    ×
-DenseNet                                            |       |   √   |     √      |   √  |       |            |
+[DenseNet](https://arxiv.org/abs/1608.06993)        |       |   √   |     √      |   √  |   √   |    √       |
 [NASNet](https://arxiv.org/abs/1707.07012)          |       |   √   |     √      | × (no SeparableConv)
-[ResNext](https://arxiv.org/abs/1611.05431)                                        |       |   √   |     √      |   √  |   √   |
+[ResNext](https://arxiv.org/abs/1611.05431)         |       |   √   |     √      |   √  |   √   |
 
 #### On-going frameworks
 
-- PyTorch (Source)
-- [Caffe2](https://caffe2.ai/)
 - ONNX
+- PyTorch (Source, waiting for formal release 0.4.0)
+- [Caffe2](https://caffe2.ai/)
 - Torch7 (Source)
 - CoreML (Source)
 - Chainer (help wants)
@@ -92,13 +92,13 @@ Use the [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-m
 1. Download the pre-trained models
 
 ```bash
-python -m mmdnn.conversion.examples.keras.extract_model -n inception_v3
+$ mmdownload -f keras -n inception_v3
 ```
 
 2. Convert the pre-trained model files into intermediate representation
 
 ```bash
-python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -n imagenet_inception_v3.json
+$ mmtoir -f keras -w imagenet_inception_v3.h5 -o keras_inception_v3
 ```
 
 3. Open the [MMdnn model visualizer](http://mmdnn.eastasia.cloudapp.azure.com:8080/) and choose file *keras_inception_v3.json*
@@ -109,19 +109,19 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 
 ## Examples
 
-### Offical Tutorial
+### Official Tutorial
 
 - [Keras "inception V3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
 
-- [Tensorflow slim model "Resnet V2 152" to PyTorch](https://github.com/Microsoft/MMdnn/blob/master/docs/tf2pytorch.md)
+- [Tensorflow slim model "ResNet V2 152" to PyTorch](https://github.com/Microsoft/MMdnn/blob/master/docs/tf2pytorch.md)
 
 ### Users' Examples
 
-- [MXNet "resnet 152 11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
+- [MXNet "ResNet-152-11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
 
-- [MXNet "resnext" to Keras](https://github.com/Microsoft/MMdnn/issues/58)
+- [MXNet "ResNeXt" to Keras](https://github.com/Microsoft/MMdnn/issues/58)
 
-- [Tensorflow "resnet 101" to PyTorch](https://github.com/Microsoft/MMdnn/issues/22)
+- [Tensorflow "ResNet-101" to PyTorch](https://github.com/Microsoft/MMdnn/issues/22)
 
 - [Tensorflow "mnist mlp model" to CNTK](https://github.com/Microsoft/MMdnn/issues/11)
 
@@ -133,7 +133,7 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 
 - [Caffe "VGG16_SOD" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/27)
 
-- [Caffe "Squeezenet v1.1" to CNTK](https://github.com/Microsoft/MMdnn/issues/48)
+- [Caffe "SqueezeNet v1.1" to CNTK](https://github.com/Microsoft/MMdnn/issues/48)
 
 ---
 

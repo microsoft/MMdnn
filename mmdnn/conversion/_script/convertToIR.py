@@ -45,7 +45,7 @@ def _convert(args):
         # assert args.network or args.frozen_pb
         if args.frozen_pb:
             from mmdnn.conversion.tensorflow.tensorflow_frozenparser import TensorflowParser2
-            parser = TensorflowParser2(args.frozen_pb, args.inputShape, args.dstNodeName)
+            parser = TensorflowParser2(args.frozen_pb, args.inputShape, args.inNodeName, args.dstNodeName)
         else:
             from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
             parser = TensorflowParser(args.network, args.weights, args.frozen_pb, args.dstNodeName)
@@ -118,6 +118,12 @@ def _get_parser():
         help='Path to save the IR model.')
 
     parser.add_argument(
+        '--inNodeName', '-inode',
+        type=_text_type,
+        default='input',
+        help="[Tensorflow] Input nodes' name of the graph.")
+
+    parser.add_argument(
         '--dstNodeName', '-node',
         type=_text_type,
         default=None,
@@ -133,7 +139,7 @@ def _get_parser():
     parser.add_argument(
         '--inputShape',
         nargs='+',
-        type=int,
+        type=_text_type,
         default=None,
         help='[MXNet/Caffe2/Torch7] Input shape of model (channel, height, width)')
 

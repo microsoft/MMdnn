@@ -33,12 +33,6 @@ def _get_parser():
         required=True,
         help='Format of model at srcModelPath (default is to auto-detect).')
     parser.add_argument(
-        '--dstType', '-dt',
-        type=_text_type,
-        choices=['code', 'model'],
-        required=True,
-        help='Type of model at srcModelPath.')
-    parser.add_argument(
         '--outputModel', '-om',
         type=_text_type,
         required=True,
@@ -77,13 +71,14 @@ def _extract_model_args(args, unknown_args, temp_filename):
     return model_parser.parse_known_args(unknown_args)
 
 
-def remove_temp_files(temp_filename):
+def remove_temp_files(temp_filename, verbose=False):
     exts = ['.json', '.pb', '.npy', '.py']
     for ext in exts:
         temp_file = temp_filename + ext
         if os.path.isfile(temp_file):
             os.remove(temp_file)
-            print('temporary file [{}] has been removed.'.format(temp_file))
+            if verbose:
+                print('temporary file [{}] has been removed.'.format(temp_file))
 
 
 def _main():
@@ -94,18 +89,20 @@ def _main():
     ret = convertToIR._convert(ir_args)
     if int(ret) != 0:
         _sys.exit(int(ret))
-    if args.dstType == 'code':
+    if args.dstFramework != 'coreml':
         code_args, unknown_args = _extract_code_args(args, unknown_args, temp_filename)
         ret = IRToCode._convert(code_args)
         if int(ret) != 0:
             _sys.exit(int(ret))
         from mmdnn.conversion._script.dump_code import dump_code
         dump_code(args.dstFramework, temp_filename + '.py', temp_filename + '.npy', args.outputModel)
+        remove_temp_files(temp_filename)
+
     elif args.dstType == 'model':
         model_args, unknown_args = _extract_model_args(args, unknown_args, temp_filename)
         ret = IRToModel._convert(model_args)
+        remove_temp_files(temp_filename)
         _sys.exit(int(ret))
-    remove_temp_files(temp_filename)
 
 
 if __name__ == '__main__':

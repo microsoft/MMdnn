@@ -79,10 +79,18 @@ class CntkGraph(Graph):
 
 
     def build(self):
-        for output in self.model.outputs:
-            output = output.owner
-            self.layer_map[output.uid] = CntkGraphNode(output)
-            self._traverse_graph(output)
+        if len(self.model.outputs) > 1:
+            for idx, output in enumerate(self.model.outputs):
+                if len(output.shape) > 0:
+                    eval_node = idx
+                    break
+
+            output = self.model[eval_node].owner
+        else:
+            output = self.model.outputs[0].owner
+
+        self.layer_map[output.uid] = CntkGraphNode(output)
+        self._traverse_graph(output)
 
         super(CntkGraph, self).build()
 

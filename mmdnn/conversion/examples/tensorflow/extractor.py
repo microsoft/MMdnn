@@ -24,6 +24,14 @@ from mmdnn.conversion.common.utils import download_file
 class tensorflow_extractor(base_extractor):
 
     architecture_map = {
+        'vgg16' : {
+            'url'         : 'http://download.tensorflow.org/models/vgg_16_2016_08_28.tar.gz',
+            'filename'    : 'vgg_16.ckpt',
+            'builder'     : lambda : vgg.vgg_16,
+            'arg_scope'   : vgg.vgg_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'num_classes' : 1000,
+        },
         'vgg19' : {
             'url'         : 'http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz',
             'filename'    : 'vgg_19.ckpt',
@@ -45,7 +53,7 @@ class tensorflow_extractor(base_extractor):
             'filename'    : 'inception_v1_2016_08_28_frozen.pb',
             'tensor_out'  : 'InceptionV1/Logits/Predictions/Reshape_1:0',
             'tensor_in'   : 'input:0',
-            # 'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'input_shape' : [224, 224, 3],
             'num_classes' : 1001,
         },
         'inception_v3' : {
@@ -54,6 +62,14 @@ class tensorflow_extractor(base_extractor):
             'builder'     : lambda : inception.inception_v3,
             'arg_scope'   : inception.inception_v3_arg_scope,
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
+            'num_classes' : 1001,
+        },
+        'inception_v3_frozen' : {
+            'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/inception_v3_2016_08_28_frozen.pb.tar.gz',
+            'filename'    : 'inception_v3_2016_08_28_frozen.pb',
+            'tensor_out'  : 'InceptionV3/Predictions/Softmax:0',
+            'tensor_in'   : 'input:0',
+            'input_shape' : [299, 299, 3],
             'num_classes' : 1001,
         },
         'resnet_v1_50' : {
@@ -104,6 +120,14 @@ class tensorflow_extractor(base_extractor):
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
             'num_classes' : 1001,
         },
+        'mobilenet_v1_1.0_frozen' : {
+            'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/mobilenet_v1_1.0_224_frozen.tgz',
+            'filename'    : 'mobilenet_v1_1.0_224/frozen_graph.pb',
+            'tensor_out'  : 'MobilenetV1/Predictions/Softmax:0',
+            'tensor_in'   : 'input:0',
+            'input_shape' : [224, 224, 3],
+            'num_classes' : 1001,
+        },
         'inception_resnet_v2' : {
             'url'         : 'http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz',
             'filename'    : 'inception_resnet_v2_2016_08_30.ckpt',
@@ -131,12 +155,17 @@ class tensorflow_extractor(base_extractor):
                 data_input,
                 num_classes=cls.architecture_map[architecture]['num_classes'],
                 is_training=False)
-            labels = tf.squeeze(logits, name='MMdnn_Output')
+
+            if logits.op.type == 'Squeeze':
+                labels = tf.identity(logits, name='MMdnn_Output')
+            else:
+                labels = tf.squeeze(logits, name='MMdnn_Output')
 
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
-            writer = tf.summary.FileWriter('./graphs', sess.graph)
-            writer.close()
+            # tf.train.export_meta_graph("kit.meta", as_text=True)
+            # writer = tf.summary.FileWriter('./graphs', sess.graph)
+            # writer.close()
             sess.run(init)
             saver = tf.train.Saver()
             saver.restore(sess, path + cls.architecture_map[architecture]['filename'])
@@ -152,6 +181,10 @@ class tensorflow_extractor(base_extractor):
         return
         # raise NotImplementedError()
 
+    @classmethod
+    def get_frozen_para(cls, architecture):
+        frozenname = architecture + '_frozen'
+        return cls.architecture_map[frozenname]['filename'], cls.architecture_map[frozenname]['input_shape'], cls.architecture_map[frozenname]['tensor_in'], cls.architecture_map[frozenname]['tensor_out']
 
     @classmethod
     def download(cls, architecture, path="./"):
@@ -190,7 +223,7 @@ class tensorflow_extractor(base_extractor):
 
             if is_frozen:
                 tf_model_path = cls.architecture_map[architecture_]['filename']
-                with open(tf_model_path, 'rb') as f:
+                with open(path + tf_model_path, 'rb') as f:
                     serialized = f.read()
                 tf.reset_default_graph()
                 original_gdef = tf.GraphDef()

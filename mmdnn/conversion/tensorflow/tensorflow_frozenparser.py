@@ -49,11 +49,14 @@ class TensorflowParser2(Parser):
         "TensorArrayWriteV3",
         # "Switch"
         "Dequantize",
-        "RequantizationRange",
-        "Requantize",
+        # "RequantizationRange",
+        # "Requantize",
         "ExpandDims",
-        "Cast"
+        "Identity",
+        # "Cast"
+        "Pack"
     ])
+
 
     q_type = set([
         "Dequantize",
@@ -80,7 +83,7 @@ class TensorflowParser2(Parser):
     def src_graph(self):
         return self.tf_graph
 
-    def __init__(self, frozen_file, inputshape, dest_nodes):
+    def __init__(self, frozen_file, inputshape, in_nodes, dest_nodes):
         super(TensorflowParser2, self).__init__()
 
         self.weight_loaded = True
@@ -91,16 +94,31 @@ class TensorflowParser2(Parser):
         original_gdef = tensorflow.GraphDef()
 
         original_gdef.ParseFromString(serialized)
-        model = original_gdef
-
-        # if dest_nodes != None:
-        #     from tensorflow.python.framework.graph_util import extract_sub_graph
-        #     model = extract_sub_graph(model, dest_nodes.split(','))
+        # model = original_gdef
+        from tensorflow.python.tools import strip_unused_lib
+        from tensorflow.python.framework import dtypes
+        from tensorflow.python.platform import gfile
+        input_node_names = in_nodes.split(',')
+        output_node_names = dest_nodes.split(',')
+        gdef = strip_unused_lib.strip_unused(
+                input_graph_def = original_gdef,
+                input_node_names = input_node_names,
+                output_node_names = output_node_names,
+                placeholder_type_enum = dtypes.float32.as_datatype_enum)
+        # Save it to an output file
+        frozen_model_file = './frozen.pb'
+        with gfile.GFile(frozen_model_file, "wb") as f:
+            f.write(gdef.SerializeToString())
+        with open(frozen_model_file, 'rb') as f:
+            serialized = f.read()
+        tensorflow.reset_default_graph()
+        model = tensorflow.GraphDef()
+        model.ParseFromString(serialized)
 
         output_shape_map = dict()
         input_shape_map = dict()
         with tensorflow.Graph().as_default() as g:
-            tensorflow.import_graph_def(original_gdef, name='')
+            tensorflow.import_graph_def(model, name='')
             ops = g.get_operations()
             N = len(ops)
             p = 0
@@ -110,14 +128,26 @@ class TensorflowParser2(Parser):
                     input_shape_map[x.name] = x.get_shape()
                 for x in ops[i].outputs:
                     output_shape_map[x.name] = x.get_shape()
-        tensor_input = tensorflow.TensorShape([None, tensorflow.Dimension(inputshape[0]), tensorflow.Dimension(inputshape[1]), tensorflow.Dimension(inputshape[2])])
-        output_shape_map['input:0'] = tensor_input
+
+        # for pytest
+        if type(inputshape[2]) == int:
+            tensor_input = tensorflow.TensorShape([None, tensorflow.Dimension(inputshape[0]), tensorflow.Dimension(inputshape[1]), tensorflow.Dimension(inputshape[2])])
+            output_shape_map[input_node_names[0]] = tensor_input
+        else:
+            if len(inputshape[2].split(',')) == 2:
+                param = inputshape[2].split(',')[1]
+                tensor_input_2 = tensorflow.TensorShape([tensorflow.Dimension(param)])
+                output_shape_map[input_node_names[1]] = tensor_input_2
+                tensor_input = tensorflow.TensorShape([None, tensorflow.Dimension(inputshape[0]), tensorflow.Dimension(inputshape[1]), tensorflow.Dimension(inputshape[2].split(',')[0])])
+                output_shape_map[input_node_names[0]] = tensor_input
+            else :
+                tensor_input = tensorflow.TensorShape([None, tensorflow.Dimension(inputshape[0]), tensorflow.Dimension(inputshape[1]), tensorflow.Dimension(inputshape[2])])
+                output_shape_map[input_node_names[0]] = tensor_input
+
+        # assert False
         self.tf_graph = TensorflowGraph(model)
         for node in self.tf_graph.model.node:
-            if node.name == 'input' and node.op == 'Placeholder':
-                node.attr['shape'].list.shape.extend([output_shape_map[node.name + ':0'].as_proto()])
-
-            if (node.name + ':0') in output_shape_map:
+            if (node.name + ':0') in output_shape_map and node.op != 'Placeholder':
                 node.attr['_output_shapes'].list.shape.extend([output_shape_map[node.name + ':0'].as_proto()])
 
             if  node.op == 'MirrorPad':
@@ -134,11 +164,27 @@ class TensorflowParser2(Parser):
                 map_key = node.name.replace("requantize", "quantized_conv")+":0"
                 node.attr['shape'].list.shape.extend([input_shape_map[map_key].as_proto()])
 
+            if node.name in input_node_names:
+                if node.name in output_shape_map.keys():
+                    node.attr['shape'].list.shape.extend([output_shape_map[node.name].as_proto()])
+                    node.attr['_output_shapes'].list.shape.extend([output_shape_map[node.name].as_proto()])
+
         self.tf_graph.build()
 
     @staticmethod
     def _get_scopes(layer_name):
         return layer_name.split('/')
+
+
+    def check_const(self, node):
+        while node:
+            if node.type == "Const":
+                return node
+            elif node.type in self.skip_type:
+                node =  self.get_parent(node.name, [0])
+            else:
+                print(node.layer)
+                assert False
 
 
     def _convert_reduction_operators(self, source_node, new_op = None):
@@ -157,60 +203,93 @@ class TensorflowParser2(Parser):
         # name, op
         IR_node = self.IR_graph.node.add()
         TensorflowParser2._copy_and_reop(source_node, IR_node, 'BatchNorm')
+        is_transformed = False
 
-        # epsilon
-        epsilon = self.get_parent(source_node.name, [1])
-        IR_node.attr['epsilon'].f = epsilon.layer.attr['value'].tensor.float_val[0]
+        test = self.get_parent(source_node.name, [0])
+        if test.type == 'Mul':
+            is_transformed = True
 
-        # moving variance (var) /read
-        moving_variance = self.get_parent(source_node.name, [0])
+        # ssd model is transformed
+        if is_transformed:
+            # Ax - (Au - b)
 
-        if moving_variance.type == 'Identity':
-            moving_variance_read = self.src_graph.get_parent(moving_variance.name, [0])
-            tensor_content = moving_variance_read.get_attr('value')
-            moving_variance_content = tensor_util.MakeNdarray(tensor_content)
-            self.set_weight(source_node.name, 'var', moving_variance_content)
+            # A
+            input_mul_A = self.get_parent(source_node.name, [0, 1])
+            tensor_content = input_mul_A.get_attr('value')
+            A_content = tensor_util.MakeNdarray(tensor_content)
+            # print(A_content)
+            self.set_weight(source_node.name, 'A', A_content)
 
-        else:
-            print(moving_variance.layer)
-            assert False
+            # b
+            input_sub = self.get_parent(source_node.name, [1])
+            tensor_content = input_sub.get_attr('value')
+            sub_content = tensor_util.MakeNdarray(tensor_content)
+            # print(sub_content)
+            self.set_weight(source_node.name, 'b', sub_content)
 
-        # gamma (scale)
-        Rsqrt = self.get_son(source_node.name, [0], True)
-        if len(Rsqrt.out_edges) == 2:
-            IR_node.attr['scale'].b = False
-            output_node = self.get_son(source_node.name, [0, 0, 0], True)
-        else:
-            IR_node.attr['scale'].b = True
+            input_node = self.get_parent(source_node.name, [0])
+            IR_node.input.append(input_node.real_name)
+
+            # print(IR_node.input)
+            # print(IR_node.output)
             # assert False
-            son = self.get_son(source_node.name, [0, 0, 0], True)
-            gamma = self.get_parent(son.name, [1, 1, 0, 0, 0, 1], True)
-            gamma_tensor = gamma.get_attr('value')
-            scale = tensor_util.MakeNdarray(gamma_tensor)
-            self.set_weight(source_node.name, 'scale', scale)
-            output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
-            # print(output_node.layer)
 
-        # beta  (bias)
-        Sub = self.get_son(source_node.name, [0, 1, 0], True)
-        beta = self.get_parent(Sub.name, [0, 0]).get_attr('value')
-        bias = tensor_util.MakeNdarray(beta)  #(96,)
-        IR_node.attr['bias'].b = True
-        self.set_weight(source_node.name, 'bias', bias)
+        else:
+            # epsilon
+            epsilon = self.get_parent(source_node.name, [1])
+            IR_node.attr['epsilon'].f = epsilon.layer.attr['value'].tensor.float_val[0]
 
-        # moving mean (mean)
-        son2 = self.get_son(source_node.name, [0, 1], True)
-        moving_mean = self.get_parent(son2.name, [0, 0]).get_attr('value')
-        mean = tensor_util.MakeNdarray(moving_mean)
-        self.set_weight(source_node.name, 'mean', mean)
+            # moving variance (var) /read
+            moving_variance = self.get_parent(source_node.name, [0])
 
-        # input node
-        assert output_node.type == 'Add'
-        input_node = self.get_parent(output_node.name, [0, 0])
-        IR_node.input.append(input_node.real_name)
+            if moving_variance.type == 'Identity':
+                moving_variance_read = self.src_graph.get_parent(moving_variance.name, [0])
+                tensor_content = moving_variance_read.get_attr('value')
+                moving_variance_content = tensor_util.MakeNdarray(tensor_content)
+                self.set_weight(source_node.name, 'var', moving_variance_content)
 
-        # output node
-        output_node.real_name = source_node.name
+            else:
+                print(moving_variance.layer)
+                assert False
+
+            # gamma (scale)
+            Rsqrt = self.get_son(source_node.name, [0], True)
+            if len(Rsqrt.out_edges) == 2:
+                IR_node.attr['scale'].b = False
+                output_node = self.get_son(source_node.name, [0, 0, 0], True)
+                Mul = self.get_son(source_node.name, [0, 1], True)
+            else:
+                IR_node.attr['scale'].b = True
+                son = self.get_son(source_node.name, [0, 0, 0], True)
+                gamma_from = self.get_parent(son.name, [1, 1], True)
+                gamma = self.check_const(gamma_from)
+                # gamma = self.get_parent(son.name, [1, 1, 0, 0, 0, 1], True)
+                gamma_tensor = gamma.get_attr('value')
+                scale = tensor_util.MakeNdarray(gamma_tensor)
+                self.set_weight(source_node.name, 'scale', scale)
+                output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
+                # print(output_node.layer)
+                Mul = self.get_son(source_node.name, [0, 0, 1], True)
+                # print(Mul.layer)
+
+            # beta  (bias)
+            beta = self.get_parent(output_node.name, [1, 0, 0], True).get_attr('value')
+            bias = tensor_util.MakeNdarray(beta)  #(96,)
+            IR_node.attr['bias'].b = True
+            self.set_weight(source_node.name, 'bias', bias)
+
+            # moving mean (mean)
+            moving_mean = self.get_parent(Mul.name, [0, 0]).get_attr('value')
+            mean = tensor_util.MakeNdarray(moving_mean)
+            self.set_weight(source_node.name, 'mean', mean)
+
+            # input node
+            assert output_node.type == 'Add'
+            input_node = self.get_parent(output_node.name, [0, 0])
+            IR_node.input.append(input_node.real_name)
+
+            # output node
+            output_node.real_name = source_node.name
 
 
     def _convert_layers_instancenorm(self, source_node):
@@ -223,6 +302,12 @@ class TensorflowParser2(Parser):
         IR_node.attr['epsilon'].f = epsilon_value
 
         # beta
+        output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
+        beta = self.get_parent(output_node.name, [1, 0, 0, 0, 0, 1], True)
+        beta_tensor = beta.get_attr('value')
+        beta = tensor_util.MakeNdarray(beta_tensor)
+        self.set_weight(source_node.name, 'bias', beta)
+
 
         # gamma (scale)
         IR_node.attr['scale'].b = True
@@ -233,7 +318,13 @@ class TensorflowParser2(Parser):
         self.set_weight(source_node.name, 'scale', scale)
         # output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
 
-        assert False
+        assert output_node.type == 'Add'
+        input_node = self.get_parent(output_node.name, [0, 0])
+        IR_node.input.append(input_node.real_name)
+
+        output_node.real_name = source_node.name
+
+        # assert False
 
 
 
@@ -322,7 +413,6 @@ class TensorflowParser2(Parser):
             IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['shape'].list.shape[0].SerializeToString())
         else:
             IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['shape'].shape.SerializeToString())
-        # print(IR_node)
 
     def rename_UNKNOWN(self, source_node):
         if source_node.type in self.skip_type:
@@ -399,8 +489,6 @@ class TensorflowParser2(Parser):
 
         assign_IRnode_values(IR_node, kwargs)
 
-
-
     def _convert_identity_operation(self, source_node, start_idx = 0, end_idx = None, new_op = None):
         IR_node = self.IR_graph.node.add()
         TensorflowParser2._copy_and_reop(source_node, IR_node, new_op)
@@ -408,12 +496,72 @@ class TensorflowParser2(Parser):
         return IR_node
 
 
+    def rename_Relu6(self, source_node):
+        self._convert_identity_operation(source_node, new_op = 'Relu6')
+
+
+    def rename_DepthwiseConv2dNative(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, end_idx = 1, new_op = 'DepthwiseConv')
+        kwargs = {}
+        kwargs['strides'] = source_node.get_attr('strides')
+        input_node = self.src_graph.get_parent(source_node.name, [1])
+        kwargs['kernel_shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
+
+        self._convert_padding(source_node, IR_node, kwargs['kernel_shape'][:-2])
+
+
+        weight_node = self.src_graph.get_parent(source_node.name, [1])
+        weight = self.check_const(weight_node).get_attr('value')
+        weight_content = tensor_util.MakeNdarray(weight)
+        self.set_weight(source_node.name, 'weights', weight_content)
+        assign_IRnode_values(IR_node, kwargs)
+
+
+    def rename_BatchNormWithGlobalNormalization(self, source_node):
+
+        IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='BatchNorm')
+        # epsilon
+        IR_node.attr['epsilon'].f = source_node.get_attr('variance_epsilon')
+
+        # moving variance (var) /read
+        moving_variance = self.get_parent(source_node.name, [2])
+        tensor_variance = moving_variance.get_attr('value')
+        moving_variance_content = tensor_util.MakeNdarray(tensor_variance)
+        self.set_weight(source_node.name, 'var', moving_variance_content)
+
+        # gamma (scale)
+        gamma = self.get_parent(source_node.name, [4])
+        gamma_value = gamma.get_attr('value')
+        gamma = tensor_util.MakeNdarray(gamma_value)
+        self.set_weight(source_node.name, 'scale', gamma)
+
+        # beta  (bias)
+        beta = self.get_parent(source_node.name, [3])
+        beta_value = beta.get_attr('value')
+        beta = tensor_util.MakeNdarray(beta_value)
+        self.set_weight(source_node.name, 'bias', beta)
+
+        # moving mean (mean)
+        mean = self.get_parent(source_node.name, [1])
+        mean_value = mean.get_attr('value')
+        mean = tensor_util.MakeNdarray(mean_value)
+        self.set_weight(source_node.name, 'mean', mean)
+
     def rename_Placeholder(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
         TensorflowParser2._copy_shape(source_node, IR_node)
+        IR_node.attr['shape'].shape.dim[0].size = -1
+        IR_node.attr['_output_shapes'].list.shape[0].dim[0].size = -1
+
+
+    def rename_CheckNumerics(self, source_node):
+        return
 
 
     def rename_Reshape(self, source_node):
+        # print(source_node.in_edges)
+        # print(source_node.out_edges)
+        # print(source_node.layer)
         IR_node = self._convert_identity_operation(source_node, end_idx = 1)
         kwargs = {'shape' : self.tensor_shape_to_list(source_node.get_attr('_output_shapes'))[0]}
         assign_IRnode_values(IR_node, kwargs)
@@ -458,45 +606,51 @@ class TensorflowParser2(Parser):
 
 
     def rename_Mul(self, source_node):
-        input_node_0 = self.src_graph.get_parent(source_node.name, [0])
+        # print(source_node.layer)
+        # print(source_node.in_edges)
+        # print(source_node.out_edges)
+        # assert False
+        # input_node_0 = self.src_graph.get_parent(source_node.name, [0])
 
-        # mean/read
-        if input_node_0.type == 'Identity':
-            input_node_0_read = self.src_graph.get_parent(input_node_0.name, [0])
-            tensor_content = input_node_0_read.get_attr('value')
-            tensor_content = tensor_util.MakeNdarray(tensor_content)
-            self.set_weight(source_node.name, 'weights', tensor_content)
-            IR_node = self._convert_identity_operation(source_node, start_idx = 1)
+        # # mean/read
+        # if input_node_0.type == 'Identity':
+        #     input_node_0_read = self.src_graph.get_parent(input_node_0.name, [0])
+        #     tensor_content = input_node_0_read.get_attr('value')
+        #     tensor_content = tensor_util.MakeNdarray(tensor_content)
+        #     self.set_weight(source_node.name, 'weights', tensor_content)
+        #     IR_node = self._convert_identity_operation(source_node, start_idx = 1)
 
-        else:
-            IR_node = self._convert_identity_operation(source_node)
+        # else:
+        IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='Mul')
+
 
     def rename_Add(self, source_node):
         scopes = self._get_scopes(source_node.name)
-        # print(scopes)
-        if scopes[-2] == 'batchnorm':
-            if scopes[-3] == 'BatchNorm':
-                self._convert_layers_batchnorm(source_node)
-            elif scopes[-3] == 'InstanceNorm':
-                print(source_node.layer)
-                # self._convert_layers_instancenorm(source_node)
+        if len(scopes) > 2:
+            if scopes[-2] == 'batchnorm':
+                if scopes[-3] == 'BatchNorm':
+                    self._convert_layers_batchnorm(source_node)
+                elif scopes[-3] == 'InstanceNorm':
+                    self._convert_layers_instancenorm(source_node)
+            else:
+                # print(scopes)
+                IR_node = self._convert_identity_operation(source_node, new_op = "Add")
         else:
             # print(scopes)
+            # print(source_node.layer)
             IR_node = self._convert_identity_operation(source_node, new_op = "Add")
-            # assert False
+
+
+    def rename_Fill(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op="Fill")
+
 
     def rename_Sub(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op = "Sub")
+        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = "Sub")
 
-        # kwargs = {}
-        # print(source_node.in_edges)
-        # input_node = self.src_graph.get_parent(source_node.name, [0])
-        # kwargs['shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
-        # print(IR_node)
-        # assign_IRnode_values(IR_node, kwargs)
 
     def rename_Sum(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op = 'Sum')
+        IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op = 'Sum')
         input_node = self.src_graph.get_parent(source_node.name, [0])
         kwargs = {}
         kwargs['cal_shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
@@ -538,7 +692,7 @@ class TensorflowParser2(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
     def rename_Reciprocal(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op = 'Reciprocal')
+        IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op = 'Reciprocal')
 
 
     def rename_Minimum(self, source_node):
@@ -551,7 +705,6 @@ class TensorflowParser2(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op = 'RealDiv')
 
     def rename_Enter(self, source_node):
-        # print(source_node.layer)
         IR_node = self._convert_identity_operation(source_node, new_op = 'Enter')
 
     def rename_Switch(self, source_node):
@@ -561,18 +714,16 @@ class TensorflowParser2(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Exp')
 
     def rename_ResizeBilinear(self, source_node):
-        # print(source_node.layer)
-        IR_node = self._convert_identity_operation(source_node, new_op = 'ResizeBilinear')
+        IR_node = self._convert_identity_operation(source_node,end_idx=1, new_op = 'ResizeBilinear')
 
 
+    def rename_Cast(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Cast')
+        input_node = self.src_graph.get_parent(source_node.name, [0])
+        kwargs = {}
+        kwargs['shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
 
-    # def rename_Cast(self, source_node):
-    #     IR_node = self._convert_identity_operation(source_node, new_op = 'Cast')
-    #     input_node = self.src_graph.get_parent(source_node.name, [0])
-    #     kwargs = {}
-    #     kwargs['shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
-
-    #     assign_IRnode_values(IR_node, kwargs)
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_Prod(self, source_node):
@@ -602,8 +753,8 @@ class TensorflowParser2(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Squeeze')
 
 
-    def rename_Pack(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op = 'Pack')
+    # def rename_Pack(self, source_node):
+    #     IR_node = self._convert_identity_operation(source_node, new_op = 'Pack')
 
 
     def rename_Gather(self, source_node):
@@ -622,9 +773,7 @@ class TensorflowParser2(Parser):
 
 
     def rename_StridedSlice(self, source_node):
-
-        IR_node = self._convert_identity_operation(source_node, new_op = 'StridedSlice')
-
+        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'StridedSlice')
         kwargs = {}
         input_node = self.src_graph.get_parent(source_node.name, [0])
         # kwargs['shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
@@ -703,7 +852,6 @@ class TensorflowParser2(Parser):
 
 
     def rename_MaxPool(self, source_node):
-        # print(source_node.layer.attr)
         self._convert_pooling(source_node, b'MAX')
 
 
@@ -737,10 +885,11 @@ class TensorflowParser2(Parser):
 
 
     def rename_MatMul(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, end_idx = 1)
-
+        IR_node = self._convert_identity_operation(source_node, end_idx=1)
         input_weight_node = self.src_graph.get_parent(source_node.name, [1])
-        weight_value = input_weight_node.get_attr('value')
+        weightnode = self.check_const(input_weight_node)
+        weight_value = weightnode.get_attr('value')
+
         weight = tensor_util.MakeNdarray(weight_value)
         self.set_weight(source_node.name, 'weights', weight)
 
@@ -754,7 +903,8 @@ class TensorflowParser2(Parser):
 
             TensorflowParser2._copy_and_reop(source_node, IR_node, 'FullyConnected')
             variable = self.tf_graph.get_node(add_node.in_edges[1]) #add_bias node
-            bias_value = variable.get_attr('value')
+            biasnode = self.check_const(variable)
+            bias_value = biasnode.get_attr('value')
             bias = tensor_util.MakeNdarray(bias_value)
             self.set_weight(source_node.name, 'bias', bias)
             IR_node.attr['use_bias'].b = True
@@ -819,17 +969,98 @@ class TensorflowParser2(Parser):
 
 
     # def rename_Dequantize(self, source_node):
-    #     IR_node = self._convert_identity_operation(source_node)
+    #     IR_node = self._convert_identity_operation(source_node,start_idx=0, end_idx= 1, new_op = 'Dequantize')
     #     kwargs = {}
     #     input_node = self.src_graph.get_parent(source_node.name, [0])
     #     kwargs['shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
 
-    #     assign_IRnode_values(IR_node, kwargs)
+        assign_IRnode_values(IR_node, kwargs)
 
-    # def rename_Requantize(self, source_node):
-    #     IR_node = self._convert_identity_operation(source_node, new_op = 'Requantize')
-    #     TensorflowParser2._copy_shape(source_node, IR_node)
+    def rename_Requantize(self, source_node):
+        # print(source_node.layer)
+        input_node = self.get_parent(source_node.name, [0])
+        son_node = self.get_son(source_node.name, [0])
 
-    # def rename_RequantizationRange(self, source_node):
-    #     IR_node = self._convert_identity_operation(source_node, new_op = 'RequantizationRange')
-    #     TensorflowParser2._copy_shape(source_node, IR_node)
+        son_node.real_name = source_node.name
+
+    def rename_RequantizationRange(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'RequantizationRange')
+        TensorflowParser2._copy_shape(source_node, IR_node)
+
+
+    def rename_GreaterEqual(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'GreaterEqual')
+
+
+    def rename_Equal(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Equal')
+
+
+    def rename_All(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'All')
+
+
+    def rename_LogicalAnd(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Mul')
+
+    def rename_Pad(self, source_node):
+        # print(source_node.layer)
+        # assert False
+        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'Pad')
+        # kwargs = {}
+        # kwargs['mode'] = 'constant'
+        # kwargs['constant_values'] = 0.0
+
+        # # paddings
+        # padding = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
+        # shapes = tensor_util.MakeNdarray(padding)
+        # kwargs['pads'] = convert_tf_pad_to_onnx(shapes)
+
+        # assign_IRnode_values(IR_node, kwargs)
+
+    def rename_FusedBatchNorm(self, source_node):
+        # print(source_node.layer)
+        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'BatchNorm')
+        IR_node.attr['epsilon'].f = source_node.get_attr('epsilon', 0)
+        scalenode = self.check_const(self.get_parent(source_node.name, [1], True))
+        scale_value = scalenode.get_attr('value')
+        scale = tensor_util.MakeNdarray(scale_value)
+        self.set_weight(source_node.name, 'scale', scale)
+
+
+        biasnode = self.check_const(self.get_parent(source_node.name, [2], True))
+        bias_value = biasnode.get_attr('value')
+        bias = tensor_util.MakeNdarray(bias_value)
+        self.set_weight(source_node.name, 'bias', bias)
+        IR_node.attr['bias'].b = True
+
+        meannode = self.check_const(self.get_parent(source_node.name, [3], True))
+        mean_value = meannode.get_attr('value')
+        mean = tensor_util.MakeNdarray(mean_value)
+        self.set_weight(source_node.name, 'mean', mean)
+
+        variancenode = self.check_const(self.get_parent(source_node.name, [4], True))
+        variance_value = variancenode.get_attr('value')
+        variance = tensor_util.MakeNdarray(variance_value)
+        self.set_weight(source_node.name, 'variance', variance)
+
+        # assert False
+
+    def rename_SpaceToBatchND(self, source_node):
+        # print(source_node.layer)
+        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'SpaceToBatchND')
+        # assert False
+
+    def rename_BatchToSpaceND(self, source_node):
+        # print(source_node.layer)
+        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'BatchToSpaceND')
+        # assert False
+
+    def rename_ArgMax(self, source_node):
+        # print(source_node.layer)
+        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'ArgMax')
+        # assert False
+
+    def rename_Slice(self, source_node):
+        # print(source_node.layer)
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Slice')

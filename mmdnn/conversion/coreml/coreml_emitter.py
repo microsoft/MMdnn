@@ -41,7 +41,7 @@ class CoreMLEmitter(Emitter):
         for input_node in self.IR_graph.input_layers:
             shape = shape_to_list(self.IR_graph.get_node(input_node).get_attr('shape'))
             shape = _infer_coreml_input_shape(shape)
-            input_features.append((input_node.encode(), shape))
+            input_features.append((str(input_node), shape))
             print("CoreML Model Input Layer: [{}] {}".format(input_node, shape))
 
         for output_node in self.IR_graph.output_layers:
@@ -52,6 +52,7 @@ class CoreMLEmitter(Emitter):
                 shape = shape_to_list(shape[0])
             else:
                 shape = [1]
+
             shape = _infer_coreml_input_shape(shape)
 
             output_features.append((output_node.encode(), shape))
@@ -82,6 +83,7 @@ class CoreMLEmitter(Emitter):
                   predicted_probabilities_output=''):
 
         input_features, output_features = self._get_inout()
+        # assert False
         is_classifier = class_labels is not None
         mode = 'classifier' if is_classifier else None
         self.builder = _NeuralNetworkBuilder(input_features, output_features, mode=mode)
@@ -168,7 +170,7 @@ class CoreMLEmitter(Emitter):
         """
         Convert convolution layer to coreml.
         """
-        has_bias = IR_node.get_attr('use_bias')
+        has_bias = IR_node.get_attr('use_bias', False)
         is_deconv = False # TODO: Deconv
 
         # Get the weights.
@@ -198,9 +200,12 @@ class CoreMLEmitter(Emitter):
 
         padding = self._get_padding(IR_node).lower()
 
-        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        # print(self.IR_graph.get_parent(IR_node.name, [0]).layer)
+        # print(input_name)
+        # print(IR_node.real_name)
 
-        self.builder.add_convolution(name=IR_node.variable_name,
+        self.builder.add_convolution(name=IR_node.real_name,
                                      kernel_channels=kernel_channels,
                                      output_channels=output_channels,
                                      height=height,
@@ -215,15 +220,17 @@ class CoreMLEmitter(Emitter):
                                      is_deconv=is_deconv,
                                      output_shape=output_shape,
                                      input_name=input_name,
-                                     output_name=IR_node.variable_name,
+                                     output_name=IR_node.real_name,
                                      dilation_factors=dilations)
 
 
     def emit_DepthwiseConv(self, IR_node):
         # depth-wise convolution
+
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
         kernel_channels = 1
         is_deconv = False
-        has_bias = IR_node.get_attr('use_bias')
+        has_bias = IR_node.get_attr('use_bias', False)
 
         depth_multiplier = IR_node.get_attr('kernel_shape')[-1]
 
@@ -255,7 +262,7 @@ class CoreMLEmitter(Emitter):
                                      has_bias=has_bias,
                                      is_deconv=is_deconv,
                                      output_shape=output_shape,
-                                     input_name=self.parent_variable_name(IR_node),
+                                     input_name=input_name,
                                      output_name=IR_node.real_name,
                                      dilation_factors=dilations)
 
@@ -319,8 +326,8 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_Crop(self, IR_node):
-        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
-        output_name=IR_node.variable_name
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        output_name=IR_node.real_name
 
         is_1d = False
         border = IR_node.get_attr('border')
@@ -437,12 +444,13 @@ class CoreMLEmitter(Emitter):
                     return 1
             else:
                 return 0
-
+        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
         new_shape = get_coreml_target_shape(target_shape)
         mode = get_mode(input_shape, target_shape)
+
         self.builder.add_reshape(
             name=IR_node.real_name,
-            input_name=self.parent_variable_name(IR_node),
+            input_name=input_name,
             output_name=IR_node.real_name,
             target_shape=new_shape,
             mode=mode)
@@ -460,9 +468,9 @@ class CoreMLEmitter(Emitter):
 
     def _emit_activation(self, IR_node, act, params=None):
         # Get input and output names
-        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
-        output_name = IR_node.variable_name
-        self.builder.add_activation(name=IR_node.variable_name,
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        output_name = IR_node.real_name
+        self.builder.add_activation(name=IR_node.real_name,
             non_linearity=act,
             input_name=input_name,
             output_name=output_name,
@@ -496,6 +504,7 @@ class CoreMLEmitter(Emitter):
         # print(IR_node.name)
         layer = IR_node.real_name
         input_name, output_name = (IR_node.IR_layer.input[0], IR_node.IR_layer.name)
+        # input_name =
         relu_output_name = output_name + '_relu'
         self.builder.add_activation(layer, 'RELU', input_name, relu_output_name)
         # negate it
@@ -575,9 +584,9 @@ class CoreMLEmitter(Emitter):
         """
 
         # Get input and output names
-        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
         # print(input_name)
-        # print(IR_node.IR_layer.input[0])
+        # print(IR_node.real_name)
         axis = IR_node.get_attr('axis', -1)
         nb_channels = IR_node.get_attr('_output_shapes')[0].dim[axis].size
 
@@ -597,20 +606,20 @@ class CoreMLEmitter(Emitter):
         mean[:] = 0.0 #mean
         variance[:] = 1.0 - .00001 #stddev
         self.builder.add_batchnorm(
-            name=IR_node.variable_name,
+            name=IR_node.real_name,
             channels = nb_channels,
             gamma = gamma1,
             beta = beta1,
             mean = mean,
             variance = variance,
             input_name = input_name,
-            output_name=IR_node.variable_name)
+            output_name=IR_node.real_name)
         # assert False
 
 
     def emit_Pad(self, IR_node):
-        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
-        output_name=IR_node.variable_name
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        output_name=IR_node.real_name
         is_1d = False
         padding = IR_node.get_attr('pads')
 
@@ -634,12 +643,15 @@ class CoreMLEmitter(Emitter):
 
     def emit_Squeeze(self, IR_node):
         self.emit_Flatten(IR_node)
+        # if IR_node.name != "MMdnn_Output" :
+            # self.emit_Flatten(IR_node)
+            # self.emit_Reshape(IR_node)
 
 
     def emit_SeparableConv(self, IR_node):
 
-        input_name = self.IR_graph.get_parent(IR_node.name, [0]).variable_name
-        output_name = output_name=IR_node.variable_name
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        output_name = output_name=IR_node.real_name
 
         assert len(IR_node.get_attr("strides")) == 4
         strides = IR_node.get_attr('strides')

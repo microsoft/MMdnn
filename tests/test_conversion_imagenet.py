@@ -110,16 +110,13 @@ class TestModels(CorrectnessTest):
 
         # get original model prediction result
         original_predict = tensorflow_extractor.inference(architecture_name, TestModels.cachedir, image_path, is_frozen = True)
-        # print(original_predict)
-        # assert False
+        para = tensorflow_extractor.get_frozen_para(architecture_name)
         del tensorflow_extractor
 
         # original to IR
         IR_file = TestModels.tmpdir + 'tensorflow_frozen_' + architecture_name + "_converted"
         parser = TensorflowParser2(
-            TestModels.cachedir + "inception_v1_2016_08_28_frozen.pb",
-            [224, 224, 3],
-            "InceptionV1/Logits/Predictions/Reshape_1:0")
+            TestModels.cachedir + para[0], para[1], para[2].split(':')[0], para[3].split(':')[0])
         parser.run(IR_file)
         del parser
         del TensorflowParser2
@@ -447,6 +444,7 @@ class TestModels(CorrectnessTest):
 
         return converted_predict
 
+
     @staticmethod
     def CoreMLEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
@@ -522,6 +520,8 @@ class TestModels(CorrectnessTest):
 
         return converted_predict
 
+
+
     exception_tabel = {
         'cntk_Keras_resnet18',                      # different after the first convolution layer
         'cntk_Keras_resnet152',                     # different after the first convolution layer
@@ -548,7 +548,7 @@ class TestModels(CorrectnessTest):
 
         'keras' : {
             'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
             'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
             'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
             'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
@@ -575,21 +575,24 @@ class TestModels(CorrectnessTest):
         },
 
         'tensorflow' : {
+            'vgg16'             : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'vgg19'             : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'inception_v1'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'inception_v3'      : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, PytorchEmit],
+            'inception_v1'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+            'inception_v3'      : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, PytorchEmit, CoreMLEmit],
             'resnet_v1_50'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v1_152'     : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v2_50'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v2_152'     : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit],
+            'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit],
             # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
             # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
-         },
+        },
 
-         'tensorflow_frozen' : {
-            'inception_v1' : [TensorflowEmit, KerasEmit, MXNetEmit], # TODO: CntkEmit
-         },
+        'tensorflow_frozen' : {
+            'inception_v1' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+            'inception_v3' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+            'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
+        },
 
     }
 

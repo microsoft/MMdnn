@@ -19,7 +19,7 @@ Support frameworks: ['resnet_v1_152', 'inception_v3', 'resnet_v2_50', 'resnet_v2
 Example:
 
 ```bash
-$ python -m mmdnn.conversion._script.extractModel -f tensorflow -n resnet_v2_152
+$ mmdownload -f tensorflow -n resnet_v2_152
 
 Downloading file [./resnet_v2_152_2017_04_14.tar.gz] from [http://download.tensorflow.org/models/resnet_v2_152_2017_04_14.tar.gz]
 100% [......................................................................] 675629399 / 675629399
@@ -30,14 +30,16 @@ Model saved in file: ./imagenet_resnet_v2_152.ckpt
 
 Then you can see files *imagenet_resnet_v2_152.ckpt.data-00000-of-00001*, *imagenet_resnet_v2_152.ckpt.index* and *imagenet_resnet_v2_152.ckpt.meta*, which can be handled by Tensorflow parser.
 
-
 Mainly extract code like:
 
 ```python
 with slim.arg_scope(...):
     data_input = tf.placeholder(name='input', dtype=tf.float32, shape=[...])
     logits = your_own_network_builder(data_input)
-    labels = tf.squeeze(logits, name='MMdnn_Output')
+    if logits.op.type == 'Squeeze':
+        labels = tf.identity(logits, name='MMdnn_Output')
+    else:
+        labels = tf.squeeze(logits, name='MMdnn_Output')
 ```
 
 #### Meta File Graph Visualization
@@ -45,7 +47,7 @@ with slim.arg_scope(...):
 When you prepared your checkpoint, you can find the output node name from the graph by Tensorboard.
 
 ```bash
-$ python -m mmdnn.conversion.examples.tensorflow.vis_meta imagenet_resnet_v2_152.ckpt.meta ./logs/
+$ mmvismeta imagenet_resnet_v2_152.ckpt.meta ./logs/
 
 TensorBoard 0.4.0rc3 at http://kit-station:6006 (Press CTRL+C to quit)
 ```
