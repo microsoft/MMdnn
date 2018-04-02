@@ -139,7 +139,7 @@ def _get_parser():
     parser.add_argument(
         '--inputShape',
         nargs='+',
-        type=int,
+        type=_text_type,
         default=None,
         help='[MXNet/Caffe2/Torch7] Input shape of model (channel, height, width)')
 
