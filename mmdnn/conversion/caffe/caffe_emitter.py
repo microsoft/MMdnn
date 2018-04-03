@@ -160,7 +160,7 @@ if __name__=='__main__':
 
 
     def emit_Conv(self, IR_node):
-        self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_size={}, stride={}, num_output={}, pad={}, group={}, \
+        self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_size={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
 bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
@@ -168,6 +168,7 @@ bias_term={}, ntop=1)".format(
             IR_node.get_attr('strides')[1],
             IR_node.get_attr('kernel_shape')[-1],
             IR_node.get_attr('pads')[1],
+            IR_node.get_attr('pads')[2],
             IR_node.get_attr('group', 1),
             IR_node.get_attr('use_bias', False)))
 
