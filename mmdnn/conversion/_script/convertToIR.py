@@ -80,6 +80,10 @@ def _convert(args):
         assert model != None
         parser = TorchParser(model, args.inputShape)
 
+    elif args.srcFramework == 'onnx':
+        from mmdnn.conversion.onnx.onnx_parser import ONNXParser
+        parser = ONNXParser(args.network)
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.srcFramework))
 
@@ -96,7 +100,7 @@ def _get_parser():
     parser.add_argument(
         '--srcFramework', '-f',
         type=_text_type,
-        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'torch', 'torch7'],
+        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'torch', 'torch7', 'onnx'],
         help="Source toolkit name of the model to be converted.")
 
     parser.add_argument(
