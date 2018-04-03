@@ -73,6 +73,7 @@ def _extract_model_args(args, unknown_args, temp_filename):
 
 def remove_temp_files(temp_filename, verbose=False):
     exts = ['.json', '.pb', '.npy', '.py']
+    # exts = ['.pb', '.npy', '.py']
     for ext in exts:
         temp_file = temp_filename + ext
         if os.path.isfile(temp_file):
@@ -98,7 +99,7 @@ def _main():
         dump_code(args.dstFramework, temp_filename + '.py', temp_filename + '.npy', args.outputModel)
         remove_temp_files(temp_filename)
 
-    elif args.dstType == 'model':
+    else:
         model_args, unknown_args = _extract_model_args(args, unknown_args, temp_filename)
         ret = IRToModel._convert(model_args)
         remove_temp_files(temp_filename)

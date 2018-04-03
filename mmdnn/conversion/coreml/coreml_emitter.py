@@ -55,7 +55,7 @@ class CoreMLEmitter(Emitter):
 
             shape = _infer_coreml_input_shape(shape)
 
-            output_features.append((output_node.encode(), shape))
+            output_features.append((str(output_node), shape))
             print("CoreML Model Output Layer: [{}] {}".format(output_node, shape))
 
         return list(input_features), list(output_features)
@@ -101,7 +101,6 @@ class CoreMLEmitter(Emitter):
                 self.emit_UNKNOWN(current_node)
                 assert False
 
-        # self._connect_coreml_layers()
         # Add classifier classes (if applicable)
         if is_classifier:
             classes_in = class_labels
@@ -499,6 +498,7 @@ class CoreMLEmitter(Emitter):
                 IR_node.name,
                 IR_node.replace_scope(IR_node.in_edges[0]))
         return code
+
 
     def emit_Relu6(self, IR_node):
         # print(IR_node.name)
