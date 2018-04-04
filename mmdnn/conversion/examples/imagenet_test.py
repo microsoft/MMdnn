@@ -74,6 +74,7 @@ class TestKit(object):
         },
 
         'tensorflow' : {
+            'vgg16'         : lambda path : TestKit.ZeroCenter(path, 224, False),
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
             'inception_v1'  : lambda path : TestKit.Standard(path, 224),
             'inception_v3'  : lambda path : TestKit.Standard(path, 299),

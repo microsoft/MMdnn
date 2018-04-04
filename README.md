@@ -17,7 +17,7 @@ This project is designed and developed by [Microsoft Research (MSR)](https://www
 
 You can get stable version of MMdnn by
 ```bash
-pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.4/mmdnn-0.1.4-py2.py3-none-any.whl
+pip install mmdnn
 ```
 
 or you can try the newest version by
@@ -70,7 +70,6 @@ Models                                              | Caffe | Keras | Tensorflow
 
 - ONNX
 - PyTorch (Source, waiting for formal release 0.4.0)
-- [Caffe2](https://caffe2.ai/)
 - Torch7 (Source)
 - CoreML (Source)
 - Chainer (help wants)
