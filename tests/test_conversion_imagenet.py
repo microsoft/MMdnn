@@ -59,6 +59,9 @@ class CorrectnessTest(unittest.TestCase):
 
     def _compare_outputs(self, original_predict, converted_predict, need_assert=True):
         # Function self.assertEquals has deprecated, change to assertEqual
+        if converted_predict is None and not need_assert:
+            return
+
         self.assertEqual(len(original_predict), len(converted_predict))
         error, ind = _compute_max_relative_error(converted_predict, original_predict)
         L1_error = _compute_L1_error(converted_predict, original_predict)
@@ -479,15 +482,7 @@ class TestModels(CorrectnessTest):
             BGRTranspose = bool(funcstr.split(',')[-2].split(')')[0])
             img_size = int(funcstr.split('path,')[1].split(',')[0])
 
-        print(BGRTranspose)
-        print(coreml_pre)
-        print(img_size)
-
-        prep_list = prep_for_coreml(coreml_pre, BGRTranspose )
-        print(prep_list)
-        # assert False
-
-        # print(func.__name__)
+        prep_list = prep_for_coreml(coreml_pre, BGRTranspose)
 
         emitter = CoreMLEmitter(architecture_path, weight_path)
         model, input_name, output_name = emitter.gen_model(
@@ -509,17 +504,22 @@ class TestModels(CorrectnessTest):
         con_model = coremltools.models.MLModel(model)
         print("Model loading success.")
 
-        from PIL import Image as pil_image
-        img = pil_image.open(image_path)
-        img = img.resize((img_size, img_size))
+        from coremltools.models.utils import macos_version
 
-        input_data = img
-        coreml_inputs = {str(input_name[0][0]): input_data}
-        coreml_output = con_model.predict(coreml_inputs, useCPUOnly=False)
-        converted_predict = coreml_output[str(output_name[0][0])]
+        if macos_version() < (10, 13):
+            return None
 
-        return converted_predict
+        else:
+            from PIL import Image as pil_image
+            img = pil_image.open(image_path)
+            img = img.resize((img_size, img_size))
 
+            input_data = img
+            coreml_inputs = {str(input_name[0][0]): input_data}
+            coreml_output = con_model.predict(coreml_inputs, useCPUOnly=False)
+            converted_predict = coreml_output[str(output_name[0][0])]
+
+            return converted_predict
 
 
     exception_tabel = {
@@ -593,8 +593,21 @@ class TestModels(CorrectnessTest):
             'inception_v3' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
             'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
         },
-
     }
+
+
+    @classmethod
+    def _need_assert(cls, original_framework, target_framework, network_name):
+        test_name = original_framework + '_' + target_framework + '_' + network_name
+        if test_name in cls.exception_tabel:
+            return False
+
+        if target_framework == 'CoreML':
+            from coremltools.models.utils import macos_version
+            if macos_version() < (10, 13):
+                return False
+
+        return True
 
 
     def _test_function(self, original_framework, parser):
@@ -609,7 +622,8 @@ class TestModels(CorrectnessTest):
 
             IR_file = TestModels.tmpdir + original_framework + '_' + network_name + "_converted"
             for emit in self.test_table[original_framework][network_name]:
-                print('Testing {} from {} to {}.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr)
+                target_framework = emit.__func__.__name__[:-4]
+                print('Testing {} from {} to {}.'.format(network_name, original_framework, target_framework), file=sys.stderr)
                 converted_predict = emit.__func__(
                     original_framework,
                     network_name,
@@ -617,10 +631,9 @@ class TestModels(CorrectnessTest):
                     IR_file + ".npy",
                     self.image_path)
 
-                test_name = original_framework + '_' + emit.__func__.__name__[:-4] + '_' + network_name
-                self._compare_outputs(original_predict, converted_predict, not test_name in self.exception_tabel)
+                self._compare_outputs(original_predict, converted_predict, self._need_assert(original_framework, target_framework, network_name))
+                print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, target_framework), file=sys.stderr)
 
-                print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, emit.__func__.__name__[:-4]), file=sys.stderr)
             try:
                 os.remove(IR_file + ".json")
             except OSError:
