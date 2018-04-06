@@ -62,6 +62,7 @@ class CorrectnessTest(unittest.TestCase):
         if converted_predict is None and not need_assert:
             return
 
+
         self.assertEqual(len(original_predict), len(converted_predict))
         error, ind = _compute_max_relative_error(converted_predict, original_predict)
         L1_error = _compute_L1_error(converted_predict, original_predict)
@@ -415,6 +416,8 @@ class TestModels(CorrectnessTest):
         import caffe
         from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
 
+        original_framework = checkfrozen(original_framework)
+
         # IR to code
         converted_file = original_framework + '_caffe_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
@@ -452,13 +455,15 @@ class TestModels(CorrectnessTest):
     def CoreMLEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
 
+        original_framework = checkfrozen(original_framework)
+
         def prep_for_coreml(prepname, BGRTranspose):
             if prepname == 'Standard' and BGRTranspose == False:
                 return 0.00784313725490196, -1, -1, -1
             elif prepname == 'ZeroCenter' and BGRTranspose == True:
                 return 1, -123.68, -116.779, -103.939
             elif prepname == 'ZeroCenter' and BGRTranspose == False:
-                return 1,-103.939,-116.779,-123.68
+                return 1, -103.939, -116.779, -123.68
             elif prepname == 'Identity':
                 return 1, 1, 1, 1
 
@@ -518,6 +523,7 @@ class TestModels(CorrectnessTest):
             coreml_inputs = {str(input_name[0][0]): input_data}
             coreml_output = con_model.predict(coreml_inputs, useCPUOnly=False)
             converted_predict = coreml_output[str(output_name[0][0])]
+            converted_predict = np.squeeze(converted_predict)
 
             return converted_predict
 
@@ -566,8 +572,9 @@ class TestModels(CorrectnessTest):
             'imagenet1k-resnext-50'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
         },
 
+
         'caffe' : {
-            'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit, CoreMLEmit],
             'alexnet'       : [CntkEmit, TensorflowEmit, MXNetEmit, CaffeEmit, PytorchEmit], # TODO: KerasEmit
             'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit, PytorchEmit],
             'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
