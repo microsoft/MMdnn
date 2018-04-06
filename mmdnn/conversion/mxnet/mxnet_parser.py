@@ -371,7 +371,10 @@ class MXNetParser(Parser):
             self.convert_inedge(source_node, IR_node)
 
             self.set_output_shape(source_node, IR_node)
-        return
+
+        else:
+            raise NotImplementedError()
+
 
 
     """
@@ -911,5 +914,10 @@ class MXNetParser(Parser):
     def rename__mul_scalar(self, source_node):
         self._convert_scalar_operator(source_node, 'Mul')
 
+
     def rename__minus_scalar(self, source_node):
         self._convert_scalar_operator(source_node, 'Sub')
+
+
+    def rename__copy(self, source_node):
+        source_node.real_name = self.get_parent(source_node.name, [0]).real_name
