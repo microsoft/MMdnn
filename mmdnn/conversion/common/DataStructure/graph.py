@@ -21,7 +21,9 @@ class GraphNode(object):
 
     @property
     def real_variable_name(self):
-        return self.real_name.replace('/', '_').replace('-', '_')
+        name = self.real_name.replace('/', '_').replace('-', '_')
+        if name.startswith('_'): name = name[1:]
+        return name
 
 
 
