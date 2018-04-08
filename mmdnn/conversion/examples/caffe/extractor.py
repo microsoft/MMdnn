@@ -15,6 +15,7 @@ class caffe_extractor(base_extractor):
     MMDNN_BASE_URL = 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/'
 
     architecture_map = {
+## Image Classification
         'alexnet'       : {'prototxt'   : 'https://raw.githubusercontent.com/BVLC/caffe/master/models/bvlc_alexnet/deploy.prototxt',
                         'caffemodel' : 'http://dl.caffe.berkeleyvision.org/bvlc_alexnet.caffemodel'},
         'inception_v1'  : {'prototxt'   : 'https://raw.githubusercontent.com/BVLC/caffe/master/models/bvlc_googlenet/deploy.prototxt',
@@ -31,10 +32,13 @@ class caffe_extractor(base_extractor):
                         'caffemodel' : BASE_MODEL_URL + 'ResNet-152-model.caffemodel'},
         'squeezenet'    : {'prototxt' : "https://raw.githubusercontent.com/DeepScale/SqueezeNet/master/SqueezeNet_v1.1/deploy.prototxt",
                            'caffemodel' : "https://github.com/DeepScale/SqueezeNet/raw/master/SqueezeNet_v1.1/squeezenet_v1.1.caffemodel"},
-        'xception'      : {'prototxt' : "http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/deploy_xception.prototxt",
-                           'caffemodel' : "http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/xception.caffemodel"},
-        'inception_v4'  : {'prototxt' : MMDNN_BASE_URL + 'caffe/deploy_inception-v4.prototxt',
+        'xception'      : {'prototxt' : MMDNN_BASE_URL + "caffe/xception_deploy.prototxt",
+                           'caffemodel' : MMDNN_BASE_URL + "caffe/xception.caffemodel"},
+        'inception_v4'  : {'prototxt' : MMDNN_BASE_URL + 'caffe/inception-v4_deploy.prototxt',
                            'caffemodel' : MMDNN_BASE_URL + 'caffe/inception-v4.caffemodel'},
+## Semantic Segmentation
+        'voc-fcn8s'     : {'prototxt' : 'https://raw.githubusercontent.com/shelhamer/fcn.berkeleyvision.org/master/voc-fcn8s/deploy.prototxt',
+                           'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn8s-heavy-pascal.caffemodel'},
     }
 
 
@@ -63,13 +67,13 @@ class caffe_extractor(base_extractor):
         if cls.sanity_check(architecture_name):
             import caffe
             import numpy as np
-            net = caffe.Net(architecture, path, caffe.TEST)
+            net = caffe.Net(architecture[0], architecture[1], caffe.TEST)
             func = TestKit.preprocess_func['caffe'][architecture_name]
             img = func(image_path)
             img = np.transpose(img, (2, 0, 1))
             img = np.expand_dims(img, 0)
             net.blobs['data'].data[...] = img
-            predict = np.squeeze(net.forward()['prob'][0])
+            predict = np.squeeze(net.forward()[net._layer_names[-1]][0])
             predict = np.squeeze(predict)
             return predict
 

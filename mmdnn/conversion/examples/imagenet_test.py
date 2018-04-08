@@ -15,7 +15,6 @@ class TestKit(object):
     truth = {
         'caffe' : {
             'alexnet'        : [(821, 0.25088307), (657, 0.20857951), (744, 0.096812263), (595, 0.066312768), (847, 0.053720973)],
-            #'alexnet'        : [(657, 0.41121086), (744, 0.20789686), (847, 0.086725488), (821, 0.059082959), (595, 0.058017101)],
             'vgg19'          : [(21, 0.37522122), (144, 0.28500062), (23, 0.099720284), (134, 0.036305398), (22, 0.033559237)],
             'inception_v1'   : [(21, 0.93591732), (23, 0.037170019), (22, 0.014315935), (128, 0.005050648), (749, 0.001965977)],
             'resnet152'      : [(144, 0.93159181), (23, 0.033074539), (21, 0.028599562), (99, 0.001878676), (146, 0.001557963)],
@@ -70,20 +69,21 @@ class TestKit(object):
             'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, True),
             'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True),
             'resnet152'     : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 227, False),
-            'inception_v4'  : lambda path : TestKit.ZeroCenter(path, 299, False),
-            'xception'      : lambda path : TestKit.ZeroCenter(path, 299, False),
+            'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 227),
+            'inception_v4'  : lambda path : TestKit.Standard(path, 299, True),
+            'xception'      : lambda path : TestKit.Standard(path, 299, True),
+            'voc-fcn8s'     : lambda path : TestKit.Identity(path, 500, True),
         },
 
         'tensorflow' : {
-            'vgg16'         : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'vgg16'         : lambda path : TestKit.ZeroCenter(path, 224),
+            'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224),
             'inception_v1'  : lambda path : TestKit.Standard(path, 224),
             'inception_v3'  : lambda path : TestKit.Standard(path, 299),
             'resnet'        : lambda path : TestKit.Standard(path, 299),
-            'resnet_v1_50'  : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'resnet_v1_101' : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'resnet_v1_152' : lambda path : TestKit.ZeroCenter(path, 224, False),
+            'resnet_v1_50'  : lambda path : TestKit.ZeroCenter(path, 224),
+            'resnet_v1_101' : lambda path : TestKit.ZeroCenter(path, 224),
+            'resnet_v1_152' : lambda path : TestKit.ZeroCenter(path, 224),
             'resnet_v2_50'  : lambda path : TestKit.Standard(path, 299),
             'resnet_v2_152' : lambda path : TestKit.Standard(path, 299),
             'resnet_v2_200' : lambda path : TestKit.Standard(path, 299),
@@ -190,12 +190,14 @@ class TestKit(object):
 
 
     @staticmethod
-    def Standard(path, size):
+    def Standard(path, size, BGRTranspose=False):
         img = image.load_img(path, target_size = (size, size))
         x = image.img_to_array(img)
         x /= 255.0
         x -= 0.5
         x *= 2.0
+        if BGRTranspose == True:
+            x = x[..., ::-1]
         return x
 
 
