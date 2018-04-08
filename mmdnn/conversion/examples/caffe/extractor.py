@@ -12,6 +12,7 @@ from mmdnn.conversion.common.utils import download_file
 class caffe_extractor(base_extractor):
 
     BASE_MODEL_URL = 'http://data.mxnet.io/models/imagenet/test/caffe/'
+    MMDNN_BASE_URL = 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/'
 
     architecture_map = {
         'alexnet'       : {'prototxt'   : 'https://raw.githubusercontent.com/BVLC/caffe/master/models/bvlc_alexnet/deploy.prototxt',
@@ -29,7 +30,11 @@ class caffe_extractor(base_extractor):
         'resnet152'     : {'prototxt'   : BASE_MODEL_URL + 'ResNet-152-deploy.prototxt',
                         'caffemodel' : BASE_MODEL_URL + 'ResNet-152-model.caffemodel'},
         'squeezenet'    : {'prototxt' : "https://raw.githubusercontent.com/DeepScale/SqueezeNet/master/SqueezeNet_v1.1/deploy.prototxt",
-                        'caffemodel' : "https://github.com/DeepScale/SqueezeNet/raw/master/SqueezeNet_v1.1/squeezenet_v1.1.caffemodel"}
+                           'caffemodel' : "https://github.com/DeepScale/SqueezeNet/raw/master/SqueezeNet_v1.1/squeezenet_v1.1.caffemodel"},
+        'xception'      : {'prototxt' : "http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/deploy_xception.prototxt",
+                           'caffemodel' : "http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/xception.caffemodel"},
+        'inception_v4'  : {'prototxt' : MMDNN_BASE_URL + 'caffe/deploy_inception-v4.prototxt',
+                           'caffemodel' : MMDNN_BASE_URL + 'caffe/inception-v4.caffemodel'},
     }
 
 
