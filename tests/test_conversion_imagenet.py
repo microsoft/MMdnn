@@ -376,7 +376,6 @@ class TestModels(CorrectnessTest):
         original_framework = checkfrozen(original_framework)
 
         import mxnet as mx
-        print("Testing {} from {} to MXNet.".format(architecture_name, original_framework))
 
         # IR to code
         converted_file = original_framework + '_mxnet_' + architecture_name + "_converted"
@@ -529,15 +528,17 @@ class TestModels(CorrectnessTest):
 
 
     exception_tabel = {
-        'cntk_Keras_resnet18',                      # different after the first convolution layer
-        'cntk_Keras_resnet152',                     # different after the first convolution layer
-        'cntk_Tensorflow_resnet18',                 # different after the first convolution layer
-        'cntk_Tensorflow_resnet152',                # different after the first convolution layer
+        'cntk_Keras_resnet18',                      # Different *Same Padding* method in first convolution layer.
+        'cntk_Keras_resnet152',                     # Different *Same Padding* method in first convolution layer.
+        'cntk_Tensorflow_resnet18',                 # Different *Same Padding* method in first convolution layer.
+        'cntk_Tensorflow_resnet152',                # Different *Same Padding* method in first convolution layer.
         'cntk_Caffe_resnet18',                      # TODO
         'cntk_Caffe_resnet152',                     # TODO
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
+        'caffe_Cntk_inception_v4',                  # TODO
         'caffe_Pytorch_inception_v1',               # TODO
         'caffe_Pytorch_alexnet',                    # TODO
+        'caffe_Pytorch_inception_v4',               # TODO, same with caffe_Cntk_inception_v4
         'mxnet_Caffe_imagenet1k-resnet-152',        # TODO
         'mxnet_Caffe_imagenet1k-resnext-50',        # TODO
         'mxnet_Caffe_imagenet1k-resnext-101-64x4d', # TODO
@@ -568,7 +569,7 @@ class TestModels(CorrectnessTest):
             'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: Caffe
             'imagenet1k-resnet-152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'squeezenet_v1.1'           : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is too slow
+            'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is ok but too slow
             'imagenet1k-resnext-50'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
         },
 
@@ -579,6 +580,8 @@ class TestModels(CorrectnessTest):
             'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit, PytorchEmit],
             'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'squeezenet'    : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'inception_v4'    : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, CoreMLEmit], # TODO MXNetEmit, CaffeEmit
+            'xception'      : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit, CoreMLEmit], #  KerasEmit is too slow
         },
 
         'tensorflow' : {

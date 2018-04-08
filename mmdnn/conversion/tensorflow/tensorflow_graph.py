@@ -8,10 +8,10 @@ from tensorflow.core.framework.node_def_pb2 import NodeDef
 from tensorflow.core.framework import attr_value_pb2
 
 
-class TensorflowGraphNode(GraphNode):        
+class TensorflowGraphNode(GraphNode):
 
     def __init__(self, layer):
-        super(TensorflowGraphNode, self).__init__(layer)        
+        super(TensorflowGraphNode, self).__init__(layer)
 
 
     @property
@@ -20,7 +20,7 @@ class TensorflowGraphNode(GraphNode):
 
 
     @property
-    def type(self):        
+    def type(self):
         return self.layer.op
 
 
@@ -43,20 +43,20 @@ class TensorflowGraphNode(GraphNode):
 
 
 class TensorflowGraph(Graph):
-      
+
     def __init__(self, model):
         # sanity check.
         pass
 
         super(TensorflowGraph, self).__init__(model)
         self.model = model
-      
-  
-    def build(self):        
+
+
+    def build(self):
         for i, layer in enumerate(self.model.node):
             self.layer_map[layer.name] = TensorflowGraphNode(layer)
 
-        for i, layer in enumerate(self.model.node):            
+        for i, layer in enumerate(self.model.node):
             self.layer_map[layer.name] = TensorflowGraphNode(layer)
             self.layer_name_map[layer.name] = layer.name
             for pred in layer.input:
@@ -66,7 +66,7 @@ class TensorflowGraph(Graph):
                     new_node.op = "NoOp"
                     self.layer_map[pred] = TensorflowGraphNode(new_node)
                     self.layer_name_map[pred] = pred
-                
+
                 self._make_connection(pred, layer.name)
 
         super(TensorflowGraph, self).build()

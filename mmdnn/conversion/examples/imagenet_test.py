@@ -71,6 +71,8 @@ class TestKit(object):
             'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True),
             'resnet152'     : lambda path : TestKit.ZeroCenter(path, 224, True),
             'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 227, False),
+            'inception_v4'  : lambda path : TestKit.ZeroCenter(path, 299, False),
+            'xception'      : lambda path : TestKit.ZeroCenter(path, 299, False),
         },
 
         'tensorflow' : {
