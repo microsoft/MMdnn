@@ -371,7 +371,10 @@ class MXNetParser(Parser):
             self.convert_inedge(source_node, IR_node)
 
             self.set_output_shape(source_node, IR_node)
-        return
+
+        else:
+            raise NotImplementedError()
+
 
 
     """
@@ -525,6 +528,10 @@ class MXNetParser(Parser):
             # gamma
             if IR_node.attr["scale"].b:
                 self.set_weight(source_node.name, "scale", self.weight_data.get(source_node.name + "_gamma").asnumpy())
+            else:
+                #We have fixed gamma. This is 1 according to the mxnet docs (https://mxnet.apache.org/api/python/symbol/symbol.html#mxnet.symbol.BatchNorm)
+                self.set_weight(source_node.name, "scale", np.array([1], np.float32))
+
 
             # beta
             if IR_node.attr["bias"].b:
@@ -907,5 +914,10 @@ class MXNetParser(Parser):
     def rename__mul_scalar(self, source_node):
         self._convert_scalar_operator(source_node, 'Mul')
 
+
     def rename__minus_scalar(self, source_node):
         self._convert_scalar_operator(source_node, 'Sub')
+
+
+    def rename__copy(self, source_node):
+        source_node.real_name = self.get_parent(source_node.name, [0]).real_name

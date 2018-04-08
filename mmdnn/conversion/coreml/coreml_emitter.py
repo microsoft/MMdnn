@@ -648,10 +648,25 @@ class CoreMLEmitter(Emitter):
             # self.emit_Reshape(IR_node)
 
 
+    def emit_LRN(self, IR_node):
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        output_name = IR_node.real_name
+        C = IR_node.get_attr('size')
+        alpha = IR_node.get_attr('alpha')
+        beta = IR_node.get_attr('beta')
+        k = IR_node.get_attr('k')
+        depth_radius = int(IR_node.get_attr('size'))
+        self.builder.add_lrn(output_name, input_name, output_name,
+                          alpha=alpha * C,
+                          beta=beta,
+                          local_size=depth_radius,
+                          k=k)
+
+
     def emit_SeparableConv(self, IR_node):
 
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
-        output_name = output_name=IR_node.real_name
+        output_name = IR_node.real_name
 
         assert len(IR_node.get_attr("strides")) == 4
         strides = IR_node.get_attr('strides')
