@@ -156,9 +156,9 @@ class TestKit(object):
         )
 
         parser.add_argument('--dump',
-            type = _text_type,
-            default = None,
-            help = 'Target model path.')
+            type=_text_type,
+            default=None,
+            help='Target model path.')
 
         self.args = parser.parse_args()
         if self.args.n.endswith('.py'):

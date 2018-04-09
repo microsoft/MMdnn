@@ -11,9 +11,6 @@ def extract_model(args):
         from mmdnn.conversion.examples.caffe.extractor import caffe_extractor
         extractor = caffe_extractor()
 
-    elif args.framework == 'caffe2':
-        raise NotImplementedError("Caffe2 is not supported yet.")
-
     elif args.framework == 'keras':
         from mmdnn.conversion.examples.keras.extractor import keras_extractor
         extractor = keras_extractor()

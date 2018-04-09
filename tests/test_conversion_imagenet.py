@@ -193,6 +193,7 @@ class TestModels(CorrectnessTest):
         transformer = CaffeTransformer(architecture_file, weight_file, "tensorflow", None, phase = 'TRAIN')
         graph = transformer.transform_graph()
         data = transformer.transform_data()
+        del CaffeTransformer
 
         from mmdnn.conversion.caffe.writer import ModelSaver, PyWriter
 
@@ -457,7 +458,7 @@ class TestModels(CorrectnessTest):
         original_framework = checkfrozen(original_framework)
 
         def prep_for_coreml(prepname, BGRTranspose):
-            if prepname == 'Standard' and BGRTranspose == False:
+            if prepname == 'Standard':
                 return 0.00784313725490196, -1, -1, -1
             elif prepname == 'ZeroCenter' and BGRTranspose == True:
                 return 1, -123.68, -116.779, -103.939
@@ -465,7 +466,8 @@ class TestModels(CorrectnessTest):
                 return 1, -103.939, -116.779, -123.68
             elif prepname == 'Identity':
                 return 1, 1, 1, 1
-
+            else:
+                raise ValueError()
 
         # IR to Model
         converted_file = original_framework + '_coreml_' + architecture_name + "_converted"
@@ -534,6 +536,7 @@ class TestModels(CorrectnessTest):
         'cntk_Tensorflow_resnet152',                # Different *Same Padding* method in first convolution layer.
         'cntk_Caffe_resnet18',                      # TODO
         'cntk_Caffe_resnet152',                     # TODO
+        'tensorflow_frozen_MXNet_inception_v1',     # TODO
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
         'caffe_Cntk_inception_v4',                  # TODO
         'caffe_Pytorch_inception_v1',               # TODO
