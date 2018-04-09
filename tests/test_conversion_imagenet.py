@@ -185,7 +185,7 @@ class TestModels(CorrectnessTest):
         architecture_file, weight_file = caffe_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = caffe_extractor.inference(architecture_name,architecture_file, weight_file, image_path)
+        original_predict = caffe_extractor.inference(architecture_name, (architecture_file, weight_file), TestModels.cachedir, image_path)
         del caffe_extractor
 
         # original to IR
@@ -575,6 +575,7 @@ class TestModels(CorrectnessTest):
 
 
         'caffe' : {
+            # 'voc-fcn8s'       : [TensorflowEmit]
             'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit, CoreMLEmit],
             'alexnet'       : [CntkEmit, TensorflowEmit, MXNetEmit, CaffeEmit, PytorchEmit], # TODO: KerasEmit
             'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit, PytorchEmit],

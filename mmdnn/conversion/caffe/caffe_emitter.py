@@ -320,6 +320,7 @@ bias_term={}, ntop=1)".format(
             self.parent_variable_name(IR_node),
             in_place))
 
+
     def emit_PRelu(self, IR_node):
         in_place = True
         self.add_body(1, "n.{:<15} = L.PReLU(n.{}, in_place={}, ntop=1)".format(
@@ -332,6 +333,7 @@ bias_term={}, ntop=1)".format(
         self.add_body(1, "n.{:<15} = L.Softmax(n.{}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node)))
+
 
     def emit_Pad(self, IR_node):
         IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name

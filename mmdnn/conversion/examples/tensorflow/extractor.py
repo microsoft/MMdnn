@@ -237,6 +237,7 @@ class tensorflow_extractor(base_extractor):
                     tf_out = sess.run(tf_output_name, feed_dict={tf_input_name: img})
                 predict = np.squeeze(tf_out)
                 return predict
+
             else:
                 with slim.arg_scope(cls.architecture_map[architecture]['arg_scope']()):
                     data_input = cls.architecture_map[architecture]['input']()
