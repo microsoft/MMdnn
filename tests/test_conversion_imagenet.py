@@ -583,13 +583,15 @@ class TestModels(CorrectnessTest):
 
 
         'caffe' : {
-            'voc-fcn8s'       : [TensorflowEmit],
+            'voc-fcn8s'     : [TensorflowEmit],
+            'voc-fcn16s'    : [TensorflowEmit],
+            'voc-fcn32s'    : [TensorflowEmit],
             'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit, CoreMLEmit],
             'alexnet'       : [CntkEmit, TensorflowEmit, MXNetEmit, CaffeEmit, PytorchEmit], # TODO: KerasEmit
             'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit, PytorchEmit],
             'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'squeezenet'    : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'inception_v4'    : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, CoreMLEmit], # TODO MXNetEmit, CaffeEmit
+            'inception_v4'  : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, CoreMLEmit], # TODO MXNetEmit, CaffeEmit
             'xception'      : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit, CoreMLEmit], #  KerasEmit is too slow
         },
 

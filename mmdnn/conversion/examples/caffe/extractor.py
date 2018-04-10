@@ -39,6 +39,10 @@ class caffe_extractor(base_extractor):
 ## Semantic Segmentation
         'voc-fcn8s'     : {'prototxt' : 'https://raw.githubusercontent.com/shelhamer/fcn.berkeleyvision.org/master/voc-fcn8s/deploy.prototxt',
                            'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn8s-heavy-pascal.caffemodel'},
+        'voc-fcn16s'    : {'prototxt' : MMDNN_BASE_URL + "caffe/voc-fcn16s_deploy.prototxt",
+                           'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn16s-heavy-pascal.caffemodel'},
+        'voc-fcn32s'    : {'prototxt' : MMDNN_BASE_URL + "caffe/voc-fcn32s_deploy.prototxt",
+                           'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn32s-heavy-pascal.caffemodel'},
     }
 
 
