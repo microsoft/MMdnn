@@ -157,12 +157,11 @@ def RefactorModel():
 """
             code = self.body_code + weight_code + train_code + main_code
         else:
-            test_code = """import matplotlib.pyplot as plt
-from collections import namedtuple
+            test_code = """from collections import namedtuple
 Batch = namedtuple('Batch', ['data'])
 
 
-def get_image(url, show = False):
+def get_image(url, show=False):
     import cv2
     # download and show the image
     fname = mx.test_utils.download(url)
@@ -170,6 +169,7 @@ def get_image(url, show = False):
     if img is None:
         return None
     if show:
+        import matplotlib.pyplot as plt
         plt.imshow(img)
         plt.axis('off')
     # convert into format (batch, RGB, width, height)
