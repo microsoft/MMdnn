@@ -63,7 +63,9 @@ class CorrectnessTest(unittest.TestCase):
             return
 
 
-        self.assertEqual(len(original_predict), len(converted_predict))
+        self.assertEqual(original_predict.shape, converted_predict.shape)
+        original_predict = original_predict.flatten()
+        converted_predict = converted_predict.flatten()
         error, ind = _compute_max_relative_error(converted_predict, original_predict)
         L1_error = _compute_L1_error(converted_predict, original_predict)
         SNR, PSNR = _compute_SNR(converted_predict, original_predict)
@@ -190,7 +192,7 @@ class TestModels(CorrectnessTest):
 
         # original to IR
         from mmdnn.conversion.caffe.transformer import CaffeTransformer
-        transformer = CaffeTransformer(architecture_file, weight_file, "tensorflow", None, phase = 'TRAIN')
+        transformer = CaffeTransformer(architecture_file, weight_file, "tensorflow", None, phase = 'TEST')
         graph = transformer.transform_graph()
         data = transformer.transform_data()
         del CaffeTransformer
@@ -209,6 +211,9 @@ class TestModels(CorrectnessTest):
         with open(npy_path, 'wb') as of:
             np.save(of, data)
         print ("IR weights are saved as [{}].".format(npy_path))
+
+        if original_predict.ndim == 3:
+            original_predict = np.transpose(original_predict, (1, 2, 0))
 
         return original_predict
 
@@ -578,7 +583,7 @@ class TestModels(CorrectnessTest):
 
 
         'caffe' : {
-            # 'voc-fcn8s'       : [TensorflowEmit]
+            'voc-fcn8s'       : [TensorflowEmit],
             'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit, CoreMLEmit],
             'alexnet'       : [CntkEmit, TensorflowEmit, MXNetEmit, CaffeEmit, PytorchEmit], # TODO: KerasEmit
             'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit, PytorchEmit],
