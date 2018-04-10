@@ -449,7 +449,7 @@ def KitModel(weight_file = None):
 
     def emit_ConvTranspose(self, IR_node):
         self.used_layers.add(IR_node.type)
-        output_shape = shape_to_list(IR_node.get_attr('_output_shapes')[0])
+        output_shape = [1] + shape_to_list(IR_node.get_attr('_output_shapes')[0])[1:]
         input_node, padding = self._defuse_padding(IR_node)
         self.add_body(1, "{:<15} = convolution_transpose({}, output_shape={}, strides={}, padding='{}', name='{}')".format(
             IR_node.variable_name,

@@ -72,7 +72,7 @@ class TestKit(object):
             'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 227),
             'inception_v4'  : lambda path : TestKit.Standard(path, 299, True),
             'xception'      : lambda path : TestKit.Standard(path, 299, True),
-            'voc-fcn8s'     : lambda path : TestKit.Identity(path, 500, True),
+            'voc-fcn8s'     : lambda path : TestKit.ZeroCenter(path, 500, True),
         },
 
         'tensorflow' : {
