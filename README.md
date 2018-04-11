@@ -65,6 +65,7 @@ Models                                              | Caffe | Keras | Tensorflow
 [DenseNet](https://arxiv.org/abs/1608.06993)        |       |   √   |     √      |   √  |   √   |    √       |
 [NASNet](https://arxiv.org/abs/1707.07012)          |       |   √   |     √      | × (no SeparableConv)
 [ResNext](https://arxiv.org/abs/1611.05431)         |       |   √   |     √      |   √  |   √   |
+voc-FCN8s/FCN16s/FCN32s                             |       |       |     √      |      |       |            |
 
 #### On-going frameworks
 

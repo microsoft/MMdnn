@@ -13,7 +13,7 @@ Destination: CNTK 2.4
 Install [Keras](https://keras.io/#installation) and [CNTK](https://docs.microsoft.com/en-us/cognitive-toolkit/Setup-CNTK-on-your-machine) in case
 
 ```bash
-$ pip install keras==2.1.3
+$ pip install keras
 
 $ pip install https://cntk.ai/PythonWheel/CPU-Only/cntk-2.4-cp27-cp27mu-linux_x86_64.whl
 or
