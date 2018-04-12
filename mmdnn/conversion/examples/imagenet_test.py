@@ -72,7 +72,9 @@ class TestKit(object):
             'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 227),
             'inception_v4'  : lambda path : TestKit.Standard(path, 299, True),
             'xception'      : lambda path : TestKit.Standard(path, 299, True),
-            'voc-fcn8s'     : lambda path : TestKit.Identity(path, 500, True),
+            'voc-fcn8s'     : lambda path : TestKit.ZeroCenter(path, 500, True),
+            'voc-fcn16s'    : lambda path : TestKit.ZeroCenter(path, 500, True),
+            'voc-fcn32s'    : lambda path : TestKit.ZeroCenter(path, 500, True),
         },
 
         'tensorflow' : {
@@ -156,9 +158,9 @@ class TestKit(object):
         )
 
         parser.add_argument('--dump',
-            type = _text_type,
-            default = None,
-            help = 'Target model path.')
+            type=_text_type,
+            default=None,
+            help='Target model path.')
 
         self.args = parser.parse_args()
         if self.args.n.endswith('.py'):

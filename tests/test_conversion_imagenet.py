@@ -63,7 +63,9 @@ class CorrectnessTest(unittest.TestCase):
             return
 
 
-        self.assertEqual(len(original_predict), len(converted_predict))
+        self.assertEqual(original_predict.shape, converted_predict.shape)
+        original_predict = original_predict.flatten()
+        converted_predict = converted_predict.flatten()
         error, ind = _compute_max_relative_error(converted_predict, original_predict)
         L1_error = _compute_L1_error(converted_predict, original_predict)
         SNR, PSNR = _compute_SNR(converted_predict, original_predict)
@@ -190,9 +192,10 @@ class TestModels(CorrectnessTest):
 
         # original to IR
         from mmdnn.conversion.caffe.transformer import CaffeTransformer
-        transformer = CaffeTransformer(architecture_file, weight_file, "tensorflow", None, phase = 'TRAIN')
+        transformer = CaffeTransformer(architecture_file, weight_file, "tensorflow", None, phase = 'TEST')
         graph = transformer.transform_graph()
         data = transformer.transform_data()
+        del CaffeTransformer
 
         from mmdnn.conversion.caffe.writer import ModelSaver, PyWriter
 
@@ -208,6 +211,9 @@ class TestModels(CorrectnessTest):
         with open(npy_path, 'wb') as of:
             np.save(of, data)
         print ("IR weights are saved as [{}].".format(npy_path))
+
+        if original_predict.ndim == 3:
+            original_predict = np.transpose(original_predict, (1, 2, 0))
 
         return original_predict
 
@@ -457,7 +463,7 @@ class TestModels(CorrectnessTest):
         original_framework = checkfrozen(original_framework)
 
         def prep_for_coreml(prepname, BGRTranspose):
-            if prepname == 'Standard' and BGRTranspose == False:
+            if prepname == 'Standard':
                 return 0.00784313725490196, -1, -1, -1
             elif prepname == 'ZeroCenter' and BGRTranspose == True:
                 return 1, -123.68, -116.779, -103.939
@@ -465,7 +471,8 @@ class TestModels(CorrectnessTest):
                 return 1, -103.939, -116.779, -123.68
             elif prepname == 'Identity':
                 return 1, 1, 1, 1
-
+            else:
+                raise ValueError()
 
         # IR to Model
         converted_file = original_framework + '_coreml_' + architecture_name + "_converted"
@@ -534,6 +541,7 @@ class TestModels(CorrectnessTest):
         'cntk_Tensorflow_resnet152',                # Different *Same Padding* method in first convolution layer.
         'cntk_Caffe_resnet18',                      # TODO
         'cntk_Caffe_resnet152',                     # TODO
+        'tensorflow_frozen_MXNet_inception_v1',     # TODO
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
         'caffe_Cntk_inception_v4',                  # TODO
         'caffe_Pytorch_inception_v1',               # TODO
@@ -575,13 +583,15 @@ class TestModels(CorrectnessTest):
 
 
         'caffe' : {
-            # 'voc-fcn8s'       : [TensorflowEmit]
+            'voc-fcn8s'     : [TensorflowEmit],
+            'voc-fcn16s'    : [TensorflowEmit],
+            'voc-fcn32s'    : [TensorflowEmit],
             'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit, CoreMLEmit],
             'alexnet'       : [CntkEmit, TensorflowEmit, MXNetEmit, CaffeEmit, PytorchEmit], # TODO: KerasEmit
             'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit, PytorchEmit],
             'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'squeezenet'    : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'inception_v4'    : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, CoreMLEmit], # TODO MXNetEmit, CaffeEmit
+            'inception_v4'  : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, CoreMLEmit], # TODO MXNetEmit, CaffeEmit
             'xception'      : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit, CoreMLEmit], #  KerasEmit is too slow
         },
 
