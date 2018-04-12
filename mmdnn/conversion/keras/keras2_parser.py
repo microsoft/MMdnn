@@ -109,6 +109,7 @@ class Keras2Parser(Parser):
         self.data_format = _keras.backend.image_data_format()
         self.keras_graph = Keras2Graph(model)
         self.keras_graph.build()
+        self.lambda_layer_count = 0
 
 
     def gen_IR(self):
@@ -715,3 +716,20 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node, 'LeakyRelu')
         self.convert_inedge(source_node, IR_node)
         assign_IRnode_values(IR_node, {'alpha' : source_node.layer.alpha.tolist()})
+
+
+    def rename_space_to_depth_x2(self, source_node):
+        IR_node = self.IR_graph.node.add()
+
+        # name, op
+        Keras2Parser._copy_and_reop(source_node, IR_node, 'Reshape')
+        IR_node.name = "Lambda_{}".format(self.lambda_layer_count)
+
+        # input edge
+        self.convert_inedge(source_node, IR_node)
+
+        # for target shape
+        IR_node.attr["shape"].list.i.append(-1)
+        IR_node.attr["shape"].list.i.extend(source_node.layer.output_shape[1:])
+        self.lambda_layer_count = self.lambda_layer_count + 1
+        source_node.real_name = IR_node.name
