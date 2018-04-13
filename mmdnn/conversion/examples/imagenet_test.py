@@ -221,9 +221,14 @@ class TestKit(object):
 
     def print_result(self, predict):
         predict = np.squeeze(predict)
-        top_indices = predict.argsort()[-5:][::-1]
-        self.result = [(i, predict[i]) for i in top_indices]
+        if predict.ndim == 1:
+            top_indices = predict.argsort()[-5:][::-1]
+            self.result = [(i, predict[i]) for i in top_indices]
+        else:
+            self.result = predict
+
         print (self.result)
+        print (self.result.shape)
 
 
     def print_intermediate_result(self, intermediate_output, if_transpose = False):
