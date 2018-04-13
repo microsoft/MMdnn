@@ -112,6 +112,8 @@ class TestKit(object):
             'inception_resnet_v2'  : lambda path : TestKit.Standard(path, 299),
             'densenet'             : lambda path : TestKit.Standard(path, 224),
             'nasnet'               : lambda path : TestKit.Standard(path, 331),
+            'yolo2-tiny'           : lambda path : TestKit.Identity(path, 416),
+            'yolo2'                : lambda path : TestKit.Identity(path, 416),
         },
 
         'mxnet' : {
