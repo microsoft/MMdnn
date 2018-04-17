@@ -209,7 +209,7 @@ class tensorflow_extractor(base_extractor):
 
 
     @classmethod
-    def inference(cls, architecture, path, image_path, is_frozen = False):
+    def inference(cls, architecture, files, path, image_path, is_frozen=False):
         if is_frozen:
             architecture_ = architecture + "_frozen"
         else:

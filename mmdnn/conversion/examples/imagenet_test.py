@@ -159,6 +159,11 @@ class TestKit(object):
                             default="mmdnn/conversion/examples/data/seagull.jpg"
         )
 
+        parser.add_argument('-l', '--label',
+                            type=_text_type,
+                            default='mmdnn/conversion/examples/data/imagenet_1000.txt',
+                            help='Path of label.')
+
         parser.add_argument('--dump',
             type=_text_type,
             default=None,
@@ -223,12 +228,25 @@ class TestKit(object):
         predict = np.squeeze(predict)
         if predict.ndim == 1:
             top_indices = predict.argsort()[-5:][::-1]
+            if predict.shape[0] == 1001 or predict.shape[0] == 1000:
+                if predict.shape[0] == 1000:
+                    offset = 0
+                else:
+                    offset = 1
+
+                import os
+                if os.path.exists(self.args.label):
+                    with open(self.args.label, 'r') as f:
+                        labels = [l.rstrip() for l in f]
+
+                for i in top_indices:
+                    print (labels[i - offset], i, predict[i])
+
             self.result = [(i, predict[i]) for i in top_indices]
+
         else:
             self.result = predict
-
-        print (self.result)
-        print (self.result.shape)
+            print (self.result)
 
 
     def print_intermediate_result(self, intermediate_output, if_transpose = False):
