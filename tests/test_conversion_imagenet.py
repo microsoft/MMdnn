@@ -92,7 +92,7 @@ class TestModels(CorrectnessTest):
         from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
 
         # get original model prediction result
-        original_predict = tensorflow_extractor.inference(architecture_name, TestModels.cachedir, image_path)
+        original_predict = tensorflow_extractor.inference(architecture_name, None, TestModels.cachedir, image_path)
         del tensorflow_extractor
 
         # original to IR
@@ -115,7 +115,7 @@ class TestModels(CorrectnessTest):
         from mmdnn.conversion.tensorflow.tensorflow_frozenparser import TensorflowParser2
 
         # get original model prediction result
-        original_predict = tensorflow_extractor.inference(architecture_name, TestModels.cachedir, image_path, is_frozen = True)
+        original_predict = tensorflow_extractor.inference(architecture_name, None, TestModels.cachedir, image_path, is_frozen = True)
         para = tensorflow_extractor.get_frozen_para(architecture_name)
         del tensorflow_extractor
 
@@ -557,8 +557,8 @@ class TestModels(CorrectnessTest):
     test_table = {
         'cntk' : {
             # 'alexnet'       : [CntkEmit, TensorflowEmit, KerasEmit],
-            'resnet18'      : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'resnet152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'resnet18'      : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'resnet152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
             'inception_v3'  : [CntkEmit, TensorflowEmit, PytorchEmit], # Caffe, Keras and MXNet no constant layer
         },
 

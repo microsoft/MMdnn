@@ -61,7 +61,7 @@ You can convert only network structure to IR for visualization or training in ot
 We use resnet_v2_152 model as an example.
 
 ```bash
-$ python -m mmdnn.conversion._script.convertToIR -f tensorflow -d resnet152 -n imagenet_resnet_v2_152.ckpt.meta --dstNodeName MMdnn_Output
+$ mmtoir -f tensorflow -d resnet152 -n imagenet_resnet_v2_152.ckpt.meta --dstNodeName MMdnn_Output
 
 Parse file [imagenet_resnet_v2_152.ckpt.meta] with binary format successfully.
 Tensorflow model file [imagenet_resnet_v2_152.ckpt.meta] loaded successfully.
@@ -75,7 +75,7 @@ Warning: weights are not loaded.
 You can use following bash command to convert the checkpoint files to IR architecture file [*resnet152.pb*], [*resnet152.json*] and IR weights file [*resnet152.npy*]
 
 ```bash
-$ python -m mmdnn.conversion._script.convertToIR -f tensorflow -d resnet152 -n imagenet_resnet_v2_152.ckpt.meta -w imagenet_resnet_v2_152.ckpt  --dstNodeName MMdnn_Output
+$ mmtoir -f tensorflow -d resnet152 -n imagenet_resnet_v2_152.ckpt.meta -w imagenet_resnet_v2_152.ckpt  --dstNodeName MMdnn_Output
 
 Parse file [imagenet_resnet_v2_152.ckpt.meta] with binary format successfully.
 Tensorflow model file [imagenet_resnet_v2_152.ckpt.meta] loaded successfully.
@@ -90,7 +90,7 @@ IR weights are saved as [resnet152.npy].
 The generated Tensorflow code snippet can restore weights from IR weights file directly, but we need the tensors' shape information to infer some parameters.
 
 ```bash
-$ python -m mmdnn.conversion._script.IRToCode -f tensorflow --IRModelPath resnet152.pb --IRWeightPath resnet152.npy --dstModelPath tf_resnet152.py
+$ mmtocode -f tensorflow --IRModelPath resnet152.pb --IRWeightPath resnet152.npy --dstModelPath tf_resnet152.py
 
 Parse file [resnet152.pb] with binary format successfully.
 Target network code snippet is saved as [tf_resnet152.py].
