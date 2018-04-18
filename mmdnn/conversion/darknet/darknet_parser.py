@@ -115,8 +115,9 @@ class DarknetParser(Parser):
         header = np.fromfile(fp, count=4, dtype=np.int32)
         self.buf = np.fromfile(fp, dtype = np.float32)
         print(self.buf.size)
+
         fp.close()
-        self.start = 0
+        self.start = 1
 
         model = parse_cfg(model_config)
         # print(model)
@@ -209,7 +210,7 @@ class DarknetParser(Parser):
         """
         weights: name_weights, name_bias
         """
-        # print(source_node.layer)
+        print(source_node.layer)
         print("//////////////",self.start)
         IR_node = self._convert_identity_operation(source_node, new_op='Conv')
         # print(IR_node)
@@ -223,6 +224,11 @@ class DarknetParser(Parser):
         innode = self.dk_graph.get_node(source_node.in_edges[0])
         input_shape = innode.get_attr('_output_shape')
         # print(input_shape)
+        # kernel = source_node.get_attr('kernel')
+        # print("kkkkkkkkk", kernel)
+
+        # # assert False
+        # kwargs['kernel_shape'] = kernel[-2:] + [kernel[1]] + [kernel[0]]
         kwargs['kernel_shape'] = source_node.get_attr('kernel')
 
         # padding
@@ -237,10 +243,13 @@ class DarknetParser(Parser):
 
         print( "-------------------", source_node.get_attr('bias_term'))
         if source_node.get_attr('bias_term') == 'true':
+            kwargs['use_bias'] = True
             print(kwargs['kernel_shape'])
             print(source_node.layer)
-            kernel = np.zeros(kwargs['kernel_shape'])
-            k_bias = np.zeros(kwargs['kernel_shape'][0])
+
+            kernel = kwargs['kernel_shape']
+            kernel = np.zeros([kernel[-1], kernel[-2], kernel[0], kernel[1]])
+            k_bias = np.zeros(kwargs['kernel_shape'][-1])
             print(kernel.shape)
             print(k_bias.shape)
 
@@ -248,12 +257,14 @@ class DarknetParser(Parser):
             print(conv_name)
             b = np.reshape(self.buf[self.start:self.start+k_bias.size], k_bias.shape)
             self.start = self.start + k_bias.size
-            self.set_weight(conv_name, 'weights', b)
+            self.set_weight(conv_name, 'bias', b)
 
             W = np.reshape(self.buf[self.start:self.start+kernel.size], kernel.shape)
             self.start = self.start + kernel.size
+            W = np.transpose(W, (2, 3, 1, 0))
             self.set_weight(conv_name, 'weights', W)
-
+        else:
+            kwargs['use_bias'] = False
 
 
         assign_IRnode_values(IR_node, kwargs)
@@ -277,9 +288,11 @@ class DarknetParser(Parser):
         innode = self.dk_graph.get_node(source_node.in_edges[0])
         input_shape = innode.get_attr('_output_shape')
         kernel = innode.get_attr('kernel')
+        print(kernel)
+        kernel = np.zeros([kernel[-1], kernel[-2], kernel[0], kernel[1]])
         # print(input_shape)
         # print(kernel)
-
+        # assert False
 
         # buf, start, scale_layer['name'], bn_layer['name'], conv_layer['name']
         bias = np.zeros(input_shape[-1])
@@ -287,7 +300,7 @@ class DarknetParser(Parser):
         mean = np.zeros(input_shape[-1])
         var = np.zeros(input_shape[-1])
         # assert False
-        kernel = np.zeros(kernel)
+        # kernel = np.zeros(kernel)
         print(bias.shape)
         print(scale.shape)
         print(mean.shape)
@@ -306,7 +319,7 @@ class DarknetParser(Parser):
 
         mean_content = np.reshape(self.buf[self.start:self.start+mean.size], mean.shape)
         self.start = self.start + mean.size
-        self.set_weight(source_node.name, 'mean', scale_content)
+        self.set_weight(source_node.name, 'mean', mean_content)
 
 
         var_content = np.reshape(self.buf[self.start:self.start+var.size], var.shape)
@@ -316,13 +329,26 @@ class DarknetParser(Parser):
 
         W = np.reshape(self.buf[self.start:self.start+kernel.size], kernel.shape)
         self.start = self.start + kernel.size
+        W = np.transpose(W, (2, 3, 1, 0))
+        print(W.shape)
+        # assert False
         self.set_weight(innode.name, 'weights', W)
 
         # print(IR_node)
         # assert False
 
+    # no use
     def rename_ReLU(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Relu')
+        # print(IR_node)
+        # assert False
+
+    def rename_leakyReLU(self, source_node):
+        # print(source_node.layer)
+        kwargs = {}
+        kwargs['alpha'] = float(source_node.get_attr('negative_slope'))
+        IR_node = self._convert_identity_operation(source_node, new_op='LeakyRelu')
+        assign_IRnode_values(IR_node, kwargs)
         # print(IR_node)
         # assert False
 

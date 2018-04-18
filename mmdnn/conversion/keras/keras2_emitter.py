@@ -465,9 +465,19 @@ def KitModel(weight_file = None):
 
 
     def emit_LeakyRelu(self, IR_node):
-        self.add_body(1, "{:<15} = layers.LeakyReLU({})({})".format(
+        self.add_body(1, "{:<15} = layers.LeakyReLU(name='{}', alpha= {})({})".format(
             IR_node.variable_name,
+            IR_node.name,
             IR_node.get_attr('alpha'),
+            self.parent_variable_name(IR_node)
+        ))
+
+    def emit_upsample(self, IR_node):
+        self.add_body(1, "{:<15} = layers.UpSampling2D(name='{}', size= ({},{}), data_format = 'channels_last')({})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            IR_node.get_attr('strides'),
+            IR_node.get_attr('strides'),
             self.parent_variable_name(IR_node)
         ))
 

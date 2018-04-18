@@ -115,7 +115,7 @@ class DarknetGraph(Graph):
                 convolution_param = OrderedDict()
                 convolution_param['num_output'] = int(block['filters'])
                 convolution_param['kernel_size'] = int(block['size'])
-                convolution_param['kernel'] = [int(block['filters']), channels, int(block['size']), int(block['size'])]
+                convolution_param['kernel'] = [int(block['size']), int(block['size']), channels, int(block['filters'])]
                 convolution_param['pad'] = int(block['pad'])
 
                 if block['pad'] == '1':
@@ -178,12 +178,14 @@ class DarknetGraph(Graph):
                     relu_layer['type'] = 'ReLU'
                     relu_param = OrderedDict()
                     if block['activation'] == 'leaky':
+                        relu_layer['type'] = 'leakyReLU'
                         relu_param['negative_slope'] = '0.1'
                     relu_param['_output_shape'] = input_shape
                     relu_layer['attr'] = relu_param
                     self.layer_map[relu_layer['name']] = DarknetGraphNode(relu_layer)
                     print(i)
-                    print(relu_layer['name'])
+                    # print(relu_layer['name'])
+                    print(relu_layer)
                     print("=============")
 
                     self.layer_num_map[i] = relu_layer['name']
