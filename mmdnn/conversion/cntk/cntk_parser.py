@@ -145,6 +145,10 @@ class CntkParser(Parser):
 
 
     def rename_Convolution(self, source_node):
+        if source_node.layer.is_block:
+            self.rename_Convolution2D(source_node)
+            return
+
         IR_node = self._convert_identity_operation(source_node, new_op="Conv")
 
         for input in source_node.layer.inputs:
