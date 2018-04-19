@@ -447,6 +447,18 @@ def KitModel(weight_file = None):
             output_shape[1],
             output_shape[2]))
 
+    def emit_ConvTranspose(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        output_shape = [1] + shape_to_list(IR_node.get_attr('_output_shapes')[0])[1:]
+        input_node, padding = self._defuse_padding(IR_node)
+        self.add_body(1, "{:<15} = convolution_transpose({}, output_shape={}, strides={}, padding='{}', name='{}')".format(
+            IR_node.variable_name,
+            input_node,
+            output_shape,
+            IR_node.get_attr('strides'),
+            padding,
+            IR_node.name))
+
 
     def _layer_Conv(self):
         self.add_body(0, """
@@ -465,6 +477,7 @@ def convolution(input, name, group, **kwargs):
         b = tf.Variable(__weights_dict[name]['bias'], trainable=is_train, name=name + "_bias")
         layer = layer + b
     return layer""")
+
 
     def _layer_PRelu(self):
         self.add_body(0, """
@@ -504,5 +517,23 @@ def depthwise_convolution(input, name, **kwargs):
     layer = tf.nn.depthwise_conv2d(input, depthwise, **kwargs)
     if 'bias' in __weights_dict[name]:
         b = tf.Variable(__weights_dict[name]['bias'], trainable = is_train, name = name + "_bias")
+        layer = layer + b
+    return layer""")
+
+
+    def _layer_ConvTranspose(self):
+        self.add_body(0, """
+def convolution_transpose(input, name, **kwargs):
+    w = tf.Variable(__weights_dict[name]['weights'], trainable=is_train, name=name + "_weight")
+    dim = __weights_dict[name]['weights'].ndim - 2
+    if dim == 2:
+        layer = tf.nn.conv2d_transpose(input, w, **kwargs)
+    elif dim == 3:
+        layer = tf.nn.conv3d_transpose(input, w, **kwargs)
+    else:
+        raise ValueError("Error dim number {} in ConvTranspose".format(dim))
+
+    if 'bias' in __weights_dict[name]:
+        b = tf.Variable(__weights_dict[name]['bias'], trainable=is_train, name=name + "_bias")
         layer = layer + b
     return layer""")

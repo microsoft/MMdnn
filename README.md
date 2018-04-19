@@ -65,6 +65,7 @@ Models                                              | Caffe | Keras | Tensorflow
 [DenseNet](https://arxiv.org/abs/1608.06993)        |       |   √   |     √      |   √  |   √   |    √       |
 [NASNet](https://arxiv.org/abs/1707.07012)          |       |   √   |     √      | × (no SeparableConv)
 [ResNext](https://arxiv.org/abs/1611.05431)         |       |   √   |     √      |   √  |   √   |
+voc-FCN8s/FCN16s/FCN32s                             |       |       |     √      |      |       |            |
 
 #### On-going frameworks
 
@@ -76,6 +77,7 @@ Models                                              | Caffe | Keras | Tensorflow
 
 #### On-going Models
 
+- Semantic Segmentation
 - Image Style Transfer
 - Object Detection
 - RNN
@@ -126,6 +128,8 @@ $ mmtoir -f keras -w imagenet_inception_v3.h5 -o keras_inception_v3
 
 - [Tensorflow "Inception_v3" to MXNet](https://github.com/Microsoft/MMdnn/issues/30)
 
+- [Caffe "voc-fcn" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/29)
+
 - [Caffe "AlexNet" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/10)
 
 - [Caffe "inception_v4" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/26)
@@ -148,7 +152,7 @@ Details are in [ops.txt](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/co
 
 ### Frameworks
 
-We are working on other frameworks conversion and visualization, such as Caffe2, PyTorch, CoreML and so on. And more RNN related operators are investigating. Any contributions and suggestions are welcome!
+We are working on other frameworks conversion and visualization, such as PyTorch, CoreML and so on. And more RNN related operators are investigating. Any contributions and suggestions are welcome!
 
 ### License
 

@@ -109,6 +109,7 @@ class Keras2Parser(Parser):
         self.data_format = _keras.backend.image_data_format()
         self.keras_graph = Keras2Graph(model)
         self.keras_graph.build()
+        self.lambda_layer_count = 0
 
 
     def gen_IR(self):
@@ -617,27 +618,13 @@ class Keras2Parser(Parser):
         # raw_code = marshal.dumps(source_node.layer.function.__code__)
         # print (raw_code)
         # print (source_node.layer.get_config())
-        raise NotImplementedError("Lambda layer in keras is not supported yet.")
-
-        IR_node = self.IR_graph.node.add()
-
-        # name, op
-        Keras2Parser._copy_and_reop(source_node, IR_node, "Keras Lambda")
-
-        # input edge
-        self.convert_inedge(source_node, IR_node)
-
-        IR_node.attr['function'].s = source_node.keras_layer.function.__name__
-        for dim in source_node.keras_layer.output_shape:
-            new_dim = IR_node.attr["output_shape"].shape.dim.add()
-            if dim == None:
-                new_dim.size = -1
-            else:
-                new_dim.size = dim
-
-        # arguments not implementent
-        #print (type(source_node.keras_layer.arguments))
-
+        node_type = source_node.layer.name
+        if hasattr(self, "rename_" + node_type):
+            print ("Try to convert Lambda function [{}]".format(source_node.layer.name))
+            func = getattr(self, "rename_" + node_type)
+            func(source_node)
+        else:
+            raise NotImplementedError("Lambda layer [{}] in keras is not supported yet.".format(node_type))
 
 
     def rename_BatchNormalization(self, keras_node):
@@ -722,3 +709,26 @@ class Keras2Parser(Parser):
 
     def rename_Cropping3D(self, source_node):
         self._convert_crop(source_node)
+
+
+    def rename_LeakyReLU(self, source_node):
+        IR_node = self.IR_graph.node.add()
+        Keras2Parser._copy_and_reop(source_node, IR_node, 'LeakyRelu')
+        self.convert_inedge(source_node, IR_node)
+        assign_IRnode_values(IR_node, {'alpha' : source_node.layer.alpha.tolist()})
+
+
+    def rename_space_to_depth_x2(self, source_node):
+        IR_node = self.IR_graph.node.add()
+
+        # name, op
+        Keras2Parser._copy_and_reop(source_node, IR_node, 'SpaceToDepth')
+        IR_node.name = "Lambda_{}".format(self.lambda_layer_count)
+
+        # input edge
+        self.convert_inedge(source_node, IR_node)
+
+        # for target shape
+        IR_node.attr["blocksize"].i = 2
+        self.lambda_layer_count = self.lambda_layer_count + 1
+        source_node.real_name = IR_node.name

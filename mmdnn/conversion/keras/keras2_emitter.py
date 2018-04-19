@@ -120,7 +120,7 @@ def KitModel(weight_file = None):
 
 
     def _emit_activation(self, IR_node, op):
-        self.add_body(1, "{:<15} = layers.Activation(name = '{}', activation = '{}')({})".format(
+        self.add_body(1, "{:<15} = layers.Activation(name='{}', activation='{}')({})".format(
             IR_node.variable_name,
             IR_node.name,
             op,
@@ -448,6 +448,7 @@ def KitModel(weight_file = None):
     def emit_DepthwiseConv(self, IR_node):
         self._emit_convolution(IR_node, 'keras.applications.mobilenet.DepthwiseConv2D')
 
+
     def emit_Crop(self, IR_node):
         border = IR_node.get_attr('border')
         rank = len(border) // 2
@@ -461,6 +462,47 @@ def KitModel(weight_file = None):
             tuple(cropping),
             IR_node.name,
             self.parent_variable_name(IR_node)))
+
+
+    def emit_LeakyRelu(self, IR_node):
+        self.add_body(1, "{:<15} = layers.LeakyReLU(name='{}', alpha= {})({})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            IR_node.get_attr('alpha'),
+            self.parent_variable_name(IR_node)
+        ))
+
+    def emit_upsample(self, IR_node):
+        self.add_body(1, "{:<15} = layers.UpSampling2D(name='{}', size= ({},{}), data_format = 'channels_last')({})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            IR_node.get_attr('strides'),
+            IR_node.get_attr('strides'),
+            self.parent_variable_name(IR_node)
+        ))
+
+
+    def emit_SpaceToDepth(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        assert IR_node.get_attr('blocksize') == 2
+        # TODO: arguments won't be saved in keras export model
+
+        blocksize = "arguments={'blocksize': %d}" % 2
+
+        self.add_body(1, "{:<15} = layers.Lambda(space_to_depth, {}, name='{}')({})".format(
+            IR_node.variable_name,
+            blocksize,
+            IR_node.name,
+            self.parent_variable_name(IR_node)
+        ))
+
+
+    def _layer_SpaceToDepth(self):
+        self.add_body(0, '''
+def space_to_depth(input, blocksize):
+    import tensorflow as tf
+    return tf.space_to_depth(input, block_size=blocksize)
+''')
 
 
     def _layer_Flatten(self):

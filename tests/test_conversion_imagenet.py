@@ -63,7 +63,9 @@ class CorrectnessTest(unittest.TestCase):
             return
 
 
-        self.assertEqual(len(original_predict), len(converted_predict))
+        self.assertEqual(original_predict.shape, converted_predict.shape)
+        original_predict = original_predict.flatten()
+        converted_predict = converted_predict.flatten()
         error, ind = _compute_max_relative_error(converted_predict, original_predict)
         L1_error = _compute_L1_error(converted_predict, original_predict)
         SNR, PSNR = _compute_SNR(converted_predict, original_predict)
@@ -90,7 +92,7 @@ class TestModels(CorrectnessTest):
         from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
 
         # get original model prediction result
-        original_predict = tensorflow_extractor.inference(architecture_name, TestModels.cachedir, image_path)
+        original_predict = tensorflow_extractor.inference(architecture_name, None, TestModels.cachedir, image_path)
         del tensorflow_extractor
 
         # original to IR
@@ -113,7 +115,7 @@ class TestModels(CorrectnessTest):
         from mmdnn.conversion.tensorflow.tensorflow_frozenparser import TensorflowParser2
 
         # get original model prediction result
-        original_predict = tensorflow_extractor.inference(architecture_name, TestModels.cachedir, image_path, is_frozen = True)
+        original_predict = tensorflow_extractor.inference(architecture_name, None, TestModels.cachedir, image_path, is_frozen = True)
         para = tensorflow_extractor.get_frozen_para(architecture_name)
         del tensorflow_extractor
 
@@ -133,11 +135,12 @@ class TestModels(CorrectnessTest):
         from mmdnn.conversion.examples.keras.extractor import keras_extractor
         from mmdnn.conversion.keras.keras2_parser import Keras2Parser
 
-        # get original model prediction result
-        original_predict = keras_extractor.inference(architecture_name, TestModels.cachedir, image_path)
-
         # download model
         model_filename = keras_extractor.download(architecture_name, TestModels.cachedir)
+
+        # get original model prediction result
+        original_predict = keras_extractor.inference(architecture_name, model_filename, TestModels.cachedir, image_path)
+
         del keras_extractor
 
         # original to IR
@@ -185,14 +188,15 @@ class TestModels(CorrectnessTest):
         architecture_file, weight_file = caffe_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = caffe_extractor.inference(architecture_name,architecture_file, weight_file, image_path)
+        original_predict = caffe_extractor.inference(architecture_name, (architecture_file, weight_file), TestModels.cachedir, image_path)
         del caffe_extractor
 
         # original to IR
         from mmdnn.conversion.caffe.transformer import CaffeTransformer
-        transformer = CaffeTransformer(architecture_file, weight_file, "tensorflow", None, phase = 'TRAIN')
+        transformer = CaffeTransformer(architecture_file, weight_file, "tensorflow", None, phase = 'TEST')
         graph = transformer.transform_graph()
         data = transformer.transform_data()
+        del CaffeTransformer
 
         from mmdnn.conversion.caffe.writer import ModelSaver, PyWriter
 
@@ -208,6 +212,9 @@ class TestModels(CorrectnessTest):
         with open(npy_path, 'wb') as of:
             np.save(of, data)
         print ("IR weights are saved as [{}].".format(npy_path))
+
+        if original_predict.ndim == 3:
+            original_predict = np.transpose(original_predict, (1, 2, 0))
 
         return original_predict
 
@@ -376,7 +383,6 @@ class TestModels(CorrectnessTest):
         original_framework = checkfrozen(original_framework)
 
         import mxnet as mx
-        print("Testing {} from {} to MXNet.".format(architecture_name, original_framework))
 
         # IR to code
         converted_file = original_framework + '_mxnet_' + architecture_name + "_converted"
@@ -458,7 +464,7 @@ class TestModels(CorrectnessTest):
         original_framework = checkfrozen(original_framework)
 
         def prep_for_coreml(prepname, BGRTranspose):
-            if prepname == 'Standard' and BGRTranspose == False:
+            if prepname == 'Standard':
                 return 0.00784313725490196, -1, -1, -1
             elif prepname == 'ZeroCenter' and BGRTranspose == True:
                 return 1, -123.68, -116.779, -103.939
@@ -466,7 +472,8 @@ class TestModels(CorrectnessTest):
                 return 1, -103.939, -116.779, -123.68
             elif prepname == 'Identity':
                 return 1, 1, 1, 1
-
+            else:
+                raise ValueError()
 
         # IR to Model
         converted_file = original_framework + '_coreml_' + architecture_name + "_converted"
@@ -529,15 +536,18 @@ class TestModels(CorrectnessTest):
 
 
     exception_tabel = {
-        'cntk_Keras_resnet18',                      # different after the first convolution layer
-        'cntk_Keras_resnet152',                     # different after the first convolution layer
-        'cntk_Tensorflow_resnet18',                 # different after the first convolution layer
-        'cntk_Tensorflow_resnet152',                # different after the first convolution layer
+        'cntk_Keras_resnet18',                      # Different *Same Padding* method in first convolution layer.
+        'cntk_Keras_resnet152',                     # Different *Same Padding* method in first convolution layer.
+        'cntk_Tensorflow_resnet18',                 # Different *Same Padding* method in first convolution layer.
+        'cntk_Tensorflow_resnet152',                # Different *Same Padding* method in first convolution layer.
         'cntk_Caffe_resnet18',                      # TODO
         'cntk_Caffe_resnet152',                     # TODO
+        'tensorflow_frozen_MXNet_inception_v1',     # TODO
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
+        'caffe_Cntk_inception_v4',                  # TODO
         'caffe_Pytorch_inception_v1',               # TODO
         'caffe_Pytorch_alexnet',                    # TODO
+        'caffe_Pytorch_inception_v4',               # TODO, same with caffe_Cntk_inception_v4
         'mxnet_Caffe_imagenet1k-resnet-152',        # TODO
         'mxnet_Caffe_imagenet1k-resnext-50',        # TODO
         'mxnet_Caffe_imagenet1k-resnext-101-64x4d', # TODO
@@ -547,8 +557,8 @@ class TestModels(CorrectnessTest):
     test_table = {
         'cntk' : {
             # 'alexnet'       : [CntkEmit, TensorflowEmit, KerasEmit],
-            'resnet18'      : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'resnet152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'resnet18'      : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'resnet152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
             'inception_v3'  : [CntkEmit, TensorflowEmit, PytorchEmit], # Caffe, Keras and MXNet no constant layer
         },
 
@@ -561,6 +571,7 @@ class TestModels(CorrectnessTest):
             'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
             'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
             'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
+            # 'yolo2'          : [KerasEmit],
         },
 
         'mxnet' : {
@@ -568,17 +579,22 @@ class TestModels(CorrectnessTest):
             'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: Caffe
             'imagenet1k-resnet-152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'squeezenet_v1.1'           : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is too slow
+            'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is ok but too slow
             'imagenet1k-resnext-50'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
         },
 
 
         'caffe' : {
+            'voc-fcn8s'     : [TensorflowEmit],
+            'voc-fcn16s'    : [TensorflowEmit],
+            'voc-fcn32s'    : [TensorflowEmit],
             'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit, CoreMLEmit],
             'alexnet'       : [CntkEmit, TensorflowEmit, MXNetEmit, CaffeEmit, PytorchEmit], # TODO: KerasEmit
             'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit, PytorchEmit],
             'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'squeezenet'    : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
+            'inception_v4'  : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, CoreMLEmit], # TODO MXNetEmit, CaffeEmit
+            'xception'      : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit, CoreMLEmit], #  KerasEmit is too slow
         },
 
         'tensorflow' : {

@@ -254,6 +254,7 @@ bias_term={}, ntop=1)".format(
             IR_node.get_attr('epsilon'),
             self.phase == 'test'
         ))
+
         scale_layer_var_name = IR_node.variable_name + "_scale"
         # Since the scale layer is "almost part" of the bn layer, we can safely use in_place here.
         self.add_body(1, "n.{:<15} = L.Scale(n.{}, bias_term={}, in_place=True, ntop=1)".format(
@@ -261,7 +262,7 @@ bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             IR_node.get_attr('bias', False)
         ))
-        IR_node.real_name = IR_node.name + "_scale"
+
         if self.weight_loaded:
             self.weights_dict[scale_layer_var_name] = dict()
             if 'scale' in self.weights_dict[IR_node.name]:
@@ -271,6 +272,8 @@ bias_term={}, ntop=1)".format(
             self.weights_dict[scale_layer_var_name]['bias'] = self.weights_dict[IR_node.name]['bias']
             self.weights_dict[IR_node.name].pop('bias', None)
             self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
+
+        IR_node.real_name = IR_node.name + "_scale"
 
 
     def emit_LRN(self, IR_node):
@@ -320,6 +323,7 @@ bias_term={}, ntop=1)".format(
             self.parent_variable_name(IR_node),
             in_place))
 
+
     def emit_PRelu(self, IR_node):
         in_place = True
         self.add_body(1, "n.{:<15} = L.PReLU(n.{}, in_place={}, ntop=1)".format(
@@ -332,6 +336,7 @@ bias_term={}, ntop=1)".format(
         self.add_body(1, "n.{:<15} = L.Softmax(n.{}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node)))
+
 
     def emit_Pad(self, IR_node):
         IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name

@@ -209,7 +209,7 @@ class tensorflow_extractor(base_extractor):
 
 
     @classmethod
-    def inference(cls, architecture, path, image_path, is_frozen = False):
+    def inference(cls, architecture, files, path, image_path, is_frozen=False):
         if is_frozen:
             architecture_ = architecture + "_frozen"
         else:
@@ -237,6 +237,7 @@ class tensorflow_extractor(base_extractor):
                     tf_out = sess.run(tf_output_name, feed_dict={tf_input_name: img})
                 predict = np.squeeze(tf_out)
                 return predict
+
             else:
                 with slim.arg_scope(cls.architecture_map[architecture]['arg_scope']()):
                     data_input = cls.architecture_map[architecture]['input']()

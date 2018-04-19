@@ -405,6 +405,14 @@ def KitModel(weight_file = None):
             IR_node.name))
 
 
+    def emit_LeakRelu(self, IR_node):
+        self.add_body(1, "{:<15} = _cntk.relu({}) - {} * _cntk.relu(-{})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('alpha'),
+            self.parent_variable_name(IR_node)))
+
+
     def _layer_LRN(self):
         self.add_body(0, """
 def lrn(input, **kwargs):

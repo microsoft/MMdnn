@@ -6,13 +6,25 @@
 from six import text_type as _text_type
 
 
+def generate_label(predict, label_file, offset):
+    import os
+
+    if not os.path.exists(label_file):
+        return predict
+
+    with open(label_file, 'r') as f:
+        labels = [l.rstrip() for l in f]
+
+    ret = []
+    for i, j in predict:
+        ret.append((labels[i - offset], i, j))
+
+    return ret
+
 def extract_model(args):
     if args.framework == 'caffe':
         from mmdnn.conversion.examples.caffe.extractor import caffe_extractor
         extractor = caffe_extractor()
-
-    elif args.framework == 'caffe2':
-        raise NotImplementedError("Caffe2 is not supported yet.")
 
     elif args.framework == 'keras':
         from mmdnn.conversion.examples.keras.extractor import keras_extractor
@@ -40,10 +52,20 @@ def extract_model(args):
     files = extractor.download(args.network, args.path)
 
     if files and args.image:
-        predict = extractor.inference(args.network, files, args.image)
-        top_indices = predict.argsort()[-5:][::-1]
-        result = [(i, predict[i]) for i in top_indices]
-        print(result)
+        predict = extractor.inference(args.network, files, args.path, args.image)
+        if predict.ndim == 1:
+            if predict.shape[0] == 1001:
+                offset = 1
+            else:
+                offset = 0
+            top_indices = predict.argsort()[-5:][::-1]
+            predict = [(i, predict[i]) for i in top_indices]
+            predict = generate_label(predict, args.label, offset)
+
+        else:
+            print (predict.shape)
+
+        print (predict)
 
 
 def _main():
@@ -73,6 +95,13 @@ def _main():
         type=_text_type,
         default='./',
         help='Path to save the pre-trained model files (e.g keras h5)')
+
+
+    parser.add_argument(
+        '-l', '--label',
+        type=_text_type,
+        default='mmdnn/conversion/examples/data/imagenet_1000.txt',
+        help='Path of label.')
 
     args = parser.parse_args()
     extract_model(args)

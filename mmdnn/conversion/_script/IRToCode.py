@@ -7,9 +7,10 @@ from six import text_type as _text_type
 def _convert(args):
     if args.dstFramework == 'caffe':
         from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
-        if args.IRWeightPath == None:        
+        if args.IRWeightPath is None:
             emitter = CaffeEmitter(args.IRModelPath)
         else:
+            assert args.dstWeightPath
             emitter = CaffeEmitter((args.IRModelPath, args.IRWeightPath))
 
     elif args.dstFramework == 'keras':

@@ -84,6 +84,10 @@ def _convert(args):
         from mmdnn.conversion.onnx.onnx_parser import ONNXParser
         parser = ONNXParser(args.network)
 
+    elif args.srcFramework == 'darknet':
+        from mmdnn.conversion.darknet.darknet_parser import DarknetParser
+        parser = DarknetParser(args.network, args.weights)
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.srcFramework))
 
@@ -100,7 +104,7 @@ def _get_parser():
     parser.add_argument(
         '--srcFramework', '-f',
         type=_text_type,
-        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'torch', 'torch7', 'onnx'],
+        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'torch', 'torch7', 'onnx', 'darknet'],
         help="Source toolkit name of the model to be converted.")
 
     parser.add_argument(

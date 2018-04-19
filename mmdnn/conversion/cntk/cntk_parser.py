@@ -144,6 +144,18 @@ class CntkParser(Parser):
             raise ValueError("Unknown variable [{}].".format(variable))
 
 
+    @staticmethod
+    def _get_attribute(source_node, attribute_name):
+        if attribute_name in source_node.attributes:
+            return source_node.attributes
+
+        node = source_node.block_root
+        while not attribute_name in node.attributes:
+            node = node.inputs[0].owner
+
+        return node.attributes
+
+
     def rename_Convolution(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op="Conv")
 
@@ -155,17 +167,18 @@ class CntkParser(Parser):
         W = self.channel_first_conv_kernel_to_IR(W)
         self.set_weight(source_node.name, 'weights', W)
 
-        kwargs = dict()
+        attributes = CntkParser._get_attribute(source_node.layer, 'strides')
 
-        kwargs['strides'] = [1] + list(source_node.get_attr('strides'))[1:] + [1]
-        kwargs['dilations'] = [1] + list(source_node.get_attr('dilation'))[1:] + [1]
+        kwargs = dict()
+        kwargs['strides'] = [1] + list(attributes['strides'])[1:] + [1]
+        kwargs['dilations'] = [1] + list(attributes['dilation'])[1:] + [1]
         kwargs['kernel_shape'] = list(W.shape)
-        padding = source_node.get_attr('autoPadding')[1:]
+        padding = attributes['autoPadding'][1:]
 
         for pad in padding:
             assert pad == padding[0]
 
-        kwargs['auto_pad'] = 'SAME_UPPER' if padding[0] else 'VALID'
+        kwargs['auto_pad'] = 'SAME_LOWER' if padding[0] else 'VALID'
         kwargs['pads'] = self._convert_padding_to_IR(kwargs['kernel_shape'][:-2], padding)
 
         kwargs['use_bias'] = self._fuse_bias_node(source_node)
@@ -264,7 +277,7 @@ class CntkParser(Parser):
             padding.extend([padding[-1]] * (dim - len(padding) - 2))
         for pad in padding:
             assert pad == padding[-1]
-        kwargs['auto_pad'] = 'SAME_UPPER' if padding[0] else 'VALID'
+        kwargs['auto_pad'] = 'SAME_LOWER' if padding[0] else 'VALID'
         kwargs['pads'] = self._convert_padding_to_IR(kwargs['kernel_shape'][1:-1], padding)
 
         assign_IRnode_values(IR_node, kwargs)
@@ -387,7 +400,7 @@ class CntkParser(Parser):
         for pad in padding:
             assert pad == padding[0]
 
-        kwargs['auto_pad'] = 'SAME_UPPER' if padding[0] else 'VALID'
+        kwargs['auto_pad'] = 'SAME_LOWER' if padding[0] else 'VALID'
         kwargs['pads'] = self._convert_padding_to_IR(kwargs['kernel_shape'][:-2], padding)
 
         kwargs['use_bias'] = True
