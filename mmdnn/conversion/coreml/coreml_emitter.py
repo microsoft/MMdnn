@@ -61,10 +61,7 @@ class CoreMLEmitter(Emitter):
         return list(input_features), list(output_features)
 
     def _connect_coreml_layers(self):
-        for layer in self.builder.nn_spec.layers:
-            # for i, in_node in enumerate(layer.input):
-            #     layer.input[i] = self.IR_graph.get_node(in_node).real_name
-
+        for layer in self.builder.nn_spec.layers:]
             for i, out_node in enumerate(layer.output):
                 layer.output[i] = self.IR_graph.get_node(out_node).real_name
 
@@ -83,7 +80,6 @@ class CoreMLEmitter(Emitter):
                   predicted_probabilities_output=''):
 
         input_features, output_features = self._get_inout()
-        # assert False
         is_classifier = class_labels is not None
         mode = 'classifier' if is_classifier else None
         self.builder = _NeuralNetworkBuilder(input_features, output_features, mode=mode)
@@ -145,15 +141,12 @@ class CoreMLEmitter(Emitter):
         auto_pads = IR_node.get_attr('auto_pads')
         if auto_pads is not None:
             if auto_pads == 'VALID':
-                return auto_pads
+                pass
             else:
                 return 'SAME'
 
-        pads = IR_node.get_attr('pads')
-        if is_valid_padding(pads):
-            return 'VALID'
-        else:
-            return 'SAME'
+        pads = IR_node.get_attr('pads', [0,0,0,0])
+        return pads
 
     def _emit_merge(self, IR_node, func):
         """
@@ -189,6 +182,7 @@ class CoreMLEmitter(Emitter):
 
         stride_height, stride_width = IR_node.get_attr('strides')[1], IR_node.get_attr('strides')[2]
 
+
         # Dilations
         dilations = IR_node.get_attr('dilations', [1, 1])
         if is_deconv and not dilations == [1, 1]:
@@ -197,12 +191,22 @@ class CoreMLEmitter(Emitter):
         groups = IR_node.get_attr('groups', 1)
         kernel_channels = channels
 
-        padding = self._get_padding(IR_node).lower()
+        padding = self._get_padding(IR_node)
+
+        if isinstance(padding, list):
+            border_mode = "valid"
+            # see protobuf
+            padding_top, padding_left, padding_bottom, padding_right = padding
+        else:
+            border_mode = "same"
+            padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
+
+
+
+
 
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
-        # print(self.IR_graph.get_parent(IR_node.name, [0]).layer)
-        # print(input_name)
-        # print(IR_node.real_name)
+
 
         self.builder.add_convolution(name=IR_node.real_name,
                                      kernel_channels=kernel_channels,
@@ -211,7 +215,7 @@ class CoreMLEmitter(Emitter):
                                      width=width,
                                      stride_height=stride_height,
                                      stride_width=stride_width,
-                                     border_mode=padding,
+                                     border_mode= border_mode,
                                      groups=groups,
                                      W=W,
                                      b=b,
@@ -219,6 +223,10 @@ class CoreMLEmitter(Emitter):
                                      is_deconv=is_deconv,
                                      output_shape=output_shape,
                                      input_name=input_name,
+                                     padding_top= padding_top,
+                                     padding_left= padding_left,
+                                     padding_bottom= padding_bottom,
+                                     padding_right= padding_right,
                                      output_name=IR_node.real_name,
                                      dilation_factors=dilations)
 
@@ -242,7 +250,18 @@ class CoreMLEmitter(Emitter):
         # Dilations
         dilations = IR_node.get_attr('dilations', [1, 1])
 
-        padding = self._get_padding(IR_node).lower()
+
+        padding = self._get_padding(IR_node)
+        if isinstance(padding, list):
+            border_mode = "valid"
+            # see protobuf
+            padding_top, padding_left, padding_bottom, padding_right = padding
+        else:
+            border_mode = "same"
+            padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
+
+
+
         output_channels = W.shape[-1]
         groups = W.shape[-1]
         stride_height, stride_width = IR_node.get_attr('strides')[1], IR_node.get_attr('strides')[2]
@@ -254,13 +273,17 @@ class CoreMLEmitter(Emitter):
                                      width=width,
                                      stride_height=stride_height,
                                      stride_width=stride_width,
-                                     border_mode=padding,
+                                     border_mode=border_mode,
                                      groups=groups,
                                      W=W,
                                      b=b,
                                      has_bias=has_bias,
                                      is_deconv=is_deconv,
                                      output_shape=output_shape,
+                                     padding_top= padding_top,
+                                     padding_left= padding_left,
+                                     padding_bottom= padding_bottom,
+                                     padding_right= padding_right,
                                      input_name=input_name,
                                      output_name=IR_node.real_name,
                                      dilation_factors=dilations)
@@ -282,14 +305,19 @@ class CoreMLEmitter(Emitter):
         else:
             raise TypeError("Pooling type %s not supported" % pooling_type)
 
+
         # if it's global, set the global flag
         global_pooling = IR_node.get_attr('global_pooling', False)
         dim = len(IR_node.get_attr('strides')) - 2
         if global_pooling:
             if dim == 2:
-                height, width = (0, 0)
-                stride_height = stride_width = 0
+                height, width = tuple(IR_node.get_attr('kernel_shape')[1:-1])
+                stride_height, stride_width = tuple(IR_node.get_attr('strides')[1:-1])
+                # TODO  global pooling modification
+
                 padding_type = 'VALID'
+                padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
+
             elif dim == 1:
                 raise NotImplementedError()
                 global_pooling = False
@@ -301,11 +329,22 @@ class CoreMLEmitter(Emitter):
                 raise NotImplementedError()
 
         else:
+
             height, width = tuple(IR_node.get_attr('kernel_shape')[1:-1])
             stride_height, stride_width = tuple(IR_node.get_attr('strides')[1:-1])
 
             # Padding
-            padding_type = self._get_padding(IR_node)
+            p = self._get_padding(IR_node)
+            if isinstance(p, list):
+                padding_type = "VALID"
+                # see protobuf
+                padding_top, padding_left, padding_bottom, padding_right = p
+            else:
+                padding_type = "SAME"
+                padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
+
+
+
 
         self.builder.add_pooling(name=IR_node.name,
                                     height=height,
@@ -314,10 +353,42 @@ class CoreMLEmitter(Emitter):
                                     stride_width=stride_width,
                                     layer_type=layer_type_str,
                                     padding_type=padding_type,
+                                    padding_top= padding_top,
+                                    padding_left= padding_left,
+                                    padding_bottom= padding_bottom,
+                                    padding_right= padding_right,
                                     input_name=input_name,
                                     output_name=IR_node.name,
                                     exclude_pad_area=True,
                                     is_global=global_pooling)
+
+
+    def emit_Scale(self, IR_node):
+        # Get input and output names
+        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+
+        weights = IR_node.get_attr('scale', False)
+        weights = self.weights_dict[IR_node.name]['scale']
+        has_bias = IR_node.get_attr('hasBias', False)
+        if has_bias:
+            bias = self.weights_dict[IR_node.name]['bias']
+
+
+        shape_scale = self.weights_dict[IR_node.name]['shapeScale']
+        if has_bias:
+            shape_bias = self.weights_dict[IR_node.name]['shapeBias']
+
+
+
+        self.builder.add_scale(name = IR_node.real_name,
+                                        W = weights,
+                                        b = bias,
+                                        has_bias = has_bias,
+                                        input_name = input_name,
+                                        output_name =IR_node.name,
+                                        shape_scale= [shape_scale],
+                                        shape_bias= [shape_bias])
+
 
 
     def emit_UNKNOWN(self, IR_node):
@@ -347,7 +418,6 @@ class CoreMLEmitter(Emitter):
             left = left, right=right, top=top, bottom=bottom, offset = [0,0],
             input_names = [input_name], output_name=output_name
             )
-        # assert False
 
 
 
@@ -469,6 +539,9 @@ class CoreMLEmitter(Emitter):
         # Get input and output names
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
         output_name = IR_node.real_name
+        if not isinstance(params, list):
+            params = [params]
+
         self.builder.add_activation(name=IR_node.real_name,
             non_linearity=act,
             input_name=input_name,
@@ -476,11 +549,27 @@ class CoreMLEmitter(Emitter):
             params=params)
 
 
+    # activation emit
     def emit_Relu(self, IR_node):
         self._emit_activation(IR_node, 'RELU')
-
     def emit_PRelu(self, IR_node):
         self._emit_activation(IR_node, 'PRELU', self.weights_dict[IR_node.name]['gamma'])
+    def emit_LeakyRelu(self, IR_node):
+        self._emit_activation(IR_node, 'LEAKYRELU', self.weights_dict[IR_node.name]['alpha'])
+    def emit_Elu(self,IR_node):
+        self._emit_activation(IR_node, 'ELU', self.weights_dict[IR_node.name]['alpha'])
+    def emit_ThresholdedRelu(self, IR_node):
+        self._emit_activation(IR_node, 'THRESHOLDEDRELU', self.weights_dict[IR_node.name]['alpha'])
+    def emit_ScaledTanh(self, IR_node):
+        self._emit_activation(IR_node, 'SCALED_TANH', [self.weights_dict[IR_node.name]['alpha'],self.weights_dict[IR_node.name]['beta'] ])
+    def emit_linear(self, IR_node):
+        self._emit_activation(IR_node, 'LINEAR', [self.weights_dict[IR_node.name]['alpha'],self.weights_dict[IR_node.name]['beta'] ])
+    def emit_SigmoidHard(self, IR_node):
+        self._emit_activation(IR_node, 'SIGMOID_HARD', [self.weights_dict[IR_node.name]['alpha'],self.weights_dict[IR_node.name]['beta'] ])
+    def emit_ParametricSoftplus(self, IR_node):
+        self._emit_activation(IR_node, 'PARAMETRICSOFTPLUS', [self.weights_dict[IR_node.name]['alpha'],self.weights_dict[IR_node.name]['beta'] ])
+
+
 
 
     def emit_Softmax(self, IR_node):
@@ -501,10 +590,10 @@ class CoreMLEmitter(Emitter):
 
 
     def emit_Relu6(self, IR_node):
-        # print(IR_node.name)
+
         layer = IR_node.real_name
         input_name, output_name = (IR_node.IR_layer.input[0], IR_node.IR_layer.name)
-        # input_name =
+
         relu_output_name = output_name + '_relu'
         self.builder.add_activation(layer, 'RELU', input_name, relu_output_name)
         # negate it
@@ -585,36 +674,43 @@ class CoreMLEmitter(Emitter):
 
         # Get input and output names
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
-        # print(input_name)
-        # print(IR_node.real_name)
+
+
         axis = IR_node.get_attr('axis', -1)
         nb_channels = IR_node.get_attr('_output_shapes')[0].dim[axis].size
+
+
 
         # Set parameters
         # Parameter arrangement in Keras: gamma, beta, mean, variance
         weights = self.weights_dict[IR_node.name]
         mean = weights['mean']
-        std = weights['var']
+        var = weights['var']
         gamma = weights.get('scale', np.ones(mean.shape))
         beta = weights.get('bias', np.zeros(mean.shape))
 
+
+        # TODO remain to be modified!
+        # print(mean, std, gamma, beta)
+        # assert False
         # compute adjusted parameters
-        variance = std * std
-        f = 1.0 / np.sqrt(std + IR_node.get_attr('epsilon'))
-        gamma1 = gamma*f
-        beta1 = beta - gamma*mean*f
-        mean[:] = 0.0 #mean
-        variance[:] = 1.0 - .00001 #stddev
+        # variance = std * std
+        # f = 1.0 / np.sqrt(std + IR_node.get_attr('epsilon'))
+        # gamma1 = gamma*f
+        # beta1 = beta - gamma*mean*f
+        # mean[:] = 0.0 #mean
+        # variance[:] = 1.0 - .00001 #stddev
+
         self.builder.add_batchnorm(
             name=IR_node.real_name,
             channels = nb_channels,
-            gamma = gamma1,
-            beta = beta1,
+            gamma = gamma,
+            beta = beta,
             mean = mean,
-            variance = variance,
+            variance = var,
             input_name = input_name,
             output_name=IR_node.real_name)
-        # assert False
+
 
 
     def emit_Pad(self, IR_node):
@@ -622,7 +718,6 @@ class CoreMLEmitter(Emitter):
         output_name=IR_node.real_name
         is_1d = False
         padding = IR_node.get_attr('pads')
-
         if is_1d:
             raise ValueError("Unrecognized padding option: %s" % (str(padding)))
         else:
@@ -634,6 +729,20 @@ class CoreMLEmitter(Emitter):
             else:
                 raise ValueError("Unrecognized padding option: %s" % (str(padding)))
 
+
+        # padding type
+        # Type of the padding. Can be one of 'constant', 'reflection' or 'replication
+        padding_type = IR_node.get_attr('mode', 'CONSTANT')
+        if padding_type == 'CONSTANT':
+            padding_type = 'constant'
+        elif padding_type == 'REFLECT':
+            padding_type = 'reflection'
+        elif padding_type == 'SYMMETRIC':
+            padding_type = 'replication'
+        else:
+            assert False
+
+
         # Now add the layer
         self.builder.add_padding(name = IR_node.name,
             left = left, right=right, top=top, bottom=bottom, value = 0,
@@ -643,9 +752,6 @@ class CoreMLEmitter(Emitter):
 
     def emit_Squeeze(self, IR_node):
         self.emit_Flatten(IR_node)
-        # if IR_node.name != "MMdnn_Output" :
-            # self.emit_Flatten(IR_node)
-            # self.emit_Reshape(IR_node)
 
 
     def emit_LRN(self, IR_node):
@@ -668,7 +774,8 @@ class CoreMLEmitter(Emitter):
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
         output_name = IR_node.real_name
 
-        assert len(IR_node.get_attr("strides")) == 4
+
+
         strides = IR_node.get_attr('strides')
         stride_height, stride_width = (strides[1], strides[2])
 
