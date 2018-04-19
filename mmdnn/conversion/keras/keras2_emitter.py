@@ -11,6 +11,8 @@ import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.DataStructure.emitter import Emitter
 from mmdnn.conversion.common.utils import *
+from mmdnn.conversion.keras.extra_layers import Scale
+
 
 
 class Keras2Emitter(Emitter):
@@ -70,6 +72,11 @@ def set_layer_weights(model, weights_dict):
                 if 'bias' in cur_dict:
                     current_layer_parameters.append(cur_dict['bias'])
                 current_layer_parameters.extend([cur_dict['mean'], cur_dict['var']])
+            elif layer.__class__.__name__ == "Scale":
+                if 'scale' in cur_dict:
+                    current_layer_parameters.append(cur_dict['scale'])
+                if 'bias' in cur_dict:
+                    current_layer_parameters.append(cur_dict['bias'])
             elif layer.__class__.__name__ == "SeparableConv2D":
                 current_layer_parameters = [cur_dict['depthwise_filter'], cur_dict['pointwise_filter']]
                 if 'bias' in cur_dict:
@@ -384,6 +391,16 @@ def KitModel(weight_file = None):
             IR_node.name,
             axis,
             IR_node.layer.attr['epsilon'].f,
+            IR_node.layer.attr['bias'].b,
+            IR_node.layer.attr['scale'].b,
+            self.parent_variable_name(IR_node)))
+
+    def emit_Scale(self, IR_node):
+        axis = IR_node.layer.attr['axis'].i if 'axis' in IR_node.layer.attr else -1
+        self.add_body(1, "{:<15} = layers.Scale(name = '{}', axis = {}, center = {}, scale = {})({})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            axis,
             IR_node.layer.attr['bias'].b,
             IR_node.layer.attr['scale'].b,
             self.parent_variable_name(IR_node)))

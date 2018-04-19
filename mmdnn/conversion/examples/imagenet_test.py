@@ -143,9 +143,24 @@ class TestKit(object):
             'inception_v3'  : lambda path : TestKit.Identity(path, 299),
         },
 
+      
         'darknet' : {
             'yolov3'        : lambda path : TestKit.Identity(path, 416),
+        },
+      
+        'coreml' : {
+            'mobilenet'         : lambda path : TestKit.Identity_pillow(path, 224),
+            'inception_v3'      : lambda path : TestKit.Identity_pillow(path, 299),
+            'vgg16'             : lambda path : TestKit.Identity_pillow(path, 224),
+            'vgg19'             : lambda path : TestKit.Identity_pillow(path, 224),
+            'resnet50'            : lambda path : TestKit.Identity_pillow(path, 224),
+            'xception'          : lambda path : TestKit.Identity_pillow(path, 299),
+            'inception_resnet'  : lambda path : TestKit.Identity_pillow(path, 299),
+            'densenet'          : lambda path : TestKit.Identity_pillow(path, 224),
+            'nasnet'            : lambda path : TestKit.Identity_pillow(path, 331),
+            'tinyyolo'          : lambda path : TestKit.Identity_pillow(path, 416),
         }
+
     }
 
     def __init__(self):
@@ -230,6 +245,13 @@ class TestKit(object):
         if BGRTranspose == True:
             x = x[..., ::-1]
         return x
+
+    @staticmethod
+    def Identity_pillow(path, size):
+        from PIL import Image
+        x = Image.open(path)
+        return x.resize((size, size))
+
 
 
     def preprocess(self, image_path):
