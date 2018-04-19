@@ -38,6 +38,7 @@ class Keras2Emitter(Emitter):
 
         self.IR_graph = IRGraph(network_path)
         self.IR_graph.build()
+        self.yolo_parameter = []
 
 
     @property
@@ -495,6 +496,25 @@ def KitModel(weight_file = None):
             IR_node.name,
             self.parent_variable_name(IR_node)
         ))
+
+
+    def emit_yolo(self, IR_node):
+        self.used_layers.add('Yolo')
+        # print(IR_node.layer)
+        self.add_body(1, "{:<15} = {}".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)
+        ))
+        self.yolo_parameter = [IR_node.get_attr('anchors'),
+            IR_node.get_attr('classes'),
+            IR_node.get_attr("ignore_thresh"),
+            IR_node.get_attr("jitter")]
+
+    def _layer_Yolo(self):
+        self.add_body(0, '''
+def yolo_parameter():
+    return {}
+'''.format(self.yolo_parameter))
 
 
     def _layer_SpaceToDepth(self):
