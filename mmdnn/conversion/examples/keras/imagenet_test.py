@@ -71,7 +71,6 @@ class TestKeras(TestKit):
             label = '{} {:.2f}'.format(predicted_class, score)
             draw = ImageDraw.Draw(image)
             label_size = draw.textsize(label)
-            print(label_size)
 
             top, left, bottom, right = box
             top = max(0, np.floor(top + 0.5).astype('int32'))
@@ -116,7 +115,6 @@ class TestKeras(TestKit):
         self.preprocess(image_path)
 
         print(self.data.shape)
-        print("IIIIIIIIIIIIIIIIIIIII")
         # self.print_intermediate_result('conv1_7x7_s2_1', True)
 
         self.print_result()
@@ -136,7 +134,7 @@ class TestKeras(TestKit):
         self.anchors = []
         for i in range(len(self.yolo_parameter[0])):
             if i%2:
-                tmp = [self.yolo_parameter[0][i], self.yolo_parameter[0][i-1]]
+                tmp = [self.yolo_parameter[0][i-1], self.yolo_parameter[0][i]]
                 self.anchors.append(tmp)
         self.anchors = np.array(self.anchors)
         self.score_threshold = self.yolo_parameter[2]
