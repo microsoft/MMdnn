@@ -137,7 +137,12 @@ class TestKit(object):
             'resnet18'      : lambda path : TestKit.Identity(path, 224),
             'resnet152'     : lambda path : TestKit.Identity(path, 224),
             'inception_v3'  : lambda path : TestKit.Identity(path, 299),
+        },
+
+        'coreml' : {
+            'coreml'        : lambda path : TestKit.Identity(path, 224)
         }
+
     }
 
     def __init__(self):
