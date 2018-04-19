@@ -61,7 +61,7 @@ class CoreMLEmitter(Emitter):
         return list(input_features), list(output_features)
 
     def _connect_coreml_layers(self):
-        for layer in self.builder.nn_spec.layers:]
+        for layer in self.builder.nn_spec.layers:
             for i, out_node in enumerate(layer.output):
                 layer.output[i] = self.IR_graph.get_node(out_node).real_name
 
@@ -733,14 +733,17 @@ class CoreMLEmitter(Emitter):
         # padding type
         # Type of the padding. Can be one of 'constant', 'reflection' or 'replication
         padding_type = IR_node.get_attr('mode', 'CONSTANT')
+        # print(padding_type)
+        # print(IR_node.attr)
         if padding_type == 'CONSTANT':
             padding_type = 'constant'
         elif padding_type == 'REFLECT':
             padding_type = 'reflection'
         elif padding_type == 'SYMMETRIC':
             padding_type = 'replication'
-        else:
-            assert False
+        # else:
+            # assert False
+            # continue
 
 
         # Now add the layer

@@ -491,6 +491,7 @@ class CoremlParser(Parser):
         # activation type
         activation_type = coreml_node_activation.WhichOneof("NonlinearityType")
 
+        # print(activation_type)
 
         if activation_type == 'leakyReLU':
             self.set_weight(coreml_node_layer.name, "alpha", coreml_node_activation.leakyReLU.alpha)
@@ -509,11 +510,11 @@ class CoremlParser(Parser):
         elif activation_type == 'sigmoidHard':
             self.set_weight(coreml_node_layer.name, 'alpha', coreml_node_activation.sigmoidHard.alpha)
             self.set_weight(coreml_node_layer.name, 'beta', coreml_node_activation.sigmoidHard.beta)
-        elif activation_type = 'parametricSoftplus':
+        elif activation_type == 'parametricSoftplus':
             self.set_weight(coreml_node_layer.name, 'alpha', coreml_node_activation.parametricSoftplus.alpha)
             self.set_weight(coreml_node_layer.name, 'beta', coreml_node_activation.parametricSoftplus.beta)
-        else:
-            assert False
+        # else:
+            # assert False
 
         # input edge
         self.convert_inedge(coreml_node, IR_node)
