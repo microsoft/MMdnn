@@ -60,10 +60,6 @@ class TestKit(object):
             'resnet18'      : [(21, 8.2490816), (22, 7.7600741), (23, 7.4341722), (148, 7.1398726), (144, 6.9187264)],
             'resnet152'     : [(21, 12.461424), (99, 12.38283), (144, 11.1572275), (94, 10.569823), (146, 10.096423)],
             'inception_v3'  : [(21, 15.558625), (22, 9.7712708), (23, 9.6847782), (146, 9.188818), (144, 8.0436306)]
-        },
-
-        'darknet' : {
-            'yolov3'       : [],
         }
     }
 
@@ -253,7 +249,8 @@ class TestKit(object):
             print (self.result)
 
 
-    def print_intermediate_result(self, intermediate_output, if_transpose = False):
+    @staticmethod
+    def print_intermediate_result(intermediate_output, if_transpose=False):
         intermediate_output = np.squeeze(intermediate_output)
 
         if if_transpose == True:
@@ -261,7 +258,8 @@ class TestKit(object):
 
         print (intermediate_output)
         print (intermediate_output.shape)
-        print ("%.30f" % np.sum(intermediate_output))
+        print ("Sum = %.30f" % np.sum(intermediate_output))
+        print ("Std = %.30f" % np.std(intermediate_output))
 
 
     def test_truth(self):

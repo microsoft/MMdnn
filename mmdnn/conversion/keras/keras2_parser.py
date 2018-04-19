@@ -722,14 +722,13 @@ class Keras2Parser(Parser):
         IR_node = self.IR_graph.node.add()
 
         # name, op
-        Keras2Parser._copy_and_reop(source_node, IR_node, 'Reshape')
+        Keras2Parser._copy_and_reop(source_node, IR_node, 'SpaceToDepth')
         IR_node.name = "Lambda_{}".format(self.lambda_layer_count)
 
         # input edge
         self.convert_inedge(source_node, IR_node)
 
         # for target shape
-        IR_node.attr["shape"].list.i.append(-1)
-        IR_node.attr["shape"].list.i.extend(source_node.layer.output_shape[1:])
+        IR_node.attr["blocksize"].i = 2
         self.lambda_layer_count = self.lambda_layer_count + 1
         source_node.real_name = IR_node.name

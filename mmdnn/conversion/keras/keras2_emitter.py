@@ -482,6 +482,29 @@ def KitModel(weight_file = None):
         ))
 
 
+    def emit_SpaceToDepth(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        assert IR_node.get_attr('blocksize') == 2
+        # TODO: arguments won't be saved in keras export model
+
+        blocksize = "arguments={'blocksize': %d}" % 2
+
+        self.add_body(1, "{:<15} = layers.Lambda(space_to_depth, {}, name='{}')({})".format(
+            IR_node.variable_name,
+            blocksize,
+            IR_node.name,
+            self.parent_variable_name(IR_node)
+        ))
+
+
+    def _layer_SpaceToDepth(self):
+        self.add_body(0, '''
+def space_to_depth(input, blocksize):
+    import tensorflow as tf
+    return tf.space_to_depth(input, block_size=blocksize)
+''')
+
+
     def _layer_Flatten(self):
         self.add_body(0, '''
 def __flatten(name, input):
