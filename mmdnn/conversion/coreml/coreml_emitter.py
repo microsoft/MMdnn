@@ -189,6 +189,7 @@ class CoreMLEmitter(Emitter):
             raise ValueError("Unsupported non-unity dilation for Deconvolution layer")
 
         groups = IR_node.get_attr('groups', 1)
+
         kernel_channels = channels
 
         padding = self._get_padding(IR_node)

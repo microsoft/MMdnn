@@ -111,8 +111,10 @@ class CoremlParser(Parser):
 
 
     def gen_IR(self):
-
-        for layer in self.coreml_graph.topological_sort:
+        h = 2
+        for i, layer in enumerate(self.coreml_graph.topological_sort):
+            if i == h:
+                break
 
             current_node = self.coreml_graph.get_node(layer)
             current_node_layer = current_node.layer
@@ -250,13 +252,11 @@ class CoremlParser(Parser):
         # important!
         if source_node_conv.HasField('weights'):
             # reshape the weight!
-            [h , w , k , o] = list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels, source_node_conv.outputChannels]
+            [h , w , k , o] = list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels , source_node_conv.outputChannels]
             # [2, 3, 0, 1]
             weights = np.array(source_node_conv.weights.floatValue).reshape([o, k, h, w]).transpose([2, 3, 1, 0])
+            print(weights)
 
-            self.set_weight(source_node.name, 'weights',  weights)
-            if source_node_layer.convolution.HasField('bias'):
-                self.set_weight(source_node.name, 'bias', np.array(source_node_conv.bias.floatValue))
 
 
         kwargs = dict()
@@ -272,35 +272,46 @@ class CoremlParser(Parser):
             CoremlParser._copy_and_repo(source_node, IR_node, "Conv")
         elif layer_name == 'dw':
             CoremlParser._copy_and_repo(source_node, IR_node, "DepthwiseConv")
+            # weights = np.array(source_node_conv.weights.floatValue).reshape([h, w, k * source_node_conv.nGroups, o / source_node_conv.nGroups])
+
+
         else:
             if kwargs['isDeconvolution']:
                 CoremlParser._copy_and_repo(source_node, IR_node, "ConvTranspose")
             else:
                 CoremlParser._copy_and_repo(source_node, IR_node, "Conv")
+
+        self.set_weight(source_node.name, 'weights',  weights)
+        if source_node_layer.convolution.HasField('bias'):
+            self.set_weight(source_node.name, 'bias', np.array(source_node_conv.bias.floatValue))
+
         # filter
         # [kd, kh, kw, channel_size, filter number]
 
         # if conv, weights have the shape
             # [outchannel, kernelchannel, H, W], kernelchannels == inputchannels / nGroups
         # if deconv, weights have the shape
-            # [kernelchannel, outpuotchannel/nGroups, H, W], kernelchannels == inoutchannels / nGroups
+            # [kernelchannel, outputchannel/nGroups, H, W], kernelchannels == inputchannels / nGroups
         # For coreml the kernelSize is length 2 in the order [H, W]
 
-        kwargs['kernel_shape'] = [1] + list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels, source_node_conv.outputChannels]
+        # kwargs['kernel_shape'] = [1] + list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels, source_node_conv.outputChannels]
+
+
+        kwargs['kernel_shape'] = list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels, source_node_conv.outputChannels]
 
         kwargs['groups'] = source_node_conv.nGroups
 
         # strides
         # [1, sd, sh, sw, 1]
-        # kwargs['strides'] = [1, 1] + list(source_node_conv.stride) + [1]
+        kwargs['strides'] = [1] + list(source_node_conv.stride) + [1]
 
-        kwargs['strides'] = [1] + list(source_node_conv.stride)  + [1]
+        # kwargs['strides'] = [1] + list(source_node_conv.stride)  + [1]
 
         # dilations
         # [1, dd, dh, dw, 1]
-        # kwargs['dilations'] = [1, 1] + list(source_node_conv.dilationFactor) + [1]
+        kwargs['dilations'] = [1] + list(source_node_conv.dilationFactor) + [1]
 
-        kwargs['dilations'] = list(source_node_conv.dilationFactor)
+        # kwargs['dilations'] = list(source_node_conv.dilationFactor)
 
         assign_IRnode_values(IR_node, kwargs)
 
@@ -678,7 +689,8 @@ class CoremlParser(Parser):
 
         if is_global:
             kwargs['global_pooling'] = True
-
+            kwargs['global_pooling_coreml'] = True
+            kwargs['shape_coreml'] = [self.shape_dict[coreml_node_layer.name][3], self.shape_dict[coreml_node_layer.name][4], self.shape_dict[coreml_node_layer.name][2] ]
 
 
         # padding
@@ -693,6 +705,8 @@ class CoremlParser(Parser):
         # [1, pd, ph, pw, 1]
         # kwargs['kernel_shape'] = [1, 1] + list(coreml_node_pool.kernelSize) + [1]
         kwargs['kernel_shape'] = [1] + list(coreml_node_pool.kernelSize) + [1]
+
+
 
 
         assign_IRnode_values(IR_node, kwargs)
@@ -755,3 +769,18 @@ class CoremlParser(Parser):
 
         # name, op
         self._convert_padding_api(source_node, IR_node)
+
+    # def rename_Reshape(self, source_node):
+    #     IR_node = self.IR_graph.node.add()
+
+
+
+    #     # name, op
+    #     CoremlParser._copy_and_repo(source_node, IR_node, 'Reshape')
+
+    #     # input edge
+    #     self.convert_inedge(source_node, IR_node)
+
+    #     # for target shape
+    #     IR_node.attr['shape'].list.i.append([-1, self.shape_dict[, 1, ])
+    #     IR_node.attr['shape'].list.i.extend(source_node.layer.target_shape)
