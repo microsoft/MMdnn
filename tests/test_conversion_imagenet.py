@@ -168,7 +168,7 @@ class TestModels(CorrectnessTest):
         architecture_file, weight_file = mxnet_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = mxnet_extractor.inference(architecture_name, TestModels.cachedir, image_path)
+        original_predict = mxnet_extractor.inference(architecture_name, None, TestModels.cachedir, image_path)
         del mxnet_extractor
 
         # original to IR
@@ -264,9 +264,6 @@ class TestModels(CorrectnessTest):
         del parser
         del CoremlParser
         return original_predict
-
-
-
 
 
     @staticmethod
@@ -506,8 +503,6 @@ class TestModels(CorrectnessTest):
         }
 
         # IR to Model
-        # converted_file = original_framework + '_coreml_' + architecture_name + "_converted"
-        # converted_file = converted_file.replace('.', '_')
 
         # image
         func = TestKit.preprocess_func[original_framework][architecture_name]
@@ -577,16 +572,15 @@ class TestModels(CorrectnessTest):
         },
 
         'keras' : {
-            # 'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            # 'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
-            # 'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
-            # 'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            # 'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            # 'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            # 'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
-            'mobilenet'    : [CoreMLEmit],
-            # 'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            # 'yolo2'          : [KerasEmit],
+            'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
+            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
+            'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
+            'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
+            'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
+            'yolo2'          : [KerasEmit],
         },
 
         'mxnet' : {
@@ -600,9 +594,9 @@ class TestModels(CorrectnessTest):
 
 
         'caffe' : {
-            'voc-fcn8s'     : [TensorflowEmit],
-            'voc-fcn16s'    : [TensorflowEmit],
-            'voc-fcn32s'    : [TensorflowEmit],
+            'voc-fcn8s'     : [CntkEmit, TensorflowEmit],
+            'voc-fcn16s'    : [CntkEmit, TensorflowEmit],
+            'voc-fcn32s'    : [CntkEmit, TensorflowEmit],
             'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit, CoreMLEmit],
             'alexnet'       : [CntkEmit, TensorflowEmit, MXNetEmit, CaffeEmit, PytorchEmit], # TODO: KerasEmit
             'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit, PytorchEmit],
@@ -690,25 +684,26 @@ class TestModels(CorrectnessTest):
         print("Testing {} model all passed.".format(original_framework), file=sys.stderr)
 
 
-    # def test_cntk(self):
-    #      self._test_function('cntk', self.CntkParse)
+    def test_cntk(self):
+         self._test_function('cntk', self.CntkParse)
 
 
-    # def test_tensorflow(self):
-    #     self._test_function('tensorflow', self.TensorFlowParse)
-    #     self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
+    def test_tensorflow(self):
+        self._test_function('tensorflow', self.TensorFlowParse)
+        self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
 
 
-    # def test_caffe(self):
-    #     self._test_function('caffe', self.CaffeParse)
+    def test_caffe(self):
+        self._test_function('caffe', self.CaffeParse)
 
 
-    # def test_keras(self):
-    #     self._test_function('keras', self.KerasParse)
+    def test_keras(self):
+        self._test_function('keras', self.KerasParse)
+
 
     def test_coreml(self):
         self._test_function('coreml', self.CoremlParse)
 
 
-    # def test_mxnet(self):
-    #     self._test_function('mxnet', self.MXNetParse)
+    def test_mxnet(self):
+        self._test_function('mxnet', self.MXNetParse)

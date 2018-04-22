@@ -62,10 +62,13 @@ def extract_model(args):
             predict = [(i, predict[i]) for i in top_indices]
             predict = generate_label(predict, args.label, offset)
 
+            for line in predict:
+                print (line)
+
         else:
             print (predict.shape)
+            print (predict)
 
-        print (predict)
 
 
 def _main():
