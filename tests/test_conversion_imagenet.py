@@ -485,15 +485,30 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
+    def prep_for_coreml(prepname, BGRTranspose):
+        if prepname == 'Standard':
+            return 0.00784313725490196, -1, -1, -1, BGRTranspose
+        elif prepname == 'ZeroCenter' and BGRTranspose == True:
+            return 1, -123.68, -116.779, -103.939, BGRTranspose
+        elif prepname == 'ZeroCenter' and BGRTranspose == False:
+            return 1, -103.939, -116.779, -123.68, BGRTranspose
+        elif prepname == 'Identity':
+            return 1, 1, 1, 1, BGRTranspose
+        else:
+            raise ValueError()
+
+
+    @staticmethod
     def CoreMLEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        return
+
         from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
         from coremltools.models import MLModel
 
         original_framework = checkfrozen(original_framework)
 
-
         # scale, b, g, r, BGRTranspose
-        prep_for_coreml = {
+        CoreML_preprocess = {
             'inception_v3'      : [0.00784313771874, -1.0, -1.0, -1.0, False],
             'vgg16'             : [1.0, -103.939002991, -116.778999329, -123.680000305, True],
             'resnet50'          : [1.0, -103.939002991,  -116.778999329, -123.680000305, True],
@@ -503,12 +518,26 @@ class TestModels(CorrectnessTest):
         }
 
         # IR to Model
-
         # image
         func = TestKit.preprocess_func[original_framework][architecture_name]
         img = func(image_path)
 
-        prep_list = prep_for_coreml[architecture_name]
+        if original_framework == 'CoreML':
+            prep_list = CoreML_preprocess[architecture_name]
+
+        else:
+            import inspect
+            funcstr = inspect.getsource(func)
+            coreml_pre = funcstr.split('(')[0].split('.')[-1]
+
+            if len(funcstr.split(',')) == 3:
+                BGRTranspose = bool(0)
+                img_size = int(funcstr.split('path,')[1].split(')')[0])
+            else:
+                BGRTranspose = bool(funcstr.split(',')[-2].split(')')[0])
+                img_size = int(funcstr.split('path,')[1].split(',')[0])
+
+            prep_list = TestModels.prep_for_coreml(coreml_pre, BGRTranspose)
 
         emitter = CoreMLEmitter(architecture_path, weight_path)
         model, input_name, output_name = emitter.gen_model(
@@ -532,10 +561,7 @@ class TestModels(CorrectnessTest):
         # load model
         model = MLModel(model)
 
-
-
         # inference
-
         coreml_input = {input_name: img}
         coreml_output = model.predict(coreml_input)
         prob = coreml_output[output_name]
@@ -545,10 +571,10 @@ class TestModels(CorrectnessTest):
 
 
     exception_tabel = {
-        'cntk_Keras_resnet18',                      # Different *Same Padding* method in first convolution layer.
-        'cntk_Keras_resnet152',                     # Different *Same Padding* method in first convolution layer.
-        'cntk_Tensorflow_resnet18',                 # Different *Same Padding* method in first convolution layer.
-        'cntk_Tensorflow_resnet152',                # Different *Same Padding* method in first convolution layer.
+        'cntk_Keras_resnet18',                      # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
+        'cntk_Keras_resnet152',                     # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
+        'cntk_Tensorflow_resnet18',                 # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
+        'cntk_Tensorflow_resnet152',                # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
         'cntk_Caffe_resnet18',                      # TODO
         'cntk_Caffe_resnet152',                     # TODO
         'tensorflow_frozen_MXNet_inception_v1',     # TODO
@@ -573,14 +599,14 @@ class TestModels(CorrectnessTest):
 
         'keras' : {
             'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
+            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
             'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
             'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
             'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
             'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
             'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
             'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            'yolo2'          : [KerasEmit],
+            'yolo2'        : [KerasEmit],
         },
 
         'mxnet' : {
@@ -702,7 +728,9 @@ class TestModels(CorrectnessTest):
 
 
     def test_coreml(self):
-        self._test_function('coreml', self.CoremlParse)
+        from coremltools.models.utils import macos_version
+        if macos_version() >= (10, 13):
+            self._test_function('coreml', self.CoremlParse)
 
 
     def test_mxnet(self):
