@@ -46,6 +46,10 @@ def extract_model(args):
         from mmdnn.conversion.examples.pytorch.extractor import pytorch_extractor
         extractor = pytorch_extractor()
 
+    elif args.framework == 'darknet':
+        from mmdnn.conversion.examples.darknet.extractor import darknet_extractor
+        extractor = darknet_extractor()
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.framework))
 
@@ -53,19 +57,26 @@ def extract_model(args):
 
     if files and args.image:
         predict = extractor.inference(args.network, files, args.path, args.image)
-        if predict.ndim == 1:
-            if predict.shape[0] == 1001:
-                offset = 1
-            else:
-                offset = 0
-            top_indices = predict.argsort()[-5:][::-1]
-            predict = [(i, predict[i]) for i in top_indices]
-            predict = generate_label(predict, args.label, offset)
+        if type(predict) == list:
+            print(predict)
 
         else:
-            print (predict.shape)
+            if predict.ndim == 1:
+                if predict.shape[0] == 1001:
+                    offset = 1
+                else:
+                    offset = 0
+                top_indices = predict.argsort()[-5:][::-1]
+                predict = [(i, predict[i]) for i in top_indices]
+                predict = generate_label(predict, args.label, offset)
 
-        print (predict)
+                for line in predict:
+                    print (line)
+
+            else:
+                print (predict.shape)
+                print (predict)
+
 
 
 def _main():
@@ -77,7 +88,7 @@ def _main():
         '--framework', '-f',
         type=_text_type,
         required=True,
-        choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'pytorch'],
+        choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'pytorch', 'darknet'],
         help="Framework name")
 
     parser.add_argument(

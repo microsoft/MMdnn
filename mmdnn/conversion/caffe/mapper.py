@@ -128,9 +128,9 @@ class NodeMapper(object):
         offset = node.parameters.offset
         if offset:
             if len(offset) == 1:
-                kwargs['border'] = [offset[0], 0, offset[0], 0]
+                kwargs['border'] = [offset[0], offset[0], 0, 0]
             else:
-                kwargs['border'] = [offset[0], 0, offset[1], 0]
+                kwargs['border'] = [offset[0], offset[1], 0, 0]
 
         return Node.create('Crop', **kwargs)
 

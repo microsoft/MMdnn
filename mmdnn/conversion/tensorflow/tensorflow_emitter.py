@@ -443,7 +443,7 @@ def KitModel(weight_file = None):
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             border[0],
-            border[2],
+            border[1],
             output_shape[1],
             output_shape[2]))
 
