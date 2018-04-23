@@ -64,18 +64,11 @@ class DarknetGraph(Graph):
 
     def build(self):
 
-        # fp = open(weightfile, 'rb')
-        # header = np.fromfile(fp, count=4, dtype=np.int32)
-        # buf = np.fromfile(fp, dtype = np.float32)
-        # print(buf)
-        # print(buf.shape)
-        # fp.close()
-        # assert False
-        start = 0
         for i, block in enumerate(self.model):
-            print(i)
-            print(block)
-            print("\n")
+            # print("\n")
+            # print(i)
+            # print(block)
+
             # continue
             node = OrderedDict()
             if block['type'] == 'net':
@@ -131,14 +124,10 @@ class DarknetGraph(Graph):
                 conv_layer['attr'] = convolution_param
                 self.layer_map[conv_layer['name']] = DarknetGraphNode(conv_layer)
                 self.original_list[conv_layer['name']] = DarknetGraphNode(conv_layer)
-                # self.layer_num_map[i] = conv_layer['name']
                 pre_node_name = conv_layer['name']
-                print( self.layer_map[conv_layer['name']].layer)
-                print("*************")
 
                 if block['batch_normalize'] == '1':
                     bn_layer = OrderedDict()
-                    # print("====", pre_node_name)
                     bn_layer['input'] = [pre_node_name]
 
 
@@ -158,16 +147,10 @@ class DarknetGraph(Graph):
 
                     self.layer_map[bn_layer['name']] = DarknetGraphNode(bn_layer)
                     self.original_list[bn_layer['name']] = DarknetGraphNode(bn_layer)
-                    # print(self.layer_map[bn_layer['name']].layer)
-                    # print("*************")
 
                     pre_node_name = bn_layer['name']
 
-                # else:
-                    # print(block)
-                    # assert False
 
-                # print(block['activation'])
                 if block['activation'] != 'linear':
                     relu_layer = OrderedDict()
                     relu_layer['input'] = [pre_node_name]
@@ -183,11 +166,6 @@ class DarknetGraph(Graph):
                     relu_param['_output_shape'] = input_shape
                     relu_layer['attr'] = relu_param
                     self.layer_map[relu_layer['name']] = DarknetGraphNode(relu_layer)
-                    print(i)
-                    # print(relu_layer['name'])
-                    print(relu_layer)
-                    print("=============")
-
                     self.layer_num_map[i] = relu_layer['name']
                     self.original_list[relu_layer['name']] = DarknetGraphNode(relu_layer)
                     pre_node_name = relu_layer['name']
@@ -208,8 +186,6 @@ class DarknetGraph(Graph):
                 pooling_param['kernel_size'] = int(block['size'])
                 pooling_param['stride'] = int(block['stride'])
                 pooling_param['pool'] = 'MAX'
-                print(block)
-                # pooling_param['pad'] = int(block['pad'])
                 pooling_param['padding'] = 0
                 if block.has_key('pad') and int(block['pad']) == 1:
                     pooling_param['padding'] = (int(block['size'])-1)/2
@@ -226,7 +202,6 @@ class DarknetGraph(Graph):
                 self.original_list[max_layer['name']] = DarknetGraphNode(max_layer)
                 self.layer_num_map[i] = max_layer['name']
                 pre_node_name = max_layer['name']
-                # assert False
 
             elif block['type'] == 'avgpool':
                 avg_layer = OrderedDict()
@@ -240,7 +215,7 @@ class DarknetGraph(Graph):
                 pooling_param = OrderedDict()
                 input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')
                 pooling_param['_output_shape'] = [-1, 1, 1, input_shape[-1]]
-                pooling_param['pool'] = 'AVE'
+                pooling_param['pool'] = 'AVG'
                 avg_layer['attr'] = pooling_param
                 self.layer_map[avg_layer['name']] = DarknetGraphNode(avg_layer)
                 self.original_list[avg_layer['name']] = DarknetGraphNode(avg_layer)
@@ -249,15 +224,8 @@ class DarknetGraph(Graph):
 
             elif block['type'] == 'route':
                 prev = block['layers'].split(',') #[-1,61]
-                print(prev)
-                print(self.layer_num_map)
                 if len(prev) == 1:
                     prev_layer_id = i + int(prev[0])
-                    # route_layer = OrderedDict()
-                    # route_layer['input'] = self.layer_num_map[prev_layer_id]
-                    # route_layer['name'] = self.layer_num_map[prev_layer_id]
-                    # route_layer['type'] = 'Identity'
-                    # self.layer_map[route_layer['name']] = DarknetGraphNode(route_layer)
                     self.layer_num_map[i] = self.layer_num_map[prev_layer_id]
                     pre_node_name = self.layer_num_map[i]
                 elif len(prev) == 2:
@@ -279,14 +247,11 @@ class DarknetGraph(Graph):
                     route_param = OrderedDict()
 
 
-                    print(input_list)
-                    print(input_shape)
                     shape_ = 0
                     for shape in input_shape:
                         shape_ += shape[-1]
                     route_param['axis'] = 3
                     route_param['_output_shape'] = input_shape[0][:-1] + [shape_]
-                    print( route_param['_output_shape'])
                     route_layer['input'] = input_list
 
                     if block.has_key('name'):
@@ -301,12 +266,8 @@ class DarknetGraph(Graph):
                     self.original_list[route_layer['name']] = DarknetGraphNode(route_layer)
                     self.layer_num_map[i] = route_layer['name']
                     pre_node_name = route_layer['name']
-                    print( self.layer_map[route_layer['name']].layer)
-                    print("*************")
 
             elif block['type'] == 'shortcut':
-                print(self.layer_num_map)
-                print(int(block['from']))
                 prev_layer_id1 = i + int(block['from'])
                 prev_layer_id2 = i - 1
                 bottom1 = self.layer_num_map[prev_layer_id1]
@@ -330,10 +291,6 @@ class DarknetGraph(Graph):
                 self.original_list[shortcut_layer['name']] = DarknetGraphNode(shortcut_layer)
                 self.layer_num_map[i] = shortcut_layer['name']
                 pre_node_name = shortcut_layer['name']
-                print( self.layer_map[shortcut_layer['name']].layer)
-                print("*************")
-
-                # bottom = shortcut_layer['top']
 
                 if block['activation'] != 'linear':
                     relu_layer = OrderedDict()
@@ -409,9 +366,6 @@ class DarknetGraph(Graph):
                 pre_node_name = sm_layer['name']
 
             elif block['type'] == 'yolo':
-                # print(block)
-
-                # input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')
 
                 yolo_layer = OrderedDict()
                 yolo_layer['input'] = [pre_node_name]
@@ -421,8 +375,6 @@ class DarknetGraph(Graph):
                     yolo_layer['name'] = 'layer%d-yolo' % i
                 yolo_layer['type'] = 'yolo'
                 yolo_param = OrderedDict()
-                # input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')
-                # yolo_param['_output_shape'] = input_shape
                 yolo_param['truth_thresh'] = float(block['truth_thresh'])
                 yolo_param['random'] = float(block['random'])
                 yolo_param['ignore_thresh'] = float(block['ignore_thresh'])
@@ -430,30 +382,18 @@ class DarknetGraph(Graph):
                 yolo_param['num'] = int(block['num'])
                 yolo_param['classes'] = int(block['classes'])
                 anchors = [int(t) for t in block['anchors'].split(',')]
-                # print(len(anchors))
-                # assert False
                 yolo_param['anchors'] = anchors
                 mask = [int(t) for t in block['mask'].split(',')]
-                # print(mask)
                 yolo_param['mask'] = mask
 
                 yolo_layer['attr'] = yolo_param
                 self.layer_map[yolo_layer['name']] = DarknetGraphNode(yolo_layer)
                 self.original_list[yolo_layer['name']] = DarknetGraphNode(yolo_layer)
                 self.layer_num_map[i] = yolo_layer['name']
-                # pre_node_name = yolo_layer['name']
-                print(self.layer_map[yolo_layer['name']].layer)
-                print("$$$$$$$$$$$$$$$$")
-                # print(pre_node_name)
 
             elif block['type'] == 'upsample':
-                print(block)
-                print("==============================upsampple")
-                print(pre_node_name)
 
                 input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')
-                print(input_shape)
-                # assert False
                 upsample_layer = OrderedDict()
                 upsample_layer['input'] = [pre_node_name]
                 if block.has_key('name'):
@@ -462,38 +402,29 @@ class DarknetGraph(Graph):
                     upsample_layer['name'] = 'layer%d-upsample' % i
                 upsample_layer['type'] = 'upsample'
                 upsample_param = OrderedDict()
-                # assert False
-                # input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')
-                # yolo_param['_output_shape'] = input_shape
                 stride = block['stride']
                 upsample_param['strides'] = int(stride)
                 upsample_param['_output_shape'] = [input_shape[0]] + [q*int(stride) for q in input_shape[1:3]] + [input_shape[-1]]
-                print(upsample_param['_output_shape'])
                 upsample_layer['attr'] = upsample_param
                 self.layer_map[upsample_layer['name']] = DarknetGraphNode(upsample_layer)
                 self.original_list[upsample_layer['name']] = DarknetGraphNode(upsample_layer)
                 self.layer_num_map[i] = upsample_layer['name']
                 pre_node_name = upsample_layer['name']
-                print(self.layer_map[upsample_layer['name']].layer)
-                print("$$$$$$$$$$$$$$$$")
-                print(pre_node_name)
 
+            elif block['type'] == 'cost':
+                continue
             else:
                 print('unknow layer type %s ' % block['type'])
                 print(block,"\n")
-                # assert False
+                assert False
 
-        # assert False
 
-        print(self.original_list.keys())
-        # assert False
+
         for layer in self.layer_map:
-            # print(layer)
-            # print(self.layer_map[layer].layer['input'])
             for pred in self.layer_map[layer].layer['input']:
                 if pred not in self.layer_map.keys() and pred != 'data':
                     print(pred)
-                    print("::::::::::::::::::::::::::")
+                    print("::::::::::::: unknown input :::::::::::::")
                     assert False
 
                 self._make_connection(pred, layer)

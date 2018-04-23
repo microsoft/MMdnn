@@ -286,6 +286,7 @@ def KitModel(weight_file = None):
         elif pooling_type == "AVG":
             pool_name = "AveragePooling{}D".format(dim)
         else:
+            print(pooling_type)
             assert False
 
         if IR_node.layer.attr['global_pooling'].b:
