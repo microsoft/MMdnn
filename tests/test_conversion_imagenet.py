@@ -500,8 +500,6 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def CoreMLEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
-        return
-
         from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
         from coremltools.models import MLModel
 
