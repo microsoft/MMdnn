@@ -112,10 +112,10 @@ if __name__=='__main__':
         self.add_body(0, self.header_code)
 
         #for test
-        # with open("graph.txt", 'w') as f:
-        #     for layer in self.IR_graph.topological_sort:
-        #         current_node = self.IR_graph.get_node(layer)
-        #         print("========current_node=========\n{}".format(current_node.layer), file=f)
+        with open("graph.txt", 'w') as f:
+            for layer in self.IR_graph.topological_sort:
+                current_node = self.IR_graph.get_node(layer)
+                print("========current_node=========\n{}".format(current_node.layer), file=f)
         #test end
 
         for layer in self.IR_graph.topological_sort:
@@ -163,6 +163,17 @@ if __name__=='__main__':
 
 
     def emit_Conv(self, IR_node):
+        #check if have pad layer
+        pad_h = 0
+        pad_w = 0
+        IR_parent_node = self.IR_graph.get_parent(IR_node.name, [0])
+        if IR_parent_node.type == 'Pad':
+            pad_h = IR_parent_node.get_attr('pads')[1]
+            pad_w = IR_parent_node.get_attr('pads')[2]
+        else:
+            pad_h = IR_node.get_attr('pads')[1]
+            pad_w = IR_node.get_attr('pads')[2]
+
         self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_size={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
 bias_term={}, ntop=1)".format(
             IR_node.variable_name,
@@ -170,8 +181,8 @@ bias_term={}, ntop=1)".format(
             IR_node.get_attr('kernel_shape')[0],
             IR_node.get_attr('strides')[1],
             IR_node.get_attr('kernel_shape')[-1],
-            IR_node.get_attr('pads')[1],
-            IR_node.get_attr('pads')[2],
+            pad_h,
+            pad_w,
             IR_node.get_attr('group', 1),
             IR_node.get_attr('use_bias', False)))
 
@@ -340,3 +351,22 @@ bias_term={}, ntop=1)".format(
 
     def emit_Pad(self, IR_node):
         IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+
+    def reduction(self, IR_node, op, axes):
+        # Convert NHWC (IR) to NCHW (Caffe): [0,1,2,3]->[0,3,1,2]
+        if len(axes) == 1:
+            assert (axes[0] == 2)
+        elif len(axes) == 2:
+            assert ((axes[0] == 1) and (axes[1] == 2))
+
+        self.add_body(1, "n.{:<15} = L.Reduction(n.{}, operation={} , axis={} ,ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            op,
+            len(axes)))
+
+    def emit_ReduceMean(self, IR_node):
+        self.reduction(IR_node, 4 , IR_node.get_attr('axes'))
+
+    def emit_ReduceSum(self, IR_node):
+        self.reduction(IR_node, 1, IR_node.get_attr('axes'))

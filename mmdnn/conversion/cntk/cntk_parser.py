@@ -5,6 +5,7 @@
 
 import os
 import numpy as np
+from six.moves import xrange
 import cntk as _cntk
 from mmdnn.conversion.cntk.cntk_graph import CntkGraph
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
@@ -246,7 +247,7 @@ class CntkParser(Parser):
 
 
     def rename_Pooling(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op='Pool')
+        IR_node = self._convert_identity_operation(source_node, new_op='Pool', shape_transpose=True)
         dim = len(IR_node.attr['_output_shapes'].list.shape[0].dim)
         kwargs = {}
 
@@ -363,6 +364,9 @@ class CntkParser(Parser):
         for param in source_node.layer.inputs:
             if param.name.endswith('W'):
                 w = np.squeeze(self.get_ndarray(param))
+                if w.ndim > 2:
+                    w = np.transpose(w, list(range(1, w.ndim - 1)) + [0, -1])
+                    w = np.reshape(w, [-1, w.shape[-1]])
                 self.set_weight(source_node.name, 'weights', w)
                 assign_IRnode_values(IR_node, {'units' : w.shape[-1] })
 
