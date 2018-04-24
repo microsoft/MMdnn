@@ -205,10 +205,9 @@ bias_term={}, ntop=1)".format(
         elif pooling_type == 'STOCHASTIC':
             pooling_type = P.Pooling.STOCHASTIC
         else:
-            raise ValueError
+            raise ValueError()
 
         if IR_node.layer.attr['global_pooling'].b:
-            self.used_layers.add('GlobalPooling')
             self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, stride={}, global_pooling=True, ntop=1)".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
@@ -267,7 +266,6 @@ bias_term={}, ntop=1)".format(
         ))
 
         scale_layer_var_name = IR_node.variable_name + "_scale"
-        # Since the scale layer is "almost part" of the bn layer, we can safely use in_place here.
         self.add_body(1, "n.{:<15} = L.Scale(n.{}, bias_term={}, in_place=True, ntop=1)".format(
             scale_layer_var_name,
             IR_node.variable_name,
@@ -278,11 +276,14 @@ bias_term={}, ntop=1)".format(
             self.weights_dict[scale_layer_var_name] = dict()
             if 'scale' in self.weights_dict[IR_node.name]:
                 self.weights_dict[scale_layer_var_name]['scale'] = self.weights_dict[IR_node.name]['scale']
-                #self.weights_dict[IR_node.name].pop('scale', None)
-                self.weights_dict[IR_node.name]['scale'] = 1
-            self.weights_dict[scale_layer_var_name]['bias'] = self.weights_dict[IR_node.name]['bias']
-            self.weights_dict[IR_node.name].pop('bias', None)
-            self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
+            else:
+                self.weights_dict[scale_layer_var_name]['scale'] = 1
+
+            self.weights_dict[IR_node.name]['scale'] = 1
+
+            if 'bias' in self.weights_dict[IR_node.name]:
+                self.weights_dict[scale_layer_var_name]['bias'] = self.weights_dict[IR_node.name]['bias']
+                self.weights_dict[IR_node.name].pop('bias', None)
 
         IR_node.real_name = IR_node.name + "_scale"
 
