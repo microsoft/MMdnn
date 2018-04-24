@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from setuptools import setup, find_packages
+from io import open
 
 # Get the long description from the README file
 with open('README.md', encoding='utf-8') as f:
