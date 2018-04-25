@@ -176,6 +176,13 @@ def KitModel(weight_file = None):
             dim = len(IR_node.get_attr('strides')) - 2
             padding = [False] + [padding] * dim
 
+            if IR_node.type == 'DepthwiseConv':
+                groups = IR_node.get_attr('kernel_shape')[-2]
+                self.add_body(1, "__weights_dict['{}']['weights'] = np.swapaxes(__weights_dict['{}']['weights'], -1, -2)".format(
+                    IR_node.real_name, IR_node.real_name))
+            else:
+                groups = IR_node.get_attr('group', 1)
+
             self.add_body(1, "{:<15} = convolution({}, is_transpose={}, strides={}, auto_padding={}, dilation={}, groups={}, name='{}')".format(
                 IR_node.variable_name,
                 input_node,
@@ -183,7 +190,7 @@ def KitModel(weight_file = None):
                 tuple(IR_node.get_attr('strides')[1:-1]),
                 padding,
                 tuple(IR_node.get_attr('dilations', [1])),
-                IR_node.get_attr('group', 1),
+                groups,
                 IR_node.name))
 
         else:
@@ -469,6 +476,20 @@ def KitModel(weight_file = None):
             output_shape,
             IR_node.real_name
         ))
+
+
+    def emit_Relu6(self, IR_node):
+        self.emit_Relu(IR_node)
+        self.add_body(1, "{:<15} = cntk.clip({}, 0, 6, name='{}_clip')".format(
+            IR_node.variable_name + "_clip",
+            IR_node.variable_name,
+            IR_node.name
+        ))
+        IR_node.real_name = IR_node.name + '_clip'
+
+
+    def emit_DepthwiseConv(self, IR_node):
+        self.emit_Conv(IR_node)
 
 
     def _layer_Crop(self):

@@ -1,10 +1,24 @@
 # TensorFlow README
 
-## Usage
-
 TensorFlow parser (Tensorflow -> IR part) is an experimental product, since the granularity of TensorFlow checkpoint graph is much finer than other platform. We have to use *graph matching*-like method to retrieve operators.
 
 We tested the [slim pre-trained models](https://github.com/tensorflow/models/tree/master/research/slim) and the parser works. Any contribution is welcome.
+
+Models                   | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | TensorFlow
+:-----------------------:|:-----:|:------:|:----:|:-----:|:-----:|:-------:|:------:|
+Vgg19                    |   √   |   √    |  √   |   √   |   √   |    √    | √
+Inception_v1             |   o   |   √    |  o   |   √   |   √   |    √    | √
+Inception_v3             |   x   |   √    |  √   |   o   |   √   |    √    | √
+ResNet V1                |   x   |   √    |  o   |   √   |   √   |    √    | √
+ResNet V2                |   x   |   √    |  √   |   √   |   √   |    √    | √
+MobileNet V1             |   x   |   √    |  o   |   √   |   √   |    x    | √
+
+**√** - Correctness tested
+
+**o** - Some difference after conversion
+
+**space** - not tested
+
 
 ### Sample Tools
 
@@ -127,7 +141,7 @@ Ubuntu 16.04 with
 
 - Tensorflow 1.7
 
-@ 4/11/2018
+@ 2018/04/11
 
 ## Limitation
 

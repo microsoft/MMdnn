@@ -1,7 +1,5 @@
 # PyTorch README
 
-## Usage
-
 Currently, we only implemented the IR -> PyTorch part.
 
 I am implementing the PyTorch parser in branch [pytorch](https://github.com/Microsoft/MMdnn/tree/pytorch) and have some issue with getting layer shape and jit CppOP. Waiting for JIT completion.
@@ -10,20 +8,19 @@ Any contribution to PyTorch parser (PyTorch -> IR) is welcome.
 
 ### Extract PyTorch pre-trained models
 
-You can refer [PyTorch model extractor](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/pytorch/extract_model.py) to extract your pytorch models.
+You can refer [PyTorch model extractor](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/pytorch/extractor.py) to extract your pytorch models.
 
 ```bash
-$ python -m mmdnn.conversion.examples.pytorch.extract_model -h
-usage: extract_model.py [-h] -n
-                        {densenet,squeezenet,vgg16,resnet152,vgg19,inception_v3}
+$ mmdownload -f pytorch -h
+Support frameworks: ['alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201', 'inception_v3', 'resnet101', 'resnet152', 'resnet18', 'resnet34', 'resnet50', 'squeezenet1_0', 'squeezenet1_1', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
 ```
 
 ### Convert models from IR to PyTorch code snippet and weights
 
-We need to transform the IR weights to PyTorch suitable weights. Use argument *-dw* to specify the output weight file name.
+> Note: We need to transform the IR weights to PyTorch suitable weights. Use argument *-dw* to specify the output weight file name.
 
 ```bash
-$ python -m mmdnn.conversion._script.IRToCode --dstModelFormat pytorch --IRModelPath inception_v3.pb --IRWeightPath inception_v3.npy --dstModelPath pytorch_inception_v3.py -dw pytorch_inception_v3.npy
+$ mmtoir -f pytorch -n inception_v3.pb --IRWeightPath inception_v3.npy --dstModelPath pytorch_inception_v3.py -dw pytorch_inception_v3.npy
 
 Parse file [kit_imagenet.pb] with binary format successfully.
 Target network code snippet is saved as [pytorch_inception_v3.py].
@@ -48,9 +45,9 @@ Detail scripts of *Tensorflow slim resnet_v1_101 model* to *PyTorch* conversion 
 
 Ubuntu 16.04 with
 
-- PyTorch 0.4.0a0+7ddcb91
+- PyTorch 0.4.0
 
-@ 2017/12/06
+@ 2018/04/25
 
 ## Limitation
 
