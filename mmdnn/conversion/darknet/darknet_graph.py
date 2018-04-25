@@ -413,8 +413,70 @@ class DarknetGraph(Graph):
 
             elif block['type'] == 'cost':
                 continue
+
+            # spacetodepth
+            elif block['type'] == 'reorg':
+                input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')
+                reorg_layer = OrderedDict()
+                reorg_layer['input'] = [pre_node_name]
+                if block.has_key('name'):
+                    reorg_layer['name'] = block['name']
+                else:
+                    reorg_layer['name'] = 'layer%d-reorg' % i
+
+                reorg_layer['type'] = 'SpaceToDepth'
+                reorg_param = OrderedDict()
+                stride = int(block['stride'])
+                reorg_param['strides'] = stride
+                reorg_param['_output_shape'] = [-1, input_shape[1]/stride, input_shape[2]/stride, input_shape[3]*stride*stride]
+                reorg_layer['attr'] = reorg_param
+
+                self.layer_map[reorg_layer['name']] = DarknetGraphNode(reorg_layer)
+                self.original_list[reorg_layer['name']] = DarknetGraphNode(reorg_layer)
+                self.layer_num_map[i] = reorg_layer['name']
+                pre_node_name = reorg_layer['name']
+
+
+            elif block['type'] == 'region':
+                # print(block)
+                region_layer = OrderedDict()
+                region_layer['input'] = [pre_node_name]
+                if block.has_key('name'):
+                    region_layer['name'] = block['name']
+                else:
+                    region_layer['name'] = 'layer%d-region' % i
+                region_layer['type'] = 'region'
+                region_param = OrderedDict()
+                region_param['softmax'] = int(block['softmax'])
+                region_param['thresh'] = float(block['thresh'])
+                region_param['random'] = float(block['random'])
+                region_param['jitter'] = float(block['jitter'])
+                region_param['num'] = int(block['num'])
+                region_param['classes'] = int(block['classes'])
+                region_param['coords'] = int(block['coords'])
+                region_param['rescore'] = int(block['rescore'])
+                region_param['object_scale'] = int(block['object_scale'])
+
+                region_param['noobject_scale'] = int(block['noobject_scale'])
+                region_param['class_scale'] = int(block['class_scale'])
+                region_param['coord_scale'] = int(block['coord_scale'])
+
+                region_param['bias_match'] = int(block['bias_match'])
+                region_param['absolute'] = int(block['absolute'])
+
+                anchors = [float(t) for t in block['anchors'].split(',')]
+                region_param['anchors'] = anchors
+
+                region_layer['attr'] = region_param
+                # print(region_layer)
+                self.layer_map[region_layer['name']] = DarknetGraphNode(region_layer)
+                self.original_list[region_layer['name']] = DarknetGraphNode(region_layer)
+                self.layer_num_map[i] = region_layer['name']
+                # assert False
+
+
             else:
-                print('unknow layer type %s ' % block['type'])
+                print('unknown layer type %s ' % block['type'])
                 print(block,"\n")
                 assert False
 
