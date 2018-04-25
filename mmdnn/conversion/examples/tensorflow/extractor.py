@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import
 
+import os
 import tensorflow as tf
 
 from tensorflow.contrib.slim.nets import vgg
@@ -193,6 +194,7 @@ class tensorflow_extractor(base_extractor):
             if not architecture_file:
                 return None
 
+            tf.reset_default_graph()
             if cls.architecture_map[architecture]['filename'].endswith('ckpt'):
                 cls.handle_checkpoint(architecture, path)
 
@@ -246,7 +248,6 @@ class tensorflow_extractor(base_extractor):
                         num_classes=cls.architecture_map[architecture]['num_classes'],
                         is_training=False)
                     labels = tf.squeeze(logits)
-
 
                 init = tf.global_variables_initializer()
                 with tf.Session() as sess:
