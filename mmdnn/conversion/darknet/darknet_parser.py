@@ -30,7 +30,7 @@ class DarknetParser(Parser):
     def src_graph(self):
         return self.dk_graph
 
-    def __init__(self, model_config, weightfile):
+    def __init__(self, model_config, weightfile, yolo):
         super(DarknetParser, self).__init__()
 
         if not os.path.exists(model_config):
@@ -46,8 +46,10 @@ class DarknetParser(Parser):
 
         fp.close()
 
-        # self.start = 1  #yolov3
-        self.start = 0   #yolov2
+        if yolo == "yolov2":
+            self.start = 0  #yolov2
+        else:
+            self.start = 1   #yolov3 resnet
 
         model = parse_cfg(model_config)
         self.dk_graph = DarknetGraph(model)
@@ -159,9 +161,9 @@ class DarknetParser(Parser):
 
             conv_name = source_node.name
 
-            print("----------------",self.start)
-            print(kernel.shape)
-            print(k_bias.shape)
+            # print("----------------",self.start)
+            # print(kernel.shape)
+            # print(k_bias.shape)
 
             b = np.reshape(self.buf[self.start:self.start+k_bias.size], k_bias.shape)
             self.start = self.start + k_bias.size
@@ -184,7 +186,7 @@ class DarknetParser(Parser):
         IR_node.attr['use_global_stats'].b = source_node.get_attr('use_global_stats')
         IR_node.attr['bias'].b = source_node.get_attr('use_global_stats')
         IR_node.attr['scale'].b = source_node.get_attr('use_global_stats')
-        IR_node.attr['epsilon'].f = 0.00001
+        IR_node.attr['epsilon'].f = 1e-5
 
         assign_IRnode_values(IR_node, kwargs)
 
