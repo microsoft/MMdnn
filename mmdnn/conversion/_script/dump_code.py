@@ -21,6 +21,8 @@ def dump_code(framework, network_filepath, weight_filepath, dump_filepath):
         from mmdnn.conversion.pytorch.saver import save_model
     elif framework == 'tensorflow':
         from mmdnn.conversion.tensorflow.saver import save_model
+    elif framework == 'onnx':
+        from mmdnn.conversion.onnx.saver import save_model
     else:
         raise NotImplementedError("{} saver is not finished yet.".format(framework))
     save_model(MainModel, network_filepath, weight_filepath, dump_filepath)
@@ -34,7 +36,7 @@ def _get_parser():
     parser = argparse.ArgumentParser(description='Dump the model code into target model.')
 
     parser.add_argument(
-        '-f', '--framework', type=_text_type, choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'torch'],
+        '-f', '--framework', type=_text_type, choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'torch', 'onnx'],
         required=True,
         help='Format of model at srcModelPath (default is to auto-detect).'
     )
