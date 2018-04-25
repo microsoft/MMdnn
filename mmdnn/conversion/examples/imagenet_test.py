@@ -63,7 +63,8 @@ class TestKit(object):
         },
 
         'darknet' : {
-            'yolov3'        :[]
+            'yolov3'        :[],
+            'yolov2'        :[],
         }
     }
 
@@ -147,6 +148,7 @@ class TestKit(object):
 
         'darknet' : {
             'yolov3'        : lambda path : TestKit.Identity(path, 416),
+            'yolov2'        : lambda path : TestKit.Identity(path, 416),
         },
 
         'coreml' : {
@@ -282,6 +284,7 @@ class TestKit(object):
 
         else:
             self.result = predict
+            print(predict.shape)
             print (self.result)
 
 
