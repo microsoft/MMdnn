@@ -39,7 +39,7 @@ class TestMXNet(TestKit):
     def inference(self, image_path):
         self.preprocess(image_path)
 
-        # self.print_intermediate_result('InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool', False)
+        # self.print_intermediate_result('pooling0', False)
 
         self.print_result()
 
@@ -49,11 +49,11 @@ class TestMXNet(TestKit):
     def print_intermediate_result(self, layer_name, if_transpose = False):
         internals = self.model.symbol.get_internals()
         intermediate_output = internals[layer_name + "_output"]
-        test_model = mx.mod.Module(symbol = intermediate_output, context = mx.cpu(), data_names = ['input'])
+        test_model = mx.mod.Module(symbol=intermediate_output, context=mx.cpu(), data_names=['data'])
         if self.args.preprocess == 'vgg19' or self.args.preprocess == 'inception_v1':
-            test_model.bind(for_training = False, data_shapes = [('input', (1, 3, 224, 224))])
-        elif self.args.preprocess == 'resnet' or self.args.preprocess == 'inception_v3':
-            test_model.bind(for_training = False, data_shapes = [('input', (1, 3, 299, 299))])
+            test_model.bind(for_training=False, data_shapes = [('data', (1, 3, 224, 224))])
+        elif 'resnet' in self.args.preprocess or self.args.preprocess == 'inception_v3':
+            test_model.bind(for_training=False, data_shapes = [('data', (1, 3, 299, 299))])
         else:
             assert False
 
