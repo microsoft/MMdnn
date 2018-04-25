@@ -292,6 +292,11 @@ class Keras2Parser(Parser):
 
         kwargs['pooling_type'] = pooling_type
 
+        # print(source_node.layer)
+        # print(source_node.layer.strides)
+        # print(source_node.layer.pool_size)
+        # assert False
+
         if is_global:
             kwargs['global_pooling'] = True
             kwargs['strides'] = [1] * (dim + 2)

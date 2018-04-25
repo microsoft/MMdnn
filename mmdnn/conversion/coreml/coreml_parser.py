@@ -111,10 +111,10 @@ class CoremlParser(Parser):
 
 
     def gen_IR(self):
-        h = 2
+        # h = 2
         for i, layer in enumerate(self.coreml_graph.topological_sort):
-            if i == h:
-                break
+            # if i == h:
+                # break
 
             current_node = self.coreml_graph.get_node(layer)
             current_node_layer = current_node.layer
@@ -255,7 +255,6 @@ class CoremlParser(Parser):
             [h , w , k , o] = list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels , source_node_conv.outputChannels]
             # [2, 3, 0, 1]
             weights = np.array(source_node_conv.weights.floatValue).reshape([o, k, h, w]).transpose([2, 3, 1, 0])
-            print(weights)
 
 
 
@@ -309,6 +308,10 @@ class CoremlParser(Parser):
 
         # dilations
         # [1, dd, dh, dw, 1]
+        # print('!'*10)
+        # print(source_node_conv)
+        # print(source_node_conv.dilationFactor)
+        # print('!'*10)
         kwargs['dilations'] = [1] + list(source_node_conv.dilationFactor) + [1]
 
         # kwargs['dilations'] = list(source_node_conv.dilationFactor)
@@ -321,6 +324,58 @@ class CoremlParser(Parser):
         self._defuse_activation(source_node)
 
 
+    # @staticmethod
+    # def _convert_padding(source_node, IR_node):
+    #     source_node_layer = source_node.layer
+
+    #     if source_node_layer.HasField('convolution'):
+    #         # padding in conv
+
+    #         source_node_conv = source_node_layer.convolution
+
+    #         if source_node_conv.HasField('valid'):
+    #             # pad in IR is [x1_b, x2_b, ..., x1_e, x2_e, ...]
+
+    #             dim = [i.startEdgeSize for i in source_node_conv.valid.paddingAmounts.borderAmounts] + [i.endEdgeSize for i in source_node_conv.valid.paddingAmounts.borderAmounts]
+
+    #             if dim == []:
+    #                 dim = [0,0,0,0]
+
+    #             assign_IRnode_values(IR_node, {'auto_pad' : 'VALID', 'pads': dim})
+
+    #         elif source_node_conv.HasField('same'):
+
+    #             assign_IRnode_values(IR_node, {'auto_pad': "SAME"})
+    #         else:
+    #             assert False
+
+    #     elif source_node_layer.HasField('pooling'):
+    #         # padding in pooling
+    #         source_node_pool = source_node_layer.pooling
+    #         if  source_node_pool.HasField('valid'):
+
+    #             dim = [i.startEdgeSize for i in source_node_pool.valid.paddingAmounts.borderAmounts] + [i.endEdgeSize for i in source_node_pool.valid.paddingAmounts.borderAmounts]
+
+    #             if dim == []:
+    #                 dim = [0,0,0,0]
+    #             assign_IRnode_values(IR_node, { 'auto_pad': 'VALID', 'pads':  dim})
+
+
+    #         elif source_node_pool.HasField('same'):
+
+    #             assign_IRnode_values(IR_node, { 'auto_pad': 'SAME'})
+
+    #         elif source_node_pool.HasField('includeLastPixel'):
+    #             # symmetric padding
+    #             h, w = source_node_pool.includeLastPixel.paddingAmounts
+    #             assign_IRnode_values(IR_node, { 'pads':  [ h, h, w, w]})
+    #         else:
+    #             assert False
+
+    #     else:
+    #         assert False
+
+
 
     @staticmethod
     def _convert_padding(source_node, IR_node):
@@ -331,18 +386,35 @@ class CoremlParser(Parser):
 
             source_node_conv = source_node_layer.convolution
 
+
             if source_node_conv.HasField('valid'):
                 # pad in IR is [x1_b, x2_b, ..., x1_e, x2_e, ...]
 
-                dim = [i.startEdgeSize for i in source_node_conv.valid.paddingAmounts.borderAmounts] + [i.endEdgeSize for i in source_node_conv.valid.paddingAmounts.borderAmounts]
+                dim = []
+                for i in source_node_conv.valid.paddingAmounts.borderAmounts:
+                    dim.extend([i.startEdgeSize, i.endEdgeSize])
+
 
                 if dim == []:
-                    dim = [0,0,0,0]
+                    assign_IRnode_values(IR_node, { 'auto_pad': 'VALID'})
+                else:
 
-                assign_IRnode_values(IR_node, {'auto_pads' : 'VALID', 'pads': dim})
+                    # padding
+                    pad_dim = [0, 0]
+
+                    pad_dim.extend(dim)
+
+                    pad_dim += [0, 0]
+
+                    pad_dim = convert_tf_pad_to_onnx(pad_dim)
+
+                    # print(pad_dim)
+
+                    assign_IRnode_values(IR_node, { 'pads':  pad_dim})
+
             elif source_node_conv.HasField('same'):
 
-                assign_IRnode_values(IR_node, {'auto_pads': "SAME"})
+                assign_IRnode_values(IR_node, {'auto_pad': "SAME"})
             else:
                 assert False
 
@@ -351,21 +423,33 @@ class CoremlParser(Parser):
             source_node_pool = source_node_layer.pooling
             if  source_node_pool.HasField('valid'):
 
-                dim = [i.startEdgeSize for i in source_node_pool.valid.paddingAmounts.borderAmounts] + [i.endEdgeSize for i in source_node_pool.valid.paddingAmounts.borderAmounts]
+                dim = []
+                for i in source_node_pool.valid.paddingAmounts.borderAmounts:
+                    dim.extend([i.startEdgeSize, i.endEdgeSize])
+
 
                 if dim == []:
-                    dim = [0,0,0,0]
-                assign_IRnode_values(IR_node, { 'auto_pads': 'VALID', 'pads':  dim})
+                    assign_IRnode_values(IR_node, { 'auto_pad': 'VALID'})
+                else:
+                    # padding
+                    pad_dim = [0, 0]
+
+                    pad_dim.extend(dim)
+
+                    pad_dim += [0, 0]
+                    pad_dim = convert_tf_pad_to_onnx(pad_dim)
+                    assign_IRnode_values(IR_node, { 'pads':  pad_dim})
 
 
             elif source_node_pool.HasField('same'):
 
-                assign_IRnode_values(IR_node, { 'auto_pads': 'SAME'})
+                assign_IRnode_values(IR_node, { 'auto_pad': 'SAME'})
 
             elif source_node_pool.HasField('includeLastPixel'):
+
                 # symmetric padding
                 h, w = source_node_pool.includeLastPixel.paddingAmounts
-                assign_IRnode_values(IR_node, { 'pads':  [ h, h, w, w]})
+                assign_IRnode_values(IR_node, { 'pads':  [ 0,h, h,0,0, w, w,0]})
             else:
                 assert False
 
@@ -502,28 +586,27 @@ class CoremlParser(Parser):
         # activation type
         activation_type = coreml_node_activation.WhichOneof("NonlinearityType")
 
-        # print(activation_type)
 
         if activation_type == 'leakyReLU':
-            self.set_weight(coreml_node_layer.name, "alpha", coreml_node_activation.leakyReLU.alpha)
+            assign_IRnode_values(IR_node, {'alpha' : coreml_node_activation.leakyReLU.alpha})
         elif activation_type == 'PReLU':
-            self.set_weight(coreml_node_layer.name, "gamma", coreml_node_activation.PReLU.alpha)
+            assign_IRnode_values(IR_node, {'gamma' : coreml_node_activation.PReLU.alpha})
         elif activation_type == 'ELU':
-            self.set_weight(coreml_node_layer.name, "alpha", coreml_node_activation.ELU.alpha)
+            assign_IRnode_values(IR_node, {'alpha' : coreml_node_activation.ELU.alpha})
         elif activation_type == 'thresholdedRelu':
-            self.set_weight(coreml_node_layer.name, 'alpha', coreml_node_activation.thresholdedReLU.alpha)
+            assign_IRnode_values(IR_node, {'alpha' : coreml_node_activation.thresholdedReLU.alpha})
         elif activation_type == 'scaledTanh':
-            self.set_weight(coreml_node_layer.name, 'alpha', coreml_node_activation.scaledTanh.alpha)
-            self.set_weight(coreml_node_layer.name, 'beta', coreml_node_activation.scaledTanh.beta)
+            assign_IRnode_values(IR_node, {'alpha' : coreml_node_activation.scaledTanh.alpha})
+            assign_IRnode_values(IR_node, {'beta' : coreml_node_activation.scaledTanh.beta})
         elif activation_type == 'linear':
-            self.set_weight(coreml_node_layer.name, 'alpha', coreml_node_activation.linear.alpha)
-            self.set_weight(coreml_node_layer.name, 'beta', coreml_node_activation.linear.beta)
+            assign_IRnode_values(IR_node, {'alpha' : coreml_node_activation.linear.alpha})
+            assign_IRnode_values(IR_node, {'beta' : coreml_node_activation.linear.beta})
         elif activation_type == 'sigmoidHard':
-            self.set_weight(coreml_node_layer.name, 'alpha', coreml_node_activation.sigmoidHard.alpha)
-            self.set_weight(coreml_node_layer.name, 'beta', coreml_node_activation.sigmoidHard.beta)
+            assign_IRnode_values(IR_node, {'alpha' : coreml_node_activation.sigmoidHard.alpha})
+            assign_IRnode_values(IR_node, {'beta' : coreml_node_activation.sigmoidHard.beta})
         elif activation_type == 'parametricSoftplus':
-            self.set_weight(coreml_node_layer.name, 'alpha', coreml_node_activation.parametricSoftplus.alpha)
-            self.set_weight(coreml_node_layer.name, 'beta', coreml_node_activation.parametricSoftplus.beta)
+            assign_IRnode_values(IR_node, {'alpha' : coreml_node_activation.parametricSoftplus.alpha})
+            assign_IRnode_values(IR_node, {'beta' : coreml_node_activation.parametricSoftplus.beta})
         # else:
             # assert False
 
@@ -724,7 +807,6 @@ class CoremlParser(Parser):
         self.convert_inedge(coreml_node, IR_node)
 
     def rename_Concatenate(self, source_node):
-        # print(source_node.layer)
         # assert False
         IR_node = self._convert_merge(source_node, 'Concat')
 
@@ -772,8 +854,6 @@ class CoremlParser(Parser):
 
     # def rename_Reshape(self, source_node):
     #     IR_node = self.IR_graph.node.add()
-
-
 
     #     # name, op
     #     CoremlParser._copy_and_repo(source_node, IR_node, 'Reshape')

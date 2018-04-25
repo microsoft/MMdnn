@@ -80,9 +80,13 @@ def set_layer_weights(model, weights_dict):
                 current_layer_parameters = [cur_dict['depthwise_filter'], cur_dict['pointwise_filter']]
                 if 'bias' in cur_dict:
                     current_layer_parameters.append(cur_dict['bias'])
+            elif layer.__class__.__name__ == "DepthwiseConv2D":
+                current_layer_parameters = [cur_dict['weights'].transpose((0,1,3,2))]
+                if 'bias' in cur_dict:
+                    current_layer_parameters.append(cur_dict['bias'])
             else:
                 # rot weights
-                current_layer_parameters = [cur_dict['weights']]
+                current_layer_parameters = [cur_dict['weights'] ]
                 if 'bias' in cur_dict:
                     current_layer_parameters.append(cur_dict['bias'])
             model.get_layer(layer.name).set_weights(current_layer_parameters)
@@ -148,6 +152,7 @@ def KitModel(weight_file = None):
     @staticmethod
     def _convert_padding(padding):
         padding = convert_onnx_pad_to_tf(padding)[1:-1]
+
         for idx, pad in enumerate(padding):
             padding[idx] = tuple(pad)
         padding = tuple(padding)
@@ -156,30 +161,34 @@ def KitModel(weight_file = None):
 
     def _defuse_padding(self, IR_node):
         auto_pad = IR_node.get_attr('auto_pad')
-        if auto_pad:
-            input_node = self.parent_variable_name(IR_node)
-            if auto_pad == 'VALID':
-                padding = 'valid'
-            elif auto_pad.startswith("SAME"):
-                padding = 'same'
-            else:
-                assert False
-            return input_node, padding
 
+        if auto_pad != None and auto_pad.startswith("SAME"):
+            input_node = self.parent_variable_name(IR_node)
+            padding = 'same'
+            return input_node, padding
         else:
+
             padding = IR_node.get_attr("pads")
-            padding = self._convert_padding(padding)
-            if is_valid_padding(padding) == False:
-                input_node = IR_node.variable_name + '_input'
-                self.add_body(1, "{:<15} = layers.ZeroPadding{}D(padding = {})({})".format(
-                    input_node,
-                    len(padding),
-                    padding,
-                    self.parent_variable_name(IR_node)))
+
+            if padding != None:
+                padding = self._convert_padding(padding)
+
+                if is_valid_padding(padding) == False:
+                    input_node = IR_node.variable_name + '_input'
+                    self.add_body(1, "{:<15} = layers.ZeroPadding{}D(padding = {})({})".format(
+                        input_node,
+                        len(padding),
+                        padding,
+                        self.parent_variable_name(IR_node)))
+                else:
+                    input_node = self.parent_variable_name(IR_node)
             else:
                 input_node = self.parent_variable_name(IR_node)
 
+
+            # TODO
             return input_node, 'valid'
+            # return input_node, 'same'
 
 
     def _emit_convolution(self, IR_node, conv_type):
@@ -192,13 +201,18 @@ def KitModel(weight_file = None):
         else:
             filters = IR_node.get_attr('kernel_shape')[-1]
 
-        filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier={}'.format(filters)
+        filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier={}'.format(1)
+        # change dw from filters to 1
+        # filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier={}'.format(filters)
 
         input_node, padding = self._defuse_padding(IR_node)
 
         dilations = IR_node.get_attr('dilations')
-        if not dilations:
+
+        if not dilations or len(dilations) == 2:
+            # reset the default dilation
             dilations = [1] * len(IR_node.get_attr('kernel_shape'))
+
 
         self.add_body(1, "{:<15} = convolution(weights_dict, name='{}', input={}, group={}, conv_type='{}', {}, kernel_size={}, strides={}, dilation_rate={}, padding='{}', use_bias={})".format(
             IR_node.variable_name,
@@ -287,12 +301,24 @@ def KitModel(weight_file = None):
         else:
             assert False
 
+        # if not IR_node.layer.attr['global_pooling'].b:
+        # TODO
         if IR_node.layer.attr['global_pooling'].b:
             self.add_body(1, "{:<15} = layers.Global{}(name = '{}')({})".format(
-                IR_node.variable_name,
+                IR_node.variable_name+'before',
                 pool_name,
                 IR_node.name,
                 self.parent_variable_name(IR_node)))
+
+            shape_str = IR_node.get_attr("shape_coreml")
+            shape_str = ','.join([str(i) for i in shape_str])
+
+            if IR_node.layer.attr['global_pooling_coreml'].b:
+                self.add_body(1, "{:<15} = layers.Reshape(name = '{}', target_shape = ({},))({})".format(
+                    IR_node.variable_name,
+                    IR_node.name + 'reshape',
+                    shape_str,
+                    IR_node.variable_name+'before'))
 
         else:
             dilations = IR_node.get_attr('dilations')
@@ -394,23 +420,27 @@ def KitModel(weight_file = None):
             IR_node.layer.attr['scale'].b,
             self.parent_variable_name(IR_node)))
 
+
+
     def emit_Scale(self, IR_node):
+        self.used_layers.add('Scale')
         axis = IR_node.layer.attr['axis'].i if 'axis' in IR_node.layer.attr else -1
-        self.add_body(1, "{:<15} = layers.Scale(name = '{}', axis = {}, center = {}, scale = {})({})".format(
+        self.add_body(1, "{:<15} = Scale(name = '{}', axis = {}, center = {}, scale = {})({})".format(
             IR_node.variable_name,
             IR_node.name,
             axis,
-            IR_node.layer.attr['bias'].b,
-            IR_node.layer.attr['scale'].b,
+            IR_node.layer.attr['hasBias'].b,
+            True,
             self.parent_variable_name(IR_node)))
+
 
 
     def emit_Pad(self, IR_node):
         mode = IR_node.get_attr('mode', 'constant')
+        mode = mode.lower()
         if mode == "constant":
             func = "ZeroPadding"
         else:
-            print (mode)
             raise NotImplementedError()
 
         dim = len(IR_node.get_attr('pads')) // 2 - 2
@@ -448,6 +478,9 @@ def KitModel(weight_file = None):
             IR_node.get_attr('k'),
             IR_node.name,
             self.parent_variable_name(IR_node)))
+
+
+
 
 
     def emit_SeparableConv(self, IR_node):
@@ -606,3 +639,77 @@ def convolution(weights_dict, name, input, group, conv_type, filters=None, **kwa
         b = K.variable(weights_dict[name]['bias'], name = name + "_bias")
         layer = layer + b
     return layer""")
+
+    def _layer_Scale(self):
+        self.add_body(0, """
+from keras.engine import Layer, InputSpec
+from keras import initializers
+from keras  import backend as K
+
+
+class Scale(Layer):
+
+    def __init__(self,
+                 axis=-1,
+                 center=True,
+                 scale=True,
+                 beta_initializer='zeros',
+                 gamma_initializer='ones',
+                 **kwargs):
+        super(Scale, self).__init__(**kwargs)
+        self.supports_masking = True
+        self.axis = axis
+        self.center = center
+        self.scale = scale
+        self.beta_initializer = initializers.get(beta_initializer)
+        self.gamma_initializer = initializers.get(gamma_initializer)
+
+
+    def build(self, input_shape):
+        dim = input_shape[self.axis]
+        if dim is None:
+            raise ValueError('Axis ' + str(self.axis) + ' of '
+                             'input tensor should have a defined dimension '
+                             'but the layer received an input with shape ' +
+                             str(input_shape) + '.')
+        self.input_spec = InputSpec(ndim=len(input_shape),
+                                    axes={self.axis: dim})
+        shape = (dim,)
+
+        if self.scale:
+            self.gamma = self.add_weight(shape=shape,
+                                         name='gamma',
+                                         initializer=self.gamma_initializer)
+        else:
+            self.gamma = None
+        if self.center:
+            self.beta = self.add_weight(shape=shape,
+                                        name='beta',
+                                        initializer=self.beta_initializer)
+        else:
+            self.beta = None
+
+
+        self.built = True
+
+    def call(self, inputs, training=None):
+        input_shape = K.int_shape(inputs)
+        # Prepare broadcasting shape.
+        ndim = len(input_shape)
+        reduction_axes = list(range(len(input_shape)))
+        del reduction_axes[self.axis]
+        broadcast_shape = [1] * len(input_shape)
+        broadcast_shape[self.axis] = input_shape[self.axis]
+        return K.reshape(self.gamma, broadcast_shape) * inputs + K.reshape(self.beta, broadcast_shape)
+
+    def get_config(self):
+        config = {
+            'axis': self.axis,
+            'center': self.center,
+            'scale': self.scale,
+        }
+        base_config = super(Scale, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+    def compute_output_shape(self, input_shape):
+        return input_shape""")

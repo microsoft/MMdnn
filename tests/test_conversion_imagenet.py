@@ -90,6 +90,7 @@ class CorrectnessTest(unittest.TestCase):
 class TestModels(CorrectnessTest):
 
     image_path = "mmdnn/conversion/examples/data/seagull.jpg"
+    # image_path = "/Users/kit/Downloads/dog416.png"
     cachedir = "tests/cache/"
     tmpdir = "tests/tmp/"
 
@@ -383,14 +384,31 @@ class TestModels(CorrectnessTest):
         del emitter
         del Keras2Emitter
 
+
         # import converted model
         model_converted = __import__(converted_file).KitModel(weight_path)
 
+
         func = TestKit.preprocess_func[original_framework][architecture_name]
+
+        # print(original_framework)
+        # print(architecture_name)
         img = func(image_path)
         input_data = np.expand_dims(img, 0)
 
+
         predict = model_converted.predict(input_data)
+
+
+
+        model_json = model_converted.to_json()
+        with open("model.json", "w") as json_file:
+            json_file.write(model_json)
+                # serialize weights to HDF5
+        model_converted.save_weights("model.h5")
+        print("Saved model to disk")
+
+
         converted_predict = np.squeeze(predict)
 
         del model_converted
@@ -399,7 +417,7 @@ class TestModels(CorrectnessTest):
         import keras.backend as K
         K.clear_session()
 
-        os.remove(converted_file + '.py')
+        # os.remove(converted_file + '.py')
 
         return converted_predict
 
@@ -489,41 +507,70 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def CoreMLEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+
         from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
         from coremltools.models import MLModel
+        import coremltools
+        from PIL import Image
+
 
         original_framework = checkfrozen(original_framework)
 
 
-        # scale, b, g, r, BGRTranspose
-        prep_for_coreml = {
-            'inception_v3'      : [0.00784313771874, -1.0, -1.0, -1.0, False],
-            'vgg16'             : [1.0, -103.939002991, -116.778999329, -123.680000305, True],
-            'resnet50'          : [1.0, -103.939002991,  -116.778999329, -123.680000305, True],
-            'mobilenet'         : [0.0170000009239, -1.76698005199, -1.98526000977, -2.10256004333, True],
-            'tinyyolo'          : [0.00392156885937, 0, 0, 0, False]
+        def prep_for_coreml(prename, BGRTranspose):
+            # The list is in RGB oder
+            if prename == 'Standard':
+                return 0.00784313725490196,-1, -1, -1
+            elif prename == 'ZeroCenter' :
+                return 1, -123.68, -116.779, -103.939
+            elif prename == 'Identity':
+                return 1, 1, 1, 1
+            else:
+                raise ValueError()
 
-        }
 
         # IR to Model
-        # converted_file = original_framework + '_coreml_' + architecture_name + "_converted"
-        # converted_file = converted_file.replace('.', '_')
+        converted_file = original_framework + '_coreml_' + architecture_name + "_converted"
+        converted_file = converted_file.replace('.', '_')
 
-        # image
         func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
 
-        prep_list = prep_for_coreml[architecture_name]
+        import inspect
+        funcstr = inspect.getsource(func)
+
+        coreml_pre = funcstr.split('(')[0].split('.')[-1]
+
+        if len(funcstr.split(',')) == 3:
+            BGRTranspose = bool(0)
+            size = int(funcstr.split('path,')[1].split(')')[0])
+            prep_list = prep_for_coreml(coreml_pre, BGRTranspose)
+        elif  len(funcstr.split(',')) == 4:
+            BGRTranspose = bool(funcstr.split(',')[-2].split(')')[0])
+            size = int(funcstr.split('path,')[1].split(',')[0])
+            prep_list = prep_for_coreml(coreml_pre, BGRTranspose)
+
+        elif len(funcstr.split(',')) == 11:
+            BGRTranspose = bool(funcstr.split(',')[-2].split(')')[0])
+            size = int(funcstr.split('path,')[1].split(',')[0])
+            prep_list = (   float(funcstr.split(',')[2]),
+                            float(funcstr.split(',')[3].split('[')[-1]),
+                            float(funcstr.split(',')[4]),
+                            float(funcstr.split(',')[5].split(']')[0])
+                        )
+
+
+        print(prep_list, BGRTranspose)
+
 
         emitter = CoreMLEmitter(architecture_path, weight_path)
         model, input_name, output_name = emitter.gen_model(
                 input_names=None,
                 output_names=None,
                 image_input_names=image_path,
-                is_bgr=prep_list[4],
-                red_bias=prep_list[3],
+                is_bgr=BGRTranspose,
+                red_bias=prep_list[1],
                 green_bias=prep_list[2],
-                blue_bias=prep_list[1],
+                blue_bias=prep_list[3],
                 gray_bias=0.0,
                 image_scale=prep_list[0],
                 class_labels=None,
@@ -536,17 +583,29 @@ class TestModels(CorrectnessTest):
 
         # load model
         model = MLModel(model)
+        print("Model loading success.")
 
+        # save model
+        coremltools.utils.save_spec(model.get_spec(), converted_file)
 
+        from coremltools.models.utils import macos_version
 
-        # inference
+        if macos_version() < (10, 13):
+            return None
+        else:
 
-        coreml_input = {input_name: img}
-        coreml_output = model.predict(coreml_input)
-        prob = coreml_output[output_name]
-        prob = np.array(prob).squeeze()
+            from PIL import Image as pil_image
+            img = pil_image.open(image_path)
+            img = img.resize((size, size))
 
-        return prob
+            # inference
+
+            coreml_input = {input_name: img}
+            coreml_output = model.predict(coreml_input)
+            prob = coreml_output[output_name]
+            prob = np.array(prob).squeeze()
+
+            return prob
 
 
     exception_tabel = {
@@ -584,9 +643,23 @@ class TestModels(CorrectnessTest):
             # 'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
             # 'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
             # 'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
-            'mobilenet'    : [CoreMLEmit],
+            # 'mobilenet'    : [CoreMLEmit],
             # 'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
             # 'yolo2'          : [KerasEmit],
+
+
+
+            # 'vgg16'        : [ CoreMLEmit],
+            'resnet50'     :   [CoreMLEmit],
+
+
+            # 'vgg19'        : [CoreMLEmit],
+            # 'inception_v3' : [ CoreMLEmit], # TODO: Caffe
+            # 'resnet50'     : [CoreMLEmit],
+            # 'densenet'     : [CoreMLEmit],
+            # 'xception'     : [CoreMLEmit],
+            # 'mobilenet'    : [CoreMLEmit], # TODO: MXNetEmit
+            # 'nasnet'       : [CoreMLEmit],
         },
 
         'mxnet' : {
@@ -632,10 +705,12 @@ class TestModels(CorrectnessTest):
             'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
         },
         'coreml' : {
-            'mobilenet' : [CoreMLEmit],
-            'inception_v3' : [CoreMLEmit],
-            'vgg16' : [CoreMLEmit],
-            'resnet50' : [CoreMLEmit]
+            # 'mobilenet' : [CoreMLEmit, KerasEmit],
+            # 'inception_v3' : [CoreMLEmit, KerasEmit],
+            # 'vgg16' : [CoreMLEmit,KerasEmit],
+            # 'resnet50' : [CoreMLEmit,KerasEmit],
+            # 'tinyyolo' : [CoreMLEmit, KerasEmit],
+
         }
     }
 
@@ -684,7 +759,7 @@ class TestModels(CorrectnessTest):
                 pass
 
             os.remove(IR_file + ".pb")
-            os.remove(IR_file + ".npy")
+            # os.remove(IR_file + ".npy")
             print("Testing {} model {} passed.".format(original_framework, network_name), file=sys.stderr)
 
         print("Testing {} model all passed.".format(original_framework), file=sys.stderr)
@@ -703,11 +778,11 @@ class TestModels(CorrectnessTest):
     #     self._test_function('caffe', self.CaffeParse)
 
 
-    # def test_keras(self):
-    #     self._test_function('keras', self.KerasParse)
+    def test_keras(self):
+        self._test_function('keras', self.KerasParse)
 
-    def test_coreml(self):
-        self._test_function('coreml', self.CoremlParse)
+    # def test_coreml(self):
+        # self._test_function('coreml', self.CoremlParse)
 
 
     # def test_mxnet(self):
