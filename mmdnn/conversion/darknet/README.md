@@ -1,4 +1,4 @@
-# Caffe README
+# darknet README
 
 ## Darknet pre-trained model
 
@@ -30,7 +30,7 @@ Darknet Model yolov3 saved as [./yolov3.cfg] and [./yolov3.weights].
 
 ## Step-by-step conversion (for debugging)
 
-### Convert model from darknet to IR (Caffe -> IR)
+### Convert model from darknet to IR (darknet -> IR)
 
 You can use following bash command to convert the network architecture [*./yolov3.cfg*] with weights [*./yolov3.weights*] to IR architecture file [*darknet_yolov3.pb*], [*darknet_yolov3.json*] and IR weights file [*darknet_yolov3.npy*]
 
