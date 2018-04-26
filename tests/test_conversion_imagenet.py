@@ -572,8 +572,6 @@ class TestModels(CorrectnessTest):
         'cntk_Keras_resnet152',                     # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
         'cntk_Tensorflow_resnet18',                 # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
         'cntk_Tensorflow_resnet152',                # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
-        'cntk_Caffe_resnet18',                      # TODO
-        'cntk_Caffe_resnet152',                     # TODO
         'tensorflow_Caffe_inception_v1',            # TODO
         'tensorflow_Cntk_inception_v1',             # TODO
         'tensorflow_Cntk_resnet_v1_152',            # TODO
@@ -584,9 +582,6 @@ class TestModels(CorrectnessTest):
         'caffe_Pytorch_inception_v1',               # TODO
         'caffe_Pytorch_alexnet',                    # TODO
         'caffe_Pytorch_inception_v4',               # TODO, same with caffe_Cntk_inception_v4
-        'mxnet_Caffe_imagenet1k-resnet-152',        # Different Padding algorithm
-        'mxnet_Caffe_imagenet1k-resnext-50',        # Different Padding algorithm
-        'mxnet_Caffe_imagenet1k-resnext-101-64x4d', # Different Padding algorithm
     }
 
 
@@ -613,7 +608,7 @@ class TestModels(CorrectnessTest):
         'mxnet' : {
             'vgg19'                     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: Caffe
-            # 'imagenet1k-resnet-18'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'imagenet1k-resnet-18'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'imagenet1k-resnet-152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'squeezenet_v1.1'           : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is ok but too slow
@@ -713,7 +708,8 @@ class TestModels(CorrectnessTest):
 
 
     def test_cntk(self):
-         self._test_function('cntk', self.CntkParse)
+        self._test_function('cntk', self.CntkParse)
+
 
 
     def test_tensorflow(self):

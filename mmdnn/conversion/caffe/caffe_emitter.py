@@ -205,6 +205,28 @@ bias_term={}, ntop=1)".format(
         #     keys.append(key)
         # print("=======Layer: {}, keys: {}".format(IR_node.name, keys))
 
+    def compute_output_shape(self, IR_node):
+        parent_node = self.IR_graph.get_parent(IR_node.name, [0])
+        if parent_node.get_attr('_output_shapes'):
+            shape = parent_node.get_attr('_output_shapes')[0]
+            shape = shape_to_list(shape)
+            h_i = shape[1]
+            w_i = shape[2]
+            pad_h = IR_node.get_attr('pads')[1]
+            pad_w = IR_node.get_attr('pads')[2]
+            kernel_h = IR_node.get_attr('kernel_shape')[0]
+            kernel_w = IR_node.get_attr('kernel_shape')[1]
+            stride_h = IR_node.get_attr('strides')[1]
+            stride_w = IR_node.get_attr('strides')[2]
+
+            h_o = (h_i + 2 * pad_h - kernel_h) // stride_h + 1
+            w_o = (w_i + 2 * pad_w - kernel_w) // stride_w + 1
+            return h_o, w_o
+        else:
+            assert False
+            return 0, 0
+
+
     def emit_Pool(self, IR_node):
         pooling_type = IR_node.get_attr('pooling_type')
         if pooling_type == 'MAX':
@@ -231,6 +253,25 @@ bias_term={}, ntop=1)".format(
                 IR_node.get_attr('pads')[1],
                 IR_node.get_attr('pads')[2],
                 IR_node.get_attr('strides')[1]))
+
+            # check if need crop output shape
+            shape = IR_node.get_attr('_output_shapes')[0]
+            shape = shape_to_list(shape)
+            ir_ho = shape[1]
+            ir_wo = shape[2]
+            caffe_ho, caffe_wo = self.compute_output_shape(IR_node)
+            if ((caffe_ho > ir_ho) or (caffe_wo > ir_wo)):
+                crop_layer_variable_name = IR_node.variable_name + "_crop"
+                self.add_body(1, "n.{:<15} = L.Crop(n.{}, L.DummyData(shape=[dict(dim=[1, {}, {}, {}])], ntop=1), ntop=1)".format(
+                    crop_layer_variable_name,
+                    IR_node.variable_name,
+                    shape[3],
+                    ir_ho,
+                    ir_wo
+                ))
+                # Change the layer name
+                IR_node.real_name = IR_node.real_name + "_crop"
+
 
 
     def emit_UNKNOWN(self, IR_node):
@@ -293,6 +334,8 @@ bias_term={}, ntop=1)".format(
             if 'bias' in self.weights_dict[IR_node.name]:
                 self.weights_dict[scale_layer_var_name]['bias'] = self.weights_dict[IR_node.name]['bias']
                 self.weights_dict[IR_node.name].pop('bias', None)
+                # change the key "name" to "variable_name", in case of the layer name has invalid characters
+                self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
             self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
