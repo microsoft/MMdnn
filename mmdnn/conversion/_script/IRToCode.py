@@ -49,7 +49,12 @@ def _convert(args):
             if args.dstWeightPath is None:
                 raise ValueError("MXNet emitter needs argument [dstWeightPath(dw)], like -dw mxnet_converted-0000.param")
             emitter = MXNetEmitter((args.IRModelPath, args.IRWeightPath, args.dstWeightPath))
-
+    elif args.dstFramework == 'onnx':
+        from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
+        if args.IRWeightPath is None:
+            raise NotImplementedError("ONNX emitter needs IR weight file")
+        else:
+            emitter = OnnxEmitter(args.IRModelPath, args.IRWeightPath)
     else:
         assert False
 
@@ -74,7 +79,7 @@ def _get_parser():
     parser.add_argument(
         '--dstFramework', '-f',
         type=_text_type,
-        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch'],
+        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch', 'onnx'],
         required=True,
         help='Format of model at srcModelPath (default is to auto-detect).')
 

@@ -130,7 +130,7 @@ class KitModel(nn.Module):
 
 
     def emit_Conv(self, IR_node):
-        self.used_layers.add(IR_node.type)
+        self.used_layers.add('Conv')
 
         dim = len(IR_node.get_attr('strides')) - 2
 
@@ -138,6 +138,13 @@ class KitModel(nn.Module):
         filter = IR_node.get_attr('kernel_shape')[-1]
         kernel = IR_node.get_attr('kernel_shape')[:-2]
         strides = IR_node.get_attr('strides')[1:-1]
+
+        if IR_node.type == 'DepthwiseConv':
+            group = in_channels
+            filter *= group
+
+        else:
+            group = IR_node.get_attr('group', 1)
 
         self.add_init(2, "self.{} = self.__conv({}, name='{}', in_channels={}, out_channels={}, kernel_size={}, stride={}, groups={}, bias={})".format(
             IR_node.variable_name,
@@ -148,7 +155,7 @@ class KitModel(nn.Module):
             tuple(kernel),
             tuple(strides),
             # padding,
-            IR_node.get_attr('group', 1),
+            group,
             IR_node.get_attr('use_bias')))
 
         input_node = self._defuse_padding(IR_node)
@@ -158,6 +165,8 @@ class KitModel(nn.Module):
             input_node))
 
         if self.weight_loaded:
+            if IR_node.type == 'DepthwiseConv':
+                self.weights_dict[IR_node.name]['weights'] = np.swapaxes(self.weights_dict[IR_node.name]['weights'], -1, -2)
             self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], [dim + 1, dim] + list(range(0, dim)))
 
 
@@ -297,6 +306,12 @@ class KitModel(nn.Module):
 
     def emit_Relu(self, IR_node):
         self.add_body(2, "{:<15} = F.relu({})".format(
+            IR_node.variable_name,
+            self.IR_graph.get_parent(IR_node.name, [0]).real_variable_name))
+
+
+    def emit_Relu6(self, IR_node):
+        self.add_body(2, "{:<15} = F.relu6({})".format(
             IR_node.variable_name,
             self.IR_graph.get_parent(IR_node.name, [0]).real_variable_name))
 
@@ -479,6 +494,10 @@ class KitModel(nn.Module):
             IR_node.layer.attr['beta'].f,
             self.parent_variable_name(IR_node)
         ))
+
+
+    def emit_DepthwiseConv(self, IR_node):
+        self.emit_Conv(IR_node)
 
 
     def _layer_Conv(self):

@@ -73,7 +73,7 @@ class mxnet_extractor(base_extractor):
 
 
     @classmethod
-    def inference(cls, architecture, path, image_path):
+    def inference(cls, architecture, files, path, image_path):
         import mxnet as mx
         import numpy as np
         if cls.sanity_check(architecture):

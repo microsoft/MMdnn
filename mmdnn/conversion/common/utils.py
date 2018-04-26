@@ -37,6 +37,8 @@ def assign_attr_value(attr, val):
             attr.list.i.extend(val)
         elif isinstance(val[0], TensorShape):
             attr.list.shape.extend(val)
+        elif isinstance(val[0], float):
+            attr.list.f.extend(val)
         else:
             raise NotImplementedError('AttrValue cannot be of list[{}].'.format(val[0]))
     else:

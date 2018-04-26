@@ -163,20 +163,40 @@ if __name__=='__main__':
 
 
     def emit_Conv(self, IR_node):
+        # check if have pad layer
+        pad_h = 0
+        pad_w = 0
+        IR_parent_node = self.IR_graph.get_parent(IR_node.name, [0])
+        if IR_parent_node.type == 'Pad':
+            pad_h = IR_parent_node.get_attr('pads')[1]
+            pad_w = IR_parent_node.get_attr('pads')[2]
+        else:
+            pad_h = IR_node.get_attr('pads')[1]
+            pad_w = IR_node.get_attr('pads')[2]
+
+        num_output = IR_node.get_attr('kernel_shape')[-1]
+        if IR_node.type == "DepthwiseConv":
+            num_group = IR_node.get_attr("kernel_shape")[-2]
+            num_output = num_group * num_group
+        else:
+            num_group = IR_node.get_attr("group", 1)
+
         self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_size={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
 bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('kernel_shape')[0],
             IR_node.get_attr('strides')[1],
-            IR_node.get_attr('kernel_shape')[-1],
-            IR_node.get_attr('pads')[1],
-            IR_node.get_attr('pads')[2],
-            IR_node.get_attr('group', 1),
+            num_output,
+            pad_h,
+            pad_w,
+            num_group,
             IR_node.get_attr('use_bias', False)))
 
         dim = len(IR_node.get_attr('strides')) - 2
         if self.weight_loaded:
+            if IR_node.type == "DepthwiseConv":
+                self.weights_dict[IR_node.name]['weights'] = np.swapaxes(self.weights_dict[IR_node.name]['weights'], -1, -2)
             self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], [dim + 1, dim] + list(range(0, dim)))
             self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
@@ -194,10 +214,9 @@ bias_term={}, ntop=1)".format(
         elif pooling_type == 'STOCHASTIC':
             pooling_type = P.Pooling.STOCHASTIC
         else:
-            raise ValueError
+            raise ValueError()
 
         if IR_node.layer.attr['global_pooling'].b:
-            self.used_layers.add('GlobalPooling')
             self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, stride={}, global_pooling=True, ntop=1)".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
@@ -256,7 +275,6 @@ bias_term={}, ntop=1)".format(
         ))
 
         scale_layer_var_name = IR_node.variable_name + "_scale"
-        # Since the scale layer is "almost part" of the bn layer, we can safely use in_place here.
         self.add_body(1, "n.{:<15} = L.Scale(n.{}, bias_term={}, in_place=True, ntop=1)".format(
             scale_layer_var_name,
             IR_node.variable_name,
@@ -267,10 +285,15 @@ bias_term={}, ntop=1)".format(
             self.weights_dict[scale_layer_var_name] = dict()
             if 'scale' in self.weights_dict[IR_node.name]:
                 self.weights_dict[scale_layer_var_name]['scale'] = self.weights_dict[IR_node.name]['scale']
-                #self.weights_dict[IR_node.name].pop('scale', None)
-                self.weights_dict[IR_node.name]['scale'] = 1
-            self.weights_dict[scale_layer_var_name]['bias'] = self.weights_dict[IR_node.name]['bias']
-            self.weights_dict[IR_node.name].pop('bias', None)
+            else:
+                self.weights_dict[scale_layer_var_name]['scale'] = 1
+
+            self.weights_dict[IR_node.name]['scale'] = 1
+
+            if 'bias' in self.weights_dict[IR_node.name]:
+                self.weights_dict[scale_layer_var_name]['bias'] = self.weights_dict[IR_node.name]['bias']
+                self.weights_dict[IR_node.name].pop('bias', None)
+
             self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
         IR_node.real_name = IR_node.name + "_scale"
@@ -340,3 +363,28 @@ bias_term={}, ntop=1)".format(
 
     def emit_Pad(self, IR_node):
         IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+
+    def reduction(self, IR_node, op, axes):
+        # Convert NHWC (IR) to NCHW (Caffe): [0,1,2,3]->[0,3,1,2]
+        if len(axes) == 1:
+            assert (axes[0] == 2)
+        elif len(axes) == 2:
+            assert ((axes[0] == 1) and (axes[1] == 2))
+
+        self.add_body(1, "n.{:<15} = L.Reduction(n.{}, operation={} , axis={} ,ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            op,
+            len(axes)))
+
+    def emit_ReduceMean(self, IR_node):
+        self.reduction(IR_node, 4 , IR_node.get_attr('axes'))
+
+    def emit_ReduceSum(self, IR_node):
+        self.reduction(IR_node, 1, IR_node.get_attr('axes'))
+
+    def emit_Relu6(self, IR_node):
+        self.emit_Relu(IR_node)
+
+    def emit_DepthwiseConv(self, IR_node):
+        self.emit_Conv(IR_node)

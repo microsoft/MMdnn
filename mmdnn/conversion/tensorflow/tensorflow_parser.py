@@ -485,6 +485,7 @@ class TensorflowParser(Parser):
             floor_node = self.tf_graph.get_node(mul_node.in_edges[1])
             assert floor_node.type == "Floor"
             floor_node.covered = True
+
         else:
             assert False
 

@@ -54,9 +54,9 @@ class TestCaffe(TestKit):
     def inference(self, image_path):
         self.preprocess(image_path)
 
-        # self.print_intermediate_result('', False)
-
         self.print_result()
+
+        # self.print_intermediate_result('pooling0', False)
 
         self.test_truth()
 

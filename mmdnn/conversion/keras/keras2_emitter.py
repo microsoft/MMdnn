@@ -40,6 +40,8 @@ class Keras2Emitter(Emitter):
 
         self.IR_graph = IRGraph(network_path)
         self.IR_graph.build()
+        self.yolo_parameter = []
+        self.region_parameter = []
 
 
     @property
@@ -299,6 +301,7 @@ def KitModel(weight_file = None):
         elif pooling_type == "AVG":
             pool_name = "AveragePooling{}D".format(dim)
         else:
+            print(pooling_type)
             assert False
 
         # if not IR_node.layer.attr['global_pooling'].b:
@@ -515,7 +518,7 @@ def KitModel(weight_file = None):
 
 
     def emit_LeakyRelu(self, IR_node):
-        self.add_body(1, "{:<15} = layers.LeakyReLU(name='{}', alpha= {})({})".format(
+        self.add_body(1, "{:<15} = layers.LeakyReLU(name='{}', alpha = {})({})".format(
             IR_node.variable_name,
             IR_node.name,
             IR_node.get_attr('alpha'),
@@ -545,6 +548,57 @@ def KitModel(weight_file = None):
             IR_node.name,
             self.parent_variable_name(IR_node)
         ))
+
+
+    def emit_yolo(self, IR_node):
+        self.used_layers.add('Yolo')
+        # print(IR_node.layer)
+        self.add_body(1, "{:<15} = {}".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)
+        ))
+        self.yolo_parameter = [IR_node.get_attr('anchors'),
+            IR_node.get_attr('classes'),
+            IR_node.get_attr("ignore_thresh"),
+            IR_node.get_attr("jitter")]
+
+
+    def emit_region(self, IR_node):
+        self.used_layers.add('Region')
+        # print(IR_node.layer)
+        self.add_body(1, "{:<15} = {}".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)
+        ))
+        self.region_parameter = [IR_node.get_attr('anchors'),
+            IR_node.get_attr('classes'),
+            IR_node.get_attr("thresh"),
+            IR_node.get_attr("softmax"),
+            IR_node.get_attr("bias_match"),
+            IR_node.get_attr("jitter"),
+            IR_node.get_attr("num"),
+            IR_node.get_attr("random"),
+            IR_node.get_attr("coords"),
+            IR_node.get_attr("absolute"),
+            IR_node.get_attr("rescore"),
+            IR_node.get_attr("class_scale"),
+            IR_node.get_attr("object_scale"),
+            IR_node.get_attr("noobject_scale"),
+            IR_node.get_attr("coord_scale"),
+            ]
+
+    def _layer_Yolo(self):
+        self.add_body(0, '''
+def yolo_parameter():
+    return {}
+'''.format(self.yolo_parameter))
+
+
+    def _layer_Region(self):
+        self.add_body(0, '''
+def region_parameter():
+    return {}
+'''.format(self.region_parameter))
 
 
     def _layer_SpaceToDepth(self):

@@ -29,7 +29,7 @@ def _get_parser():
     parser.add_argument(
         '--dstFramework', '-df',
         type=_text_type,
-        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch'],
+        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch', 'onnx'],
         required=True,
         help='Format of model at srcModelPath (default is to auto-detect).')
     parser.add_argument(
@@ -52,11 +52,11 @@ def _extract_ir_args(args, unknown_args, temp_filename):
     return ir_parser.parse_known_args(unknown_args)
 
 
-def _extract_code_args(args, unknown_args, temp_filename):
+def _extract_code_args(args, unknown_args, temp_filename,network_filename):
     unknown_args.extend(['--dstFramework', args.dstFramework])
     unknown_args.extend(['--IRModelPath', temp_filename + '.pb'])
     unknown_args.extend(['--IRWeightPath', temp_filename + '.npy'])
-    unknown_args.extend(['--dstModelPath', temp_filename + '.py'])
+    unknown_args.extend(['--dstModelPath', network_filename + '.py'])
     unknown_args.extend(['--dstWeightPath', temp_filename + '.npy'])
     code_parser = IRToCode._get_parser()
     return code_parser.parse_known_args(unknown_args)
@@ -81,6 +81,11 @@ def remove_temp_files(temp_filename, verbose=False):
             if verbose:
                 print('temporary file [{}] has been removed.'.format(temp_file))
 
+def get_network_filename(framework, temp_filename, output_model_filename):
+    if framework in ['pytorch']:
+        return os.path.join(os.path.dirname(output_model_filename), os.path.basename(output_model_filename).split('.')[0])
+    return temp_filename
+
 
 def _main():
     parser = _get_parser()
@@ -91,12 +96,13 @@ def _main():
     if int(ret) != 0:
         _sys.exit(int(ret))
     if args.dstFramework != 'coreml':
-        code_args, unknown_args = _extract_code_args(args, unknown_args, temp_filename)
+        network_filename = get_network_filename(args.dstFramework, temp_filename, args.outputModel)
+        code_args, unknown_args = _extract_code_args(args, unknown_args, temp_filename, network_filename)
         ret = IRToCode._convert(code_args)
         if int(ret) != 0:
             _sys.exit(int(ret))
         from mmdnn.conversion._script.dump_code import dump_code
-        dump_code(args.dstFramework, temp_filename + '.py', temp_filename + '.npy', args.outputModel)
+        dump_code(args.dstFramework, network_filename + '.py', temp_filename + '.npy', args.outputModel)
         remove_temp_files(temp_filename)
 
     else:
