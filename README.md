@@ -45,34 +45,45 @@ We provide a model converter to help developers convert models between framework
 - [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental) (Highly recommend you read the README of tensorflow firstly)
 - [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md)
 - [PyTorch](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/pytorch/README.md) (Destination only)
-- [CoreML](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/coreml/README.md) (Experimental, Destination only)
+- [CoreML](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/coreml/README.md)
+- [DarkNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/darknet/README.md) (Source only, Experiment)
 
 #### Tested models
 
 The model conversion between currently supported frameworks is tested on some **ImageNet** models.
 
-Models                                              | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML
-:--------------------------------------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|
-[Inception V1](http://arxiv.org/abs/1409.4842v1)    |   √   |   √   |     √      |   √  |   √   | x (No LRN) | √
-[Inception V3](http://arxiv.org/abs/1512.00567)     |   ×   |   √   |     √      |   √  |   √   |    √ | √
-[Inception V4](http://arxiv.org/abs/1512.00567)     |   √   |       |            |      |       |
-[ResNet V1 50](https://arxiv.org/abs/1512.03385)    |   ×   |   √   |     √      |   o  |   √   |    √ | √
-[ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   √   |   √   |     √      |   √  |   √   |    √
-[VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √       |    √
-[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (no DepthwiseConv) |   ×   |    ×       |    √
-[Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      | × (no SeparableConv) |   ×   |    ×
-[SqueezeNet](https://arxiv.org/pdf/1602.07360)      |   √   |   √   |     √      |   √  |   √   |    ×
-[DenseNet](https://arxiv.org/abs/1608.06993)        |       |   √   |     √      |   √  |   √   |    √       |
-[NASNet](https://arxiv.org/abs/1707.07012)          |       |   √   |     √      | × (no SeparableConv)
-[ResNext](https://arxiv.org/abs/1611.05431)         |       |   √   |     √      |   √  |   √   |
-voc-FCN8s/FCN16s/FCN32s                             |       |       |     √      |      |       |            |
+Models                                                                      | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML
+:--------------------------------------------------------------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|
+[Inception V1](http://arxiv.org/abs/1409.4842v1)                            |   √   |   √   |     √      |   √  |   √   | x (No LRN) | √
+[Inception V3](http://arxiv.org/abs/1512.00567)                             |   ×   |   √   |     √      |   √  |   √   |    √ | √
+[Inception V4](http://arxiv.org/abs/1512.00567)                             |   √   |       |            |      |       |
+[ResNet V1](https://arxiv.org/abs/1512.03385)                               |   ×   |   √   |     √      |   o  |   √   |    √ | √
+[ResNet V2](https://arxiv.org/abs/1603.05027)                               |   √   |   √   |     √      |   √  |   √   |    √
+[VGG 19](http://arxiv.org/abs/1409.1556.pdf)                                |   √   |   √   |     √      |   √  |   √   |    √       |    √
+[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)                        |   ×   |   √   |     √      |   o  |   ×   |    ×       |    √
+[Xception](https://arxiv.org/pdf/1610.02357.pdf)                            |   ×   |   √   |     √      |   o  |   ×   |    ×
+[SqueezeNet](https://arxiv.org/pdf/1602.07360)                              |   √   |   √   |     √      |   √  |   √   |    √
+[DenseNet](https://arxiv.org/abs/1608.06993)                                |       |   √   |     √      |   √  |   √   |    √       |
+[NASNet](https://arxiv.org/abs/1707.07012)                                  |       |   √   |     √      |   o
+[ResNext](https://arxiv.org/abs/1611.05431)                                 |       |   √   |     √      |   √  |   √   |
+[voc FCN](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf) |       |       |     √      |   √  |       |            |
+Yolo3                                                                       |       |   √   |            |   √  |
+
+#### Usage
+
+One command to achieve the conversion. Use a TensorFlow **ResNet V2 152** to PyTorch as our example.
+
+```bash
+$ mmdownload -f tensorflow -n resnet_v2_152 -o ./
+$ mmconvert -sf tensorflow -in imagenet_resnet_v2_152.ckpt.meta -iw imagenet_resnet_v2_152.ckpt --dstNode MMdnn_Output -df pytorch -om tf_resnet_to_pth.pth
+```
+
+Done.
 
 #### On-going frameworks
 
-- ONNX
-- PyTorch (Source, waiting for formal release 0.4.0)
+- PyTorch (Source)
 - Torch7 (Source)
-- CoreML (Source)
 - Chainer (help wants)
 
 #### On-going Models
