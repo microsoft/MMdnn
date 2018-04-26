@@ -416,7 +416,7 @@ class TestModels(CorrectnessTest):
         import keras.backend as K
         K.clear_session()
 
-        # os.remove(converted_file + '.py')
+        os.remove(converted_file + '.py')
 
         return converted_predict
 
@@ -631,7 +631,7 @@ class TestModels(CorrectnessTest):
 
     test_table = {
         'cntk' : {
-            # 'alexnet'       : [CntkEmit, TensorflowEmit, KerasEmit],
+            'alexnet'       : [CntkEmit, TensorflowEmit, KerasEmit],
             'resnet18'      : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
             'resnet152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
             'inception_v3'  : [CntkEmit, TensorflowEmit, PytorchEmit], # Caffe, Keras and MXNet no constant layer
@@ -684,8 +684,8 @@ class TestModels(CorrectnessTest):
             'resnet_v2_50'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'resnet_v2_152'     : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
             'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit],
-            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
-            # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
+            'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
         },
 
         'tensorflow_frozen' : {
