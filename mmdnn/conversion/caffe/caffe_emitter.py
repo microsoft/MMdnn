@@ -224,7 +224,6 @@ bias_term={}, ntop=1)".format(
             return h_o, w_o
         else:
             assert False
-            return 0, 0
 
 
     def emit_Pool(self, IR_node):
