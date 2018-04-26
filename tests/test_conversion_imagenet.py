@@ -638,16 +638,27 @@ class TestModels(CorrectnessTest):
         },
 
         'keras' : {
-            'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
-            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
-            'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
+            # 'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            # 'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
+            # 'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
+            # 'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            # 'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            # 'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
+            # 'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
+            # 'mobilenet'    : [CoreMLEmit],
+            # 'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
+            # 'yolo2'          : [KerasEmit],
+
+
+            'vgg16'        : [CoreMLEmit],
+            'vgg19'        : [CoreMLEmit],
+            'inception_v3' : [CoreMLEmit], # TODO: Caffe
+            'resnet50'     : [ CoreMLEmit],
+            'densenet'     : [CoreMLEmit],
+            'xception'     : [CoreMLEmit],
+            'mobilenet'    : [CoreMLEmit], # TODO: MXNetEmit
             'mobilenet'    : [CoreMLEmit],
-            'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            'yolo2'          : [KerasEmit],
+            'nasnet'       : [CoreMLEmit],
         },
 
         'mxnet' : {
@@ -768,11 +779,11 @@ class TestModels(CorrectnessTest):
     #     self._test_function('caffe', self.CaffeParse)
 
 
-    # def test_keras(self):
-    #     self._test_function('keras', self.KerasParse)
+    def test_keras(self):
+        self._test_function('keras', self.KerasParse)
 
-    def test_coreml(self):
-        self._test_function('coreml', self.CoremlParse)
+    # def test_coreml(self):
+    #     self._test_function('coreml', self.CoremlParse)
 
 
     # def test_mxnet(self):
