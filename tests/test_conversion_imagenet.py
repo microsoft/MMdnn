@@ -62,7 +62,6 @@ class CorrectnessTest(unittest.TestCase):
         if converted_predict is None and not need_assert:
             return
 
-
         # self.assertEqual(original_predict.shape, converted_predict.shape)
         original_predict = original_predict.flatten()
         converted_predict = converted_predict.flatten()
@@ -500,7 +499,6 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def CoreMLEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
-        return
         from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
         from coremltools.models import MLModel
 
@@ -641,11 +639,11 @@ class TestModels(CorrectnessTest):
             'vgg19'             : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'inception_v1'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
             'inception_v3'      : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit
-            'resnet_v1_50'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'resnet_v1_50'      : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit, CntkEmit
             'resnet_v1_152'     : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit, CntkEmit
-            'resnet_v2_50'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'resnet_v2_50'      : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit, CntkEmit
             'resnet_v2_152'     : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit
-            'mobilenet_v1_1.0'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, TensorflowEmit], # TODO: CaffeEmit(Crash), PytorchEmit(DepthwiseConv)
+            'mobilenet_v1_1.0'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
             # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
             # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
         },

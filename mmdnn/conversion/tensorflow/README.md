@@ -11,7 +11,7 @@ Inception_v1             |   o   |   √    |  o   |   √   |   √   |    √ 
 Inception_v3             |   x   |   √    |  √   |   o   |   √   |    √    | √
 ResNet V1                |   x   |   √    |  o   |   √   |   √   |    √    | √
 ResNet V2                |   x   |   √    |  √   |   √   |   √   |    √    | √
-MobileNet V1             |   x   |   √    |  o   |   √   |   √   |    x    | √
+MobileNet V1             |   x   |   √    |  o   |   √   |   √   |    √    | √
 
 **√** - Correctness tested
 
@@ -19,12 +19,11 @@ MobileNet V1             |   x   |   √    |  o   |   √   |   √   |    x   
 
 **space** - not tested
 
+## Tools
 
-### Sample Tools
+We provide some tools to help you convert TensorFlow model.
 
-We provide some tools to help you convert tensorflow files.
-
-#### Slim Model Extractor
+### Slim Model Extractor
 
 You can refer [Slim Model Extractor](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/tensorflow/extractor.py) to extract your own tensorflow model, which is a sample tool to extract both architecture and weights from slim pre-trained models.
 
@@ -56,7 +55,7 @@ with slim.arg_scope(...):
         labels = tf.squeeze(logits, name='MMdnn_Output')
 ```
 
-#### Meta File Graph Visualization
+### Meta File Graph Visualization
 
 When you prepared your checkpoint, you can find the output node name from the graph by Tensorboard.
 
@@ -68,7 +67,7 @@ TensorBoard 0.4.0rc3 at http://kit-station:6006 (Press CTRL+C to quit)
 
 ![tensorboard](https://nxtb0g.dm2304.livefilestore.com/y4mSQWnEhuXOj67Bsv-nFS7kocOD0JmGRFJsUIrZCDRfO6CIP1-wUBana8wydOM3ZHgoVe_wR_KXq_hX6sCg_D_6H93F3oQMUjfu_VjbYswl_dX2mBolqts1zG9_eA483i_BokvfQknb9JQYvOwcwJvrPVH9GI2L_0GJoxJpYGw0kFDxmzICwjc-j_wHKwdiZUyS32CBCVBS67qZlTgFuPiHA?width=1024&height=676&cropmode=none)
 
-### Convert only architecture from Tensorflow to IR
+## Convert only architecture from Tensorflow to IR
 
 You can convert only network structure to IR for visualization or training in other frameworks.
 
@@ -84,7 +83,7 @@ IR network structure is saved as [resnet152.pb].
 Warning: weights are not loaded.
 ```
 
-### Convert model (including architecture and weights) from Tensorflow to IR
+## Convert model (including architecture and weights) from Tensorflow to IR
 
 You can use following bash command to convert the checkpoint files to IR architecture file [*resnet152.pb*], [*resnet152.json*] and IR weights file [*resnet152.npy*]
 
@@ -99,7 +98,7 @@ IR network structure is saved as [resnet152.pb].
 IR weights are saved as [resnet152.npy].
 ```
 
-### Convert models from IR to Tensorflow code snippet
+## Convert models from IR to Tensorflow code snippet
 
 The generated Tensorflow code snippet can restore weights from IR weights file directly, but we need the tensors' shape information to infer some parameters.
 
@@ -123,7 +122,7 @@ Test model [resnet] from [tf] passed.
 
 The information shows that the output result of **"Squeeze"** layers from original slim model and converted model are same.
 
-### Convert models from IR to Tensorflow model
+## Convert models from IR to Tensorflow model
 
 After generating the Tensorflow code snippet, you can convert the Tensorflow code snippet and IR weights file to Tensorflow original model for further usage.
 
