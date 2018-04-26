@@ -507,6 +507,7 @@ class TestModels(CorrectnessTest):
     @staticmethod
     def CoreMLEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
 
+
         from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
         from coremltools.models import MLModel
         import coremltools
@@ -618,13 +619,13 @@ class TestModels(CorrectnessTest):
         'cntk_Caffe_resnet152',                     # TODO
         'tensorflow_frozen_MXNet_inception_v1',     # TODO
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
-        'caffe_Cntk_inception_v4',                  # TODO
         'caffe_Pytorch_inception_v1',               # TODO
         'caffe_Pytorch_alexnet',                    # TODO
         'caffe_Pytorch_inception_v4',               # TODO, same with caffe_Cntk_inception_v4
         'mxnet_Caffe_imagenet1k-resnet-152',        # TODO
         'mxnet_Caffe_imagenet1k-resnext-50',        # TODO
         'mxnet_Caffe_imagenet1k-resnext-101-64x4d', # TODO
+
     }
 
 
@@ -652,24 +653,25 @@ class TestModels(CorrectnessTest):
         'mxnet' : {
             'vgg19'                     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: Caffe
+            'imagenet1k-resnet-18'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'imagenet1k-resnet-152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
             'squeezenet_v1.1'           : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
             'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is ok but too slow
             'imagenet1k-resnext-50'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
         },
 
-
         'caffe' : {
-            'voc-fcn8s'     : [TensorflowEmit],
-            'voc-fcn16s'    : [TensorflowEmit],
-            'voc-fcn32s'    : [TensorflowEmit],
-            'vgg19'         : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit, CoreMLEmit],
-            'alexnet'       : [CntkEmit, TensorflowEmit, MXNetEmit, CaffeEmit, PytorchEmit], # TODO: KerasEmit
-            'inception_v1'  : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, CaffeEmit, PytorchEmit],
-            'resnet152'     : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'squeezenet'    : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'inception_v4'  : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, CoreMLEmit], # TODO MXNetEmit, CaffeEmit
-            'xception'      : [CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit, CoreMLEmit], #  KerasEmit is too slow
+            'voc-fcn8s'     : [CntkEmit, TensorflowEmit],
+            'voc-fcn16s'    : [CntkEmit, TensorflowEmit],
+            'voc-fcn32s'    : [CntkEmit, TensorflowEmit],
+            'vgg19'         : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'alexnet'       : [CaffeEmit, CoreMLEmit, CntkEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit('Tensor' object has no attribute '_keras_history')
+            'inception_v1'  : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'resnet152'     : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'squeezenet'    : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'inception_v4'  : [CoreMLEmit, CntkEmit, KerasEmit, PytorchEmit, TensorflowEmit], # TODO MXNetEmit(Small error), CaffeEmit(Crash for shape)
+            'xception'      : [CoreMLEmit, CntkEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  TODO: Caffe(Crash) KerasEmit(too slow)
+
         },
 
         'tensorflow' : {
@@ -750,6 +752,7 @@ class TestModels(CorrectnessTest):
             print("Testing {} model {} passed.".format(original_framework, network_name), file=sys.stderr)
 
         print("Testing {} model all passed.".format(original_framework), file=sys.stderr)
+
 
 
     # def test_cntk(self):
