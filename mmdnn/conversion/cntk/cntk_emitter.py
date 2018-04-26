@@ -42,6 +42,7 @@ class CntkEmitter(Emitter):
 
         self.IR_graph = IRGraph(network_path)
         super(CntkEmitter, self)._build()
+        self.yolo_parameter = []
 
 
     @property
@@ -176,6 +177,13 @@ def KitModel(weight_file = None):
             dim = len(IR_node.get_attr('strides')) - 2
             padding = [False] + [padding] * dim
 
+            if IR_node.type == 'DepthwiseConv':
+                groups = IR_node.get_attr('kernel_shape')[-2]
+                self.add_body(1, "__weights_dict['{}']['weights'] = np.swapaxes(__weights_dict['{}']['weights'], -1, -2)".format(
+                    IR_node.real_name, IR_node.real_name))
+            else:
+                groups = IR_node.get_attr('group', 1)
+
             self.add_body(1, "{:<15} = convolution({}, is_transpose={}, strides={}, auto_padding={}, dilation={}, groups={}, name='{}')".format(
                 IR_node.variable_name,
                 input_node,
@@ -183,7 +191,7 @@ def KitModel(weight_file = None):
                 tuple(IR_node.get_attr('strides')[1:-1]),
                 padding,
                 tuple(IR_node.get_attr('dilations', [1])),
-                IR_node.get_attr('group', 1),
+                groups,
                 IR_node.name))
 
         else:
@@ -330,7 +338,6 @@ def KitModel(weight_file = None):
     def emit_LSTM(self, IR_node):
         return self.emit_RNNs(IR_node, "LSTM")
 
-
     def emit_GRU(self, IR_node):
         return self.emit_RNNs(IR_node, "GRU")
 
@@ -445,7 +452,7 @@ def KitModel(weight_file = None):
             IR_node.layer.attr['beta'].f,
             IR_node.name))
 
-
+    # ??
     def emit_LeakRelu(self, IR_node):
         self.add_body(1, "{:<15} = _cntk.relu({}) - {} * _cntk.relu(-{})".format(
             IR_node.variable_name,
@@ -454,8 +461,43 @@ def KitModel(weight_file = None):
             self.parent_variable_name(IR_node)))
 
 
+    def emit_LeakyRelu(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        self.add_body(1, "{:<15} = _leaky_relu({}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('alpha'),
+            IR_node.name))
+
+
+
+    def emit_upsample(self, IR_node):
+        # print(IR_node.layer)
+        # assert False
+        self.used_layers.add(IR_node.type)
+        self.add_body(1, "{:<15} = Upsampling2D({}, stride = {}, name = '{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('strides'),
+            IR_node.name))
+
+
     def emit_ConvTranspose(self, IR_node):
         self.emit_Conv(IR_node)
+
+
+    def emit_yolo(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        self.add_body(1, "{:<15} = {}".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)
+        ))
+        # print(IR_node.layer)
+        self.yolo_parameter = [IR_node.get_attr('anchors'),
+            IR_node.get_attr('classes'),
+            IR_node.get_attr("ignore_thresh"),
+            IR_node.get_attr("jitter")]
+        # assert False
 
 
     def emit_Crop(self, IR_node):
@@ -471,6 +513,20 @@ def KitModel(weight_file = None):
         ))
 
 
+    def emit_Relu6(self, IR_node):
+        self.emit_Relu(IR_node)
+        self.add_body(1, "{:<15} = cntk.clip({}, 0, 6, name='{}_clip')".format(
+            IR_node.variable_name + "_clip",
+            IR_node.variable_name,
+            IR_node.name
+        ))
+        IR_node.real_name = IR_node.name + '_clip'
+
+
+    def emit_DepthwiseConv(self, IR_node):
+        self.emit_Conv(IR_node)
+
+
     def _layer_Crop(self):
         self.add_body(0, '''
 def _crop(input, border, output_shape, **kwargs):
@@ -482,6 +538,32 @@ def _crop(input, border, output_shape, **kwargs):
     layer = cntk.crop_manual(node_input=input, node_referent=ref_tensor, offset_x=border[0], offset_y=border[1])
     layer = cntk.transpose(layer, list(range(1, dim)) + [0])
     return layer
+''')
+
+
+    def _layer_LeakyRelu(self):
+        self.add_body(0, '''
+def _leaky_relu(x, leak, name):
+    return cntk.param_relu(cntk.constant((np.ones(x.shape)*leak).astype(np.float32)), x, name = name)
+''')
+
+
+    def _layer_yolo(self):
+        self.add_body(0, '''
+def yolo_parameter():
+    return {}
+'''.format(self.yolo_parameter))
+
+
+    def _layer_upsample(self):
+        self.add_body(0, '''
+def Upsampling2D(x, stride, name):
+    assert stride == 2
+    xr = cntk.reshape(x, (x.shape[0], 1, x.shape[1], 1, x.shape[2]))
+    xx = cntk.splice(xr, xr, axis = -2)
+    xy = cntk.splice(xx, xx, axis = -4)
+    r = cntk.reshape(xy, (x.shape[0] * 2, x.shape[1] * 2, x.shape[2]), name = name)
+    return r
 ''')
 
 

@@ -333,7 +333,7 @@ class CaffeTransformer(object):
                 ])
         self.graph = graph
         #  self.graph = NodeRenamer()(graph)
-        print_stderr(self.graph)
+        print (self.graph)
 
     def gen_prototxt_from_caffemodel(self, data_path, input_shape):
         prototxt = 'deploy.prototxt'

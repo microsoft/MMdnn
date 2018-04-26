@@ -163,7 +163,7 @@ if __name__=='__main__':
 
 
     def emit_Conv(self, IR_node):
-        #check if have pad layer
+        # check if have pad layer
         pad_h = 0
         pad_w = 0
         IR_parent_node = self.IR_graph.get_parent(IR_node.name, [0])
@@ -174,20 +174,29 @@ if __name__=='__main__':
             pad_h = IR_node.get_attr('pads')[1]
             pad_w = IR_node.get_attr('pads')[2]
 
+        num_output = IR_node.get_attr('kernel_shape')[-1]
+        if IR_node.type == "DepthwiseConv":
+            num_group = IR_node.get_attr("kernel_shape")[-2]
+            num_output = num_group * num_group
+        else:
+            num_group = IR_node.get_attr("group", 1)
+
         self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_size={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
 bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('kernel_shape')[0],
             IR_node.get_attr('strides')[1],
-            IR_node.get_attr('kernel_shape')[-1],
+            num_output,
             pad_h,
             pad_w,
-            IR_node.get_attr('group', 1),
+            num_group,
             IR_node.get_attr('use_bias', False)))
 
         dim = len(IR_node.get_attr('strides')) - 2
         if self.weight_loaded:
+            if IR_node.type == "DepthwiseConv":
+                self.weights_dict[IR_node.name]['weights'] = np.swapaxes(self.weights_dict[IR_node.name]['weights'], -1, -2)
             self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], [dim + 1, dim] + list(range(0, dim)))
             self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
@@ -328,6 +337,8 @@ bias_term={}, ntop=1)".format(
                 # change the key "name" to "variable_name", in case of the layer name has invalid characters
                 self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
+            self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
+
         IR_node.real_name = IR_node.name + "_scale"
 
 
@@ -414,3 +425,9 @@ bias_term={}, ntop=1)".format(
 
     def emit_ReduceSum(self, IR_node):
         self.reduction(IR_node, 1, IR_node.get_attr('axes'))
+
+    def emit_Relu6(self, IR_node):
+        self.emit_Relu(IR_node)
+
+    def emit_DepthwiseConv(self, IR_node):
+        self.emit_Conv(IR_node)

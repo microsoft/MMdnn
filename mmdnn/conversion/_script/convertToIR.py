@@ -86,7 +86,7 @@ def _convert(args):
 
     elif args.srcFramework == 'darknet':
         from mmdnn.conversion.darknet.darknet_parser import DarknetParser
-        parser = DarknetParser(args.network, args.weights)
+        parser = DarknetParser(args.network, args.weights, args.darknetYolo)
 
     else:
         raise ValueError("Unknown framework [{}].".format(args.srcFramework))
@@ -158,6 +158,15 @@ def _get_parser():
         type=_text_type,
         default='TRAIN',
         help='[Caffe] Convert the specific phase of caffe model.')
+
+
+    # Darknet
+    parser.add_argument(
+        '--darknetYolo',
+        type=_text_type,
+        choices=["yolov3", "yolov2"],
+        help='[Darknet] Convert the specific yolo model.')
+
     return parser
 
 

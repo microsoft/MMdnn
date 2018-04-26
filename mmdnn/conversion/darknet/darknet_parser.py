@@ -30,7 +30,7 @@ class DarknetParser(Parser):
     def src_graph(self):
         return self.dk_graph
 
-    def __init__(self, model_config, weightfile):
+    def __init__(self, model_config, weightfile, yolo):
         super(DarknetParser, self).__init__()
 
         if not os.path.exists(model_config):
@@ -45,7 +45,11 @@ class DarknetParser(Parser):
         print("weights buf size: {}".format(self.buf.size))
 
         fp.close()
-        self.start = 1
+
+        if yolo == "yolov2":
+            self.start = 0  #yolov2
+        else:
+            self.start = 1   #yolov3 resnet
 
         model = parse_cfg(model_config)
         self.dk_graph = DarknetGraph(model)
@@ -157,6 +161,10 @@ class DarknetParser(Parser):
 
             conv_name = source_node.name
 
+            # print("----------------",self.start)
+            # print(kernel.shape)
+            # print(k_bias.shape)
+
             b = np.reshape(self.buf[self.start:self.start+k_bias.size], k_bias.shape)
             self.start = self.start + k_bias.size
             self.set_weight(conv_name, 'bias', b)
@@ -178,6 +186,7 @@ class DarknetParser(Parser):
         IR_node.attr['use_global_stats'].b = source_node.get_attr('use_global_stats')
         IR_node.attr['bias'].b = source_node.get_attr('use_global_stats')
         IR_node.attr['scale'].b = source_node.get_attr('use_global_stats')
+        IR_node.attr['epsilon'].f = 1e-5
 
         assign_IRnode_values(IR_node, kwargs)
 
@@ -187,6 +196,7 @@ class DarknetParser(Parser):
         kernel = np.zeros([kernel[-1], kernel[-2], kernel[0], kernel[1]])
 
         # buf, start, scale_layer['name'], bn_layer['name'], conv_layer['name']
+        # print("==============",self.start)
         bias = np.zeros(input_shape[-1])
         scale = np.zeros(input_shape[-1])
         mean = np.zeros(input_shape[-1])
@@ -219,6 +229,8 @@ class DarknetParser(Parser):
         W = np.reshape(self.buf[self.start:self.start+kernel.size], kernel.shape)
         self.start = self.start + kernel.size
         W = np.transpose(W, (2, 3, 1, 0))
+        # print(W)
+        # assert False
         self.set_weight(innode.name, 'weights', W)
 
 
@@ -295,9 +307,46 @@ class DarknetParser(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op='Add')
 
 
+    def rename_SpaceToDepth(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op='SpaceToDepth')
+        stride = source_node.get_attr('strides')
+        kwargs = {}
+        kwargs['blocksize'] = stride
+
+        assign_IRnode_values(IR_node, kwargs)
+
+
     def rename_InnerProduct(self, source_node):
         print(source_node.layer)
         assert False
+
+
+    def rename_region(self, source_node):
+        # print(source_node.layer)
+        IR_node = self._convert_identity_operation(source_node, new_op='region')
+        kwargs = {}
+        kwargs['thresh'] = source_node.get_attr('thresh')
+        kwargs['random'] = source_node.get_attr('random')
+        # kwargs['ignore_thresh'] = source_node.get_attr('ignore_thresh')
+        kwargs['jitter'] = source_node.get_attr('jitter')
+        kwargs['num'] = source_node.get_attr('num')
+        kwargs['classes'] = source_node.get_attr('classes')
+
+        kwargs['softmax'] = source_node.get_attr('softmax')
+        kwargs['coords'] = source_node.get_attr('coords')
+        kwargs['rescore'] = source_node.get_attr('rescore')
+        # print(source_node.get_attr('anchors'))
+        kwargs['anchors'] = source_node.get_attr('anchors')
+        # kwargs['anchors'] = ['0.52','0.22']
+        # kwargs['mask'] = source_node.get_attr('mask')
+        kwargs['object_scale'] = source_node.get_attr('object_scale')
+        kwargs['noobject_scale'] = source_node.get_attr('noobject_scale')
+        kwargs['class_scale'] = source_node.get_attr('class_scale')
+        kwargs['coord_scale'] = source_node.get_attr('coord_scale')
+
+        kwargs['bias_match'] = source_node.get_attr('bias_match')
+        kwargs['absolute'] = source_node.get_attr('absolute')
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_Softmax(self, source_node):

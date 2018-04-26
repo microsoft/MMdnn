@@ -19,6 +19,11 @@ class darknet_extractor(base_extractor):
         'yolov3'          : {
             'config'           : _base_model_url + "yolov3.cfg",
             'weights'          : "https://pjreddie.com/media/files/yolov3.weights"
+        },
+
+        'yolov2'          :{
+            'config'           : _base_model_url + "yolov2.cfg",
+            'weights'          : "https://pjreddie.com/media/files/yolov2.weights"
         }
 
     }
