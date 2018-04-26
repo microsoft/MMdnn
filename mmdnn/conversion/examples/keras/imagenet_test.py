@@ -58,7 +58,7 @@ class TestKeras(TestKit):
                 self.input_image_shape: [416, 416],
                 K.learning_phase(): 0
             })
-        print(out_boxes, out_scores, out_classes)
+        # print(out_boxes, out_scores, out_classes)
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
 
         thickness = (image.size[0] + image.size[1]) // 300

@@ -96,9 +96,9 @@ def yolo_eval(yolo_outputs,
         score_threshold=.6,
         iou_threshold=.5):
     """Evaluate YOLO model on given input and return filtered boxes."""
+    # yolo_outputs order 13,26,52
+
     input_shape = K.shape(yolo_outputs[0])[1:3] * 32
-    print(yolo_outputs)
-    print(input_shape)
 
     for i in range(0,3):
         _boxes, _box_scores = yolo_boxes_and_scores(yolo_outputs[i],
@@ -108,9 +108,6 @@ def yolo_eval(yolo_outputs,
         else:
             boxes = K.concatenate([boxes,_boxes], axis=0)
             box_scores = K.concatenate([box_scores,_box_scores], axis=0)
-
-    print(boxes)
-    print(box_scores)
 
     mask = box_scores >= score_threshold
     max_boxes_tensor = K.constant(max_boxes, dtype='int32')
