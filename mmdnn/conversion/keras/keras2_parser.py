@@ -116,7 +116,6 @@ class Keras2Parser(Parser):
         for layer in self.keras_graph.topological_sort:
             current_node = self.keras_graph.get_node(layer)
             node_type = current_node.type
-
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
@@ -292,10 +291,6 @@ class Keras2Parser(Parser):
 
         kwargs['pooling_type'] = pooling_type
 
-        # print(source_node.layer)
-        # print(source_node.layer.strides)
-        # print(source_node.layer.pool_size)
-        # assert False
 
         if is_global:
             kwargs['global_pooling'] = True
@@ -618,11 +613,6 @@ class Keras2Parser(Parser):
 
 
     def rename_Lambda(self, source_node):
-        # print (source_node.layer.function)
-        # import marshal
-        # raw_code = marshal.dumps(source_node.layer.function.__code__)
-        # print (raw_code)
-        # print (source_node.layer.get_config())
         node_type = source_node.layer.name
         if hasattr(self, "rename_" + node_type):
             print ("Try to convert Lambda function [{}]".format(source_node.layer.name))

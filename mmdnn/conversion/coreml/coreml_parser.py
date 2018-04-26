@@ -111,10 +111,7 @@ class CoremlParser(Parser):
 
 
     def gen_IR(self):
-        # h = 2
         for i, layer in enumerate(self.coreml_graph.topological_sort):
-            # if i == h:
-                # break
 
             current_node = self.coreml_graph.get_node(layer)
             current_node_layer = current_node.layer
@@ -271,7 +268,6 @@ class CoremlParser(Parser):
             CoremlParser._copy_and_repo(source_node, IR_node, "Conv")
         elif layer_name == 'dw':
             CoremlParser._copy_and_repo(source_node, IR_node, "DepthwiseConv")
-            # weights = np.array(source_node_conv.weights.floatValue).reshape([h, w, k * source_node_conv.nGroups, o / source_node_conv.nGroups])
 
 
         else:
@@ -284,17 +280,6 @@ class CoremlParser(Parser):
         if source_node_layer.convolution.HasField('bias'):
             self.set_weight(source_node.name, 'bias', np.array(source_node_conv.bias.floatValue))
 
-        # filter
-        # [kd, kh, kw, channel_size, filter number]
-
-        # if conv, weights have the shape
-            # [outchannel, kernelchannel, H, W], kernelchannels == inputchannels / nGroups
-        # if deconv, weights have the shape
-            # [kernelchannel, outputchannel/nGroups, H, W], kernelchannels == inputchannels / nGroups
-        # For coreml the kernelSize is length 2 in the order [H, W]
-
-        # kwargs['kernel_shape'] = [1] + list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels, source_node_conv.outputChannels]
-
 
         kwargs['kernel_shape'] = list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels, source_node_conv.outputChannels]
 
@@ -304,17 +289,8 @@ class CoremlParser(Parser):
         # [1, sd, sh, sw, 1]
         kwargs['strides'] = [1] + list(source_node_conv.stride) + [1]
 
-        # kwargs['strides'] = [1] + list(source_node_conv.stride)  + [1]
-
-        # dilations
-        # [1, dd, dh, dw, 1]
-        # print('!'*10)
-        # print(source_node_conv)
-        # print(source_node_conv.dilationFactor)
-        # print('!'*10)
         kwargs['dilations'] = [1] + list(source_node_conv.dilationFactor) + [1]
 
-        # kwargs['dilations'] = list(source_node_conv.dilationFactor)
 
         assign_IRnode_values(IR_node, kwargs)
 
@@ -322,58 +298,6 @@ class CoremlParser(Parser):
         # activation
         # TODO
         self._defuse_activation(source_node)
-
-
-    # @staticmethod
-    # def _convert_padding(source_node, IR_node):
-    #     source_node_layer = source_node.layer
-
-    #     if source_node_layer.HasField('convolution'):
-    #         # padding in conv
-
-    #         source_node_conv = source_node_layer.convolution
-
-    #         if source_node_conv.HasField('valid'):
-    #             # pad in IR is [x1_b, x2_b, ..., x1_e, x2_e, ...]
-
-    #             dim = [i.startEdgeSize for i in source_node_conv.valid.paddingAmounts.borderAmounts] + [i.endEdgeSize for i in source_node_conv.valid.paddingAmounts.borderAmounts]
-
-    #             if dim == []:
-    #                 dim = [0,0,0,0]
-
-    #             assign_IRnode_values(IR_node, {'auto_pad' : 'VALID', 'pads': dim})
-
-    #         elif source_node_conv.HasField('same'):
-
-    #             assign_IRnode_values(IR_node, {'auto_pad': "SAME"})
-    #         else:
-    #             assert False
-
-    #     elif source_node_layer.HasField('pooling'):
-    #         # padding in pooling
-    #         source_node_pool = source_node_layer.pooling
-    #         if  source_node_pool.HasField('valid'):
-
-    #             dim = [i.startEdgeSize for i in source_node_pool.valid.paddingAmounts.borderAmounts] + [i.endEdgeSize for i in source_node_pool.valid.paddingAmounts.borderAmounts]
-
-    #             if dim == []:
-    #                 dim = [0,0,0,0]
-    #             assign_IRnode_values(IR_node, { 'auto_pad': 'VALID', 'pads':  dim})
-
-
-    #         elif source_node_pool.HasField('same'):
-
-    #             assign_IRnode_values(IR_node, { 'auto_pad': 'SAME'})
-
-    #         elif source_node_pool.HasField('includeLastPixel'):
-    #             # symmetric padding
-    #             h, w = source_node_pool.includeLastPixel.paddingAmounts
-    #             assign_IRnode_values(IR_node, { 'pads':  [ h, h, w, w]})
-    #         else:
-    #             assert False
-
-    #     else:
-    #         assert False
 
 
 
@@ -408,7 +332,6 @@ class CoremlParser(Parser):
 
                     pad_dim = convert_tf_pad_to_onnx(pad_dim)
 
-                    # print(pad_dim)
 
                     assign_IRnode_values(IR_node, { 'pads':  pad_dim})
 
@@ -710,12 +633,40 @@ class CoremlParser(Parser):
         if IR_node.attr['bias'].b:
             self.set_weight(coreml_node_layer.name, "bias", np.array(coreml_node_bn.beta.floatValue))
 
+
+
+        gamma, beta = None, None
+        if IR_node.attr['scale'].b:
+            gamma = np.array(coreml_node_bn.gamma.floatValue)
+        if IR_node.attr['bias'].b:
+            beta =  np.array(coreml_node_bn.beta.floatValue)
+
+        mean = np.array(coreml_node_bn.mean.floatValue)
+        variance  =  np.array(coreml_node_bn.variance.floatValue)
+
+        gamma = np.ones(mean.shape) if gamma is None else gamma
+        beta = np.zeros(mean.shape) if beta is None else beta
+
+        # compute adjusted parameters
+        # Reference: parameter transformation https://github.com/apple/coremltools/issues/153
+        f = 1.0 / np.sqrt(variance +  coreml_node_bn.epsilon)
+        gamma1 = gamma*f
+        beta1 = beta - gamma*mean*f
+        mean[:] = 0.0 #mean
+        variance[:] = 1.0 - .00001 #stddev
+
+
+        if IR_node.attr['scale'].b:
+            self.set_weight(coreml_node_layer.name, "scale", gamma1)
+
+        if IR_node.attr['bias'].b:
+            self.set_weight(coreml_node_layer.name, "bias", beta1)
+
         # mean
-        self.set_weight(coreml_node_layer.name, "mean", np.array(coreml_node_bn.mean.floatValue))
+        self.set_weight(coreml_node_layer.name, "mean", mean)
 
         # var
-        self.set_weight(coreml_node_layer.name, "var", np.array(coreml_node_bn.variance.floatValue))
-
+        self.set_weight(coreml_node_layer.name, "var", variance)
 
     def rename_scale(self, coreml_node):
         IR_node = self.IR_graph.node.add()
@@ -781,12 +732,10 @@ class CoremlParser(Parser):
 
         # strides
         # [1, sd, sh, sw, 1]
-        # kwargs['strides'] = [1, 1] + list(coreml_node_pool.stride) + [1]
         kwargs['strides'] = [1] + list(coreml_node_pool.stride) + [1]
 
         # window_shape
         # [1, pd, ph, pw, 1]
-        # kwargs['kernel_shape'] = [1, 1] + list(coreml_node_pool.kernelSize) + [1]
         kwargs['kernel_shape'] = [1] + list(coreml_node_pool.kernelSize) + [1]
 
 
@@ -852,15 +801,3 @@ class CoremlParser(Parser):
         # name, op
         self._convert_padding_api(source_node, IR_node)
 
-    # def rename_Reshape(self, source_node):
-    #     IR_node = self.IR_graph.node.add()
-
-    #     # name, op
-    #     CoremlParser._copy_and_repo(source_node, IR_node, 'Reshape')
-
-    #     # input edge
-    #     self.convert_inedge(source_node, IR_node)
-
-    #     # for target shape
-    #     IR_node.attr['shape'].list.i.append([-1, self.shape_dict[, 1, ])
-    #     IR_node.attr['shape'].list.i.extend(source_node.layer.target_shape)

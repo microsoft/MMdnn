@@ -220,26 +220,6 @@ class TestKit(object):
             x = x[..., ::-1]
         return x
 
-    # @staticmethod
-    # def Normalize2(path, size=224, mean=[-1.76698005199, -1.98526000977, -2.10256004333],BGRTranspose = True):
-    #     # test passed
-    #     # this is identical to preprocessing in coreml
-    #     img = image.load_img(path, target_size=(size, size))
-    #     x = image.img_to_array(img)
-    #     scale = 0.0170000009239
-    #     x *= scale
-    #     # x *= 0.0170000009239
-    #     if BGRTranspose == True:
-    #         x = x[..., ::-1]
-    #         for i in range(0, 3):
-    #             x[..., i] += mean[i]
-    #     else:
-    #         mean = mean[::-1]
-    #         for i in range(0, 3):
-    #             x[..., i] += mean[i]
-    #     return x
-
-
 
     @staticmethod
     def Standard(path, size, BGRTranspose=False):
@@ -260,13 +240,6 @@ class TestKit(object):
         if BGRTranspose == True:
             x = x[..., ::-1]
         return x
-
-    # @staticmethod
-    # def Identity_pillow(path, size):
-    #     from PIL import Image
-    #     x = Image.open(path)
-    #     return x.resize((size, size))
-
 
 
     def preprocess(self, image_path):

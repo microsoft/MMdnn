@@ -193,11 +193,9 @@ class CoreMLEmitter(Emitter):
 
         kernel_channels = channels
 
-        # padding = CoreMLEmitter._get_padding(IR_node)
+
         padding = self._get_padding(IR_node)
 
-        # print(padding)
-        # assert False
         if isinstance(padding, list):
             border_mode = "valid"
             # see protobuf
@@ -327,9 +325,6 @@ class CoreMLEmitter(Emitter):
                 height, width = 1, 1
 
                 # TODO  global pooling modification
-
-                # padding_type = 'VALID'
-                # padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
 
                 # Padding
                 padding = self._get_padding(IR_node)
@@ -705,34 +700,31 @@ class CoreMLEmitter(Emitter):
         nb_channels = IR_node.get_attr('_output_shapes')[0].dim[axis].size
 
 
-
         # Set parameters
         # Parameter arrangement in Keras: gamma, beta, mean, variance
         weights = self.weights_dict[IR_node.name]
         mean = weights['mean']
-        var = weights['var']
+        std = weights['var']
         gamma = weights.get('scale', np.ones(mean.shape))
         beta = weights.get('bias', np.zeros(mean.shape))
 
-
-        # TODO remain to be modified!
-        # print(mean, std, gamma, beta)
-        # assert False
         # compute adjusted parameters
-        # variance = std * std
-        # f = 1.0 / np.sqrt(std + IR_node.get_attr('epsilon'))
-        # gamma1 = gamma*f
-        # beta1 = beta - gamma*mean*f
-        # mean[:] = 0.0 #mean
-        # variance[:] = 1.0 - .00001 #stddev
+        # Reference: parameter transformation https://github.com/apple/coremltools/issues/153
+        variance = std * std
+        f = 1.0 / np.sqrt(std + IR_node.get_attr('epsilon'))
+        gamma1 = gamma*f
+        beta1 = beta - gamma*mean*f
+        mean[:] = 0.0 #mean
+        variance[:] = 1.0 - .00001 #stddev
+
 
         self.builder.add_batchnorm(
             name=IR_node.real_name,
             channels = nb_channels,
-            gamma = gamma,
-            beta = beta,
+            gamma = gamma1,
+            beta = beta1,
             mean = mean,
-            variance = var,
+            variance = variance,
             input_name = input_name,
             output_name=IR_node.real_name)
 
@@ -754,21 +746,15 @@ class CoreMLEmitter(Emitter):
             else:
                 raise ValueError("Unrecognized padding option: %s" % (str(padding)))
 
-
-        # padding type
+        # padding type TODO
         # Type of the padding. Can be one of 'constant', 'reflection' or 'replication
         padding_type = IR_node.get_attr('mode', 'CONSTANT')
-        # print(padding_type)
-        # print(IR_node.attr)
         if padding_type == 'CONSTANT':
             padding_type = 'constant'
         elif padding_type == 'REFLECT':
             padding_type = 'reflection'
         elif padding_type == 'SYMMETRIC':
             padding_type = 'replication'
-        # else:
-            # assert False
-            # continue
 
 
         # Now add the layer

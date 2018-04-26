@@ -203,7 +203,7 @@ def KitModel(weight_file = None):
 
         filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier={}'.format(1)
         # change dw from filters to 1
-        # filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier={}'.format(filters)
+
 
         input_node, padding = self._defuse_padding(IR_node)
 

@@ -391,8 +391,7 @@ class TestModels(CorrectnessTest):
 
         func = TestKit.preprocess_func[original_framework][architecture_name]
 
-        # print(original_framework)
-        # print(architecture_name)
+
         img = func(image_path)
         input_data = np.expand_dims(img, 0)
 
@@ -545,12 +544,13 @@ class TestModels(CorrectnessTest):
             size = int(funcstr.split('path,')[1].split(')')[0])
             prep_list = prep_for_coreml(coreml_pre, BGRTranspose)
         elif  len(funcstr.split(',')) == 4:
-            BGRTranspose = bool(funcstr.split(',')[-2].split(')')[0])
+            BGRTranspose = funcstr.split(',')[-2].split(')')[0].strip() == str(True)
             size = int(funcstr.split('path,')[1].split(',')[0])
             prep_list = prep_for_coreml(coreml_pre, BGRTranspose)
 
         elif len(funcstr.split(',')) == 11:
-            BGRTranspose = bool(funcstr.split(',')[-2].split(')')[0])
+            BGRTranspose = funcstr.split(',')[-2].split(')')[0].strip() == str(True)
+
             size = int(funcstr.split('path,')[1].split(',')[0])
             prep_list = (   float(funcstr.split(',')[2]),
                             float(funcstr.split(',')[3].split('[')[-1]),
@@ -585,6 +585,7 @@ class TestModels(CorrectnessTest):
         model = MLModel(model)
         print("Model loading success.")
 
+        converted_file = 'beforemodel.mlmodel'
         # save model
         coremltools.utils.save_spec(model.get_spec(), converted_file)
 
@@ -636,30 +637,16 @@ class TestModels(CorrectnessTest):
         },
 
         'keras' : {
-            # 'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            # 'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
-            # 'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
-            # 'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            # 'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            # 'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            # 'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
-            # 'mobilenet'    : [CoreMLEmit],
-            # 'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            # 'yolo2'          : [KerasEmit],
-
-
-
-            # 'vgg16'        : [ CoreMLEmit],
-            'resnet50'     :   [CoreMLEmit],
-
-
-            # 'vgg19'        : [CoreMLEmit],
-            # 'inception_v3' : [ CoreMLEmit], # TODO: Caffe
-            # 'resnet50'     : [CoreMLEmit],
-            # 'densenet'     : [CoreMLEmit],
-            # 'xception'     : [CoreMLEmit],
-            # 'mobilenet'    : [CoreMLEmit], # TODO: MXNetEmit
-            # 'nasnet'       : [CoreMLEmit],
+            'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
+            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
+            'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
+            'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
+            'mobilenet'    : [CoreMLEmit],
+            'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
+            'yolo2'          : [KerasEmit],
         },
 
         'mxnet' : {
@@ -705,11 +692,11 @@ class TestModels(CorrectnessTest):
             'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
         },
         'coreml' : {
-            # 'mobilenet' : [CoreMLEmit, KerasEmit],
-            # 'inception_v3' : [CoreMLEmit, KerasEmit],
-            # 'vgg16' : [CoreMLEmit,KerasEmit],
-            # 'resnet50' : [CoreMLEmit,KerasEmit],
-            # 'tinyyolo' : [CoreMLEmit, KerasEmit],
+            'mobilenet' : [CoreMLEmit, KerasEmit],
+            'inception_v3' : [CoreMLEmit, KerasEmit],
+            'vgg16' : [CoreMLEmit,KerasEmit],
+            'resnet50' : [CoreMLEmit,KerasEmit],
+            'tinyyolo' : [CoreMLEmit, KerasEmit],
 
         }
     }
@@ -759,31 +746,31 @@ class TestModels(CorrectnessTest):
                 pass
 
             os.remove(IR_file + ".pb")
-            # os.remove(IR_file + ".npy")
+            os.remove(IR_file + ".npy")
             print("Testing {} model {} passed.".format(original_framework, network_name), file=sys.stderr)
 
         print("Testing {} model all passed.".format(original_framework), file=sys.stderr)
 
 
-    # def test_cntk(self):
-    #      self._test_function('cntk', self.CntkParse)
+    def test_cntk(self):
+         self._test_function('cntk', self.CntkParse)
 
 
-    # def test_tensorflow(self):
-    #     self._test_function('tensorflow', self.TensorFlowParse)
-    #     self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
+    def test_tensorflow(self):
+        self._test_function('tensorflow', self.TensorFlowParse)
+        self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
 
 
-    # def test_caffe(self):
-    #     self._test_function('caffe', self.CaffeParse)
+    def test_caffe(self):
+        self._test_function('caffe', self.CaffeParse)
 
 
     def test_keras(self):
         self._test_function('keras', self.KerasParse)
 
-    # def test_coreml(self):
-        # self._test_function('coreml', self.CoremlParse)
+    def test_coreml(self):
+        self._test_function('coreml', self.CoremlParse)
 
 
-    # def test_mxnet(self):
-    #     self._test_function('mxnet', self.MXNetParse)
+    def test_mxnet(self):
+        self._test_function('mxnet', self.MXNetParse)

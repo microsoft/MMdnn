@@ -36,30 +36,7 @@ class coreml_extractor(base_extractor):
 
     }
 
-    # architecture_map = {
-    #     'inception_v3'      : "https://s3-us-west-2.amazonaws.com/coreml-models/Inceptionv3.mlmodel",
-    #     'vgg16'             : "https://s3-us-west-2.amazonaws.com/coreml-models/VGG16.mlmodel",
-    #     'vgg19'             : 224,
-    #     'resnet'            : "https://s3-us-west-2.amazonaws.com/coreml-models/Resnet50.mlmodel",  # resnet50
-    #     'mobilenet'         : "https://s3-us-west-2.amazonaws.com/coreml-models/MobileNet.mlmodel",
-    #     'xception'          : 299,
-    #     'inception_resnet'  : 299,
-    #     'densenet'          : 224,
-    #     'nasnet'            : 331,
-    # }
 
-    # image_size = {
-    #     'inception_v3'      : 299,
-    #     'vgg16'             : 224,
-    #     'vgg19'             : 224,
-    #     'resnet50'          : 224,
-    #     'mobilenet'         : 224,
-    #     'xception'          : 299,
-    #     'inception_resnet'  : 299,
-    #     'densenet'          : 224,
-    #     'nasnet'            : 331,
-    #     'tinyyolo'          : 416,
-    # }
 
     @classmethod
     def download(cls, architecture, path = './'):
