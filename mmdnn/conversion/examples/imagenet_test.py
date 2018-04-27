@@ -209,7 +209,7 @@ class TestKit(object):
 
 
     @staticmethod
-    def Normalize(path, size=224, scale=0.0392156863 ,mean=[-0.485, -0.456, -0.406], std=[0.229, 0.224, 0.225] ,BGRTranspose = False):
+    def Normalize(path, size=224, scale=0.0392156863 ,mean=[-0.485, -0.456, -0.406], std=[0.229, 0.224, 0.225], BGRTranspose = False):
         img = image.load_img(path, target_size=(size, size))
         x = image.img_to_array(img)
         x *= scale

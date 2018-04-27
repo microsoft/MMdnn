@@ -90,7 +90,6 @@ class CorrectnessTest(unittest.TestCase):
 class TestModels(CorrectnessTest):
 
     image_path = "mmdnn/conversion/examples/data/seagull.jpg"
-    # image_path = "/Users/kit/Downloads/dog416.png"
     cachedir = "tests/cache/"
     tmpdir = "tests/tmp/"
 
@@ -611,96 +610,95 @@ class TestModels(CorrectnessTest):
 
 
     exception_tabel = {
-        'cntk_Keras_resnet18',                      # Different *Same Padding* method in first convolution layer.
-        'cntk_Keras_resnet152',                     # Different *Same Padding* method in first convolution layer.
-        'cntk_Tensorflow_resnet18',                 # Different *Same Padding* method in first convolution layer.
-        'cntk_Tensorflow_resnet152',                # Different *Same Padding* method in first convolution layer.
-        'cntk_Caffe_resnet18',                      # TODO
-        'cntk_Caffe_resnet152',                     # TODO
+        'cntk_Keras_resnet18',                      # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
+        'cntk_Keras_resnet152',                     # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
+        'cntk_Tensorflow_resnet18',                 # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
+        'cntk_Tensorflow_resnet152',                # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
+        'tensorflow_Caffe_inception_v1',            # TODO
+        'tensorflow_Cntk_inception_v1',             # TODO
+        'tensorflow_Cntk_resnet_v1_152',            # TODO
+        'tensorflow_Cntk_mobilenet_v1_1.0',         # TODO
         'tensorflow_frozen_MXNet_inception_v1',     # TODO
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
         'caffe_Pytorch_inception_v1',               # TODO
         'caffe_Pytorch_alexnet',                    # TODO
         'caffe_Pytorch_inception_v4',               # TODO, same with caffe_Cntk_inception_v4
-        'mxnet_Caffe_imagenet1k-resnet-152',        # TODO
-        'mxnet_Caffe_imagenet1k-resnext-50',        # TODO
-        'mxnet_Caffe_imagenet1k-resnext-101-64x4d', # TODO
-
     }
+
+
 
 
     test_table = {
         'cntk' : {
-            'alexnet'       : [CntkEmit, TensorflowEmit, KerasEmit],
-            'resnet18'      : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'resnet152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'inception_v3'  : [CntkEmit, TensorflowEmit, PytorchEmit], # Caffe, Keras and MXNet no constant layer
+            'alexnet'       : [CntkEmit, KerasEmit, TensorflowEmit],
+            'inception_v3'  : [CntkEmit, PytorchEmit， TensorflowEmit], # Caffe, Keras and MXNet no constant layer
+            'resnet18'      : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
         },
 
         'keras' : {
-            'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'densenet'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'inception_v3' : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: Caffe
+            'mobilenet'    : [CoreMLEmit, KerasEmit, TensorflowEmit], # TODO: MXNetEmit
+            'nasnet'       : [CoreMLEmit, KerasEmit, TensorflowEmit],
+            'resnet50'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'vgg16'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
-            'inception_v3' : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: Caffe
-            'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
-            'mobilenet'    : [CoreMLEmit],
-            'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            'yolo2'          : [KerasEmit],
-
+            'xception'     : [CoreMLEmit, KerasEmit, TensorflowEmit],
+            'yolo2'        : [KerasEmit],
         },
 
         'mxnet' : {
-            'vgg19'                     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'imagenet1k-inception-bn'   : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: Caffe
-            'imagenet1k-resnet-18'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'imagenet1k-resnet-152'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'squeezenet_v1.1'           : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is ok but too slow
-            'imagenet1k-resnext-50'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'imagenet1k-inception-bn'      : [CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: Caffe
+            'imagenet1k-resnet-18'         : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'imagenet1k-resnet-152'        : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'imagenet1k-resnext-50'        : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # Keras is ok but too slow
+            'squeezenet_v1.1'              : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'vgg19'                        : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
         },
 
         'caffe' : {
+            'alexnet'       : [CaffeEmit, CntkEmit, CoreMLEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit('Tensor' object has no attribute '_keras_history')
+            'inception_v1'  : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'inception_v4'  : [CoreMLEmit, CntkEmit, KerasEmit, PytorchEmit, TensorflowEmit], # TODO MXNetEmit(Small error), CaffeEmit(Crash for shape)
+            'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'squeezenet'    : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'vgg19'         : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'voc-fcn8s'     : [CntkEmit, TensorflowEmit],
             'voc-fcn16s'    : [CntkEmit, TensorflowEmit],
             'voc-fcn32s'    : [CntkEmit, TensorflowEmit],
-            'vgg19'         : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'alexnet'       : [CaffeEmit, CoreMLEmit, CntkEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit('Tensor' object has no attribute '_keras_history')
-            'inception_v1'  : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'resnet152'     : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'squeezenet'    : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'inception_v4'  : [CoreMLEmit, CntkEmit, KerasEmit, PytorchEmit, TensorflowEmit], # TODO MXNetEmit(Small error), CaffeEmit(Crash for shape)
             'xception'      : [CoreMLEmit, CntkEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  TODO: Caffe(Crash) KerasEmit(too slow)
-
         },
 
         'tensorflow' : {
-            'vgg16'             : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'vgg19'             : [CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'inception_v1'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
-            'inception_v3'      : [CntkEmit, TensorflowEmit, KerasEmit, MXNetEmit, PytorchEmit, CoreMLEmit],
-            'resnet_v1_50'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'resnet_v1_152'     : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'resnet_v2_50'      : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'resnet_v2_152'     : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit], # TODO: CntkEmit
-            'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit],
-            'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
-            'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            'inception_v1'      : [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'inception_v3'      : [CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'mobilenet_v1_1.0'  : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
+            'resnet_v1_50'      : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'resnet_v1_152'     : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'resnet_v2_50'      : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'resnet_v2_152'     : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'vgg16'             : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'vgg19'             : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+
+            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
+            # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
         },
 
         'tensorflow_frozen' : {
-            'inception_v1' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
-            'inception_v3' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
-            'mobilenet_v1_1.0' : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
-        },
-        'coreml' : {
-            'mobilenet' : [CoreMLEmit, KerasEmit],
-            'inception_v3' : [CoreMLEmit, KerasEmit],
-            'vgg16' : [CoreMLEmit,KerasEmit],
-            'resnet50' : [CoreMLEmit,KerasEmit],
-            'tinyyolo' : [CoreMLEmit, KerasEmit],
+            'mobilenet_v1_1.0' : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit]
+            'inception_v1'     : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit], # TODO: CntkEmit
+            'inception_v3'     : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit], # TODO: CntkEmit
 
+        },
+
+        'coreml' : {
+            'inception_v3' : [CoreMLEmit, KerasEmit],
+            'mobilenet'    : [CoreMLEmit, KerasEmit],
+            'resnet50'     : [CoreMLEmit, KerasEmit],
+            'tinyyolo'     : [CoreMLEmit, KerasEmit],
+            'vgg16'        : [CoreMLEmit, KerasEmit],
         }
     }
 
@@ -756,13 +754,18 @@ class TestModels(CorrectnessTest):
 
 
 
-    # def test_cntk(self):
-    #      self._test_function('cntk', self.CntkParse)
+    def test_cntk(self):
+        try:
+            import cntk
+            self._test_function('cntk', self.CntkParse)
+        except ImportError:
+            raise ImportError('Please install cntk! Or cntk is not supported in your platform.')
+
 
 
     def test_tensorflow(self):
         self._test_function('tensorflow', self.TensorFlowParse)
-    #     self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
+        self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
 
 
     def test_caffe(self):
@@ -773,7 +776,9 @@ class TestModels(CorrectnessTest):
         self._test_function('keras', self.KerasParse)
 
     def test_coreml(self):
-        self._test_function('coreml', self.CoremlParse)
+        from coremltools.models.utils import macos_version
+        if macos_version() < (10, 13):
+            self._test_function('coreml', self.CoremlParse)
 
 
     def test_mxnet(self):

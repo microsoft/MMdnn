@@ -88,7 +88,7 @@ def set_layer_weights(model, weights_dict):
                     current_layer_parameters.append(cur_dict['bias'])
             else:
                 # rot weights
-                current_layer_parameters = [cur_dict['weights'] ]
+                current_layer_parameters = [cur_dict['weights']]
                 if 'bias' in cur_dict:
                     current_layer_parameters.append(cur_dict['bias'])
             model.get_layer(layer.name).set_weights(current_layer_parameters)

@@ -131,6 +131,7 @@ class CoreMLEmitter(Emitter):
         # Return the protobuf spec
         # model = _MLModel(self.builder.spec)
 
+        print (self.builder.spec.description)
 
         return self.builder.spec, input_features, output_features
 

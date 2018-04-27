@@ -105,7 +105,6 @@ class TensorflowParser(Parser):
         var_to_shape_map = reader.get_variable_to_shape_map()
         data = dict()
         for name in var_to_shape_map:
-            print(name)
             tensor = reader.get_tensor(name)
             data[name] = tensor
 
