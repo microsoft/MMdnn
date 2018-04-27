@@ -183,11 +183,12 @@ if __name__=='__main__':
         else:
             num_group = IR_node.get_attr("group", 1)
 
-        self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_size={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
+        self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_h={}, kernel_w={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
 bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('kernel_shape')[0],
+            IR_node.get_attr('kernel_shape')[1],
             IR_node.get_attr('strides')[1],
             num_output,
             pad_h,
@@ -434,9 +435,21 @@ bias_term={}, ntop=1)".format(
             op,
             len(axes)))
 
+        if IR_node.get_attr('keepdims') == True:
+            shape = IR_node.get_attr("_output_shapes")[0]
+            shape = shape_to_list(shape)
+            shape = [1] + [shape[-1]] + shape[1:-1]
+            dim_str = "'dim': {}".format(shape)
+            dim_str = "{'shape': { " + dim_str + '} }'
+            self.add_body(1, "n.{:<15} = L.Reshape(n.{}, reshape_param={}) ".format(
+                IR_node.variable_name + "_reshape",
+                IR_node.real_variable_name,
+                dim_str))
+            IR_node.real_name = IR_node.real_name + '_reshape'
+
 
     def emit_ReduceMean(self, IR_node):
-        self.reduction(IR_node, 4 , IR_node.get_attr('axes'))
+        self.reduction(IR_node, 4, IR_node.get_attr('axes'))
 
     def emit_ReduceSum(self, IR_node):
         self.reduction(IR_node, 1, IR_node.get_attr('axes'))
