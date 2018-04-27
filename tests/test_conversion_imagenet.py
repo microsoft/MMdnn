@@ -754,32 +754,35 @@ class TestModels(CorrectnessTest):
 
 
 
+
+
+    def test_caffe(self):
+        try:
+            import caffe
+            self._test_function('caffe', self.CaffeParse)
+        except ImportError:
+            print('Please install caffe! Or caffe is not supported in your platform.')
+
     def test_cntk(self):
         try:
             import cntk
             self._test_function('cntk', self.CntkParse)
         except ImportError:
-            raise ImportError('Please install cntk! Or cntk is not supported in your platform.')
-
-
-
-    def test_tensorflow(self):
-        self._test_function('tensorflow', self.TensorFlowParse)
-        self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
-
-
-    def test_caffe(self):
-        self._test_function('caffe', self.CaffeParse)
-
-
-    def test_keras(self):
-        self._test_function('keras', self.KerasParse)
+            print('Please install cntk! Or cntk is not supported in your platform.')
 
     def test_coreml(self):
         from coremltools.models.utils import macos_version
         if macos_version() < (10, 13):
             self._test_function('coreml', self.CoremlParse)
+        else:
+            print('Coreml is not supported in your platform.')
 
+    def test_keras(self):
+        self._test_function('keras', self.KerasParse)
 
     def test_mxnet(self):
         self._test_function('mxnet', self.MXNetParse)
+
+    def test_tensorflow(self):
+        self._test_function('tensorflow', self.TensorFlowParse)
+        self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
