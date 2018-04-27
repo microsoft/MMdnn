@@ -633,11 +633,11 @@ class TestModels(CorrectnessTest):
         'tensorflow' : {
             'vgg16'             : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'vgg19'             : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'inception_v1'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'inception_v1'      : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
             'inception_v3'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'resnet_v1_50'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-            'resnet_v1_152'     : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-            'resnet_v2_50'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'resnet_v1_50'      : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'resnet_v1_152'     : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            'resnet_v2_50'      : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
             'resnet_v2_152'     : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'mobilenet_v1_1.0'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
             # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
@@ -714,6 +714,9 @@ class TestModels(CorrectnessTest):
 
     def test_tensorflow(self):
         self._test_function('tensorflow', self.TensorFlowParse)
+
+
+    def test_tensorflow_frozen(self):
         self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
 
 
