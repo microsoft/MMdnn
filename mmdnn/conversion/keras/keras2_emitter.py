@@ -82,10 +82,6 @@ def set_layer_weights(model, weights_dict):
                 current_layer_parameters = [cur_dict['depthwise_filter'], cur_dict['pointwise_filter']]
                 if 'bias' in cur_dict:
                     current_layer_parameters.append(cur_dict['bias'])
-            elif layer.__class__.__name__ == "DepthwiseConv2D":
-                current_layer_parameters = [cur_dict['weights'].transpose((0,1,3,2))]
-                if 'bias' in cur_dict:
-                    current_layer_parameters.append(cur_dict['bias'])
             else:
                 # rot weights
                 current_layer_parameters = [cur_dict['weights']]
@@ -108,6 +104,7 @@ def KitModel(weight_file = None):
             node_type = current_node.type
 
             if hasattr(self, "emit_" + node_type):
+                print("Converting layer {}({})".format(current_node.name, node_type))
                 func = getattr(self, "emit_" + node_type)
                 func(current_node)
             else:
@@ -203,7 +200,7 @@ def KitModel(weight_file = None):
         else:
             filters = IR_node.get_attr('kernel_shape')[-1]
 
-        filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier={}'.format(1)
+        filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier={}'.format(filters)
         # change dw from filters to 1
 
 
@@ -314,14 +311,15 @@ def KitModel(weight_file = None):
                 self.parent_variable_name(IR_node)))
 
             shape_str = IR_node.get_attr("shape_coreml")
-            shape_str = ','.join([str(i) for i in shape_str])
+            if shape_str:
+                shape_str = ','.join([str(i) for i in shape_str])
 
-            if IR_node.layer.attr['global_pooling_coreml'].b:
-                self.add_body(1, "{:<15} = layers.Reshape(name = '{}', target_shape = ({},))({})".format(
-                    IR_node.variable_name,
-                    IR_node.name + 'reshape',
-                    shape_str,
-                    IR_node.variable_name+'before'))
+                if IR_node.layer.attr['global_pooling_coreml'].b:
+                    self.add_body(1, "{:<15} = layers.Reshape(name = '{}', target_shape = ({},))({})".format(
+                        IR_node.variable_name,
+                        IR_node.name + 'reshape',
+                        shape_str,
+                        IR_node.variable_name+'before'))
 
         else:
             dilations = IR_node.get_attr('dilations')
@@ -432,7 +430,7 @@ def KitModel(weight_file = None):
             IR_node.variable_name,
             IR_node.name,
             axis,
-            IR_node.layer.attr['hasBias'].b,
+            IR_node.layer.attr['use_bias'].b,
             True,
             self.parent_variable_name(IR_node)))
 

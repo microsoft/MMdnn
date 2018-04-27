@@ -390,7 +390,7 @@ class CoreMLEmitter(Emitter):
 
         weights = IR_node.get_attr('scale', False)
         weights = self.weights_dict[IR_node.name]['scale']
-        has_bias = IR_node.get_attr('hasBias', False)
+        has_bias = IR_node.get_attr('use_bias', False)
         if has_bias:
             bias = self.weights_dict[IR_node.name]['bias']
 

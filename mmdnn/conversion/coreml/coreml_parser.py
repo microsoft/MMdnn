@@ -256,6 +256,7 @@ class CoremlParser(Parser):
 
 
         kwargs = dict()
+        kwargs['kernel_shape'] = list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels, source_node_conv.outputChannels]
 
         # pads
         CoremlParser._convert_padding(source_node, IR_node)
@@ -268,6 +269,8 @@ class CoremlParser(Parser):
             CoremlParser._copy_and_repo(source_node, IR_node, "Conv")
         elif layer_name == 'dw':
             CoremlParser._copy_and_repo(source_node, IR_node, "DepthwiseConv")
+            weights = weights.transpose((0,1,3,2))
+            kwargs['kernel_shape'] = list(source_node_conv.kernelSize) + [source_node_conv.outputChannels, source_node_conv.kernelChannels]
 
 
         else:
@@ -281,7 +284,8 @@ class CoremlParser(Parser):
             self.set_weight(source_node.name, 'bias', np.array(source_node_conv.bias.floatValue))
 
 
-        kwargs['kernel_shape'] = list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels, source_node_conv.outputChannels]
+
+        # kwargs['kernel_shape'] = weights.shape
 
         kwargs['groups'] = source_node_conv.nGroups
 
@@ -680,7 +684,7 @@ class CoremlParser(Parser):
         # input edge
         self.convert_inedge(coreml_node, IR_node)
 
-        IR_node.attr['hasBias'].b = coreml_node_scale.hasBias
+        IR_node.attr['use_bias'].b = coreml_node_scale.hasBias
 
         self.set_weight(coreml_node_layer.name, "scale", np.array(coreml_node_scale.scale.floatValue))
 
@@ -688,7 +692,7 @@ class CoremlParser(Parser):
 
 
 
-        if IR_node.attr['hasBias'].b:
+        if IR_node.attr['use_bias'].b:
             self.set_weight(coreml_node_layer.name, "bias", np.array(coreml_node_scale.bias.floatValue))
             self.set_weight(coreml_node_layer.name, "shapeBias", coreml_node_scale.shapeBias[0])
 

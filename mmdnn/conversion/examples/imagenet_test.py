@@ -144,7 +144,7 @@ class TestKit(object):
 
 
         'coreml' : {
-            'mobilenet'         : lambda path :  TestKit.Normalize(path, 224, 0.0170000009239, [-2.10256004333, -1.98526000977, -1.76698005199], [1.0,1.0,1.0], True),
+            'mobilenet'         : lambda path :  TestKit.Normalize(path, 224, 0.0170000009239, [-2.10256004333, -1.98526000977, -1.76698005199], [1.0, 1.0, 1.0], True),
             'inception_v3'      : lambda path : TestKit.Standard(path, 299),
             'vgg16'             : lambda path : TestKit.ZeroCenter(path, 224, True),
             'resnet50'          : lambda path : TestKit.ZeroCenter(path, 224, True),

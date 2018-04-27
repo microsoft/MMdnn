@@ -168,7 +168,7 @@ class TestModels(CorrectnessTest):
         architecture_file, weight_file = mxnet_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = mxnet_extractor.inference(architecture_name, TestModels.cachedir, image_path)
+        original_predict = mxnet_extractor.inference(architecture_name, None, TestModels.cachedir, image_path)
         del mxnet_extractor
 
         # original to IR
@@ -394,17 +394,8 @@ class TestModels(CorrectnessTest):
         img = func(image_path)
         input_data = np.expand_dims(img, 0)
 
-
         predict = model_converted.predict(input_data)
 
-
-
-        model_json = model_converted.to_json()
-        with open("model.json", "w") as json_file:
-            json_file.write(model_json)
-                # serialize weights to HDF5
-        model_converted.save_weights("model.h5")
-        print("Saved model to disk")
 
 
         converted_predict = np.squeeze(predict)
@@ -529,8 +520,8 @@ class TestModels(CorrectnessTest):
 
 
         # IR to Model
-        converted_file = original_framework + '_coreml_' + architecture_name + "_converted"
-        converted_file = converted_file.replace('.', '_')
+        # converted_file = original_framework + '_coreml_' + architecture_name + "_converted"
+        # converted_file = converted_file.replace('.', '_')
 
         func = TestKit.preprocess_func[original_framework][architecture_name]
 
@@ -559,7 +550,6 @@ class TestModels(CorrectnessTest):
                         )
 
 
-        print(prep_list, BGRTranspose)
 
 
         emitter = CoreMLEmitter(architecture_path, weight_path)
@@ -583,11 +573,10 @@ class TestModels(CorrectnessTest):
 
         # load model
         model = MLModel(model)
-        print("Model loading success.")
 
-        converted_file = 'beforemodel.mlmodel'
+
         # save model
-        coremltools.utils.save_spec(model.get_spec(), converted_file)
+        # coremltools.utils.save_spec(model.get_spec(), converted_file)
 
         from coremltools.models.utils import macos_version
 
@@ -631,20 +620,30 @@ class TestModels(CorrectnessTest):
     test_table = {
         'cntk' : {
             'alexnet'       : [CntkEmit, KerasEmit, TensorflowEmit],
-            'inception_v3'  : [CntkEmit, PytorchEmit， TensorflowEmit], # Caffe, Keras and MXNet no constant layer
+            'inception_v3'  : [CntkEmit, PytorchEmit, TensorflowEmit], #TODO: Caffe, Keras, and MXNet no constant layer
             'resnet18'      : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
         },
 
         'keras' : {
-            'densenet'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'inception_v3' : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: Caffe
-            'mobilenet'    : [CoreMLEmit, KerasEmit, TensorflowEmit], # TODO: MXNetEmit
-            'nasnet'       : [CoreMLEmit, KerasEmit, TensorflowEmit],
-            'resnet50'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'vgg16'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
-            'xception'     : [CoreMLEmit, KerasEmit, TensorflowEmit],
+            # 'densenet'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            # 'inception_v3' : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: Caffe
+            # 'mobilenet'    : [CoreMLEmit, KerasEmit, TensorflowEmit], # TODO: MXNetEmit
+            # 'nasnet'       : [CoreMLEmit, KerasEmit, TensorflowEmit],
+            # 'resnet50'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            # 'vgg16'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            # 'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit,CoreMLEmit],
+            # 'xception'     : [CoreMLEmit, KerasEmit, TensorflowEmit],
+            # 'yolo2'        : [KerasEmit],
+
+            'densenet'     : [KerasEmit],
+            'inception_v3' : [KerasEmit], # TODO: Caffe
+            'mobilenet'    : [KerasEmit], # TODO: MXNetEmit
+            'nasnet'       : [KerasEmit],
+            'resnet50'     : [KerasEmit],
+            'vgg16'        : [KerasEmit],
+            'vgg19'        : [KerasEmit],
+            'xception'     : [KerasEmit],
             'yolo2'        : [KerasEmit],
         },
 
@@ -672,33 +671,50 @@ class TestModels(CorrectnessTest):
         },
 
         'tensorflow' : {
-            'inception_v1'      : [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-            'inception_v3'      : [CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'mobilenet_v1_1.0'  : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
-            'resnet_v1_50'      : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-            'resnet_v1_152'     : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-            'resnet_v2_50'      : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-            'resnet_v2_152'     : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-            'vgg16'             : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'vgg19'             : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            # 'inception_v1'      : [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            # 'inception_v3'      : [CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            # 'mobilenet_v1_1.0'  : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
+            # 'resnet_v1_50'      : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            # 'resnet_v1_152'     : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            # 'resnet_v2_50'      : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            # 'resnet_v2_152'     : [KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+            # 'vgg16'             : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            # 'vgg19'             : [CaffeEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
 
-            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
-            # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            # # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
+            # # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+
+            'inception_v1'      : [KerasEmit], # TODO: CntkEmit
+            'inception_v3'      : [KerasEmit],
+            'mobilenet_v1_1.0'  : [KerasEmit],
+            'resnet_v1_50'      : [KerasEmit], # TODO: CntkEmit
+            'resnet_v1_152'     : [KerasEmit], # TODO: CntkEmit
+            'resnet_v2_50'      : [KerasEmit], # TODO: CntkEmit
+            'resnet_v2_152'     : [KerasEmit], # TODO: CntkEmit
+            'vgg16'             : [KerasEmit],
+            'vgg19'             : [KerasEmit],
         },
 
         'tensorflow_frozen' : {
-            'mobilenet_v1_1.0' : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit]
+            'mobilenet_v1_1.0' : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
             'inception_v1'     : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit], # TODO: CntkEmit
             'inception_v3'     : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit], # TODO: CntkEmit
 
         },
 
         'coreml' : {
-            'inception_v3' : [CoreMLEmit, KerasEmit],
-            'mobilenet'    : [CoreMLEmit, KerasEmit],
-            'resnet50'     : [CoreMLEmit, KerasEmit],
-            'tinyyolo'     : [CoreMLEmit, KerasEmit],
-            'vgg16'        : [CoreMLEmit, KerasEmit],
+            # 'inception_v3' : [CoreMLEmit, KerasEmit],
+            # 'mobilenet'    : [CoreMLEmit, KerasEmit],
+            # 'resnet50'     : [CoreMLEmit, KerasEmit],
+            # 'tinyyolo'     : [CoreMLEmit, KerasEmit],
+            # 'vgg16'        : [CoreMLEmit, KerasEmit],
+
+
+            # 'inception_v3' : [CoreMLEmit],
+            # 'mobilenet'    : [CoreMLEmit],
+            # 'resnet50'     : [CoreMLEmit],
+            # 'tinyyolo'     : [CoreMLEmit],
+            'vgg16'        : [CoreMLEmit],
         }
     }
 
@@ -756,33 +772,34 @@ class TestModels(CorrectnessTest):
 
 
 
-    def test_caffe(self):
-        try:
-            import caffe
-            self._test_function('caffe', self.CaffeParse)
-        except ImportError:
-            print('Please install caffe! Or caffe is not supported in your platform.')
+    # def test_caffe(self):
+    #     try:
+    #         import caffe
+    #         self._test_function('caffe', self.CaffeParse)
+    #     except ImportError:
+    #         print('Please install caffe! Or caffe is not supported in your platform.', file=sys.stderr)
 
-    def test_cntk(self):
-        try:
-            import cntk
-            self._test_function('cntk', self.CntkParse)
-        except ImportError:
-            print('Please install cntk! Or cntk is not supported in your platform.')
+    # def test_cntk(self):
+    #     try:
+    #         import cntk
+    #         self._test_function('cntk', self.CntkParse)
+    #     except ImportError:
+    #         print('Please install cntk! Or cntk is not supported in your platform.', file=sys.stderr)
 
     def test_coreml(self):
         from coremltools.models.utils import macos_version
         if macos_version() < (10, 13):
-            self._test_function('coreml', self.CoremlParse)
+            print('Coreml is not supported in your platform.', file=sys.stderr)
         else:
-            print('Coreml is not supported in your platform.')
+            self._test_function('coreml', self.CoremlParse)
 
-    def test_keras(self):
-        self._test_function('keras', self.KerasParse)
 
-    def test_mxnet(self):
-        self._test_function('mxnet', self.MXNetParse)
+    # def test_keras(self):
+    #     self._test_function('keras', self.KerasParse)
 
-    def test_tensorflow(self):
-        self._test_function('tensorflow', self.TensorFlowParse)
-        self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
+    # def test_mxnet(self):
+    #     self._test_function('mxnet', self.MXNetParse)
+
+    # def test_tensorflow(self):
+    #     self._test_function('tensorflow', self.TensorFlowParse)
+        # self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
