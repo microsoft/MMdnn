@@ -301,25 +301,33 @@ def KitModel(weight_file = None):
             print(pooling_type)
             assert False
 
-        # if not IR_node.layer.attr['global_pooling'].b:
         # TODO
         if IR_node.layer.attr['global_pooling'].b:
-            self.add_body(1, "{:<15} = layers.Global{}(name = '{}')({})".format(
-                IR_node.variable_name+'before',
-                pool_name,
-                IR_node.name,
-                self.parent_variable_name(IR_node)))
 
             shape_str = IR_node.get_attr("shape_coreml")
             if shape_str:
                 shape_str = ','.join([str(i) for i in shape_str])
 
-                if IR_node.layer.attr['global_pooling_coreml'].b:
-                    self.add_body(1, "{:<15} = layers.Reshape(name = '{}', target_shape = ({},))({})".format(
-                        IR_node.variable_name,
-                        IR_node.name + 'reshape',
-                        shape_str,
-                        IR_node.variable_name+'before'))
+                self.add_body(1, "{:<15} = layers.Global{}(name = '{}')({})".format(
+                    IR_node.variable_name+'before',
+                    pool_name,
+                    IR_node.name,
+                    self.parent_variable_name(IR_node)))
+
+                #  when converting from coreml model, reshape is needed after the global pooling
+                self.add_body(1, "{:<15} = layers.Reshape(name = '{}', target_shape = ({},))({})".format(
+                    IR_node.variable_name,
+                    IR_node.name + 'reshape',
+                    shape_str,
+                    IR_node.variable_name+'before'))
+            else:
+                self.add_body(1, "{:<15} = layers.Global{}(name = '{}')({})".format(
+                IR_node.variable_name,
+                pool_name,
+                IR_node.name,
+                self.parent_variable_name(IR_node)))
+
+
 
         else:
             dilations = IR_node.get_attr('dilations')
