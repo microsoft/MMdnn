@@ -63,7 +63,7 @@ class CntkParser(Parser):
         return [0] + lower + [0, 0] + upper + [0]
 
 
-    def _convert_identity_operation(self, source_node, start_edge=0, end_edge=None, new_op=None, shape_transpose=False):
+    def _convert_identity_operation(self, source_node, start_edge=0, end_edge=None, new_op=None, shape_transpose=True):
         IR_node = self.IR_graph.node.add()
         CntkParser._copy_and_reop(source_node, IR_node, new_op, shape_transpose)
         self.convert_inedge(source_node, IR_node, start_edge, end_edge)
@@ -212,7 +212,7 @@ class CntkParser(Parser):
 
 
     def rename_Reshape(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, shape_transpose=True)
+        IR_node = self._convert_identity_operation(source_node)
         new_shape = source_node.get_attr('newShape')
         kwargs = {'shape' : self.channel_first_shape_to_IR(new_shape)}
         assign_IRnode_values(IR_node, kwargs)
@@ -242,12 +242,12 @@ class CntkParser(Parser):
 
 
     def rename_Splice(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op='Concat', shape_transpose=True)
+        IR_node = self._convert_identity_operation(source_node, new_op='Concat')
         assign_IRnode_values(IR_node, {'axis' : source_node.get_attr('axis')[-1] + 1})
 
 
     def rename_Pooling(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op='Pool', shape_transpose=True)
+        IR_node = self._convert_identity_operation(source_node, new_op='Pool')
         dim = len(IR_node.attr['_output_shapes'].list.shape[0].dim)
         kwargs = {}
 
@@ -285,7 +285,7 @@ class CntkParser(Parser):
 
 
     def rename_DataInput(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op='DataInput', shape_transpose=True)
+        IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
         shape = [-1] + list(source_node.layer.shape)
         assign_IRnode_values(IR_node, {'shape' : list_to_shape(self.channel_first_shape_to_IR(shape))})
 
@@ -309,7 +309,7 @@ class CntkParser(Parser):
             elif param.name.lower().endswith('variance'):
                 self.set_weight(source_node.name, 'var', self.get_ndarray(param).flatten())
 
-        IR_node = self._convert_identity_operation(source_node, end_edge=1, new_op='BatchNorm', shape_transpose=True)
+        IR_node = self._convert_identity_operation(source_node, end_edge=1, new_op='BatchNorm')
         kwargs['epsilon'] = source_node.get_attr('epsilon')
         kwargs['axis'] = -1
         assign_IRnode_values(IR_node, kwargs)
@@ -360,7 +360,7 @@ class CntkParser(Parser):
 
 
     def rename_Dense(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op='FullyConnected')
+        IR_node = self._convert_identity_operation(source_node, new_op='FullyConnected', shape_transpose=False)
         for param in source_node.layer.inputs:
             if param.name.endswith('W'):
                 w = np.squeeze(self.get_ndarray(param))

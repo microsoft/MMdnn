@@ -3,6 +3,8 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
+from __future__ import division
+
 import os
 import sys
 import numpy as np
@@ -181,17 +183,20 @@ if __name__=='__main__':
         else:
             num_group = IR_node.get_attr("group", 1)
 
-        self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_size={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
+        self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_h={}, kernel_w={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
 bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('kernel_shape')[0],
+            IR_node.get_attr('kernel_shape')[1],
             IR_node.get_attr('strides')[1],
             num_output,
             pad_h,
             pad_w,
             num_group,
             IR_node.get_attr('use_bias', False)))
+
+        self.check_if_need_crop(IR_node)
 
         dim = len(IR_node.get_attr('strides')) - 2
         if self.weight_loaded:
@@ -205,7 +210,7 @@ bias_term={}, ntop=1)".format(
         #     keys.append(key)
         # print("=======Layer: {}, keys: {}".format(IR_node.name, keys))
 
-    def compute_output_shape(self, IR_node):
+    def compute_output_shape(self, IR_node, kernel_h, kernel_w):
         parent_node = self.IR_graph.get_parent(IR_node.name, [0])
         if parent_node.get_attr('_output_shapes'):
             shape = parent_node.get_attr('_output_shapes')[0]
@@ -214,17 +219,44 @@ bias_term={}, ntop=1)".format(
             w_i = shape[2]
             pad_h = IR_node.get_attr('pads')[1]
             pad_w = IR_node.get_attr('pads')[2]
-            kernel_h = IR_node.get_attr('kernel_shape')[0]
-            kernel_w = IR_node.get_attr('kernel_shape')[1]
             stride_h = IR_node.get_attr('strides')[1]
             stride_w = IR_node.get_attr('strides')[2]
 
-            h_o = (h_i + 2 * pad_h - kernel_h) // stride_h + 1
-            w_o = (w_i + 2 * pad_w - kernel_w) // stride_w + 1
+            if IR_node.type == 'Pool':
+                h_o = (h_i + 2 * pad_h - kernel_h + stride_h - 1) // stride_h + 1
+                w_o = (w_i + 2 * pad_w - kernel_w + stride_w - 1) // stride_w + 1
+            else:
+                h_o = (h_i + 2 * pad_h - kernel_h) // stride_h + 1
+                w_o = (w_i + 2 * pad_w - kernel_w) // stride_w + 1
             return h_o, w_o
         else:
             assert False
-            return 0, 0
+
+
+    def check_if_need_crop(self, IR_node):
+        shape = IR_node.get_attr('_output_shapes')[0]
+        shape = shape_to_list(shape)
+        ir_ho = shape[1]
+        ir_wo = shape[2]
+        if IR_node.type == 'Pool':
+            k_h = IR_node.get_attr('kernel_shape')[1]
+            k_w = IR_node.get_attr('kernel_shape')[2]
+        else:
+            k_h = IR_node.get_attr('kernel_shape')[0]
+            k_w = IR_node.get_attr('kernel_shape')[1]
+
+        caffe_ho, caffe_wo = self.compute_output_shape(IR_node, k_h, k_w)
+        if caffe_ho > ir_ho or caffe_wo > ir_wo:
+            crop_layer_variable_name = IR_node.variable_name + "_crop"
+            self.add_body(1, "n.{:<15} = L.Crop(n.{}, L.DummyData(shape=[dict(dim=[1, {}, {}, {}])], ntop=1), ntop=1)".format(
+                crop_layer_variable_name,
+                IR_node.variable_name,
+                shape[3],
+                ir_ho,
+                ir_wo
+            ))
+            # Change the layer name
+            IR_node.real_name = IR_node.real_name + "_crop"
 
 
     def emit_Pool(self, IR_node):
@@ -255,23 +287,7 @@ bias_term={}, ntop=1)".format(
                 IR_node.get_attr('strides')[1]))
 
             # check if need crop output shape
-            shape = IR_node.get_attr('_output_shapes')[0]
-            shape = shape_to_list(shape)
-            ir_ho = shape[1]
-            ir_wo = shape[2]
-            caffe_ho, caffe_wo = self.compute_output_shape(IR_node)
-            if ((caffe_ho > ir_ho) or (caffe_wo > ir_wo)):
-                crop_layer_variable_name = IR_node.variable_name + "_crop"
-                self.add_body(1, "n.{:<15} = L.Crop(n.{}, L.DummyData(shape=[dict(dim=[1, {}, {}, {}])], ntop=1), ntop=1)".format(
-                    crop_layer_variable_name,
-                    IR_node.variable_name,
-                    shape[3],
-                    ir_ho,
-                    ir_wo
-                ))
-                # Change the layer name
-                IR_node.real_name = IR_node.real_name + "_crop"
-
+            self.check_if_need_crop(IR_node)
 
 
     def emit_UNKNOWN(self, IR_node):
@@ -335,7 +351,6 @@ bias_term={}, ntop=1)".format(
                 self.weights_dict[scale_layer_var_name]['bias'] = self.weights_dict[IR_node.name]['bias']
                 self.weights_dict[IR_node.name].pop('bias', None)
                 # change the key "name" to "variable_name", in case of the layer name has invalid characters
-                self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
             self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
@@ -420,8 +435,21 @@ bias_term={}, ntop=1)".format(
             op,
             len(axes)))
 
+        if IR_node.get_attr('keepdims') == True:
+            shape = IR_node.get_attr("_output_shapes")[0]
+            shape = shape_to_list(shape)
+            shape = [1] + [shape[-1]] + shape[1:-1]
+            dim_str = "'dim': {}".format(shape)
+            dim_str = "{'shape': { " + dim_str + '} }'
+            self.add_body(1, "n.{:<15} = L.Reshape(n.{}, reshape_param={}) ".format(
+                IR_node.variable_name + "_reshape",
+                IR_node.real_variable_name,
+                dim_str))
+            IR_node.real_name = IR_node.real_name + '_reshape'
+
+
     def emit_ReduceMean(self, IR_node):
-        self.reduction(IR_node, 4 , IR_node.get_attr('axes'))
+        self.reduction(IR_node, 4, IR_node.get_attr('axes'))
 
     def emit_ReduceSum(self, IR_node):
         self.reduction(IR_node, 1, IR_node.get_attr('axes'))
