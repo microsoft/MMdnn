@@ -705,11 +705,13 @@ class TestModels(CorrectnessTest):
         },
 
         'coreml' : {
-            'mobilenet' : [CoreMLEmit],
-            'inception_v3' : [CoreMLEmit],
-            'vgg16' : [CoreMLEmit],
-            'resnet50' : [CoreMLEmit]
+            'inception_v3' : [CoreMLEmit, KerasEmit],
+            'mobilenet'    : [CoreMLEmit, KerasEmit],
+            'resnet50'     : [CoreMLEmit, KerasEmit],
+            'tinyyolo'     : [CoreMLEmit, KerasEmit],
+            'vgg16'        : [CoreMLEmit, KerasEmit],
         },
+
         'darknet' : {
             'yolov2': [KerasEmit],
             'yolov3': [KerasEmit],
