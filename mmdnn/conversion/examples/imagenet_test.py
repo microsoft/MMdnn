@@ -63,7 +63,12 @@ class TestKit(object):
         },
         'coreml' : {
             'mobilenet' : [],
-        }
+        },
+
+        'darknet' : {
+            'yolov3'        :[],
+        },
+
     }
 
     preprocess_func = {
@@ -122,6 +127,7 @@ class TestKit(object):
             'squeezenet_v1.0'               : lambda path : TestKit.ZeroCenter(path, 224, False),
             'squeezenet_v1.1'               : lambda path : TestKit.ZeroCenter(path, 224, False),
             'imagenet1k-inception-bn'       : lambda path : TestKit.Identity(path, 224, False),
+            'imagenet1k-resnet-18'          : lambda path : TestKit.Identity(path, 224, True),
             'imagenet1k-resnet-152'         : lambda path : TestKit.Identity(path, 224, True),
             'resnext'                       : lambda path : TestKit.Identity(path, 224, False),
             'imagenet1k-resnext-50'         : lambda path : TestKit.Identity(path, 224, False),
@@ -140,6 +146,12 @@ class TestKit(object):
             'resnet18'      : lambda path : TestKit.Identity(path, 224),
             'resnet152'     : lambda path : TestKit.Identity(path, 224),
             'inception_v3'  : lambda path : TestKit.Identity(path, 299),
+        },
+
+
+        'darknet' : {
+             'yolov3'        : lambda path : TestKit.Identity(path, 416),
+             'yolov2'        : lambda path : TestKit.Identity(path, 416),
         },
 
 
