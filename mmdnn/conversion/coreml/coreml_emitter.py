@@ -138,14 +138,16 @@ class CoreMLEmitter(Emitter):
 
     @staticmethod
     def _get_padding(IR_node):
-        auto_pads = IR_node.get_attr('auto_pads')
-        if auto_pads is not None:
-            if auto_pads == 'VALID':
+
+        auto_pad = IR_node.get_attr('auto_pad')
+        if auto_pad is not None:
+            if auto_pad == 'VALID':
                 pass
             else:
                 return 'SAME'
 
-        pads = IR_node.get_attr('pads', [0,0,0,0])
+        pads = IR_node.get_attr('pads', [0,0,0,0,0,0,0,0])
+
         return pads
 
     def _emit_merge(self, IR_node, func):
@@ -189,24 +191,23 @@ class CoreMLEmitter(Emitter):
             raise ValueError("Unsupported non-unity dilation for Deconvolution layer")
 
         groups = IR_node.get_attr('groups', 1)
+
         kernel_channels = channels
+
 
         padding = self._get_padding(IR_node)
 
         if isinstance(padding, list):
             border_mode = "valid"
             # see protobuf
-            padding_top, padding_left, padding_bottom, padding_right = padding
+            padding_top, padding_left, padding_bottom, padding_right = padding[1], padding [2], padding[5], padding [6]
         else:
             border_mode = "same"
             padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
 
 
 
-
-
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
-
 
         self.builder.add_convolution(name=IR_node.real_name,
                                      kernel_channels=kernel_channels,
@@ -252,13 +253,18 @@ class CoreMLEmitter(Emitter):
 
 
         padding = self._get_padding(IR_node)
+
+
+
         if isinstance(padding, list):
             border_mode = "valid"
             # see protobuf
-            padding_top, padding_left, padding_bottom, padding_right = padding
+            padding_top, padding_left, padding_bottom, padding_right = padding[1], padding [2], padding[5], padding [6]
         else:
             border_mode = "same"
             padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
+
+
 
 
 
@@ -309,14 +315,29 @@ class CoreMLEmitter(Emitter):
         # if it's global, set the global flag
         global_pooling = IR_node.get_attr('global_pooling', False)
         dim = len(IR_node.get_attr('strides')) - 2
+
+
         if global_pooling:
             if dim == 2:
-                height, width = tuple(IR_node.get_attr('kernel_shape')[1:-1])
+
+
+
                 stride_height, stride_width = tuple(IR_node.get_attr('strides')[1:-1])
+                height, width = 1, 1
+
                 # TODO  global pooling modification
 
-                padding_type = 'VALID'
-                padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
+                # Padding
+                padding = self._get_padding(IR_node)
+
+                if isinstance(padding, list):
+                    padding_type = "VALID"
+                    # see protobuf
+                    padding_top, padding_left, padding_bottom, padding_right = padding[1], padding[2], padding[5], padding[6]
+                else:
+                    padding_type = "SAME"
+                    padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
+
 
             elif dim == 1:
                 raise NotImplementedError()
@@ -334,15 +355,15 @@ class CoreMLEmitter(Emitter):
             stride_height, stride_width = tuple(IR_node.get_attr('strides')[1:-1])
 
             # Padding
-            p = self._get_padding(IR_node)
-            if isinstance(p, list):
+            padding = self._get_padding(IR_node)
+            if isinstance(padding, list):
+
                 padding_type = "VALID"
                 # see protobuf
-                padding_top, padding_left, padding_bottom, padding_right = p
+                padding_top, padding_left, padding_bottom, padding_right = padding[1], padding [2], padding[5], padding [6]
             else:
                 padding_type = "SAME"
                 padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
-
 
 
 
@@ -369,7 +390,7 @@ class CoreMLEmitter(Emitter):
 
         weights = IR_node.get_attr('scale', False)
         weights = self.weights_dict[IR_node.name]['scale']
-        has_bias = IR_node.get_attr('hasBias', False)
+        has_bias = IR_node.get_attr('use_bias', False)
         if has_bias:
             bias = self.weights_dict[IR_node.name]['bias']
 
@@ -553,21 +574,21 @@ class CoreMLEmitter(Emitter):
     def emit_Relu(self, IR_node):
         self._emit_activation(IR_node, 'RELU')
     def emit_PRelu(self, IR_node):
-        self._emit_activation(IR_node, 'PRELU', self.weights_dict[IR_node.name]['gamma'])
+        self._emit_activation(IR_node, 'PRELU', IR_node.get_attr('gamma', 0) )
     def emit_LeakyRelu(self, IR_node):
-        self._emit_activation(IR_node, 'LEAKYRELU', self.weights_dict[IR_node.name]['alpha'])
+        self._emit_activation(IR_node, 'LEAKYRELU', IR_node.get_attr('alpha', 0) )
     def emit_Elu(self,IR_node):
-        self._emit_activation(IR_node, 'ELU', self.weights_dict[IR_node.name]['alpha'])
+        self._emit_activation(IR_node, 'ELU',  IR_node.get_attr('alpha', 0)  )
     def emit_ThresholdedRelu(self, IR_node):
-        self._emit_activation(IR_node, 'THRESHOLDEDRELU', self.weights_dict[IR_node.name]['alpha'])
+        self._emit_activation(IR_node, 'THRESHOLDEDRELU', IR_node.get_attr('alpha', 0) )
     def emit_ScaledTanh(self, IR_node):
-        self._emit_activation(IR_node, 'SCALED_TANH', [self.weights_dict[IR_node.name]['alpha'],self.weights_dict[IR_node.name]['beta'] ])
+        self._emit_activation(IR_node, 'SCALED_TANH', [IR_node.get_attr('alpha', 0),IR_node.get_attr('beta', 0)])
     def emit_linear(self, IR_node):
-        self._emit_activation(IR_node, 'LINEAR', [self.weights_dict[IR_node.name]['alpha'],self.weights_dict[IR_node.name]['beta'] ])
+        self._emit_activation(IR_node, 'LINEAR', [IR_node.get_attr('alpha', 0),IR_node.get_attr('beta', 0)])
     def emit_SigmoidHard(self, IR_node):
-        self._emit_activation(IR_node, 'SIGMOID_HARD', [self.weights_dict[IR_node.name]['alpha'],self.weights_dict[IR_node.name]['beta'] ])
+        self._emit_activation(IR_node, 'SIGMOID_HARD', [IR_node.get_attr('alpha', 0),IR_node.get_attr('beta', 0)])
     def emit_ParametricSoftplus(self, IR_node):
-        self._emit_activation(IR_node, 'PARAMETRICSOFTPLUS', [self.weights_dict[IR_node.name]['alpha'],self.weights_dict[IR_node.name]['beta'] ])
+        self._emit_activation(IR_node, 'PARAMETRICSOFTPLUS', [ IR_node.get_attr('alpha', 0),IR_node.get_attr('beta', 0) ])
 
 
 
@@ -680,34 +701,31 @@ class CoreMLEmitter(Emitter):
         nb_channels = IR_node.get_attr('_output_shapes')[0].dim[axis].size
 
 
-
         # Set parameters
         # Parameter arrangement in Keras: gamma, beta, mean, variance
         weights = self.weights_dict[IR_node.name]
         mean = weights['mean']
-        var = weights['var']
+        std = weights['var']
         gamma = weights.get('scale', np.ones(mean.shape))
         beta = weights.get('bias', np.zeros(mean.shape))
 
-
-        # TODO remain to be modified!
-        # print(mean, std, gamma, beta)
-        # assert False
         # compute adjusted parameters
-        # variance = std * std
-        # f = 1.0 / np.sqrt(std + IR_node.get_attr('epsilon'))
-        # gamma1 = gamma*f
-        # beta1 = beta - gamma*mean*f
-        # mean[:] = 0.0 #mean
-        # variance[:] = 1.0 - .00001 #stddev
+        # Reference: parameter transformation https://github.com/apple/coremltools/issues/153
+        variance = std * std
+        f = 1.0 / np.sqrt(std + IR_node.get_attr('epsilon'))
+        gamma1 = gamma*f
+        beta1 = beta - gamma*mean*f
+        mean[:] = 0.0 #mean
+        variance[:] = 1.0 - .00001 #stddev
+
 
         self.builder.add_batchnorm(
             name=IR_node.real_name,
             channels = nb_channels,
-            gamma = gamma,
-            beta = beta,
+            gamma = gamma1,
+            beta = beta1,
             mean = mean,
-            variance = var,
+            variance = variance,
             input_name = input_name,
             output_name=IR_node.real_name)
 
@@ -729,21 +747,15 @@ class CoreMLEmitter(Emitter):
             else:
                 raise ValueError("Unrecognized padding option: %s" % (str(padding)))
 
-
-        # padding type
+        # padding type TODO
         # Type of the padding. Can be one of 'constant', 'reflection' or 'replication
         padding_type = IR_node.get_attr('mode', 'CONSTANT')
-        # print(padding_type)
-        # print(IR_node.attr)
         if padding_type == 'CONSTANT':
             padding_type = 'constant'
         elif padding_type == 'REFLECT':
             padding_type = 'reflection'
         elif padding_type == 'SYMMETRIC':
             padding_type = 'replication'
-        # else:
-            # assert False
-            # continue
 
 
         # Now add the layer

@@ -36,30 +36,7 @@ class coreml_extractor(base_extractor):
 
     }
 
-    # architecture_map = {
-    #     'inception_v3'      : "https://s3-us-west-2.amazonaws.com/coreml-models/Inceptionv3.mlmodel",
-    #     'vgg16'             : "https://s3-us-west-2.amazonaws.com/coreml-models/VGG16.mlmodel",
-    #     'vgg19'             : 224,
-    #     'resnet'            : "https://s3-us-west-2.amazonaws.com/coreml-models/Resnet50.mlmodel",  # resnet50
-    #     'mobilenet'         : "https://s3-us-west-2.amazonaws.com/coreml-models/MobileNet.mlmodel",
-    #     'xception'          : 299,
-    #     'inception_resnet'  : 299,
-    #     'densenet'          : 224,
-    #     'nasnet'            : 331,
-    # }
 
-    image_size = {
-        'inception_v3'      : 299,
-        'vgg16'             : 224,
-        'vgg19'             : 224,
-        'resnet50'            : 224,
-        'mobilenet'         : 224,
-        'xception'          : 299,
-        'inception_resnet'  : 299,
-        'densenet'          : 224,
-        'nasnet'            : 331,
-        'tinyyolo'          : 416,
-    }
 
     @classmethod
     def download(cls, architecture, path = './'):
@@ -78,13 +55,25 @@ class coreml_extractor(base_extractor):
     @classmethod
     def inference(cls, architecture, model_path, image_path):
         # TODO
+        from PIL import Image
         import numpy as np
         from coremltools.models._infer_shapes_nn_mlmodel import infer_shapes
         if cls.sanity_check(architecture):
             func = TestKit.preprocess_func['coreml'][architecture]
-            img = func(image_path)
 
 
+            import inspect
+            funcstr = inspect.getsource(func)
+
+            if len(funcstr.split(',')) == 3:
+                size = int(funcstr.split('path,')[1].split(')')[0])
+            else:
+                size = int(funcstr.split('path,')[1].split(',')[0])
+
+
+
+            img = Image.open(image_path)
+            img = img.resize((size, size))
 
             # load model
             model = MLModel(model_path)
@@ -96,15 +85,15 @@ class coreml_extractor(base_extractor):
             # TODO: Multiple outputs
             output_name = spec.description.output[0].name
 
-
-
             # inference
             input_data = img
             coreml_input = {input_name: img}
             coreml_output = model.predict(coreml_input)
 
 
-            prob = coreml_output[output_name].values()
+            prob = coreml_output[output_name]
+            if isinstance(prob, dict):
+                prob = coreml_output[output_name].values()
             prob = np.array(prob).squeeze()
 
             return prob
