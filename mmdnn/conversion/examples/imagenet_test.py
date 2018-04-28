@@ -47,8 +47,7 @@ class TestKit(object):
             'resnet152-11k'                 : [(1278, 0.49073416), (1277, 0.21393695), (282, 0.12980066), (1282, 0.0663582), (1224, 0.022041745)],
             'imagenet1k-resnext-101-64x4d'  : [(21, 0.587986), (23, 0.29983738), (862, 0.044453762), (596, 0.00983246), (80, 0.00465048)],
             'imagenet1k-resnext-50'         : [(396, 0.7104751), (398, 0.122665755), (438, 0.06391319), (440, 0.029796895), (417, 0.019492012)],
-            'resnext'                       : [(21, 0.58798772), (23, 0.29983655), (862, 0.044453178), (596, 0.0098323636), (80, 0.0046504852)],
-            'imagenet1k-resnet-18'          : [(144, 0.4993047), (23, 0.19939236), (21, 0.13068005), (22, 0.040368408), (315, 0.022424433)],
+            'resnext'                       : [(21, 0.58798772), (23, 0.29983655), (862, 0.044453178), (596, 0.0098323636), (80, 0.0046504852)]
         },
         'pytorch' : {
             'resnet18'  : [(394, 10.310125), (395, 9.2285385), (21, 8.9611788), (144, 8.3729601), (749, 7.9692998)],
@@ -62,11 +61,14 @@ class TestKit(object):
             'resnet152'     : [(21, 12.461424), (99, 12.38283), (144, 11.1572275), (94, 10.569823), (146, 10.096423)],
             'inception_v3'  : [(21, 15.558625), (22, 9.7712708), (23, 9.6847782), (146, 9.188818), (144, 8.0436306)]
         },
+        'coreml' : {
+            'mobilenet' : [],
+        },
 
         'darknet' : {
             'yolov3'        :[],
-            'yolov2'        :[],
-        }
+        },
+
     }
 
     preprocess_func = {
@@ -148,21 +150,17 @@ class TestKit(object):
 
 
         'darknet' : {
-            'yolov3'        : lambda path : TestKit.Identity(path, 416),
-            'yolov2'        : lambda path : TestKit.Identity(path, 416),
+             'yolov3'        : lambda path : TestKit.Identity(path, 416),
+             'yolov2'        : lambda path : TestKit.Identity(path, 416),
         },
 
+
         'coreml' : {
-            'mobilenet'         : lambda path : TestKit.Identity_pillow(path, 224),
-            'inception_v3'      : lambda path : TestKit.Identity_pillow(path, 299),
-            'vgg16'             : lambda path : TestKit.Identity_pillow(path, 224),
-            'vgg19'             : lambda path : TestKit.Identity_pillow(path, 224),
-            'resnet50'            : lambda path : TestKit.Identity_pillow(path, 224),
-            'xception'          : lambda path : TestKit.Identity_pillow(path, 299),
-            'inception_resnet'  : lambda path : TestKit.Identity_pillow(path, 299),
-            'densenet'          : lambda path : TestKit.Identity_pillow(path, 224),
-            'nasnet'            : lambda path : TestKit.Identity_pillow(path, 331),
-            'tinyyolo'          : lambda path : TestKit.Identity_pillow(path, 416),
+            'mobilenet'         : lambda path :  TestKit.Normalize(path, 224, 0.0170000009239, [-2.10256004333, -1.98526000977, -1.76698005199], [1.0, 1.0, 1.0], True),
+            'inception_v3'      : lambda path : TestKit.Standard(path, 299),
+            'vgg16'             : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'resnet50'          : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'tinyyolo'          : lambda path : TestKit.Normalize(path, 416, 0.00392156863, [0, 0, 0], [1.0, 1.0, 1.0], False),
         }
 
     }
@@ -196,11 +194,6 @@ class TestKit(object):
             default=None,
             help='Target model path.')
 
-        parser.add_argument('--detect',
-            type=_text_type,
-            default=None,
-            help='object detection output file name.')
-
         self.args = parser.parse_args()
         if self.args.n.endswith('.py'):
             self.args.n = self.args.n[:-3]
@@ -211,22 +204,32 @@ class TestKit(object):
     def ZeroCenter(path, size, BGRTranspose=False):
         img = image.load_img(path, target_size = (size, size))
         x = image.img_to_array(img)
+
+        # Reference: 1) Keras image preprocess: https://github.com/keras-team/keras/blob/master/keras/applications/imagenet_utils.py
+        #            2) tensorflow github issue: https://github.com/tensorflow/models/issues/517
+        # R-G-B for Imagenet === [123.68, 116.78, 103.94]
+
+
+        x[..., 0] -= 123.68
+        x[..., 1] -= 116.779
+        x[..., 2] -= 103.939
+
         if BGRTranspose == True:
             x = x[..., ::-1]
-        x[..., 0] -= 103.939
-        x[..., 1] -= 116.779
-        x[..., 2] -= 123.68
+
         return x
 
 
     @staticmethod
-    def Normalize(path, size=224, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    def Normalize(path, size=224, scale=0.0392156863 ,mean=[-0.485, -0.456, -0.406], std=[0.229, 0.224, 0.225], BGRTranspose = False):
         img = image.load_img(path, target_size=(size, size))
         x = image.img_to_array(img)
-        x /= 255.0
+        x *= scale
         for i in range(0, 3):
-            x[..., i] -= mean[i]
+            x[..., i] += mean[i]
             x[..., i] /= std[i]
+        if BGRTranspose == True:
+            x = x[..., ::-1]
         return x
 
 
@@ -249,13 +252,6 @@ class TestKit(object):
         if BGRTranspose == True:
             x = x[..., ::-1]
         return x
-
-    @staticmethod
-    def Identity_pillow(path, size):
-        from PIL import Image
-        x = Image.open(path)
-        return x.resize((size, size))
-
 
 
     def preprocess(self, image_path):
@@ -285,7 +281,6 @@ class TestKit(object):
 
         else:
             self.result = predict
-            print(predict.shape)
             print (self.result)
 
 

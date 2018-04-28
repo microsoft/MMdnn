@@ -21,7 +21,7 @@ Downloading file [./resnet_v2_152_2017_04_14.tar.gz] from [http://download.tenso
 Model saved in file: ./imagenet_resnet_v2_152.ckpt
 ```
 
-The you got the TensorFlow checkpoint files for *ResNet V2 152* model which is in your current working directory, including *imagenet_resnet_v2_152.ckpt.meta* for architecture , *imagenet_resnet_v2_152.ckpt.data-00000-of-00001*  and *imagenet_resnet_v2_152.ckpt.index* for weights.
+Then you got the TensorFlow checkpoint files for *ResNet V2 152* model which is in your current working directory, including *imagenet_resnet_v2_152.ckpt.meta* for architecture , *imagenet_resnet_v2_152.ckpt.data-00000-of-00001*  and *imagenet_resnet_v2_152.ckpt.index* for weights.
 
 ## Find the output node of the model
 

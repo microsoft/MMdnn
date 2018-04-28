@@ -286,22 +286,18 @@ class KitModel(nn.Module):
 
 
     def emit_Reshape(self, IR_node):
-        raise NotImplementedError
-        shape_str = IRGraph.shapeToStr(IR_node.IR_layer.attr["shape"].shape, True)
-        self.add_body(1, "{:<15} = Reshape(name = \"{}\", target_shape = ({}))({})".format(
+        shape_list = IR_node.get_attr('shape')
+        shape_str = ','.join([str(int(i)) for i in shape_list])
+        self.add_body(2, "{:<15} = torch.reshape(input = {}, shape = ({}))".format(
             IR_node.variable_name,
-            IR_node.name,
-            shape_str,
-            self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name))
+            self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name,
+            shape_str))
 
 
     def emit_Tanh(self, IR_node):
-        raise NotImplementedError()
-        code = "{:<15} = Activation(name = '{}', activation = 'tanh')({})".format(
-                IR_node.replace_scope(IR_node.name),
-                IR_node.name,
-                IR_node.replace_scope(IR_node.in_edges[0]))
-        return code
+        self.add_body(2, "{:<15} = F.tanh({})".format(
+            IR_node.variable_name,
+            self.IR_graph.get_parent(IR_node.name, [0]).real_variable_name))
 
 
     def emit_Relu(self, IR_node):
