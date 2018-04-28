@@ -266,6 +266,26 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
+    def DarknetParse(architecture_name, image_path):
+        from mmdnn.conversion.examples.darknet.extractor import darknet_extractor
+        from mmdnn.conversion.darknet.darknet_parser import DarknetParser
+        # download model
+        architecture_file = darknet_extractor.download(architecture_name, TestModels.cachedir)
+
+        # get original model prediction result
+        original_predict = darknet_extractor.inference(architecture_name, architecture_file, TestModels.cachedir, image_path)
+        del darknet_extractor
+
+        # original to IR
+        IR_file = TestModels.tmpdir + 'darknet_' + architecture_name + "_converted"
+        parser = DarknetParser(architecture_file)
+        parser.run(IR_file)
+        del parser
+        del DarknetParser
+        return original_predict
+
+
+    @staticmethod
     def CntkEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
 
@@ -584,6 +604,8 @@ class TestModels(CorrectnessTest):
         'caffe_Pytorch_inception_v1',               # TODO
         'caffe_Pytorch_alexnet',                    # TODO
         'caffe_Pytorch_inception_v4',               # TODO, same with caffe_Cntk_inception_v4
+        'darknet_Keras_yolov2',                     # TODO,
+        'darknet_Keras_yolov3',                     # TODO,
     }
 
 
@@ -654,6 +676,10 @@ class TestModels(CorrectnessTest):
             'inception_v3' : [CoreMLEmit],
             'vgg16' : [CoreMLEmit],
             'resnet50' : [CoreMLEmit]
+        },
+        'darknet' : {
+            'yolov2': [KerasEmit],
+            'yolov3': [KerasEmit],
         }
     }
 
@@ -736,3 +762,6 @@ class TestModels(CorrectnessTest):
 
     def test_mxnet(self):
         self._test_function('mxnet', self.MXNetParse)
+
+    def test_darknet(self):
+        self._test_function('darknet', self.DarknetParse)
