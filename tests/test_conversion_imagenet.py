@@ -271,6 +271,7 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def DarknetParse(architecture_name, image_path):
+        ensure_dir("./data/")
         from mmdnn.conversion.examples.darknet.extractor import darknet_extractor
         from mmdnn.conversion.darknet.darknet_parser import DarknetParser
         # download model
@@ -282,7 +283,8 @@ class TestModels(CorrectnessTest):
 
         # original to IR
         IR_file = TestModels.tmpdir + 'darknet_' + architecture_name + "_converted"
-        parser = DarknetParser(architecture_file)
+
+        parser = DarknetParser(architecture_file[0], architecture_file[1], architecture_name)
         parser.run(IR_file)
         del parser
         del DarknetParser
@@ -416,9 +418,10 @@ class TestModels(CorrectnessTest):
 
         predict = model_converted.predict(input_data)
 
-
-
-        converted_predict = np.squeeze(predict)
+        if original_framework == "darknet":
+            converted_predict = None
+        else:
+            converted_predict = np.squeeze(predict)
 
         del model_converted
         del sys.modules[converted_file]
@@ -753,7 +756,6 @@ class TestModels(CorrectnessTest):
                     IR_file + ".pb",
                     IR_file + ".npy",
                     self.image_path)
-
                 self._compare_outputs(original_predict, converted_predict, self._need_assert(original_framework, target_framework, network_name))
                 print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, target_framework), file=sys.stderr)
 

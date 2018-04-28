@@ -13,16 +13,16 @@ from mmdnn.conversion.common.utils import download_file
 
 class darknet_extractor(base_extractor):
 
-    _base_model_url = "https://github.com/pjreddie/darknet/blob/master/cfg/"
+    _base_model_url = "https://raw.githubusercontent.com/pjreddie/darknet/master/"
 
     architecture_map = {
         'yolov3'          : {
-            'config'           : _base_model_url + "yolov3.cfg",
+            'config'           : _base_model_url + "cfg/yolov3.cfg",
             'weights'          : "https://pjreddie.com/media/files/yolov3.weights"
         },
 
         'yolov2'          :{
-            'config'           : _base_model_url + "yolov2.cfg",
+            'config'           : _base_model_url + "cfg/yolov2.cfg",
             'weights'          : "https://pjreddie.com/media/files/yolov2.weights"
         }
 
@@ -31,6 +31,7 @@ class darknet_extractor(base_extractor):
 
     @classmethod
     def download(cls, architecture, path = './'):
+
         if cls.sanity_check(architecture):
             cfg_name = architecture + ".cfg"
             architecture_file = download_file(cls.architecture_map[architecture]['config'], directory=path, local_fname=cfg_name)
@@ -54,9 +55,13 @@ class darknet_extractor(base_extractor):
         import numpy as np
 
         if cls.sanity_check(architecture):
+            download_file(cls._base_model_url + "cfg/coco.data", directory='./')
+            download_file(cls._base_model_url + "data/coco.names", directory='./data/')
 
             net = cdarknet.load_net(files[0], files[1], 0)
             meta = cdarknet.load_meta("coco.data")
+
+
             r = cdarknet.detect(net, meta, image_path)
             # print(r)
             return r
@@ -73,5 +78,5 @@ class darknet_extractor(base_extractor):
 # image_path = "./mmdnn/conversion/examples/data/dog.jpg"
 # model_path = "./"
 # d = darknet_extractor()
-# result = d.inference('yolov3', model_path, image_path = image_path)
+# result = d.inference('yolov3', model_filename, model_path, image_path = image_path)
 # print(result)
