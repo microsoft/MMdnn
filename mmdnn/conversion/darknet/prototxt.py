@@ -37,7 +37,7 @@ def parse_prototxt(protofile):
                 key, value = line.split(':')
                 key = key.strip()
                 value = value.strip().strip('"')
-                if block.has_key(key):
+                if key in block.keys():
                     if type(block[key]) == list:
                         block[key].append(value)
                     else:
@@ -66,7 +66,7 @@ def parse_prototxt(protofile):
             key, value = line.split(':')
             key = key.strip()
             value = value.strip().strip('"')
-            if props.has_key(key):
+            if key in props.keys():
                if type(props[key]) == list:
                    props[key].append(value)
                else:
