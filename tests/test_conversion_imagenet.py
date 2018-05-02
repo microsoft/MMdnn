@@ -615,6 +615,37 @@ class TestModels(CorrectnessTest):
 
             return prob
 
+    @staticmethod
+    def OnnxEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
+
+        original_framework = checkfrozen(original_framework)
+
+        # IR to code
+        converted_file = original_framework + '_onnx_' + architecture_name + "_converted"
+        converted_file = converted_file.replace('.', '_')
+        emitter = OnnxEmitter(architecture_path, weight_path)
+        emitter.run(converted_file + '.py', None, 'test')
+        del emitter
+        del OnnxEmitter
+
+        # import converted model
+        from onnx_tf.backend import prepare
+        model_converted = __import__(converted_file).KitModel(weight_path)
+        tf_rep = prepare(model_converted)
+
+        func = TestKit.preprocess_func[original_framework][architecture_name]
+        img = func(image_path)
+        input_data = np.expand_dims(img, 0)
+
+        predict = tf_rep.run(input_data)[0]
+
+        del prepare
+        del model_converted
+        del tf_rep
+        os.remove(converted_file + '.py')
+
+        return predict
 
     exception_tabel = {
         'cntk_Keras_resnet18',                      # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
