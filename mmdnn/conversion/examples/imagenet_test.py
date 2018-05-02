@@ -194,6 +194,12 @@ class TestKit(object):
             default=None,
             help='Target model path.')
 
+        parser.add_argument('--detect',
+            type=_text_type,
+            default=None,
+            help='Model detection result path.')
+
+
         self.args = parser.parse_args()
         if self.args.n.endswith('.py'):
             self.args.n = self.args.n[:-3]

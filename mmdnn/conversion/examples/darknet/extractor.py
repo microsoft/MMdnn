@@ -4,6 +4,7 @@
 #----------------------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+from __future__ import print_function
 import os
 from mmdnn.conversion.examples.darknet import darknet as cdarknet
 from mmdnn.conversion.examples.imagenet_test import TestKit
@@ -58,11 +59,12 @@ class darknet_extractor(base_extractor):
             download_file(cls._base_model_url + "cfg/coco.data", directory='./')
             download_file(cls._base_model_url + "data/coco.names", directory='./data/')
 
-            net = cdarknet.load_net(files[0], files[1], 0)
-            meta = cdarknet.load_meta("coco.data")
+            print(files)
+            net = cdarknet.load_net(files[0].encode(), files[1].encode(), 0)
+            meta = cdarknet.load_meta("coco.data".encode())
 
 
-            r = cdarknet.detect(net, meta, image_path)
+            r = cdarknet.detect(net, meta, image_path.encode())
             # print(r)
             return r
 

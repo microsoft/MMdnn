@@ -41,9 +41,13 @@ class TestKeras(TestKit):
 
     def generate(self):
         self.input_image_shape = K.placeholder(shape=(2, ))
-        boxes, scores, classes = yolo_eval(self.model.output[::-1], self.anchors,
-                len(self.class_names), self.input_image_shape,
-                score_threshold=self.score_threshold, iou_threshold=self.iou_threshold)
+        output = self.model.output
+        output.sort(key=lambda x: int(x.shape[1]))
+        # print(output)
+
+        boxes, scores, classes = yolo_eval(output, self.anchors,
+                    len(self.class_names), self.input_image_shape,
+                    score_threshold=self.score_threshold, iou_threshold=self.iou_threshold)
         return boxes, scores, classes
 
     def yolo_result(self, path):
