@@ -3,6 +3,7 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
+import six
 from six import string_types as _string_types
 from mmdnn.conversion.caffe.errors import ConversionError
 from mmdnn.conversion.common.IR.graph_pb2 import GraphDef, NodeDef, TensorShape
@@ -13,7 +14,7 @@ def assign_attr_value(attr, val):
     '''Assign value to AttrValue proto according to data type.'''
     if isinstance(val, bool):
         attr.b = val
-    elif isinstance(val, int):
+    elif isinstance(val, six.integer_types):
         attr.i = val
     elif isinstance(val, float):
         attr.f = val
@@ -24,9 +25,7 @@ def assign_attr_value(attr, val):
     elif isinstance(val, list):
         if len(val) == 0: return
 
-        if isinstance(val[0], int):
-            attr.list.i.extend(val)
-        elif isinstance(val[0], long):
+        if isinstance(val[0], six.integer_types):
             attr.list.i.extend(val)
         elif isinstance(val[0], TensorShape):
             attr.list.shape.extend(val)

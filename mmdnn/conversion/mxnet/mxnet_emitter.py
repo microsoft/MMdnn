@@ -90,6 +90,7 @@ def RefactorModel():
                 func = getattr(self, "emit_Activation")
                 line = func(current_node, MXNetEmitter.activation_map[node_type.lower()].lower())
                 self.add_body(1, line)
+
             elif hasattr(self, "emit_" + node_type):
                 func = getattr(self, "emit_" + node_type)
                 line = func(current_node)
@@ -880,4 +881,25 @@ def predict(model, labels, url):
             old_name,
             IR_node.real_name))
 
+        return ""
+
+
+    def emit_Slice(self, IR_node):
+        starts = IR_node.get_attr('starts')
+        starts = [starts[0], starts[-1]] + starts[1:-1]
+        ends = IR_node.get_attr('ends')
+        ends = [ends[0], ends[-1]] + ends[1:-1]
+        ends = [i if i else None for i in ends]
+        strides = IR_node.get_attr('strides')
+        if strides:
+            strides = [strides[0], strides[-1]] + strides[1:-1]
+
+        self.add_body(1, "{:<15} = mx.sym.slice({}, begin={}, end={}, step={}, name='{}')".format(
+            IR_node.real_variable_name,
+            self.parent_variable_name(IR_node),
+            starts,
+            ends,
+            strides,
+            IR_node.name
+        ))
         return ""

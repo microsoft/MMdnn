@@ -460,6 +460,32 @@ def KitModel(weight_file = None):
             IR_node.name))
 
 
+    def emit_Slice(self, IR_node):
+        extra_str = ""
+        if IR_node.get_attr('strides'):
+            extra_str += ", strides={}".format(IR_node.get_attr('strides'))
+        if IR_node.get_attr('begin_mask'):
+            extra_str += ", begin_mask={}".format(IR_node.get_attr('begin_mask'))
+        if IR_node.get_attr('end_mask'):
+            extra_str += ", end_mask={}".format(IR_node.get_attr('end_mask'))
+        self.add_body(1, "{:<15} = tf.strided_slice({}, {}, {} {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('starts'),
+            IR_node.get_attr('ends'),
+            extra_str,
+            IR_node.name))
+
+
+    def emit_Split(self, IR_node):
+        self.add_body(1, "{:<15} = tf.split({}, {}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('split'),
+            IR_node.get_attr('axis'),
+            IR_node.name))
+
+
     def _layer_Conv(self):
         self.add_body(0, """
 def convolution(input, name, group, **kwargs):
