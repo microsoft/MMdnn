@@ -3,6 +3,8 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
+from __future__ import division
+
 import os
 import numpy as np
 from six import string_types as _string_types
@@ -194,7 +196,7 @@ class CoreMLEmitter(Emitter):
 
         groups = IR_node.get_attr('group', 1)
 
-        kernel_channels = input_channels / groups
+        kernel_channels = input_channels // groups
         padding = self._get_padding(IR_node)
 
         if isinstance(padding, list):
