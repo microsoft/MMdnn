@@ -1,6 +1,5 @@
 
 import os
-import caffe
 import numpy as np
 
 from mmdnn.conversion.common.utils import *
@@ -86,7 +85,7 @@ class DarknetParser(Parser):
                 if dim == None:
                     new_dim.size = -1
                 else:
-                    new_dim.size = dim
+                    new_dim.size = int(dim)
 
             IR_node.attr["_output_shape"].list.shape.extend([shape])
 
@@ -98,7 +97,7 @@ class DarknetParser(Parser):
                     if dim == None:
                         new_dim.size = -1
                     else:
-                        new_dim.size = dim
+                        new_dim.size = int(dim)
             else:
                 IR_node.attr["shape"].shape.unknown_rank = True
 

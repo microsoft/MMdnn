@@ -2,6 +2,11 @@
 #  Copyright (c) Microsoft Corporation. All rights reserved.
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np
 from collections import OrderedDict
 from mmdnn.conversion.common.DataStructure.graph import GraphNode, Graph
@@ -112,7 +117,7 @@ class DarknetGraph(Graph):
                 convolution_param['pad'] = int(block['pad'])
 
                 if block['pad'] == '1':
-                    convolution_param['padding'] = int(convolution_param['kernel_size'])/2
+                    convolution_param['padding'] = int(convolution_param['kernel_size'])//2
                 convolution_param['stride'] = int(block['stride'])
                 if block['batch_normalize'] == '1':
                     convolution_param['bias_term'] = 'false'
@@ -187,7 +192,7 @@ class DarknetGraph(Graph):
                 pooling_param['stride'] = int(block['stride'])
                 pooling_param['pool'] = 'MAX'
                 pooling_param['padding'] = 0
-                if 'name' in block.keys(): and int(block['pad']) == 1:
+                if 'pad' in block.keys() and int(block['pad']) == 1:
                     pooling_param['padding'] = (int(block['size'])-1)/2
 
                 input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')

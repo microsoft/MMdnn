@@ -104,7 +104,7 @@ def KitModel(weight_file = None):
             node_type = current_node.type
 
             if hasattr(self, "emit_" + node_type):
-                print("Converting layer {}({})".format(current_node.name, node_type))
+                # print("Converting layer {}({})".format(current_node.name, node_type))
                 func = getattr(self, "emit_" + node_type)
                 func(current_node)
             else:
