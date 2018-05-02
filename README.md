@@ -64,7 +64,7 @@ Models                                                                      | Ca
 [Xception](https://arxiv.org/pdf/1610.02357.pdf)                            |   ×   |   √   |     √      |   o  |   ×   |    ×
 [SqueezeNet](https://arxiv.org/pdf/1602.07360)                              |   √   |   √   |     √      |   √  |   √   |    √
 [DenseNet](https://arxiv.org/abs/1608.06993)                                |       |   √   |     √      |   √  |   √   |    √       |
-[NASNet](https://arxiv.org/abs/1707.07012)                                  |       |   √   |     √      |   o
+[NASNet](https://arxiv.org/abs/1707.07012)                                  |       |   √   |     √      |   o  |   √   | √ |
 [ResNext](https://arxiv.org/abs/1611.05431)                                 |       |   √   |     √      |   √  |   √   |
 [voc FCN](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf) |       |       |     √      |   √  |       |            |
 Yolo3                                                                       |       |   √   |            |   √  |

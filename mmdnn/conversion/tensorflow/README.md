@@ -12,6 +12,7 @@ Inception_v3             |   x   |   √    |  √   |   o   |   √   |    √ 
 ResNet V1                |   x   |   √    |  o   |   √   |   √   |    √    | √
 ResNet V2                |   x   |   √    |  √   |   √   |   √   |    √    | √
 MobileNet V1             |   x   |   √    |  o   |   √   |   √   |    √    | √
+NasNet-A                 |   x   |        |      |       |   √   |    √    | √
 
 **√** - Correctness tested
 
