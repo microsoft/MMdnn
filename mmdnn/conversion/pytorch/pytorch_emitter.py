@@ -394,9 +394,8 @@ class KitModel(nn.Module):
         IR_node.real_name = "self." + IR_node.variable_name
 
 
-    @staticmethod
-    def _convert_axis(IR_node, axis):
-        ndim = len(IR_node.get_attr('_output_shapes')[0].dim)
+    def _convert_axis(self, IR_node, axis):
+        ndim = len(self.IR_graph.get_parent(IR_node.name, [0]).get_attr('_output_shapes')[0].dim)
         if axis == 0:
             return 0
         elif axis == ndim - 1:
@@ -494,6 +493,26 @@ class KitModel(nn.Module):
 
     def emit_DepthwiseConv(self, IR_node):
         self.emit_Conv(IR_node)
+
+
+    def emit_Slice(self, IR_node):
+        starts = IR_node.get_attr('starts')
+        starts = [starts[0], starts[-1]] + starts[1:-1]
+        ends = IR_node.get_attr('ends')
+        ends = [ends[0], ends[-1]] + ends[1:-1]
+        extra_str = ""
+        for idx, _ in enumerate(starts):
+            if idx:
+                extra_str += ", "
+            extra_str += "{}:".format(starts[idx])
+            if ends[idx]:
+                extra_str += "{}".format(ends[idx])
+
+        self.add_body(2, "{:<15} = {}[{}]".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            extra_str
+        ))
 
 
     def _layer_Conv(self):

@@ -573,6 +573,8 @@ class TestModels(CorrectnessTest):
                         )
 
 
+
+
         emitter = CoreMLEmitter(architecture_path, weight_path)
         model, input_name, output_name = emitter.gen_model(
                 input_names=None,
@@ -595,6 +597,9 @@ class TestModels(CorrectnessTest):
         # load model
         model = MLModel(model)
 
+
+        # save model
+        # coremltools.utils.save_spec(model.get_spec(), converted_file)
 
         from coremltools.models.utils import macos_version
 
@@ -692,8 +697,9 @@ class TestModels(CorrectnessTest):
             'resnet_v2_50'      : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
             'resnet_v2_152'     : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'mobilenet_v1_1.0'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
-            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
-            # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            'nasnet-a_large'    : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
+            # 'inception_resnet_v2' : [TensorflowEmit], # TODO PytorchEmit
+
         },
 
         'tensorflow_frozen' : {
@@ -764,9 +770,6 @@ class TestModels(CorrectnessTest):
             print("Testing {} model {} passed.".format(original_framework, network_name), file=sys.stderr)
 
         print("Testing {} model all passed.".format(original_framework), file=sys.stderr)
-
-
-
 
 
     def test_caffe(self):
