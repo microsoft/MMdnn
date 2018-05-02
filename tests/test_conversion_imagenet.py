@@ -596,10 +596,6 @@ class TestModels(CorrectnessTest):
         model = MLModel(model)
 
 
-        # save model
-        converted_file = '/Users/kit/Downloads/my_model.mlmodel'
-        coremltools.utils.save_spec(model.get_spec(), converted_file)
-
         from coremltools.models.utils import macos_version
 
         if macos_version() < (10, 13):
@@ -696,8 +692,8 @@ class TestModels(CorrectnessTest):
             'resnet_v2_50'      : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
             'resnet_v2_152'     : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'mobilenet_v1_1.0'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
-            'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
-            'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
+            # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
         },
 
         'tensorflow_frozen' : {
