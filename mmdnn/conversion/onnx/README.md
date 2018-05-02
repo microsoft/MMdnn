@@ -75,8 +75,6 @@ pip3 install pillow
 
 ### Prepare Keras DenseNet121 model
 
-We currently only support the **channel first** version of Keras DenseNet121 model, so make sure that you have set `image_data_format='channels_first'` in your Keras config at ~/.keras/keras.json.
-
 The code below creates the DenseNet121 model (saved as `densenet121.keras`), and predicts the elephant picture (as below) with the model.
 
 ```python
@@ -173,6 +171,5 @@ Ubuntu 16.04 with
 
 ## Limitation
 
-- Support channel first only
 - Tested only Keras DenseNet model
 - Need ONNX master branch
