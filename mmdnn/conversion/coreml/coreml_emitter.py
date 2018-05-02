@@ -89,7 +89,6 @@ class CoreMLEmitter(Emitter):
             current_node = self.IR_graph.get_node(layer)
             print("Converting layer {}({})".format(current_node.name, current_node.type))
             node_type = current_node.type
-
             if hasattr(self, "emit_" + node_type):
                 func = getattr(self, "emit_" + node_type)
                 func(current_node)
@@ -165,36 +164,37 @@ class CoreMLEmitter(Emitter):
         """
         Convert convolution layer to coreml.
         """
-        has_bias = IR_node.get_attr('use_bias', False)
-        is_deconv = False # TODO: Deconv
 
-        # Get the weights.
-        output_channels = IR_node.get_attr('kernel_shape')[-1]
+        has_bias = IR_node.get_attr('use_bias', False)
+        is_deconv = False
+
 
         # Dimensions and weights
-        if is_deconv:
-            raise NotImplementedError()
-            height, width, n_filters, channels = weightList[0].shape
-            W = weightList[0].transpose([0,1,3,2])
-            output_shape = output_blob_shape[:-1]
+        kernel_shape = IR_node.get_attr('kernel_shape')
+
+        if len(kernel_shape) == 4:
+            height, width, kernel_channels, output_channels = kernel_shape
+        elif len(kernel_shape) == 5:
+            depth, height, width, kernel_channels, output_channels = kernel_shape
         else:
-            W = self.weights_dict[IR_node.name]['weights']
-            height, width, channels, n_filters = W.shape
-            output_shape = None
+            raise NotImplementedError()
+
+        output_shape = None
+
+        # W should have shape (height, width, kernel_channels, output_channels), where kernel_channel = input_channels / groups
+        W = self.weights_dict[IR_node.name]['weights']
+        W = W.reshape(kernel_shape)
         b = self.weights_dict[IR_node.name]['bias'] if has_bias else None
 
-        stride_height, stride_width = IR_node.get_attr('strides')[1], IR_node.get_attr('strides')[2]
 
+        stride_height, stride_width = IR_node.get_attr('strides')[1], IR_node.get_attr('strides')[2]
 
         # Dilations
         dilations = IR_node.get_attr('dilations', [1, 1])
         if is_deconv and not dilations == [1, 1]:
             raise ValueError("Unsupported non-unity dilation for Deconvolution layer")
 
-        groups = IR_node.get_attr('groups', 1)
-
-        kernel_channels = channels
-
+        groups = IR_node.get_attr('group', 1)
 
         padding = self._get_padding(IR_node)
 
@@ -205,7 +205,6 @@ class CoreMLEmitter(Emitter):
         else:
             border_mode = "same"
             padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
-
 
 
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
@@ -231,6 +230,84 @@ class CoreMLEmitter(Emitter):
                                      padding_right= padding_right,
                                      output_name=IR_node.real_name,
                                      dilation_factors=dilations)
+
+
+
+
+    def emit_ConvTranspose(self, IR_node):
+        """
+        Convert convolution layer to coreml.
+        """
+
+        # assert False
+        has_bias = IR_node.get_attr('use_bias', False)
+        is_deconv = True
+
+        # Get the weights.
+
+        kernel_shape = IR_node.get_attr('kernel_shape')
+
+        if len(kernel_shape) == 4:
+            height, width, output_channels, kernel_channels = kernel_shape
+            W = self.weights_dict[IR_node.name]['weights']
+            W = W.reshape(kernel_shape)
+            W = W.transpose((0, 1, 3, 2))
+        elif len(kernel_shape) == 5:
+            depth, height, width, output_channels, kernel_channels = kernel_shape
+            W = self.weights_dict[IR_node.name]['weights']
+            W = W.reshape(kernel_shape)
+            W = W.transpose((0, 1, 2, 4, 3))
+        else:
+            raise NotImplementedError()
+
+
+        output_shape = None
+        b = self.weights_dict[IR_node.name]['bias'] if has_bias else None
+
+        stride_height, stride_width = IR_node.get_attr('strides')[1], IR_node.get_attr('strides')[2]
+
+        # Dilations
+        dilations = IR_node.get_attr('dilations', [1, 1])
+        if is_deconv and not dilations == [1, 1]:
+            raise ValueError("Unsupported non-unity dilation for Deconvolution layer")
+
+        groups = IR_node.get_attr('group', 1)
+
+        padding = self._get_padding(IR_node)
+
+        if isinstance(padding, list):
+            border_mode = "valid"
+            # see protobuf
+            padding_top, padding_left, padding_bottom, padding_right = padding[1], padding [2], padding[5], padding [6]
+        else:
+            border_mode = "same"
+            padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
+
+
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+
+        self.builder.add_convolution(name=IR_node.real_name,
+                                     kernel_channels=kernel_channels,
+                                     output_channels=output_channels,
+                                     height=height,
+                                     width=width,
+                                     stride_height=stride_height,
+                                     stride_width=stride_width,
+                                     border_mode= border_mode,
+                                     groups=groups,
+                                     W=W,
+                                     b=b,
+                                     has_bias=has_bias,
+                                     is_deconv=is_deconv,
+                                     output_shape=output_shape,
+                                     input_name=input_name,
+                                     padding_top= padding_top,
+                                     padding_left= padding_left,
+                                     padding_bottom= padding_bottom,
+                                     padding_right= padding_right,
+                                     output_name=IR_node.real_name,
+                                     dilation_factors=dilations)
+
 
 
     def emit_DepthwiseConv(self, IR_node):
@@ -367,7 +444,6 @@ class CoreMLEmitter(Emitter):
                 padding_top, padding_left, padding_bottom, padding_right = 0, 0, 0, 0
 
 
-
         self.builder.add_pooling(name=IR_node.name,
                                     height=height,
                                     width=width,
@@ -430,8 +506,10 @@ class CoreMLEmitter(Emitter):
             if type(border) is int:
                 top = left = bottom = right = border
             elif type(border) is list:
-                top, left = border[1], border [0]
-                bottom, right = border[2], border [3]
+                # type: "list(int). A 1-D values of (leftBorder, topBorder, rightBorder, bottomBorder)."
+                # This is central crop
+                top, left = border[1], border[0]
+                bottom, right = border[1], border[0]
             else:
                 raise ValueError("Unrecognized padding option: %s" % (str(border)))
 
@@ -800,7 +878,7 @@ class CoreMLEmitter(Emitter):
     def emit_Squeeze(self, IR_node):
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
         output_name=IR_node.real_name
-        # print(IR_node.layer)
+
         self.builder.add_bias(name = IR_node.name,
                               b = 0,
                               input_name = input_name,
@@ -812,15 +890,15 @@ class CoreMLEmitter(Emitter):
     def emit_LRN(self, IR_node):
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
         output_name = IR_node.real_name
-        C = IR_node.get_attr('size')
         alpha = IR_node.get_attr('alpha')
         beta = IR_node.get_attr('beta')
         k = IR_node.get_attr('k')
         depth_radius = int(IR_node.get_attr('size'))
+        #  depth_radius: Half-width of the 1-D normalization window."
         self.builder.add_lrn(output_name, input_name, output_name,
-                          alpha=alpha * C,
+                          alpha=alpha,
                           beta=beta,
-                          local_size=depth_radius,
+                          local_size=2*depth_radius-1,
                           k=k)
 
 

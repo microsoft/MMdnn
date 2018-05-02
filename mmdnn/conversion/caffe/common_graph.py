@@ -26,6 +26,8 @@ def assign_attr_value(attr, val):
 
         if isinstance(val[0], int):
             attr.list.i.extend(val)
+        elif isinstance(val[0], long):
+            attr.list.i.extend(val)
         elif isinstance(val[0], TensorShape):
             attr.list.shape.extend(val)
         else:
@@ -48,7 +50,7 @@ class Node(object):
         assert isinstance(node_pb2, NodeDef)
         self.node_pb2 = node_pb2
         self.output = []
-        
+
     @staticmethod
     def create(op, **kwargs):
         node_pb2 = NodeDef()
@@ -122,7 +124,7 @@ class Graph(object):
             if name in self.node_dict:
                 input_nodes.append(self.get_node(name))
         return input_nodes
-    
+
     def as_graph_def(self):
         graph_pb2 = GraphDef()
         graph_pb2.version = self.version

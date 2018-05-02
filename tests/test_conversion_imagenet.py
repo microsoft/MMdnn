@@ -676,9 +676,9 @@ class TestModels(CorrectnessTest):
             'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'squeezenet'    : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'vgg19'         : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'voc-fcn8s'     : [CntkEmit, TensorflowEmit],
-            'voc-fcn16s'    : [CntkEmit, TensorflowEmit],
-            'voc-fcn32s'    : [CntkEmit, TensorflowEmit],
+            'voc-fcn8s'     : [CntkEmit, CoreMLEmit, TensorflowEmit],
+            'voc-fcn16s'    : [CntkEmit, CoreMLEmit, TensorflowEmit],
+            'voc-fcn32s'    : [CntkEmit, CoreMLEmit, TensorflowEmit],
             'xception'      : [CoreMLEmit, CntkEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  TODO: Caffe(Crash) KerasEmit(too slow)
         },
 
