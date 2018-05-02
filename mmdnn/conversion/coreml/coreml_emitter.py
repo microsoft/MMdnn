@@ -56,6 +56,7 @@ class CoreMLEmitter(Emitter):
             shape = _infer_coreml_input_shape(shape)
 
             output_features.append((str(output_node), shape))
+
             print("CoreML Model Output Layer: [{}] {}".format(output_node, shape))
 
         return list(input_features), list(output_features)
@@ -441,6 +442,37 @@ class CoreMLEmitter(Emitter):
             )
 
 
+    def emit_ReduceMean(self, IR_node):
+        """
+        Convert ReduceMean layer to coreml.
+        """
+
+        axis = IR_node.get_attr('axes', [1,2])
+
+#       Allowed values: 'CHW', 'HW', 'C', 'H', 'W'
+        if len(axis) == 1:
+            if axis[0] == 0:
+                axis_str = 'C'
+            elif axis[0] == 1:
+                axis_str = 'H'
+            elif axis[0] == 2:
+                axis_str = 'W'
+        elif len(axis) == 2:
+            axis_str = 'HW'
+        elif len(axis) == 3:
+            axis_str = 'CHW'
+
+        # Get input and output names
+        input_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+
+
+        self.builder.add_reduce(IR_node.name,
+                            input_name = input_name,
+                            output_name = IR_node.name,
+                            axis = axis_str,
+                            mode = 'avg',
+                            epsilon = 1e-6)
+
 
     def emit_DataInput(self, IR_node):
         """ Layers that can be skipped. """
@@ -761,12 +793,20 @@ class CoreMLEmitter(Emitter):
         # Now add the layer
         self.builder.add_padding(name = IR_node.name,
             left = left, right=right, top=top, bottom=bottom, value = 0,
-            input_name = input_name, output_name=output_name
+            input_name = input_name, output_name=output_name, padding_type = padding_type
             )
 
 
     def emit_Squeeze(self, IR_node):
-        self.emit_Flatten(IR_node)
+        input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        output_name=IR_node.real_name
+        # print(IR_node.layer)
+        self.builder.add_bias(name = IR_node.name,
+                              b = 0,
+                              input_name = input_name,
+                              output_name = output_name,
+                              shape_bias = [1])
+        # self.emit_Flatten(IR_node)
 
 
     def emit_LRN(self, IR_node):

@@ -573,8 +573,6 @@ class TestModels(CorrectnessTest):
                         )
 
 
-
-
         emitter = CoreMLEmitter(architecture_path, weight_path)
         model, input_name, output_name = emitter.gen_model(
                 input_names=None,
@@ -597,9 +595,6 @@ class TestModels(CorrectnessTest):
         # load model
         model = MLModel(model)
 
-
-        # save model
-        # coremltools.utils.save_spec(model.get_spec(), converted_file)
 
         from coremltools.models.utils import macos_version
 

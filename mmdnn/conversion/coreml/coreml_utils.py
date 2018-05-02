@@ -8,9 +8,12 @@ from coremltools.models import datatypes
 def _infer_coreml_input_shape(IR_shape, if_convert=True):
     """Infer CoreML input shape from IR shape.
     """
-
     if len(IR_shape) == 0:
-        shape = [1, 1, 1]
+        # the end of the tensorflow_resnet_v2_50's squeeze shape is [unknown_rank: true] with len 0
+        # 1001 means the 1001 classes for tensorflow_resnet_v2_50
+        # !Alert! TODO
+        # Future implement can be changed to the last two layer
+        shape = [1001,1,1]
     elif len(IR_shape) == 1:
         # TODO - remove style transfer 1D hack
         # Input is 1D but it goes to the width dimension: (1,1,W)
