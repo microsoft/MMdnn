@@ -7,13 +7,13 @@ We tested some Caffe pre-trained models to others, get more detail from [this fi
 Models                   | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML
 :-----------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|
 Vgg19                    |   √   |   √   |     √      |  √   |   √   |      √     |    √
-AlexNet                  |   √   |       |     √      |  √   |   √   |      √     |
-Inception_v1             |   √   |   √   |     √      |  √   |   √   |      √     |
-Inception_v4             |       |   √   |     √      |  o   |       |      √     |
-ResNet 152               |   √   |   √   |     √      |  √   |   √   |      √     |
-SqueezeNet               |   √   |   √   |     √      |  √   |   √   |      √     |
-Xception                 |       |       |     √      |  √   |   √   |      √     |
-voc-FCN8s/FCN16s/FCN32s  |       |       |     √      |      |       |            |
+AlexNet                  |   √   |       |     √      |  √   |   √   |      √     |    √
+Inception_v1             |   √   |   √   |     √      |  √   |   √   |      √     |    √
+Inception_v4             |       |   √   |     √      |  o   |       |      √     |    √
+ResNet 152               |   √   |   √   |     √      |  √   |   √   |      √     |    √
+SqueezeNet               |   √   |   √   |     √      |  √   |   √   |      √     |    √
+Xception                 |       |       |     √      |  √   |   √   |      √     |    √
+voc-FCN8s/FCN16s/FCN32s  |       |       |     √      |      |       |            |    √
 
 **√** - Correctness tested
 
