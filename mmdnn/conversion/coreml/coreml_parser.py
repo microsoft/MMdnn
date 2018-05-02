@@ -287,7 +287,7 @@ class CoremlParser(Parser):
 
         # kwargs['kernel_shape'] = weights.shape
 
-        kwargs['groups'] = source_node_conv.nGroups
+        kwargs['group'] = source_node_conv.nGroups
 
         # strides
         # [1, sd, sh, sw, 1]
