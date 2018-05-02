@@ -164,7 +164,6 @@ class CoreMLEmitter(Emitter):
         """
         Convert convolution layer to coreml.
         """
-
         has_bias = IR_node.get_attr('use_bias', False)
         is_deconv = False
 
@@ -173,9 +172,9 @@ class CoreMLEmitter(Emitter):
         kernel_shape = IR_node.get_attr('kernel_shape')
 
         if len(kernel_shape) == 4:
-            height, width, kernel_channels, output_channels = kernel_shape
+            height, width, input_channels, output_channels = kernel_shape
         elif len(kernel_shape) == 5:
-            depth, height, width, kernel_channels, output_channels = kernel_shape
+            depth, height, width, input_channels, output_channels = kernel_shape
         else:
             raise NotImplementedError()
 
@@ -183,7 +182,6 @@ class CoreMLEmitter(Emitter):
 
         # W should have shape (height, width, kernel_channels, output_channels), where kernel_channel = input_channels / groups
         W = self.weights_dict[IR_node.name]['weights']
-        W = W.reshape(kernel_shape)
         b = self.weights_dict[IR_node.name]['bias'] if has_bias else None
 
 
@@ -196,6 +194,7 @@ class CoreMLEmitter(Emitter):
 
         groups = IR_node.get_attr('group', 1)
 
+        kernel_channels = input_channels / groups
         padding = self._get_padding(IR_node)
 
         if isinstance(padding, list):
