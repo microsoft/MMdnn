@@ -99,7 +99,7 @@ class DarknetGraph(Graph):
                 channels = input_shape[3]
                 # assert False
 
-                if block.has_key('name'):
+                if 'name' in block.keys():
                     conv_layer['name'] = block['name']
                 else:
                     conv_layer['name'] = 'layer%d-conv' % i
@@ -132,7 +132,7 @@ class DarknetGraph(Graph):
 
 
                     input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')
-                    if block.has_key('name'):
+                    if 'name' in block.keys():
                         bn_layer['name'] = '%s-bn' % block['name']
                     else:
                         bn_layer['name'] = 'layer%d-bn' % i
@@ -154,7 +154,7 @@ class DarknetGraph(Graph):
                 if block['activation'] != 'linear':
                     relu_layer = OrderedDict()
                     relu_layer['input'] = [pre_node_name]
-                    if block.has_key('name'):
+                    if 'name' in block.keys():
                         relu_layer['name'] = '%s-act' % block['name']
                     else:
                         relu_layer['name'] = 'layer%d-act' % i
@@ -177,7 +177,7 @@ class DarknetGraph(Graph):
             elif block['type'] == 'maxpool':
                 max_layer = OrderedDict()
                 max_layer['input'] = [pre_node_name]
-                if block.has_key('name'):
+                if 'name' in block.keys():
                     max_layer['name'] = block['name']
                 else:
                     max_layer['name'] = 'layer%d-maxpool' % i
@@ -187,7 +187,7 @@ class DarknetGraph(Graph):
                 pooling_param['stride'] = int(block['stride'])
                 pooling_param['pool'] = 'MAX'
                 pooling_param['padding'] = 0
-                if block.has_key('pad') and int(block['pad']) == 1:
+                if 'name' in block.keys(): and int(block['pad']) == 1:
                     pooling_param['padding'] = (int(block['size'])-1)/2
 
                 input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')
@@ -207,7 +207,7 @@ class DarknetGraph(Graph):
                 avg_layer = OrderedDict()
 
                 avg_layer['input'] = [pre_node_name]
-                if block.has_key('name'):
+                if 'name' in block.keys():
                     avg_layer['name'] = block['name']
                 else:
                     avg_layer['name'] = 'layer%d-avgpool' % i
@@ -254,7 +254,7 @@ class DarknetGraph(Graph):
                     route_param['_output_shape'] = input_shape[0][:-1] + [shape_]
                     route_layer['input'] = input_list
 
-                    if block.has_key('name'):
+                    if 'name' in block.keys():
                         route_layer['name'] = block['name']
                     else:
                         route_layer['name'] = 'layer%d-concat' % i
@@ -276,7 +276,7 @@ class DarknetGraph(Graph):
                 shortcut_layer = OrderedDict()
                 shortcut_layer['input'] = [bottom1, bottom2]
                 # print(shortcut_layer['input'] )
-                if block.has_key('name'):
+                if 'name' in block.keys():
                     shortcut_layer['name'] = block['name']
                 else:
                     shortcut_layer['name'] = 'layer%d-shortcut' % i
@@ -295,7 +295,7 @@ class DarknetGraph(Graph):
                 if block['activation'] != 'linear':
                     relu_layer = OrderedDict()
                     relu_layer['input'] = [pre_node_name]
-                    if block.has_key('name'):
+                    if 'name' in block.keys():
                         relu_layer['name'] = '%s-act' % block['name']
                     else:
                         relu_layer['name'] = 'layer%d-act' % i
@@ -314,7 +314,7 @@ class DarknetGraph(Graph):
             elif block['type'] == 'connected':
                 fc_layer = OrderedDict()
                 fc_layer['input'] = [pre_node_name]
-                if block.has_key('name'):
+                if 'name' in block.keys():
                     fc_layer['name'] = block['name']
                 else:
                     fc_layer['name'] = 'layer%d-fc' % i
@@ -332,7 +332,7 @@ class DarknetGraph(Graph):
                 if block['activation'] != 'linear':
                     relu_layer = OrderedDict()
                     relu_layer['input'] = [pre_node_name]
-                    if block.has_key('name'):
+                    if 'name' in block.keys():
                         relu_layer['name'] = '%s-act' % block['name']
                     else:
                         relu_layer['name'] = 'layer%d-act' % i
@@ -351,7 +351,7 @@ class DarknetGraph(Graph):
                 sm_layer = OrderedDict()
 
                 sm_layer['input'] = [pre_node_name]
-                if block.has_key('name'):
+                if 'name' in block.keys():
                     sm_layer['name'] = block['name']
                 else:
                     sm_layer['name'] = 'layer%d-softmax' % i
@@ -369,7 +369,7 @@ class DarknetGraph(Graph):
 
                 yolo_layer = OrderedDict()
                 yolo_layer['input'] = [pre_node_name]
-                if block.has_key('name'):
+                if 'name' in block.keys():
                     yolo_layer['name'] = block['name']
                 else:
                     yolo_layer['name'] = 'layer%d-yolo' % i
@@ -396,7 +396,7 @@ class DarknetGraph(Graph):
                 input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')
                 upsample_layer = OrderedDict()
                 upsample_layer['input'] = [pre_node_name]
-                if block.has_key('name'):
+                if 'name' in block.keys():
                     upsample_layer['name'] = block['name']
                 else:
                     upsample_layer['name'] = 'layer%d-upsample' % i
@@ -419,7 +419,7 @@ class DarknetGraph(Graph):
                 input_shape = self.layer_map[pre_node_name].get_attr('_output_shape')
                 reorg_layer = OrderedDict()
                 reorg_layer['input'] = [pre_node_name]
-                if block.has_key('name'):
+                if 'name' in block.keys():
                     reorg_layer['name'] = block['name']
                 else:
                     reorg_layer['name'] = 'layer%d-reorg' % i
@@ -441,7 +441,7 @@ class DarknetGraph(Graph):
                 # print(block)
                 region_layer = OrderedDict()
                 region_layer['input'] = [pre_node_name]
-                if block.has_key('name'):
+                if 'name' in block.keys():
                     region_layer['name'] = block['name']
                 else:
                     region_layer['name'] = 'layer%d-region' % i
