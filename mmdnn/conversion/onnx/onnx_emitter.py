@@ -22,11 +22,6 @@ class OnnxEmitter(Emitter):
         else:
             self._load_weights(weight)
 
-    @staticmethod
-    def _shapeToStr(shapes):
-        ret = [dim.size if dim.size != -1 else 1 for dim in shapes.dim]
-        return ', '.join('%s' % i for i in ret)
-
     @property
     def header_code(self):
         return """import numpy as np
@@ -98,14 +93,20 @@ def KitModel(weight_file = None):
             self.outputs.append(IR_node.variable_name + '_out')
 
     def emit_DataInput(self, IR_node):
-        shape_str = self._shapeToStr(IR_node.IR_layer.attr["shape"].shape)
+        shape = [dim.size if dim.size != -1 else 1 for dim in IR_node.IR_layer.attr["shape"].shape.dim]
+        shape_str = ', '.join('%s' % i for i in shape)
         dtype_str = self.dtype_map[IR_node.layer.attr['dtype'].type]
         self.add_body(1, "{:<15} = helper.make_tensor_value_info('{}', {}, ({},))".format(
-            IR_node.variable_name,
-            IR_node.variable_name,
+            IR_node.variable_name + '_orig',
+            IR_node.variable_name + '_orig',
             dtype_str,
             shape_str))
-        self.inputs.append(IR_node.variable_name)
+        self.add_body(1, "{:15} = helper.make_node('Transpose', inputs=['{}'], outputs=['{}'], perm=[0, 3, 1, 2])".format(
+            IR_node.variable_name,
+            IR_node.variable_name + '_orig',
+            IR_node.variable_name))
+        self.inputs.append(IR_node.variable_name + '_orig')
+        self.nodes.append(IR_node.variable_name)
 
     def emit_Conv(self, IR_node):
         dilations = list(IR_node.get_attr('dilations'))[1:-1]
@@ -288,7 +289,7 @@ def KitModel(weight_file = None):
         self.nodes.append(IR_node.variable_name)
 
     def emit_Concat(self, IR_node):
-        axis = IR_node.get_attr('axis')
+        axis = IR_node.get_attr('axis') - 2
         inputs = ', '.join("'" + self.IR_graph.get_node(i).real_variable_name + "'" for i in IR_node.in_edges)
         self.add_body(1, "{:15} = helper.make_node('Concat', inputs=[{}], outputs=['{}'], axis={})".format(
             IR_node.variable_name,

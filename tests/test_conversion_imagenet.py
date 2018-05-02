@@ -620,6 +620,37 @@ class TestModels(CorrectnessTest):
 
             return prob
 
+    @staticmethod
+    def OnnxEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
+
+        original_framework = checkfrozen(original_framework)
+
+        # IR to code
+        converted_file = original_framework + '_onnx_' + architecture_name + "_converted"
+        converted_file = converted_file.replace('.', '_')
+        emitter = OnnxEmitter(architecture_path, weight_path)
+        emitter.run(converted_file + '.py', None, 'test')
+        del emitter
+        del OnnxEmitter
+
+        # import converted model
+        from onnx_tf.backend import prepare
+        model_converted = __import__(converted_file).KitModel(weight_path)
+        tf_rep = prepare(model_converted)
+
+        func = TestKit.preprocess_func[original_framework][architecture_name]
+        img = func(image_path)
+        input_data = np.expand_dims(img, 0)
+
+        predict = tf_rep.run(input_data)[0]
+
+        del prepare
+        del model_converted
+        del tf_rep
+        os.remove(converted_file + '.py')
+
+        return predict
 
     exception_tabel = {
         'cntk_Keras_resnet18',                      # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
@@ -642,22 +673,20 @@ class TestModels(CorrectnessTest):
     }
 
 
-
-
     test_table = {
         'cntk' : {
-            'alexnet'       : [CntkEmit, KerasEmit, TensorflowEmit],
+            # 'alexnet'       : [CntkEmit, KerasEmit, TensorflowEmit],
             'inception_v3'  : [CntkEmit, PytorchEmit, TensorflowEmit], #TODO: Caffe, Keras, and MXNet no constant layer
             'resnet18'      : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
         },
 
         'keras' : {
-            'vgg16'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'vgg19'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'inception_v3' : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'resnet50'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
-            'densenet'     : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CoreMLEmit],
+            'vgg16'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'vgg19'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'inception_v3' : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'resnet50'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'densenet'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit, OnnxEmit],
             'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
             'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
             'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
@@ -665,13 +694,13 @@ class TestModels(CorrectnessTest):
         },
 
         'mxnet' : {
-            'vgg19'                        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'imagenet1k-inception-bn'      : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'imagenet1k-resnet-18'         : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'imagenet1k-resnet-152'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
-            'squeezenet_v1.1'              : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CaffeEmit],
-            'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, TensorflowEmit, PytorchEmit, MXNetEmit], # Keras is ok but too slow
-            'imagenet1k-resnext-50'        : [CaffeEmit, CntkEmit, TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit],
+            'vgg19'                        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'imagenet1k-inception-bn'      : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'imagenet1k-resnet-18'         : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'imagenet1k-resnet-152'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'squeezenet_v1.1'              : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'imagenet1k-resnext-101-64x4d' : [CaffeEmit, CntkEmit, CoreMLEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # Keras is ok but too slow
+            'imagenet1k-resnext-50'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
         },
 
         'caffe' : {
@@ -681,9 +710,9 @@ class TestModels(CorrectnessTest):
             'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'squeezenet'    : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'vgg19'         : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'voc-fcn8s'     : [CntkEmit, TensorflowEmit],
-            'voc-fcn16s'    : [CntkEmit, TensorflowEmit],
-            'voc-fcn32s'    : [CntkEmit, TensorflowEmit],
+            'voc-fcn8s'     : [CntkEmit, CoreMLEmit, TensorflowEmit],
+            'voc-fcn16s'    : [CntkEmit, CoreMLEmit, TensorflowEmit],
+            'voc-fcn32s'    : [CntkEmit, CoreMLEmit, TensorflowEmit],
             'xception'      : [CoreMLEmit, CntkEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  TODO: Caffe(Crash) KerasEmit(too slow)
         },
 
@@ -697,8 +726,9 @@ class TestModels(CorrectnessTest):
             'resnet_v2_50'      : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
             'resnet_v2_152'     : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'mobilenet_v1_1.0'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
-            # 'inception_resnet_v2' : [CntkEmit, TensorflowEmit, KerasEmit], # TODO PytorchEmit
-            # 'nasnet-a_large' : [TensorflowEmit, KerasEmit, PytorchEmit], # TODO
+            'nasnet-a_large'    : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
+            # 'inception_resnet_v2' : [TensorflowEmit], # TODO PytorchEmit
+
         },
 
         'tensorflow_frozen' : {
@@ -772,8 +802,6 @@ class TestModels(CorrectnessTest):
 
 
 
-
-
     def test_caffe(self):
         try:
             import caffe
@@ -781,12 +809,14 @@ class TestModels(CorrectnessTest):
         except ImportError:
             print('Please install caffe! Or caffe is not supported in your platform.', file=sys.stderr)
 
+
     def test_cntk(self):
         try:
             import cntk
             self._test_function('cntk', self.CntkParse)
         except ImportError:
             print('Please install cntk! Or cntk is not supported in your platform.', file=sys.stderr)
+
 
     def test_coreml(self):
         from coremltools.models.utils import macos_version
@@ -799,8 +829,10 @@ class TestModels(CorrectnessTest):
     def test_keras(self):
         self._test_function('keras', self.KerasParse)
 
+
     def test_mxnet(self):
         self._test_function('mxnet', self.MXNetParse)
+
 
     def test_darknet(self):
         self._test_function('darknet', self.DarknetParse)

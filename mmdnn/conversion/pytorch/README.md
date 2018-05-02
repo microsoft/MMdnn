@@ -20,7 +20,7 @@ Support frameworks: ['alexnet', 'densenet121', 'densenet161', 'densenet169', 'de
 > Note: We need to transform the IR weights to PyTorch suitable weights. Use argument *-dw* to specify the output weight file name.
 
 ```bash
-$ mmtoir -f pytorch -n inception_v3.pb --IRWeightPath inception_v3.npy --dstModelPath pytorch_inception_v3.py -dw pytorch_inception_v3.npy
+$ mmtocode -f pytorch -n inception_v3.pb --IRWeightPath inception_v3.npy --dstModelPath pytorch_inception_v3.py -dw pytorch_inception_v3.npy
 
 Parse file [kit_imagenet.pb] with binary format successfully.
 Target network code snippet is saved as [pytorch_inception_v3.py].
