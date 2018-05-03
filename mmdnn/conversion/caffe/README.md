@@ -23,6 +23,8 @@ voc-FCN8s/FCN16s/FCN32s  |       |       |     √      |      |       |        
 
 ---
 
+# Usage
+
 ## Download Caffe pre-trained model
 
 ```bash
@@ -59,7 +61,7 @@ Then you get the CNTK original model *caffe_resnet152.dnn* converted from Caffe.
 
 ## Step-by-step conversion (for debugging)
 
-### Convert model from Caffe to IR (Caffe -> IR)
+### Convert models from Caffe to IR (Caffe -> IR)
 
 You can use following bash command to convert the network architecture [*resnet152-deploy.prototxt*] with weights [*resnet152.caffemodel*] to IR architecture file [*caffe_resnet_IR.pb*], [*caffe_resnet_IR.json*] and IR weights file [*caffe_resnet_IR.npy*]
 
@@ -73,9 +75,9 @@ IR network structure is saved as [caffe_resnet_IR.pb].
 IR weights are saved as [caffe_resnet_IR.npy].
 ```
 
-### Convert model from IR to Caffe code (IR -> Caffe)
+### Convert models from IR to Caffe code (IR -> Caffe)
 
-You can use following bash command to convert the IR architecture file [*caffe_resnet_IR*] and weights file [*caffe_resnet_IR.npy*] to Caffe Python code file[*caffe_converted.py*] and IR weights file suit for caffe model[*caffe_converted.npy*]
+You can use following bash command to convert the IR architecture file [*caffe_resnet_IR.pb*] and weights file [*caffe_resnet_IR.npy*] to Caffe Python code file[*caffe_converted.py*] and IR weights file suit for caffe model[*caffe_converted.npy*]
 
 ```bash
 $ mmtocode -f caffe -n caffe_resnet_IR.pb -w caffe_resnet_IR.npy -d caffe_converted.py -dw caffe_converted.npy
@@ -85,9 +87,9 @@ Target network code snippet is saved as [caffe_converted.py].
 Target weights are saved as [caffe_converted.npy].
 ```
 
-### Generate original Caffe model
+### Generate Caffe model from code snippet file and weight file
 
-You can use following bash command to generate caffe architecture file [*caffe_target.prototxt*] and weights file [*caffe_target.caffemodel*] from python code [*caffe_converted.py*] and weights file [*caffe_converted.npy*]
+You can use following bash command to generate caffe architecture file [*caffe_target.prototxt*] and weights file [*caffe_target.caffemodel*] from python code [*caffe_converted.py*] and weights file [*caffe_converted.npy*] for further usage.
 
 ```bash
 $ mmtomodel -f caffe -in caffe_converted.py -iw caffe_converted.npy -o caffe_target
@@ -96,6 +98,14 @@ Caffe model files are saved as [caffe_target.prototxt] and [caffe_target.caffemo
 ```
 
 Then you can use Caffe to load the *caffe_target.prototxt* and *caffe_target.caffemodel* files for future use.
+
+## Develop version
+
+Ubuntu 16.04 with
+
+- Caffe 1.0.0
+
+@ 05/03/2018
 
 ## Limitation
 
