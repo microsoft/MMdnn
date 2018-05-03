@@ -240,14 +240,33 @@ def KitModel(weight_file = None):
             bias_str = "bias_initializer = tf.constant_initializer(__weights_dict['{}']['bias']), ".format(IR_node.name)
         else: bias_str = ""
 
-        code = "{:<15} = tf.layers.dense({}, {}, {}{}use_bias = {})".format(
-            IR_node.variable_name,
-            self.parent_variable_name(IR_node),
-            IR_node.layer.attr['units'].i,
-            kernel_str,
-            bias_str,
-            IR_node.layer.attr['use_bias'].b)
-        self.add_body(1, code)
+        # check whether flatten operator should be added
+        parent = self.IR_graph.get_parent(IR_node.name, [0])
+        parent_shape = shape_to_list(parent.get_attr('_output_shapes')[0])
+        if len(parent_shape) > 2:
+            # flatten is needed
+            self.add_body(1, "{:<15} = tf.contrib.layers.flatten({})".format(
+                IR_node.variable_name + '_flatten',
+                self.parent_variable_name(IR_node)))
+
+            code = "{:<15} = tf.layers.dense({}, {}, {}{}use_bias = {})".format(
+                IR_node.variable_name,
+                IR_node.variable_name + '_flatten',
+                IR_node.layer.attr['units'].i,
+                kernel_str,
+                bias_str,
+                IR_node.layer.attr['use_bias'].b)
+            self.add_body(1, code)
+
+        else:
+            code = "{:<15} = tf.layers.dense({}, {}, {}{}use_bias = {})".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                IR_node.layer.attr['units'].i,
+                kernel_str,
+                bias_str,
+                IR_node.layer.attr['use_bias'].b)
+            self.add_body(1, code)
 
 
     def emit_Flatten(self, IR_node):

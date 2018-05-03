@@ -127,6 +127,8 @@ $ mmtoir -f keras -w imagenet_inception_v3.h5 -o keras_inception_v3
 
 - [Tensorflow slim model "ResNet V2 152" to PyTorch](https://github.com/Microsoft/MMdnn/blob/master/docs/tf2pytorch.md)
 
+- [Mxnet model "LResNet50E-IR" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/85) and [related issue](https://github.com/Microsoft/MMdnn/issues/135)
+
 ### Users' Examples
 
 - [MXNet "ResNet-152-11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
