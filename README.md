@@ -31,7 +31,7 @@ pip install -U git+https://github.com/Microsoft/MMdnn.git@master
 
 Across the industry and academia, there are a number of existing frameworks available for developers and researchers to design a model, where each framework has its own network structure definition and saving model format. The gaps between frameworks impede the inter-operation of the models.
 
-<img src="https://github.com/Microsoft/MMdnn/blob/master/docs/supported.jpg" width="633" height="640">
+<img src="https://github.com/Microsoft/MMdnn/blob/master/docs/supported.jpg" width="633" >
 
 We provide a model converter to help developers convert models between frameworks, through an intermediate representation format.
 
