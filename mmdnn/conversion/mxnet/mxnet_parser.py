@@ -898,6 +898,9 @@ class MXNetParser(Parser):
         value = source_node.get_attr('scalar')
         value_node = self.IR_graph.node.add()
         value_node.name = source_node.real_name + "_second"
+        # left strip the "_" at the beginning of the name
+        # Issue #85, #135
+        value_node.name = value_node.name.lstrip('_')
         value_node.op = 'Constant'
         self.set_weight(value_node.name, 'value', np.array([value], np.float32))
 
