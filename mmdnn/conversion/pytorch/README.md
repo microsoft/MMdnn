@@ -13,23 +13,31 @@ You can refer [PyTorch model extractor](https://github.com/Microsoft/MMdnn/blob/
 ```bash
 $ mmdownload -f pytorch -h
 Support frameworks: ['alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201', 'inception_v3', 'resnet101', 'resnet152', 'resnet18', 'resnet34', 'resnet50', 'squeezenet1_0', 'squeezenet1_1', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
+
+$ mmdownload -f pytorch -n resnet50 -o ./
+Downloading: "https://download.pytorch.org/models/resnet50-19c8e357.pth" to /home/ruzhang/.torch/models/resnet50-19c8e357.pth
+100%|████████████████████████████████████████████████████████████████████████| 102502400/102502400 [00:06<00:00, 15858546.50it/s]
+PyTorch pretrained model is saved as [.//imagenet_resnet50.pth].
+
 ```
 
 ### Convert models from IR to PyTorch code snippet and weights
+
+You can use following bash command to convert the IR architecture file [*inception_v3.pb*] and weights file [*inception_v3.npy*] to Caffe Python code file[*pytorch_inception_v3.py*] and IR weights file suit for caffe model[*pytorch_inception_v3.npy*]
 
 > Note: We need to transform the IR weights to PyTorch suitable weights. Use argument *-dw* to specify the output weight file name.
 
 ```bash
 $ mmtocode -f pytorch -n inception_v3.pb --IRWeightPath inception_v3.npy --dstModelPath pytorch_inception_v3.py -dw pytorch_inception_v3.npy
 
-Parse file [kit_imagenet.pb] with binary format successfully.
+Parse file [inception_v3.pb] with binary format successfully.
 Target network code snippet is saved as [pytorch_inception_v3.py].
 Target weights are saved as [pytorch_inception_v3.npy].
 ```
 
-### Convert models from IR to PyTorch original model
+### Generate PyTorch model from code snippet file and weight file
 
-After generating the PyTorch code snippet, you can convert the code and weights file to PyTorch original model for further usage.
+You can use following bash command to generate PyTorch model file [*pytorch_inception_v3.pth*] from python code [*pytorch_inception_v3.py*] and weights file [*pytorch_inception_v3.npy*] for further usage.
 
 ```bash
 $ mmtomodel -f pytorch -n pytorch_inception_v3.py -w pytorch_inception_v3.npy --dump pytorch_inception_v3.pth
