@@ -42,7 +42,7 @@ class CoremlParser(Parser):
         'parametricSoftplus'    : "ParametricSoftplus"
     }
 
-    shape_dict = {}
+
 
 
     def __init__(self, model):
@@ -251,7 +251,7 @@ class CoremlParser(Parser):
             # reshape the weight!
             [h , w , k , o] = list(source_node_conv.kernelSize) + [source_node_conv.kernelChannels , source_node_conv.outputChannels]
             # [2, 3, 0, 1]
-            weights = np.array(source_node_conv.weights.floatValue).reshape([o, k, h, w]).transpose([2, 3, 1, 0])
+            weights = np.array(source_node_conv.weights.floatValue, dtype=np.float32).reshape([o, k, h, w]).transpose([2, 3, 1, 0])
 
 
 
@@ -281,7 +281,7 @@ class CoremlParser(Parser):
 
         self.set_weight(source_node.name, 'weights',  weights)
         if source_node_layer.convolution.HasField('bias'):
-            self.set_weight(source_node.name, 'bias', np.array(source_node_conv.bias.floatValue))
+            self.set_weight(source_node.name, 'bias', np.array(source_node_conv.bias.floatValue, dtype=np.float32))
 
 
 
@@ -428,6 +428,7 @@ class CoremlParser(Parser):
             source_node.real_name = flatten_node_layer.name
 
     def _convert_merge(self, source_node, new_name = None):
+
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -436,7 +437,10 @@ class CoremlParser(Parser):
         # input edge
         self.convert_inedge(source_node, IR_node)
 
-        # For concat axis TODO
+        # For concat axis
+        # NO axis in coreml, so set the last axis
+        IR_node.attr['axis'].i = -1
+
         return IR_node
 
 
@@ -632,18 +636,18 @@ class CoremlParser(Parser):
         IR_node.attr['epsilon'].f = coreml_node_bn.epsilon
 
         if IR_node.attr['scale'].b:
-            self.set_weight(coreml_node_layer.name, "scale", np.array(coreml_node_bn.gamma.floatValue))
+            self.set_weight(coreml_node_layer.name, "scale", np.array(coreml_node_bn.gamma.floatValue, dtype=np.float32))
 
         if IR_node.attr['bias'].b:
-            self.set_weight(coreml_node_layer.name, "bias", np.array(coreml_node_bn.beta.floatValue))
+            self.set_weight(coreml_node_layer.name, "bias", np.array(coreml_node_bn.beta.floatValue, dtype=np.float32))
 
 
 
         gamma, beta = None, None
         if IR_node.attr['scale'].b:
-            gamma = np.array(coreml_node_bn.gamma.floatValue)
+            gamma = np.array(coreml_node_bn.gamma.floatValue, dtype=np.float32)
         if IR_node.attr['bias'].b:
-            beta =  np.array(coreml_node_bn.beta.floatValue)
+            beta =  np.array(coreml_node_bn.beta.floatValue, dtype=np.float32)
 
         mean = np.array(coreml_node_bn.mean.floatValue)
         variance  =  np.array(coreml_node_bn.variance.floatValue)
@@ -658,6 +662,12 @@ class CoremlParser(Parser):
         beta1 = beta - gamma*mean*f
         mean[:] = 0.0 #mean
         variance[:] = 1.0 - .00001 #stddev
+
+        # convert type because of tensorflow
+        gamma1 = gamma1.astype(np.float32)
+        beta1 = beta1.astype(np.float32)
+        mean = mean.astype(np.float32)
+        variance = variance.astype(np.float32)
 
 
         if IR_node.attr['scale'].b:
@@ -760,7 +770,6 @@ class CoremlParser(Parser):
         self.convert_inedge(coreml_node, IR_node)
 
     def rename_Concatenate(self, source_node):
-        # assert False
         IR_node = self._convert_merge(source_node, 'Concat')
 
 
