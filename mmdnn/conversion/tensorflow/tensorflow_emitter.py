@@ -331,6 +331,14 @@ def KitModel(weight_file = None):
             self.parent_variable_name(IR_node),
             IR_node.name))
 
+    def emit_LeakyRelu(self, IR_node):
+        self.add_body(1, "{:<15} = tf.nn.leaky_relu({}, alpha={}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('alpha'),
+            IR_node.name
+        ))
+
 
     def emit_Softmax(self, IR_node):
         self._emit_unary_operation(IR_node, 'nn.softmax')
@@ -385,6 +393,7 @@ def KitModel(weight_file = None):
         padding = convert_onnx_pad_to_tf(padding)
 
         mode = IR_node.get_attr('mode', 'constant')
+        mode = mode.lower()
         if mode == 'constant' or mode == 'reflect':
             mode = mode.upper()
         elif mode == 'edge':
