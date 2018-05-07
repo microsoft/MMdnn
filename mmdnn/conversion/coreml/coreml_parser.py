@@ -293,7 +293,10 @@ class CoremlParser(Parser):
         # [1, sd, sh, sw, 1]
         kwargs['strides'] = [1] + list(source_node_conv.stride) + [1]
 
-        kwargs['dilations'] = [1] + list(source_node_conv.dilationFactor) + [1]
+        dilation = list(source_node_conv.dilationFactor)
+        if dilation == []:
+            dilation = [1,1]
+        kwargs['dilations'] = [1] + dilation + [1]
 
 
         assign_IRnode_values(IR_node, kwargs)
@@ -325,6 +328,10 @@ class CoremlParser(Parser):
 
                 if dim == []:
                     assign_IRnode_values(IR_node, { 'auto_pad': 'VALID'})
+                    pad_dim = [0] * 8
+                    pad_dim = convert_tf_pad_to_onnx(pad_dim)
+
+                    assign_IRnode_values(IR_node, { 'pads':  pad_dim})
                 else:
 
                     # padding
@@ -341,7 +348,36 @@ class CoremlParser(Parser):
 
             elif source_node_conv.HasField('same'):
 
+                # compute padding for 'same'
                 assign_IRnode_values(IR_node, {'auto_pad': "SAME"})
+
+                kernel = list(source_node_conv.kernelSize)
+                dilation = list(source_node_conv.dilationFactor)
+                if dilation == []:
+                    dilation = [1,1]
+                stride = list(source_node_conv.stride)
+                if stride == []:
+                    stride = [1,1]
+
+
+
+                if stride == [1,1]:
+                    # https://discuss.mxnet.io/t/pooling-and-convolution-with-same-mode/528/3
+                    p0 = dilation[0] * ( kernel[0] -1 ) // 2
+                    p1 = dilation[1] * ( kernel[1] -1 ) // 2
+
+                    pad_dim = [0, 0, p0, p0, p1, p1, 0, 0]
+
+                    pad_dim = convert_tf_pad_to_onnx(pad_dim)
+
+                    assign_IRnode_values(IR_node, { 'pads':  pad_dim})
+                else:
+                    pad_dim = [0, 0, 0, 0, 0, 0, 0, 0]
+
+                    pad_dim = convert_tf_pad_to_onnx(pad_dim)
+
+                    assign_IRnode_values(IR_node, { 'pads':  pad_dim})
+
             else:
                 assert False
 
@@ -357,6 +393,10 @@ class CoremlParser(Parser):
 
                 if dim == []:
                     assign_IRnode_values(IR_node, { 'auto_pad': 'VALID'})
+                    pad_dim = [0] * 8
+                    pad_dim = convert_tf_pad_to_onnx(pad_dim)
+
+                    assign_IRnode_values(IR_node, { 'pads':  pad_dim})
                 else:
                     # padding
                     pad_dim = [0, 0]
@@ -371,6 +411,29 @@ class CoremlParser(Parser):
             elif source_node_pool.HasField('same'):
 
                 assign_IRnode_values(IR_node, { 'auto_pad': 'SAME'})
+
+                kernel = list(source_node_pool.kernelSize)
+                stride = list(source_node_pool.stride)
+                if stride == []:
+                    stride = [1,1]
+
+
+                if stride == [1,1]:
+                    # https://discuss.mxnet.io/t/pooling-and-convolution-with-same-mode/528/3
+                    p0 =  ( kernel[0] -1 ) // 2
+                    p1 =  ( kernel[1] -1 ) // 2
+
+                    pad_dim = [0, 0, p0, p0, p1, p1, 0, 0]
+
+                    pad_dim = convert_tf_pad_to_onnx(pad_dim)
+
+                    assign_IRnode_values(IR_node, { 'pads':  pad_dim})
+                else:
+                    pad_dim = [0, 0, 0, 0, 0, 0, 0, 0]
+
+                    pad_dim = convert_tf_pad_to_onnx(pad_dim)
+
+                    assign_IRnode_values(IR_node, { 'pads':  pad_dim})
 
             elif source_node_pool.HasField('includeLastPixel'):
 
@@ -610,10 +673,12 @@ class CoremlParser(Parser):
 
 
     def rename_BatchNormalization(self, coreml_node):
+
         IR_node = self.IR_graph.node.add()
 
         coreml_node_layer = coreml_node.layer
         coreml_node_bn = coreml_node_layer.batchnorm
+
 
         # name, op
         CoremlParser._copy_and_repo(coreml_node, IR_node, "BatchNorm")
@@ -683,10 +748,13 @@ class CoremlParser(Parser):
         self.set_weight(coreml_node_layer.name, "var", variance)
 
     def rename_scale(self, coreml_node):
+
         IR_node = self.IR_graph.node.add()
 
         coreml_node_layer = coreml_node.layer
         coreml_node_scale = coreml_node_layer.scale
+
+
 
         # name, op
         CoremlParser._copy_and_repo(coreml_node, IR_node, "Scale")
