@@ -28,10 +28,11 @@ See [here](https://keras.io/#installation) for more infomation.
 
 #### Install ONNX frontend and backend
 
-Here we use [ONNX-TensorFlow](https://github.com/onnx/onnx-tensorflow) to install ONNX and its TensorFlow backend:
+Here we use [ONNX-TensorFlow](https://github.com/onnx/onnx-tensorflow) to install ONNX and its TensorFlow backend. For complicate reasons, we use the **master branch** of ONNX-TensorFlow:
 
 ```bash
-pip3 install onnx-tf
+git clone https://github.com/onnx/onnx-tensorflow.git
+pip3 install -e onnx-tensorflow/
 ```
 
 #### Install latest ONNX
@@ -164,7 +165,7 @@ Is that the same with Keras output?
 Ubuntu 16.04 with
 
 - Keras 2.1.6
-- onnx-tf 1.0
+- onnx-tf 1.0 (master)
 - ONNX 1.1.1 (master)
 
 @ 2018/04/25
@@ -173,3 +174,4 @@ Ubuntu 16.04 with
 
 - Tested only Keras DenseNet model
 - Need ONNX master branch
+- Need ONNX-Tensorflow master branch

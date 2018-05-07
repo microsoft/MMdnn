@@ -49,6 +49,7 @@ def KitModel(weight_file = None):
 """
 
     def gen_code(self, phase):
+        self.phase = phase
         self.add_body(0, self.header_code)
 
         self.inputs = []
@@ -178,7 +179,7 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_var_array',
                           IR_node.variable_name + '_var_array',
                           IR_node.variable_name + '_var_array'))
-        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={})".format(
+        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={}, is_test={})".format(
                           IR_node.variable_name,
                           self.parent_variable_name(IR_node),
                           IR_node.variable_name + '_scale',
@@ -186,7 +187,8 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_mean',
                           IR_node.variable_name + '_var',
                           IR_node.variable_name,
-                          epsilon))
+                          epsilon,
+                          0 if self.phase == 'train' else 1))
         self.nodes.append(IR_node.variable_name + '_scale')
         self.nodes.append(IR_node.variable_name + '_bias')
         self.nodes.append(IR_node.variable_name + '_mean')
