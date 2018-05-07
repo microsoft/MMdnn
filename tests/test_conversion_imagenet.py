@@ -738,11 +738,11 @@ class TestModels(CorrectnessTest):
         },
 
         'coreml' : {
-            'inception_v3' : [CoreMLEmit, KerasEmit, TensorflowEmit],
-            'mobilenet'    : [CoreMLEmit, KerasEmit, TensorflowEmit],
-            'resnet50'     : [CoreMLEmit, KerasEmit, TensorflowEmit],
+            'inception_v3' : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
+            'mobilenet'    : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
+            'resnet50'     : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
             'tinyyolo'     : [CoreMLEmit, KerasEmit, TensorflowEmit],
-            'vgg16'        : [CoreMLEmit, KerasEmit, TensorflowEmit],
+            'vgg16'        : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
         },
 
         'darknet' : {
