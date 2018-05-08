@@ -18,6 +18,7 @@ from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.DataStructure.emitter import Emitter
 from mmdnn.conversion.common.utils import *
 
+
 class CaffeEmitter(Emitter):
 
     def __init__(self, model):
@@ -179,7 +180,7 @@ if __name__=='__main__':
         num_output = IR_node.get_attr('kernel_shape')[-1]
         if IR_node.type == "DepthwiseConv":
             num_group = IR_node.get_attr("kernel_shape")[-2]
-            num_output = num_group * num_group
+            num_output = num_group * num_output
         else:
             num_group = IR_node.get_attr("group", 1)
 
@@ -324,6 +325,7 @@ bias_term={}, ntop=1)".format(
 
 
     def emit_BatchNorm(self, IR_node):
+
         self.add_body(1, "n.{:<15} = L.BatchNorm(n.{}, eps={}, use_global_stats={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
@@ -355,6 +357,17 @@ bias_term={}, ntop=1)".format(
             self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
         IR_node.real_name = IR_node.name + "_scale"
+
+    def emit_Scale(self, IR_node):
+
+        self.add_body(1, "n.{:<15} = L.Scale(n.{}, bias_term={}, in_place=True, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('use_bias', False)
+        ))
+
+        if self.weight_loaded:
+            self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
 
     def emit_LRN(self, IR_node):
@@ -403,6 +416,15 @@ bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             in_place))
+
+    def emit_LeakyRelu(self, IR_node):
+        in_place = True
+        self.add_body(1, "n.{:<15} = L.ReLU(n.{}, in_place={}, negative_slope={}, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            in_place,
+            IR_node.IR_layer.attr['alpha'].f))
+
 
 
     def emit_PRelu(self, IR_node):
