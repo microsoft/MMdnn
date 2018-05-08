@@ -144,8 +144,16 @@ def KitModel(weight_file = None):
 
     def emit_BatchNorm(self, IR_node):
         epsilon = IR_node.get_attr('epsilon')
-        self.add_body(1, "{:15} = __weights_dict['{}']['scale']".format(IR_node.variable_name + '_scale_array',
-                                                                        IR_node.name))
+        if IR_node.get_attr('scale'):
+            self.add_body(1, "{:15} = __weights_dict['{}']['scale']".format(
+                IR_node.variable_name + '_scale_array',
+                IR_node.name))
+        else:
+            self.add_body(1, "{:15} = np.ndarray(__weights_dict['{}']['bias'].shape, dtype=__weights_dict['{}']['bias'].dtype)".format(
+                              IR_node.variable_name + '_scale_array',
+                              IR_node.name,
+                              IR_node.name))
+            self.add_body(1, "{:15}.fill(1)".format(IR_node.variable_name + '_scale_array'))
         self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
                           IR_node.variable_name + '_scale',
                           IR_node.variable_name + '_scale',
