@@ -807,7 +807,7 @@ def predict(model, labels, url):
         ndim = len(IR_node.layer.attr['_output_shapes'].list.shape[0].dim)
         if axis == 0:
             return 0
-        elif axis == ndim - 1 or axis == -1:
+        elif axis == ndim - 1:
             return 1
         else:
             return axis + 1

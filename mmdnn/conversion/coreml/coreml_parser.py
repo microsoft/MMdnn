@@ -502,7 +502,9 @@ class CoremlParser(Parser):
 
         # For concat axis
         # NO axis in coreml, so set the last axis
-        IR_node.attr['axis'].i = -1
+        IR_node.attr['axis'].i = len(CoremlParser.shape_dict[source_node.layer.output[0]])-1 -1
+        # The first -1 means in coreml there is one-more axis,
+        # The second -1 means the last axis
 
         return IR_node
 
@@ -762,7 +764,9 @@ class CoremlParser(Parser):
         # input edge
         self.convert_inedge(coreml_node, IR_node)
 
+        # bias
         IR_node.attr['use_bias'].b = coreml_node_scale.hasBias
+
 
         self.set_weight(coreml_node_layer.name, "scale", np.array(coreml_node_scale.scale.floatValue))
 
