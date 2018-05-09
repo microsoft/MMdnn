@@ -695,7 +695,7 @@ class TestModels(CorrectnessTest):
 
         'mxnet' : {
             'vgg19'                        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit, OnnxEmit],
-            'imagenet1k-inception-bn'      : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'imagenet1k-inception-bn'      : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit, OnnxEmit],
             'imagenet1k-resnet-18'         : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit, OnnxEmit],
             'imagenet1k-resnet-152'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit, OnnxEmit],
             'squeezenet_v1.1'              : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
