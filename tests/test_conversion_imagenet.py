@@ -676,7 +676,7 @@ class TestModels(CorrectnessTest):
     test_table = {
         'cntk' : {
             # 'alexnet'       : [CntkEmit, KerasEmit, TensorflowEmit],
-            'inception_v3'  : [CntkEmit, PytorchEmit, TensorflowEmit], #TODO: Caffe, Keras, and MXNet no constant layer
+            'inception_v3'  : [CntkEmit, PytorchEmit, TensorflowEmit, OnnxEmit], #TODO: Caffe, Keras, and MXNet no constant layer
             'resnet18'      : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
         },
