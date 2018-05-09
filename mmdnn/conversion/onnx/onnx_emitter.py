@@ -365,5 +365,33 @@ def KitModel(weight_file = None):
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
+    def emit_Constant(self, IR_node):
+        self.add_body(1, "{:15} = __weights_dict['{}']['value']".format(
+            IR_node.variable_name + '_value_array',
+            IR_node.name))
+        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float)))".format(
+                          IR_node.variable_name,
+                          IR_node.variable_name,
+                          IR_node.variable_name + '_value_array',
+                          IR_node.variable_name + '_value_array',
+                          IR_node.variable_name + '_value_array'))
+        self.nodes.append(IR_node.variable_name)
+
+    def emit_Sub(self, IR_node):
+        inputs = ', '.join("'" + self.IR_graph.get_node(i).real_variable_name + "'" for i in IR_node.in_edges)
+        self.add_body(1, "{:15} = helper.make_node('Sub', inputs=[{}], outputs=['{}'], broadcast=1)".format(
+            IR_node.variable_name,
+            inputs,
+            IR_node.variable_name))
+        self.nodes.append(IR_node.variable_name)
+
+    def emit_Mul(self, IR_node):
+        inputs = ', '.join("'" + self.IR_graph.get_node(i).real_variable_name + "'" for i in IR_node.in_edges)
+        self.add_body(1, "{:15} = helper.make_node('Mul', inputs=[{}], outputs=['{}'], broadcast=1)".format(
+            IR_node.variable_name,
+            inputs,
+            IR_node.variable_name))
+        self.nodes.append(IR_node.variable_name)
+
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.IR_layer.name)
