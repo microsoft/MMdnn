@@ -2,6 +2,7 @@ from mmdnn.conversion.common.DataStructure.emitter import Emitter
 from mmdnn.conversion.common.IR.IR_graph import IRGraph
 import os.path
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
+import numpy as np
 
 
 class OnnxEmitter(Emitter):
@@ -78,6 +79,23 @@ def KitModel(weight_file = None):
                       )
         self.add_body(1, "return helper.make_model(graph)")
         return self.body_code
+
+    def run(self, dstNetworkPath, dstWeightPath=None, phase='test'):
+        super(OnnxEmitter, self).run(dstNetworkPath, dstWeightPath, phase)
+        self.save_weights(self.weights_dict, dstWeightPath)
+
+    def check_if_need_transpose(self, IR_node):
+        parent = self.IR_graph.get_parent(IR_node.name, [0])
+        while parent.type == 'Flatten':
+            parent = self.IR_graph.get_parent(parent.name, [0])
+        dim = len(parent.layer.attr['_output_shapes'].list.shape[0].dim)
+        if dim > 2:
+            original_dims = self.weights_dict[IR_node.name]['weights'].shape
+            dims = [i.size for i in parent.layer.attr['_output_shapes'].list.shape[0].dim[1:]] + [-1]
+            self.weights_dict[IR_node.name]['weights'] = self.weights_dict[IR_node.name]['weights']
+            self.weights_dict[IR_node.name]['weights'] = np.reshape(self.weights_dict[IR_node.name]['weights'], dims)
+            self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], [dim - 2] + list(range(0, dim - 2)) + [dim - 1])
+            self.weights_dict[IR_node.name]['weights'] = np.reshape(self.weights_dict[IR_node.name]['weights'], original_dims)
 
     def _process_output_layers(self):
         for name in self.IR_graph.output_layers:
@@ -281,6 +299,7 @@ def KitModel(weight_file = None):
                 self.emit_UNKNOWN(IR_node)
 
     def emit_FullyConnected(self, IR_node):
+        self.check_if_need_transpose(IR_node)
         self.add_body(1, "{:15} = __weights_dict['{}']['weights']".format(
             IR_node.variable_name + '_weight_array',
             IR_node.name))
