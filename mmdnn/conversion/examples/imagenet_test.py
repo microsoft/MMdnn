@@ -102,6 +102,7 @@ class TestKit(object):
             'mobilenet_v1_0.50' : lambda path : TestKit.Standard(path, 224),
             'mobilenet_v1_0.25' : lambda path : TestKit.Standard(path, 224),
             'mobilenet'     : lambda path : TestKit.Standard(path, 224),
+            'mobilenet_v2_1.0_224'  : lambda path : TestKit.Standard(path, 224),
             'nasnet-a_large'     : lambda path : TestKit.Standard(path, 331),
             'inception_resnet_v2' : lambda path : TestKit.Standard(path, 299),
         },
