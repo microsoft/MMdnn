@@ -395,5 +395,14 @@ def KitModel(weight_file = None):
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
+    def emit_Dropout(self, IR_node):
+        self.add_body(1, "{:15} = helper.make_node('Dropout', inputs=['{}'], outputs=['{}'], is_test={}, ratio={})".format(
+                          IR_node.variable_name,
+                          self.parent_variable_name(IR_node),
+                          IR_node.variable_name,
+                          0 if self.phase == 'train' else 1,
+                          1 - IR_node.get_attr('keep_prob')))
+        self.nodes.append(IR_node.variable_name)
+
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.IR_layer.name)
