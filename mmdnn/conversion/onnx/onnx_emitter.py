@@ -114,6 +114,8 @@ def KitModel(weight_file = None):
     def emit_DataInput(self, IR_node):
         shape = [dim.size if dim.size != -1 else 1 for dim in IR_node.IR_layer.attr["shape"].shape.dim]
         shape_str = ', '.join('%s' % i for i in shape)
+        if IR_node.layer.attr['dtype'].type == graph_pb2.DT_UNDEFINED:
+            IR_node.layer.attr['dtype'].type = graph_pb2.DT_FLOAT32
         dtype_str = self.dtype_map[IR_node.layer.attr['dtype'].type]
         self.add_body(1, "{:<15} = helper.make_tensor_value_info('{}', {}, ({},))".format(
             IR_node.variable_name + '_orig',
