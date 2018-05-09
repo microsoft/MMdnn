@@ -117,6 +117,7 @@ def KitModel(weight_file = None):
         pad_length = len(pads)
         pads = pads[1:pad_length // 2 - 1] + pads[pad_length // 2 + 1:pad_length - 1]
         strides = list(IR_node.get_attr('strides'))[1:-1]
+        use_bias=IR_node.get_attr('use_bias')
         self.add_body(1, "{:15} = __weights_dict['{}']['weights']".format(
             IR_node.variable_name + '_weight_array',
             IR_node.name))
@@ -129,16 +130,39 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_weight_array',
                           IR_node.variable_name + '_weight_array',
                           IR_node.variable_name + '_weight_array'))
-        self.add_body(1, "{:15} = helper.make_node('Conv', inputs=['{}', '{}'],outputs=['{}'], dilations={}, group={}, kernel_shape={}, pads={}, strides={})".format(
-                          IR_node.variable_name,
-                          self.parent_variable_name(IR_node),
-                          IR_node.variable_name + '_weight',
-                          IR_node.variable_name,
-                          dilations,
-                          group,
-                          kernel_shape,
-                          pads,
-                          strides))
+        if use_bias:
+            self.add_body(1, "{:15} = __weights_dict['{}']['bias']".format(
+                IR_node.variable_name + '_bias_array',
+                IR_node.name))
+            self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float)))".format(
+                              IR_node.variable_name + '_bias',
+                              IR_node.variable_name + '_bias',
+                              IR_node.variable_name + '_bias_array',
+                              IR_node.variable_name + '_bias_array',
+                              IR_node.variable_name + '_bias_array'))
+            self.add_body(1, "{:15} = helper.make_node('Conv', inputs=['{}', '{}', '{}'],outputs=['{}'], dilations={}, group={}, kernel_shape={}, pads={}, strides={})".format(
+                              IR_node.variable_name,
+                              self.parent_variable_name(IR_node),
+                              IR_node.variable_name + '_weight',
+                              IR_node.variable_name + '_bias',
+                              IR_node.variable_name,
+                              dilations,
+                              group,
+                              kernel_shape,
+                              pads,
+                              strides))
+            self.nodes.append(IR_node.variable_name + '_bias')
+        else:
+            self.add_body(1, "{:15} = helper.make_node('Conv', inputs=['{}', '{}'],outputs=['{}'], dilations={}, group={}, kernel_shape={}, pads={}, strides={})".format(
+                              IR_node.variable_name,
+                              self.parent_variable_name(IR_node),
+                              IR_node.variable_name + '_weight',
+                              IR_node.variable_name,
+                              dilations,
+                              group,
+                              kernel_shape,
+                              pads,
+                              strides))
         self.nodes.append(IR_node.variable_name + '_weight')
         self.nodes.append(IR_node.variable_name)
 
