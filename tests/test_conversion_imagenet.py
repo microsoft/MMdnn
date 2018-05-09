@@ -678,7 +678,7 @@ class TestModels(CorrectnessTest):
             # 'alexnet'       : [CntkEmit, KerasEmit, TensorflowEmit],
             'inception_v3'  : [CntkEmit, PytorchEmit, TensorflowEmit, OnnxEmit], #TODO: Caffe, Keras, and MXNet no constant layer
             'resnet18'      : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit, OnnxEmit],
-            'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit, OnnxEmit],
         },
 
         'keras' : {
