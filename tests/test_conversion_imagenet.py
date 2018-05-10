@@ -742,7 +742,7 @@ class TestModels(CorrectnessTest):
             'inception_v3' : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
             'mobilenet'    : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
             'resnet50'     : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
-            'tinyyolo'     : [CoreMLEmit, KerasEmit, TensorflowEmit],
+            'tinyyolo'     : [CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
             'vgg16'        : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, TensorflowEmit],
         },
 
