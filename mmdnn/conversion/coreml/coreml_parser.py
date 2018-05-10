@@ -50,7 +50,8 @@ class CoremlParser(Parser):
 
         # load model file into Coreml Graph
         if isinstance(model, _string_types):
-            model = _MLModel(model)
+            # model.encode() convert to str --- python2 may crash due to type 'unicode'
+            model = _MLModel(model.encode())
             model = model.get_spec()
             self.weight_loaded = True
         else:

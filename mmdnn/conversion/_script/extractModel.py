@@ -50,6 +50,10 @@ def extract_model(args):
         from mmdnn.conversion.examples.darknet.extractor import darknet_extractor
         extractor = darknet_extractor()
 
+    elif args.framework == 'coreml':
+        from mmdnn.conversion.examples.coreml.extractor import coreml_extractor
+        extractor = coreml_extractor()
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.framework))
 
@@ -88,7 +92,7 @@ def _main():
         '--framework', '-f',
         type=_text_type,
         required=True,
-        choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'pytorch', 'darknet'],
+        choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'pytorch', 'darknet', 'coreml'],
         help="Framework name")
 
     parser.add_argument(
