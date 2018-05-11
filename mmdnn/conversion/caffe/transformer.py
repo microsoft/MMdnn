@@ -282,6 +282,8 @@ class ParameterNamer(object):
                 names = ('mean', 'var')
                 if len(node.data) == 4:
                     names += ('scale', 'bias')
+            elif node.kind == NodeKind.PReLU:
+                names = ('gamma',)
             else:
                 print_stderr('WARNING: Unhandled parameters: {}'.format(node.kind))
                 continue
@@ -375,6 +377,7 @@ class CaffeTransformer(object):
 
     def map_node(self, node):
         map_func = self.get_handler(node.kind, 'map')
+
         mapped_node = map_func(node)
         assert mapped_node is not None
         if isinstance(mapped_node, list):
