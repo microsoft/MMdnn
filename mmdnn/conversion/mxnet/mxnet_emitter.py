@@ -366,6 +366,7 @@ def predict(model, labels, url):
         dilate = list()
         for e in IR_node.IR_layer.attr["dilations"].list.i[1:-1]:
             dilate.append(e)
+        if dilate == []: dilate = [1, 1]
         dilate = ', '.join('%s' % i for i in dilate)
 
         defuse_pad = False
@@ -807,7 +808,7 @@ def predict(model, labels, url):
         ndim = len(IR_node.layer.attr['_output_shapes'].list.shape[0].dim)
         if axis == 0:
             return 0
-        elif axis == ndim - 1 or axis == -1:
+        elif axis == ndim - 1:
             return 1
         else:
             return axis + 1

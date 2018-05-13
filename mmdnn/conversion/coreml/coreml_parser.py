@@ -7,7 +7,7 @@
 import os
 from six import string_types as _string_types
 import numpy as np
-
+import math
 
 from coremltools.models.neural_network import NeuralNetworkBuilder as _NeuralNetworkBuilder
 from coremltools.models import datatypes
@@ -50,7 +50,8 @@ class CoremlParser(Parser):
 
         # load model file into Coreml Graph
         if isinstance(model, _string_types):
-            model = _MLModel(model)
+            # model.encode() convert to str --- python2 may crash due to type 'unicode'
+            model = _MLModel(model.encode())
             model = model.get_spec()
             self.weight_loaded = True
         else:
@@ -351,6 +352,7 @@ class CoremlParser(Parser):
                 # compute padding for 'same'
                 assign_IRnode_values(IR_node, {'auto_pad': "SAME"})
 
+
                 kernel = list(source_node_conv.kernelSize)
                 dilation = list(source_node_conv.dilationFactor)
                 if dilation == []:
@@ -359,19 +361,39 @@ class CoremlParser(Parser):
                 if stride == []:
                     stride = [1,1]
 
+                kernel[0] = dilation[0] * ( kernel[0] -1 ) + 1
+                kernel[1] = dilation[1] * ( kernel[1] -1 ) + 1
 
 
                 if stride == [1,1]:
-                    # https://discuss.mxnet.io/t/pooling-and-convolution-with-same-mode/528/3
-                    p0 = dilation[0] * ( kernel[0] -1 ) // 2
-                    p1 = dilation[1] * ( kernel[1] -1 ) // 2
 
-                    pad_dim = [0, 0, p0, p0, p1, p1, 0, 0]
+                    # https://discuss.mxnet.io/t/pooling-and-convolution-with-same-mode/528/3
+
+                    p0 =  ( kernel[0] -1 ) // 2
+                    p1 =  ( kernel[1] -1 ) // 2
+
+                    if kernel[0] % 2 == 0:
+                        p00 = p0
+                        p01 = p0 + 1
+                    else:
+                        p00 = p0
+                        p01 = p0
+
+                    if kernel[1] % 2 == 0:
+                        p10 = p1
+                        p11 = p1 + 1
+                    else:
+                        p10 = p1
+                        p11 = p1
+
+                    pad_dim = [0, 0, p00, p01, p10, p11, 0, 0]
+
 
                     pad_dim = convert_tf_pad_to_onnx(pad_dim)
 
                     assign_IRnode_values(IR_node, { 'pads':  pad_dim})
                 else:
+                    # https://www.jianshu.com/p/05c4f1621c7e
                     pad_dim = [0, 0, 0, 0, 0, 0, 0, 0]
 
                     pad_dim = convert_tf_pad_to_onnx(pad_dim)
@@ -423,12 +445,31 @@ class CoremlParser(Parser):
                     p0 =  ( kernel[0] -1 ) // 2
                     p1 =  ( kernel[1] -1 ) // 2
 
-                    pad_dim = [0, 0, p0, p0, p1, p1, 0, 0]
+
+
+                    if kernel[0] % 2 == 0:
+                        p00 = p0
+                        p01 = p0 + 1
+                    else:
+                        p00 = p0
+                        p01 = p0
+
+                    if kernel[1] % 2 == 0:
+                        p10 = p1
+                        p11 = p1 + 1
+                    else:
+                        p10 = p1
+                        p11 = p1
+
+                    pad_dim = [0, 0, p00, p01, p10, p11, 0, 0]
+
+
 
                     pad_dim = convert_tf_pad_to_onnx(pad_dim)
 
                     assign_IRnode_values(IR_node, { 'pads':  pad_dim})
                 else:
+                    # TODO
                     pad_dim = [0, 0, 0, 0, 0, 0, 0, 0]
 
                     pad_dim = convert_tf_pad_to_onnx(pad_dim)
@@ -502,7 +543,9 @@ class CoremlParser(Parser):
 
         # For concat axis
         # NO axis in coreml, so set the last axis
-        IR_node.attr['axis'].i = -1
+        IR_node.attr['axis'].i = len(CoremlParser.shape_dict[source_node.layer.output[0]])-1 -1
+        # The first -1 means in coreml there is one-more axis,
+        # The second -1 means the last axis
 
         return IR_node
 
@@ -762,7 +805,9 @@ class CoremlParser(Parser):
         # input edge
         self.convert_inedge(coreml_node, IR_node)
 
+        # bias
         IR_node.attr['use_bias'].b = coreml_node_scale.hasBias
+
 
         self.set_weight(coreml_node_layer.name, "scale", np.array(coreml_node_scale.scale.floatValue))
 
@@ -781,6 +826,10 @@ class CoremlParser(Parser):
 
         coreml_node_layer = coreml_node.layer
         coreml_node_pool = coreml_node_layer.pooling
+
+
+
+
 
         # name, op
         CoremlParser._copy_and_repo(coreml_node, IR_node, "Pool")

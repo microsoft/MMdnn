@@ -15,6 +15,7 @@ from tensorflow.contrib.slim.nets import resnet_v2
 from mmdnn.conversion.examples.tensorflow.models import inception_resnet_v2
 from mmdnn.conversion.examples.tensorflow.models import mobilenet_v1
 from mmdnn.conversion.examples.tensorflow.models import nasnet
+from mmdnn.conversion.examples.tensorflow.models.mobilenet import mobilenet_v2
 slim = tf.contrib.slim
 
 from mmdnn.conversion.examples.imagenet_test import TestKit
@@ -129,6 +130,14 @@ class tensorflow_extractor(base_extractor):
             'input_shape' : [224, 224, 3],
             'num_classes' : 1001,
         },
+        'mobilenet_v2_1.0_224':{
+            'url'         : 'https://storage.googleapis.com/mobilenet_v2/checkpoints/mobilenet_v2_1.0_224.tgz',
+            'filename'    : 'mobilenet_v2_1.0_224.ckpt',
+            'builder'     : lambda : mobilenet_v2.mobilenet,
+            'arg_scope'   : mobilenet_v2.training_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'num_classes' : 1001,
+        },
         'inception_resnet_v2' : {
             'url'         : 'http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz',
             'filename'    : 'inception_resnet_v2_2016_08_30.ckpt',
@@ -161,6 +170,7 @@ class tensorflow_extractor(base_extractor):
                 labels = tf.identity(logits, name='MMdnn_Output')
             else:
                 labels = tf.squeeze(logits, name='MMdnn_Output')
+
 
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
@@ -195,6 +205,7 @@ class tensorflow_extractor(base_extractor):
                 return None
 
             tf.reset_default_graph()
+
             if cls.architecture_map[architecture]['filename'].endswith('ckpt'):
                 cls.handle_checkpoint(architecture, path)
 

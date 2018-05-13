@@ -88,6 +88,10 @@ def _convert(args):
         from mmdnn.conversion.darknet.darknet_parser import DarknetParser
         parser = DarknetParser(args.network, args.weights, args.darknetYolo)
 
+    elif args.srcFramework == 'coreml':
+        from mmdnn.conversion.coreml.coreml_parser import CoremlParser
+        parser = CoremlParser(args.network)
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.srcFramework))
 
@@ -104,7 +108,7 @@ def _get_parser():
     parser.add_argument(
         '--srcFramework', '-f',
         type=_text_type,
-        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'torch', 'torch7', 'onnx', 'darknet'],
+        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'torch', 'torch7', 'onnx', 'darknet', 'coreml'],
         help="Source toolkit name of the model to be converted.")
 
     parser.add_argument(
