@@ -704,16 +704,16 @@ class TestModels(CorrectnessTest):
         },
 
         'caffe' : {
-            'alexnet'       : [CaffeEmit, CntkEmit, CoreMLEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit('Tensor' object has no attribute '_keras_history')
-            'inception_v1'  : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'inception_v4'  : [CoreMLEmit, CntkEmit, KerasEmit, PytorchEmit, TensorflowEmit], # TODO MXNetEmit(Small error), CaffeEmit(Crash for shape)
-            'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'squeezenet'    : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-            'vgg19'         : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+            'alexnet'       : [CaffeEmit, CntkEmit, CoreMLEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit('Tensor' object has no attribute '_keras_history')
+            'inception_v1'  : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit],
+            'inception_v4'  : [CoreMLEmit, CntkEmit, KerasEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO MXNetEmit(Small error), CaffeEmit(Crash for shape)
+            'resnet152'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit],
+            'squeezenet'    : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit],
+            'vgg19'         : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit],
             'voc-fcn8s'     : [CntkEmit, CoreMLEmit, TensorflowEmit],
             'voc-fcn16s'    : [CntkEmit, CoreMLEmit, TensorflowEmit],
             'voc-fcn32s'    : [CntkEmit, CoreMLEmit, TensorflowEmit],
-            'xception'      : [CoreMLEmit, CntkEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  TODO: Caffe(Crash) KerasEmit(too slow)
+            'xception'      : [CoreMLEmit, CntkEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], #  TODO: Caffe(Crash) KerasEmit(too slow)
         },
 
         'tensorflow' : {

@@ -447,5 +447,20 @@ def KitModel(weight_file = None):
         self.nodes.append(IR_node.variable_name + '_shape')
         self.nodes.append(IR_node.variable_name)
 
+    def emit_LRN(self, IR_node):
+        alpha = IR_node.get_attr('alpha')
+        beta = IR_node.get_attr('beta')
+        bias = IR_node.get_attr('bias', 1.0)
+        size = IR_node.get_attr('size') * 2 - 1
+        self.add_body(1, "{:15} = helper.make_node('LRN', inputs=['{}'], outputs=['{}'], alpha={}, beta={}, bias={}, size={})".format(
+                          IR_node.variable_name,
+                          self.parent_variable_name(IR_node),
+                          IR_node.variable_name,
+                          alpha,
+                          beta,
+                          bias,
+                          size))
+        self.nodes.append(IR_node.variable_name)
+
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.IR_layer.name)
