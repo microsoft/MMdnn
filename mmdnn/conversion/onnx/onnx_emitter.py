@@ -130,9 +130,9 @@ def KitModel(weight_file = None):
         self.nodes.append(IR_node.variable_name)
 
     def emit_Conv(self, IR_node):
-        dilations = list(IR_node.get_attr('dilations'))[1:-1]
+        kernel_shape = list(IR_node.get_attr('kernel_shape'))[:-2]
+        dilations = list(IR_node.get_attr('dilations', [1] * (len(kernel_shape) + 2)))[1:-1]
         group = IR_node.get_attr('group', 1)
-        kernel_shape = list(IR_node.get_attr('kernel_shape'))[:2]
         pads = IR_node.get_attr('pads')
         pad_length = len(pads)
         pads = pads[1:pad_length // 2 - 1] + pads[pad_length // 2 + 1:pad_length - 1]
