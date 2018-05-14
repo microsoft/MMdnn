@@ -99,7 +99,7 @@ def KitModel(weight_file = None):
 
     def _process_output_layers(self):
         for name in self.IR_graph.output_layers:
-            IR_node = self.IR_graph.get_node(name)
+            IR_node = self.IR_graph.get_node(self.IR_graph.get_node(name).real_name)
             shape_str = IRGraph.shapeToStr(IR_node.layer.attr["_output_shapes"].list.shape[0])
             if IR_node.layer.attr['dtype'].type == graph_pb2.DT_UNDEFINED:
                 IR_node.layer.attr['dtype'].type = graph_pb2.DT_FLOAT32
@@ -256,7 +256,7 @@ def KitModel(weight_file = None):
 
     def emit_Add(self, IR_node):
         input_layers = ', '.join(
-            ("'" + self.IR_graph.get_parent(IR_node.variable_name, [num]).real_variable_name) + "'" for num in
+            ("'" + self.IR_graph.get_parent(IR_node.name, [num]).real_variable_name) + "'" for num in
             range(0, len(IR_node.in_edges)))
         self.add_body(1, "{:15} = helper.make_node('Add', inputs=[{}], outputs=['{}'])".format(
             IR_node.variable_name,
