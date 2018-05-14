@@ -404,5 +404,8 @@ def KitModel(weight_file = None):
                           1 - IR_node.get_attr('keep_prob')))
         self.nodes.append(IR_node.variable_name)
 
+    def emit_Squeeze(self, IR_node):
+        IR_node.real_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.IR_layer.name)
