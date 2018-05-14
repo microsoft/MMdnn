@@ -10,6 +10,12 @@ class OnnxEmitter(Emitter):
         graph_pb2.DT_FLOAT32: "TensorProto.FLOAT"
     }
 
+    transpose_map = {
+        1: 2,
+        2: 3,
+        -1: 1
+    }
+
     def __init__(self, architecture, weight):
         super(OnnxEmitter, self).__init__()
         if os.path.exists(architecture) == False:
@@ -99,7 +105,7 @@ def KitModel(weight_file = None):
 
     def _process_output_layers(self):
         for name in self.IR_graph.output_layers:
-            IR_node = self.IR_graph.get_node(name)
+            IR_node = self.IR_graph.get_node(self.IR_graph.get_node(name).real_name)
             shape_str = IRGraph.shapeToStr(IR_node.layer.attr["_output_shapes"].list.shape[0])
             if IR_node.layer.attr['dtype'].type == graph_pb2.DT_UNDEFINED:
                 IR_node.layer.attr['dtype'].type = graph_pb2.DT_FLOAT32
@@ -130,9 +136,9 @@ def KitModel(weight_file = None):
         self.nodes.append(IR_node.variable_name)
 
     def emit_Conv(self, IR_node):
-        dilations = list(IR_node.get_attr('dilations'))[1:-1]
+        kernel_shape = list(IR_node.get_attr('kernel_shape'))[:-2]
+        dilations = list(IR_node.get_attr('dilations', [1] * (len(kernel_shape) + 2)))[1:-1]
         group = IR_node.get_attr('group', 1)
-        kernel_shape = list(IR_node.get_attr('kernel_shape'))[:2]
         pads = IR_node.get_attr('pads')
         pad_length = len(pads)
         pads = pads[1:pad_length // 2 - 1] + pads[pad_length // 2 + 1:pad_length - 1]
@@ -256,7 +262,7 @@ def KitModel(weight_file = None):
 
     def emit_Add(self, IR_node):
         input_layers = ', '.join(
-            ("'" + self.IR_graph.get_parent(IR_node.variable_name, [num]).real_variable_name) + "'" for num in
+            ("'" + self.IR_graph.get_parent(IR_node.name, [num]).real_variable_name) + "'" for num in
             range(0, len(IR_node.in_edges)))
         self.add_body(1, "{:15} = helper.make_node('Add', inputs=[{}], outputs=['{}'])".format(
             IR_node.variable_name,
@@ -402,6 +408,43 @@ def KitModel(weight_file = None):
                           IR_node.variable_name,
                           0 if self.phase == 'train' else 1,
                           1 - IR_node.get_attr('keep_prob')))
+        self.nodes.append(IR_node.variable_name)
+
+    def emit_Squeeze(self, IR_node):
+        IR_node.real_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+
+    def emit_ReduceMean(self, IR_node):
+        axes = IR_node.layer.attr['axes'].list.i[:]
+        axes = ','.join('%s' % OnnxEmitter.transpose_map[i] for i in axes)
+        self.add_body(1, "{:15} = helper.make_node('ReduceMean', inputs=['{}'], outputs=['{}'], axes=[{}], keepdims={})".format(
+                          IR_node.variable_name,
+                          self.parent_variable_name(IR_node),
+                          IR_node.variable_name,
+                          axes,
+                          1 if IR_node.layer.attr['keepdims'].b else 0))
+        self.nodes.append(IR_node.variable_name)
+
+    def emit_Reshape(self, IR_node):
+        shape = [item if item != -1 else 1 for item in IR_node.get_attr('shape')]
+        if len(shape) == 4:
+            shape = [shape[i] for i in [0, 3, 1, 2]]
+        shape_str = ', '.join('%s' % i for i in shape)
+        self.add_body(1, "{:15} = np.array([{}], dtype=np.int64)".format(
+            IR_node.variable_name + '_shape_array',
+            shape_str
+        ))
+        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
+                          IR_node.variable_name + '_shape',
+                          IR_node.variable_name + '_shape',
+                          IR_node.variable_name + '_shape_array',
+                          IR_node.variable_name + '_shape_array',
+                          IR_node.variable_name + '_shape_array'))
+        self.add_body(1, "{:15} = helper.make_node('Reshape', inputs=['{}', '{}'], outputs=['{}'])".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.variable_name + '_shape',
+            IR_node.variable_name))
+        self.nodes.append(IR_node.variable_name + '_shape')
         self.nodes.append(IR_node.variable_name)
 
     def emit_UNKNOWN(self, IR_node):
