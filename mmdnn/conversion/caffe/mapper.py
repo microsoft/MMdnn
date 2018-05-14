@@ -142,6 +142,16 @@ class NodeMapper(object):
         return Node.create('Relu', **kwargs)
 
     @classmethod
+    def map_p_re_lu(cls, node):
+        # print(node.parameters)
+        # assert False
+        kwargs = {}
+        # kwargs['gamma'] = 0.25
+        cls._convert_output_shape(kwargs, node)
+        return Node.create('PRelu', **kwargs)
+
+
+    @classmethod
     def map_pooling(cls, node):
         parent, _ = node.get_only_parent()
         kwargs = cls.get_kernel_params(node, parent.output_shape)

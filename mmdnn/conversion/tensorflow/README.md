@@ -113,7 +113,7 @@ Target network code snippet is saved as [tf_resnet152.py].
 You can refer the example tool to test your converted model. In this case we use the Tensorflow -> IR -> Tensorflow resnet_v2_152 model as an example.
 
 ```bash
-$ python -m mmdnn.conversion.examples.tensorflow.imagenet_test -s tf -p resnet -n tf_resnet152 -w resnet152.npy
+$ python -m mmdnn.conversion.examples.tensorflow.imagenet_test -s tensorflow -p resnet -n tf_resnet152 -w resnet152.npy
 .
 .
 .
