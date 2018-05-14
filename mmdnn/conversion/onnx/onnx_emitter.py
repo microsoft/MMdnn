@@ -10,6 +10,12 @@ class OnnxEmitter(Emitter):
         graph_pb2.DT_FLOAT32: "TensorProto.FLOAT"
     }
 
+    transpose_map = {
+        1: 2,
+        2: 3,
+        -1: 1
+    }
+
     def __init__(self, architecture, weight):
         super(OnnxEmitter, self).__init__()
         if os.path.exists(architecture) == False:
@@ -406,6 +412,17 @@ def KitModel(weight_file = None):
 
     def emit_Squeeze(self, IR_node):
         IR_node.real_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
+
+    def emit_ReduceMean(self, IR_node):
+        axes = IR_node.layer.attr['axes'].list.i[:]
+        axes = ','.join('%s' % OnnxEmitter.transpose_map[i] for i in axes)
+        self.add_body(1, "{:15} = helper.make_node('ReduceMean', inputs=['{}'], outputs=['{}'], axes=[{}], keepdims={})".format(
+                          IR_node.variable_name,
+                          self.parent_variable_name(IR_node),
+                          IR_node.variable_name,
+                          axes,
+                          1 if IR_node.layer.attr['keepdims'].b else 0))
+        self.nodes.append(IR_node.variable_name)
 
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.IR_layer.name)
