@@ -424,5 +424,28 @@ def KitModel(weight_file = None):
                           1 if IR_node.layer.attr['keepdims'].b else 0))
         self.nodes.append(IR_node.variable_name)
 
+    def emit_Reshape(self, IR_node):
+        shape = [item if item != -1 else 1 for item in IR_node.get_attr('shape')]
+        if len(shape) == 4:
+            shape = [shape[i] for i in [0, 3, 1, 2]]
+        shape_str = ', '.join('%s' % i for i in shape)
+        self.add_body(1, "{:15} = np.array([{}], dtype=np.int64)".format(
+            IR_node.variable_name + '_shape_array',
+            shape_str
+        ))
+        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
+                          IR_node.variable_name + '_shape',
+                          IR_node.variable_name + '_shape',
+                          IR_node.variable_name + '_shape_array',
+                          IR_node.variable_name + '_shape_array',
+                          IR_node.variable_name + '_shape_array'))
+        self.add_body(1, "{:15} = helper.make_node('Reshape', inputs=['{}', '{}'], outputs=['{}'])".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.variable_name + '_shape',
+            IR_node.variable_name))
+        self.nodes.append(IR_node.variable_name + '_shape')
+        self.nodes.append(IR_node.variable_name)
+
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.IR_layer.name)
