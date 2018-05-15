@@ -321,8 +321,6 @@ class TestModels(CorrectnessTest):
         import tensorflow as tf
         from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
 
-        original_framework = checkfrozen(original_framework)
-
         # IR to code
         converted_file = original_framework + '_tensorflow_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
@@ -337,6 +335,7 @@ class TestModels(CorrectnessTest):
         model_converted = __import__(converted_file).KitModel(weight_path)
         input_tf, model_tf = model_converted
 
+        original_framework = checkfrozen(original_framework)
         func = TestKit.preprocess_func[original_framework][architecture_name]
         img = func(image_path)
         input_data = np.expand_dims(img, 0)
@@ -408,10 +407,7 @@ class TestModels(CorrectnessTest):
 
         # import converted model
         model_converted = __import__(converted_file).KitModel(weight_path)
-
-
         func = TestKit.preprocess_func[original_framework][architecture_name]
-
 
         img = func(image_path)
         input_data = np.expand_dims(img, 0)
@@ -648,8 +644,9 @@ class TestModels(CorrectnessTest):
         except ImportError:
             return None
 
-        os.remove(converted_file + '.py')
-        os.remove(converted_file + '.npy')
+        finally:
+            os.remove(converted_file + '.py')
+            os.remove(converted_file + '.npy')
 
 
     exception_tabel = {
