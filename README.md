@@ -40,12 +40,13 @@ We provide a model converter to help developers convert models between framework
 > [Note] You can click the links to get detail README of each framework
 
 - [Caffe](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/caffe/README.md)
+- [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md)
+- [CoreML](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/coreml/README.md)
 - [Keras](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/keras/README.md)
 - [MXNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/mxnet/README.md)
-- [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental) (Highly recommend you read the README of tensorflow firstly)
-- [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md)
+- [ONNX](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/onnx/README.md) (Destination only, initial state)
 - [PyTorch](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/pytorch/README.md) (Destination only)
-- [CoreML](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/coreml/README.md)
+- [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental) (Highly recommend you read the README of tensorflow firstly)
 - [DarkNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/darknet/README.md) (Source only, Experiment)
 
 #### Tested models
@@ -56,7 +57,7 @@ Models                                                                      | Ca
 :--------------------------------------------------------------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|
 [Inception V1](http://arxiv.org/abs/1409.4842v1)                            |   √   |   √   |     √      |   √  |   √   | x (No LRN) | √
 [Inception V3](http://arxiv.org/abs/1512.00567)                             |   ×   |   √   |     √      |   √  |   √   |    √ | √
-[Inception V4](http://arxiv.org/abs/1512.00567)                             |   √   |       |            |      |       |
+[Inception V4](http://arxiv.org/abs/1512.00567)                             |   √   |   √   |     √      |   o  |       | √ | √
 [ResNet V1](https://arxiv.org/abs/1512.03385)                               |   ×   |   √   |     √      |   o  |   √   |    √ | √
 [ResNet V2](https://arxiv.org/abs/1603.05027)                               |   √   |   √   |     √      |   √  |   √   |    √
 [VGG 19](http://arxiv.org/abs/1409.1556.pdf)                                |   √   |   √   |     √      |   √  |   √   |    √       |    √
