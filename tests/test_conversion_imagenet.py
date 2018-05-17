@@ -724,7 +724,7 @@ class TestModels(CorrectnessTest):
             'resnet_v2_152'         : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit],
             'mobilenet_v1_1.0'      : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
             'mobilenet_v2_1.0_224'  : [CoreMLEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash) CntkEmit
-            'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
+            'nasnet-a_large'        : [MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
             # 'inception_resnet_v2' : [TensorflowEmit], # TODO PytorchEmit
 
         },
@@ -732,7 +732,7 @@ class TestModels(CorrectnessTest):
         'tensorflow_frozen' : {
             'inception_v1'      : [TensorflowEmit, KerasEmit, MXNetEmit, OnnxEmit, CoreMLEmit], # TODO: CntkEmit
             'inception_v3'      : [TensorflowEmit, KerasEmit, MXNetEmit, OnnxEmit, CoreMLEmit], # TODO: CntkEmit
-            'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
+            'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, OnnxEmit, CoreMLEmit]
         },
 
         'coreml' : {
