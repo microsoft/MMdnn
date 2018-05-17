@@ -201,25 +201,50 @@ class KitModel(nn.Module):
             ))
 
         else:
-            for e in IR_node.get_attr('dilations', []):
-                assert e == 1
 
-            pool_size = IR_node.get_attr('kernel_shape')[1:-1]
-            strides = IR_node.get_attr('strides')[1:-1]
+            if IR_node.get_attr('pooling_type') == "MAX":
+                # Change to padding defuse
+                input_node = self._defuse_padding(IR_node,", value=float('-inf')")
+                for e in IR_node.get_attr('dilations', []):
+                    assert e == 1
 
-            padding = IR_node.get_attr('pads')[1:dim]
-            ceil_mode = self.is_ceil_mode(IR_node.get_attr('pads'))
+                pool_size = IR_node.get_attr('kernel_shape')[1:-1]
+                strides = IR_node.get_attr('strides')[1:-1]
 
-            # input_node = self._defuse_padding(IR_node, exstr)
-            self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
-                IR_node.variable_name,
-                pool_name,
-                self.parent_variable_name(IR_node),
-                tuple(pool_size),
-                tuple(strides),
-                tuple(padding),
-                ceil_mode
-                ))
+                self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
+                    IR_node.variable_name,
+                    pool_name,
+                    input_node,
+                    tuple(pool_size),
+                    tuple(strides),
+                    0,
+                    False
+                    ))
+
+            elif IR_node.get_attr('pooling_type') == "AVG":
+
+                for e in IR_node.get_attr('dilations', []):
+                    assert e == 1
+
+                pool_size = IR_node.get_attr('kernel_shape')[1:-1]
+                strides = IR_node.get_attr('strides')[1:-1]
+
+                padding = IR_node.get_attr('pads')[1:dim]
+                ceil_mode = self.is_ceil_mode(IR_node.get_attr('pads'))
+
+                # input_node = self._defuse_padding(IR_node, exstr)
+                self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
+                    IR_node.variable_name,
+                    pool_name,
+                    self.parent_variable_name(IR_node),
+                    tuple(pool_size),
+                    tuple(strides),
+                    tuple(padding),
+                    ceil_mode
+                    ))
+
+            else:
+                raise ValueError()
 
 
     def emit_UNKNOWN(self, IR_node):
@@ -304,6 +329,14 @@ class KitModel(nn.Module):
         self.add_body(2, "{:<15} = F.relu({})".format(
             IR_node.variable_name,
             self.IR_graph.get_parent(IR_node.name, [0]).real_variable_name))
+
+
+    def emit_LeakyRelu(self, IR_node):
+        self.add_body(2, "{:<15} = F.leaky_relu({}, negative_slope={})".format(
+            IR_node.variable_name,
+            self.IR_graph.get_parent(IR_node.name, [0]).real_variable_name,
+            IR_node.get_attr('alpha')))
+
 
 
     def emit_Relu6(self, IR_node):
@@ -432,6 +465,23 @@ class KitModel(nn.Module):
             self.parent_variable_name(IR_node)
         ))
 
+    def emit_Scale(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        dim = len(IR_node.layer.attr['_output_shapes'].list.shape[0].dim) - 2
+
+        self.add_init(2, "self.{} = self.__scale({}, '{}', num_features={})".format(
+             IR_node.variable_name,
+             dim,
+             IR_node.name,
+             IR_node.layer.attr['_output_shapes'].list.shape[0].dim[-1].size
+        ))
+
+        self.add_body(2, "{:<15} = self.{}({})".format(
+            IR_node.variable_name,
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)
+        ))
+
 
     def emit_Squeeze(self, IR_node):
         self.add_body(2, "{:<15} = torch.squeeze({})".format(
@@ -450,11 +500,11 @@ class KitModel(nn.Module):
 
 
     def emit_Pad(self, IR_node):
-        if IR_node.get_attr('mode') == 'constant':
+        if IR_node.get_attr('mode').lower() == 'constant':
             mode = "mode = 'constant', value = {}".format(0)
-        elif IR_node.get_attr('mode') == 'reflect':
+        elif IR_node.get_attr('mode').lower() == 'reflect':
             mode = "mode = 'reflect'"
-        elif IR_node.get_attr('mode') == 'SYMMETRIC':
+        elif IR_node.get_attr('mode').upper() == 'SYMMETRIC':
             mode = "mode = 'replicate'"
         else:
             assert False
@@ -563,6 +613,95 @@ class KitModel(nn.Module):
         layer.state_dict()['running_mean'].copy_(torch.from_numpy(__weights_dict[name]['mean']))
         layer.state_dict()['running_var'].copy_(torch.from_numpy(__weights_dict[name]['var']))
         return layer""")
+
+
+    def _layer_Scale(self):
+        self.add_body(0, """
+    # from torch.nn.parameter import Parameter
+
+    class _Scale(nn.Module):
+
+        def __init__(self, num_features, affine=True):
+            super(KitModel._Scale, self).__init__()
+            self.num_features = num_features
+            self.affine = affine
+
+            self.running_mean = torch.zeros(num_features)
+            self.running_var = torch.ones(num_features)
+            self.training = False
+            self.eps = 1e-5
+            if self.affine:
+                self.weight = nn.Parameter(torch.Tensor(num_features))
+                self.bias = nn.Parameter(torch.Tensor(num_features))
+            else:
+                self.register_parameter('weight', None)
+                self.register_parameter('bias', None)
+            self.reset_parameters()
+
+
+        def reset_parameters(self):
+            if self.affine:
+                self.weight.data.uniform_()
+                self.bias.data.zero_()
+
+        def _check_input_dim(self, input):
+            raise NotImplementedError
+
+        def forward(self, input):
+            self._check_input_dim(input)
+
+            return F.batch_norm(
+                input, self.running_mean, self.running_var, self.weight, self.bias,
+                self.training,
+                0 , self.eps)
+
+
+    class Scale1d(_Scale):
+
+        def _check_input_dim(self, input):
+            if input.dim() != 2 and input.dim() != 3:
+                raise ValueError('expected 2D or 3D input (got {}D input)'
+                                .format(input.dim()))
+
+
+
+    class Scale2d(_Scale):
+
+
+        def _check_input_dim(self, input):
+            if input.dim() != 4:
+                raise ValueError('expected 4D input (got {}D input)'
+                                .format(input.dim()))
+
+
+    class Scale3d(_Scale):
+
+        def _check_input_dim(self, input):
+            if input.dim() != 5:
+                raise ValueError('expected 5D input (got {}D input)'
+                                .format(input.dim()))
+
+
+    @staticmethod
+    def __scale(dim, name, **kwargs):
+        if   dim == 1:  layer = KitModel.Scale1d(**kwargs)
+        elif dim == 2:  layer = KitModel.Scale2d(**kwargs)
+        elif dim == 3:  layer = KitModel.Scale3d(**kwargs)
+        else:           raise NotImplementedError()
+
+        if 'scale' in __weights_dict[name]:
+            layer.state_dict()['weight'].copy_(torch.from_numpy(__weights_dict[name]['scale']))
+        else:
+            layer.weight.data.fill_(1)
+
+        if 'bias' in __weights_dict[name]:
+            layer.state_dict()['bias'].copy_(torch.from_numpy(__weights_dict[name]['bias']))
+        else:
+            layer.bias.data.fill_(0)
+
+        return layer""")
+
+
 
 
     def _layer_LRN(self):
