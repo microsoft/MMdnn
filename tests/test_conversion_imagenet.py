@@ -762,7 +762,7 @@ class TestModels(CorrectnessTest):
                 return False
 
         if target_framework == 'Onnx':
-            if not converted_prediction:
+            if converted_prediction is None:
                 return False
 
         return True
