@@ -3,6 +3,7 @@ from mmdnn.conversion.common.IR.IR_graph import IRGraph
 import os.path
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 import numpy as np
+import sys
 
 
 class OnnxEmitter(Emitter):
@@ -474,6 +475,20 @@ def KitModel(weight_file = None):
 
     def emit_DepthwiseConv(self, IR_node):
         self.emit_Conv(IR_node)
+
+    def emit_Slice(self, IR_node):
+        starts = IR_node.get_attr('starts')
+        starts = [starts[0], starts[-1]] + starts[1:-1]
+        ends = IR_node.get_attr('ends')
+        ends = [ends[0], ends[-1]] + ends[1:-1]
+        ends = [i if i != 0 else sys.maxsize for i in ends]
+        self.add_body(1, "{:15} = helper.make_node('Slice', inputs=['{}'], outputs=['{}'], starts={}, ends={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.variable_name,
+            starts,
+            ends))
+        self.nodes.append(IR_node.variable_name)
 
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.IR_layer.name)
