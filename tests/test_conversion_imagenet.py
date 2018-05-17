@@ -687,7 +687,7 @@ class TestModels(CorrectnessTest):
             'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
             'mobilenet'    : [CoreMLEmit, KerasEmit, OnnxEmit, TensorflowEmit], # TODO: MXNetEmit
             'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            'yolo2'        : [KerasEmit],
+            'yolo2'        : [KerasEmit, OnnxEmit],
         },
 
         'mxnet' : {
