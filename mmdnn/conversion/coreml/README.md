@@ -1,6 +1,21 @@
 # CoreML README
 
-Currently we only implemented the CoreML emitter (IR -> CoreML) part. Any contribution to CoreML model parser (CoreML -> IR) part or emitter part is welcome.
+
+We tested the [Awesome-CoreML-Models](https://github.com/likedan/Awesome-CoreML-Models) and the parser works. Any contribution is welcome.
+
+Models                   | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | TensorFlow
+:-----------------------:|:-----:|:------:|:----:|:-----:|:-----:|:-------:|:------:|
+Vgg16                    |   √   |   √    |      |   √   |   √   |    √    | √
+Inception_v3             |   √   |   √    |      |   √   |   √   |    √    | √
+ResNet 50                |   √   |   √    |      |   √   |   √   |    √    | √
+MobileNet V1             |   √   |   √    |      |   √   |   √   |    √    | √
+Tiny-yolo                |       |   √    |      |   √   |   √   |    √    | √
+
+**√** - Correctness tested
+
+**o** - Some difference after conversion
+
+**space** - not tested
 
 ---
 
@@ -90,7 +105,7 @@ The inference result is slightly different from the original keras model. Curren
 
 ## Develop version
 
-macOS High Sierra 10.13.2 (17C205)
+macOS High Sierra 10.13.3 (17C205)
 
 @ 2018/01/10
 

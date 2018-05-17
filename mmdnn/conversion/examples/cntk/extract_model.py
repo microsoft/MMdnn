@@ -34,7 +34,7 @@ def _main():
                         type=_text_type, help='Test Image Path')
 
     parser.add_argument('-o', '--output_dir', default='./',
-                        type=_text_type, help='Caffe Checkpoint file name')
+                        type=_text_type, help='CNTK Checkpoint file name')
 
     args = parser.parse_args()
 

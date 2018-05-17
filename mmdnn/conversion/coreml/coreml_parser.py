@@ -490,47 +490,6 @@ class CoremlParser(Parser):
 
 
 
-
-    def _convert_pooling(self, source_node, dim, pooling_type, is_global):
-        source_node_layer = source_node.layer
-        IR_node = self.IR_graph.node.add()
-
-        # name, op
-        CoremlParser._copy_and_repo(resource_node, IR_node, "Pool")
-
-        # input edge
-        self.convert_inedge(source_node, IR_node)
-
-        kwargs = {}
-
-        kwargs['pooling_type'] = pooling_type
-
-        if is_global:
-            kwargs['global_pooling'] = True
-            kwargs['strides'] = [1] * (dim + 2)
-        else:
-
-            # padding
-            self._convert_padding(source_node, IR_node)
-
-            # strides
-            # [1, sd, sh, sw, 1]
-            kwargs['strides'] = [1, 1] + list(source_node) + [1]
-
-            # window_shape
-            # [1, pd, ph, pw, 1]
-            kwagrs['kernel_shape'] = [1,1] + list(source_node_layer.kernelSize) + [1]
-
-        assign_IRnode_values(IR_node, kwargs)
-
-        if is_global:
-            flatten_node = self.IR_graph.node.add()
-            flatten_node.name = source_node_layer.name + "_flatten"
-            flatten_node.op = 'Flatten'
-            flatten_node.input.append(source_node_layer.name)
-            CoremlParser._set_output_shape(source_node, flatten_node)
-            source_node.real_name = flatten_node_layer.name
-
     def _convert_merge(self, source_node, new_name = None):
 
         IR_node = self.IR_graph.node.add()
@@ -864,6 +823,7 @@ class CoremlParser(Parser):
         # strides
         # [1, sd, sh, sw, 1]
         kwargs['strides'] = [1] + list(coreml_node_pool.stride) + [1]
+
 
         # window_shape
         # [1, pd, ph, pw, 1]
