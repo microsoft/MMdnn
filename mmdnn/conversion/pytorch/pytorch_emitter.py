@@ -201,44 +201,51 @@ class KitModel(nn.Module):
             ))
 
         else:
-            # for e in IR_node.get_attr('dilations', []):
-            #     assert e == 1
 
-            # pool_size = IR_node.get_attr('kernel_shape')[1:-1]
-            # strides = IR_node.get_attr('strides')[1:-1]
+            if IR_node.get_attr('pooling_type') == "MAX":
+                # Change to padding defuse
+                input_node = self._defuse_padding(IR_node,", value=float('-inf')")
+                for e in IR_node.get_attr('dilations', []):
+                    assert e == 1
 
-            # print(IR_node.get_attr('pads'))
-            # padding = IR_node.get_attr('pads')[1:dim]
-            # ceil_mode = self.is_ceil_mode(IR_node.get_attr('pads'))
+                pool_size = IR_node.get_attr('kernel_shape')[1:-1]
+                strides = IR_node.get_attr('strides')[1:-1]
 
-            # # input_node = self._defuse_padding(IR_node, exstr)
-            # self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
-            #     IR_node.variable_name,
-            #     pool_name,
-            #     self.parent_variable_name(IR_node),
-            #     tuple(pool_size),
-            #     tuple(strides),
-            #     tuple(padding),
-            #     ceil_mode
-            #     ))
+                self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
+                    IR_node.variable_name,
+                    pool_name,
+                    input_node,
+                    tuple(pool_size),
+                    tuple(strides),
+                    0,
+                    False
+                    ))
 
-            # Change to padding defuse
-            input_node = self._defuse_padding(IR_node)
-            for e in IR_node.get_attr('dilations', []):
-                assert e == 1
+            elif IR_node.get_attr('pooling_type') == "AVG":
 
-            pool_size = IR_node.get_attr('kernel_shape')[1:-1]
-            strides = IR_node.get_attr('strides')[1:-1]
+                for e in IR_node.get_attr('dilations', []):
+                    assert e == 1
 
-            self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
-                IR_node.variable_name,
-                pool_name,
-                input_node,
-                tuple(pool_size),
-                tuple(strides),
-                0,
-                False
-                ))
+                pool_size = IR_node.get_attr('kernel_shape')[1:-1]
+                strides = IR_node.get_attr('strides')[1:-1]
+
+                padding = IR_node.get_attr('pads')[1:dim]
+                ceil_mode = self.is_ceil_mode(IR_node.get_attr('pads'))
+
+                # input_node = self._defuse_padding(IR_node, exstr)
+                self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
+                    IR_node.variable_name,
+                    pool_name,
+                    self.parent_variable_name(IR_node),
+                    tuple(pool_size),
+                    tuple(strides),
+                    tuple(padding),
+                    ceil_mode
+                    ))
+
+            else:
+                raise ValueError()
+
 
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.name)
