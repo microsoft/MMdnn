@@ -27,9 +27,12 @@ class pytorch_extractor(base_extractor):
     @classmethod
     def download(cls, architecture, path="./"):
         if cls.sanity_check(architecture):
-            architecture_file = path + "/imagenet_{}.pth".format(architecture)
+            architecture_file = path + "imagenet_{}.pth".format(architecture)
             if not os.path.exists(architecture_file):
-                model = models.__dict__[architecture](pretrained=True)
+                kwargs = {}
+                if architecture == 'inception_v3':
+                    kwargs['transform_input'] = False
+                model = models.__dict__[architecture](pretrained=True, **kwargs)
                 torch.save(model, architecture_file)
                 print("PyTorch pretrained model is saved as [{}].".format(architecture_file))
             else:
@@ -44,16 +47,20 @@ class pytorch_extractor(base_extractor):
     @classmethod
     def inference(cls, architecture, path, image_path):
         model = torch.load(path)
+
         model.eval()
 
         import numpy as np
         func = TestKit.preprocess_func['pytorch'][architecture]
         img = func(image_path)
         img = np.transpose(img, (2, 0, 1))
+
         img = np.expand_dims(img, 0).copy()
+
         data = torch.from_numpy(img)
         data = torch.autograd.Variable(data, requires_grad=False)
 
         predict = model(data).data.numpy()
         predict = np.squeeze(predict)
+
         return predict

@@ -270,6 +270,46 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
+    def PytorchParse(architecture_name, image_path):
+        from mmdnn.conversion.examples.pytorch.extractor import pytorch_extractor
+        from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser
+
+        # download model
+        architecture_file = pytorch_extractor.download(architecture_name, TestModels.cachedir)
+
+
+        # get original model prediction result
+        original_predict = pytorch_extractor.inference(architecture_name, architecture_file, image_path)
+        del pytorch_extractor
+
+        # get shape
+        func = TestKit.preprocess_func['pytorch'][architecture_name]
+
+        import inspect
+        funcstr = inspect.getsource(func)
+
+        pytorch_pre = funcstr.split('(')[0].split('.')[-1]
+
+        if len(funcstr.split(',')) == 3:
+            size = int(funcstr.split('path,')[1].split(')')[0])
+
+        elif  len(funcstr.split(',')) == 4:
+            size = int(funcstr.split('path,')[1].split(',')[0])
+
+        elif len(funcstr.split(',')) == 11:
+            size = int(funcstr.split('path,')[1].split(',')[0])
+
+
+         # original to IR
+        IR_file = TestModels.tmpdir + 'pytorch_' + architecture_name + "_converted"
+        parser = PytorchParser(architecture_file, [3, size, size])
+        parser.run(IR_file)
+        del parser
+        del PytorchParser
+        return original_predict
+
+
+    @staticmethod
     def DarknetParse(architecture_name, image_path):
         ensure_dir("./data/")
         from mmdnn.conversion.examples.darknet.extractor import darknet_extractor
@@ -746,7 +786,30 @@ class TestModels(CorrectnessTest):
         'darknet' : {
             'yolov2': [KerasEmit],
             'yolov3': [KerasEmit],
+        },
+
+        'pytorch' : {
+            'alexnet'     : [PytorchEmit],
+            'densenet121' : [PytorchEmit],
+            'densenet169' : [PytorchEmit],
+            'densenet161' : [PytorchEmit],
+            'densenet201' : [PytorchEmit],
+            'inception_v3': [PytorchEmit],
+            'vgg11'       : [PytorchEmit],
+            'vgg13'       : [PytorchEmit],
+            'vgg16'       : [PytorchEmit],
+            'vgg19'       : [PytorchEmit],
+            'vgg11_bn'    : [PytorchEmit],
+            'vgg13_bn'    : [PytorchEmit],
+            'vgg16_bn'    : [PytorchEmit],
+            'vgg19_bn'    : [PytorchEmit],
+            'resnet18'    : [PytorchEmit],
+            'resnet34'    : [PytorchEmit],
+            'resnet50'    : [PytorchEmit],
+            'resnet101'   : [PytorchEmit],
+            'resnet152'   : [PytorchEmit],
         }
+
     }
 
 
@@ -846,6 +909,9 @@ class TestModels(CorrectnessTest):
 
     def test_darknet(self):
         self._test_function('darknet', self.DarknetParse)
+
+    def test_pytorch(self):
+        self._test_function('pytorch', self.PytorchParse)
 
 
     def test_tensorflow(self):
