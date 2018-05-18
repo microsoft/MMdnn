@@ -1,10 +1,10 @@
 # PyTorch README
 
-Currently, we only implemented the IR -> PyTorch part.
+Currently, we have already implemented both the the PyTorch -> IR part and the IR -> PyTorch part.
 
-I am implementing the PyTorch parser in branch [pytorch](https://github.com/Microsoft/MMdnn/tree/pytorch) and have some issue with getting layer shape and jit CppOP. Waiting for JIT completion.
+The PyTorch parser is modified from branch [pytorch](https://github.com/Microsoft/MMdnn/tree/pytorch) , using jit CppOP to build the graph.
 
-Any contribution to PyTorch parser (PyTorch -> IR) is welcome.
+Any contribution is welcome.
 
 ## Extract PyTorch pre-trained models
 
@@ -12,13 +12,29 @@ You can refer [PyTorch model extractor](https://github.com/Microsoft/MMdnn/blob/
 
 ```bash
 $ mmdownload -f pytorch -h
-Support frameworks: ['alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201', 'inception_v3', 'resnet101', 'resnet152', 'resnet18', 'resnet34', 'resnet50', 'squeezenet1_0', 'squeezenet1_1', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
+Support frameworks: ['alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201', 'inception_v3', 'resnet101', 'resnet152', 'resnet18', 'resnet34', 'resnet50', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
 
 $ mmdownload -f pytorch -n resnet50 -o ./
 Downloading: "https://download.pytorch.org/models/resnet50-19c8e357.pth" to /home/ruzhang/.torch/models/resnet50-19c8e357.pth
 100%|████████████████████████████████████████████████████████████████████████| 102502400/102502400 [00:06<00:00, 15858546.50it/s]
-PyTorch pretrained model is saved as [.//imagenet_resnet50.pth].
+PyTorch pretrained model is saved as [./imagenet_resnet50.pth].
 
+```
+
+### Convert Pytorch pre-trained models to IR
+You can convert the whole pytorch model to IR structure. Please remember for the generality, we now only take the whole model `pth`, not just the state dict. To be more specific, it is save using `torch.save()` and `torch.load()` can load the whole model.
+
+```bash
+$ mmtoir -f pytorch -d resnet50 --inputShape 3 224 224 -n imagenet_resnet50.pth --dstNodeName MMdnn_Output
+```
+
+Please bear in mind that always add `--inputShape` argparse. This thing is different from other framework because pytorch is a dynamic framework.
+
+Then you will get
+```
+IR network structure is saved as [resnet50.json].
+IR network structure is saved as [resnet50.pb].
+IR weights are saved as [resnet50.npy].
 ```
 
 ### Convert models from IR to PyTorch code snippet and weights
@@ -56,6 +72,10 @@ Ubuntu 16.04 with
 - PyTorch 0.4.0
 
 @ 2018/04/25
+
+## Links
+
+- [pytorch to keras converter](https://github.com/nerox8664/pytorch2keras)
 
 ## Limitation
 

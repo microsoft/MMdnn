@@ -71,8 +71,9 @@ def _convert(args):
 
     elif args.srcFramework == 'pytorch':
         assert args.inputShape != None
-        from mmdnn.conversion.pytorch.pytorch_parser import PyTorchParser
-        parser = PyTorchParser(args.network, args.inputShape)
+        inputshape = [int(x) for x in args.inputShape]
+        from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser
+        parser = PytorchParser(args.network, inputshape)
 
     elif args.srcFramework == 'torch' or args.srcFramework == 'torch7':
         from mmdnn.conversion.torch.torch_parser import TorchParser
@@ -108,7 +109,7 @@ def _get_parser():
     parser.add_argument(
         '--srcFramework', '-f',
         type=_text_type,
-        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'torch', 'torch7', 'onnx', 'darknet', 'coreml'],
+        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'torch', 'torch7', 'onnx', 'darknet', 'coreml', 'pytorch'],
         help="Source toolkit name of the model to be converted.")
 
     parser.add_argument(
