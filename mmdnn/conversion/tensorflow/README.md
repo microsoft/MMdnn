@@ -4,15 +4,15 @@ TensorFlow parser (Tensorflow -> IR part) is an experimental product, since the 
 
 We tested the [slim pre-trained models](https://github.com/tensorflow/models/tree/master/research/slim) and the parser works. Any contribution is welcome.
 
-Models                   | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | TensorFlow
-:-----------------------:|:-----:|:------:|:----:|:-----:|:-----:|:-------:|:------:|
-Vgg19                    |   √   |   √    |  √   |   √   |   √   |    √    | √
-Inception_v1             |   o   |   √    |  o   |   √   |   √   |    √    | √
-Inception_v3             |   x   |   √    |  √   |   o   |   √   |    √    | √
-ResNet V1                |   x   |   √    |  o   |   √   |   √   |    √    | √
-ResNet V2                |   x   |   √    |  √   |   √   |   √   |    √    | √
-MobileNet V1             |   x   |   √    |  o   |   √   |   √   |    √    | √
-NasNet-A                 |   x   |        |      |       |   √   |    √    | √
+|    Models    | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | TensorFlow | ONNX |
+| :----------: | :---: | :----: | :--: | :---: | :---: | :-----: | :--------: | :--: |
+|     Vgg19    |   √   |    √   |   √  |   √   |   √   |    √    |      √     |   √  |
+| Inception_v1 |   o   |    √   |   o  |   √   |   √   |    √    |      √     |   √  |
+| Inception_v3 |   x   |    √   |   √  |   o   |   √   |    √    |      √     |   √  |
+|   ResNet V1  |   x   |    √   |   o  |   √   |   √   |    √    |      √     |   √  |
+|   ResNet V2  |   x   |    √   |   √  |   √   |   √   |    √    |      √     |   √  |
+| MobileNet V1 |   x   |    √   |   o  |   √   |   √   |    √    |      √     |   √  |
+|   NasNet-A   |   x   |        |      |       |   √   |    √    |      √     |   √  |
 
 **√** - Correctness tested
 

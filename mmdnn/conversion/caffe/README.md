@@ -4,16 +4,16 @@
 
 We tested some Caffe pre-trained models to others, get more detail from [this file](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/caffe/extractor.py)
 
-Models                   | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML
-:-----------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|
-Vgg19                    |   √   |   √   |     √      |  √   |   √   |      √     |    √
-AlexNet                  |   √   |       |     √      |  √   |   √   |      √     |    √
-Inception_v1             |   √   |   √   |     √      |  √   |   √   |      √     |    √
-Inception_v4             |       |   √   |     √      |  o   |       |      √     |    √
-ResNet 152               |   √   |   √   |     √      |  √   |   √   |      √     |    √
-SqueezeNet               |   √   |   √   |     √      |  √   |   √   |      √     |    √
-Xception                 |       |       |     √      |  √   |   √   |      √     |    √
-voc-FCN8s/FCN16s/FCN32s  |       |       |     √      |      |       |            |    √
+|          Models         | Caffe | Keras | Tensorflow | CNTK | MXNet | PyTorch | CoreML | ONNX |
+| :---------------------: | :---: | :---: | :--------: | :--: | :---: | :-----: | :----: | :--: |
+|          Vgg19          |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|         AlexNet         |   √   |       |      √     |   √  |   √   |    √    |    √   |   √  |
+|       Inception_v1      |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|       Inception_v4      |       |   √   |      √     |   o  |       |    √    |    √   |   √  |
+|        ResNet 152       |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|        SqueezeNet       |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|         Xception        |       |       |      √     |   √  |   √   |    √    |    √   |   √  |
+| voc-FCN8s/FCN16s/FCN32s |       |       |      √     |      |       |         |    √   |      |
 
 **√** - Correctness tested
 

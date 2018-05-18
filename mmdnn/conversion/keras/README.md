@@ -5,17 +5,17 @@
 
 We tested some Keras pre-trained models to others, get more detail from [this file](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/keras/extractor.py)
 
-Models                   | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML | ONNX  |
-:-----------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|:------:|
-Vgg16                    |   √   |   √   |     √      |  √   |   √   |      √     |    √   |
-Vgg19                    |   √   |   √   |     √      |  √   |   √   |      √     |    √   |
-inception_v3             |   √   |   √   |     √      |  √   |   √   |      √     |    √   |
-resnet50                 |   √   |   √   |     √      |  √   |   √   |      √     |    √   |
-densenet                 |   √   |   √   |     √      |  √   |   √   |      √     |    √   |   √
-xception                 |       |   √   |     √      |      |       |            |    √   |
-mobilenet                |       |   √   |     √      |      |       |            |    √   |
-nasnet                   |       |   √   |     √      |      |       |            |    √   |
-yolo2                    |       |   √   |            |      |       |            |        |
+|    Models    | Caffe | Keras | Tensorflow | CNTK | MXNet | PyTorch | CoreML | ONNX |
+| :----------: | :---: | :---: | :--------: | :--: | :---: | :-----: | :----: | :--: |
+|     Vgg16    |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|     Vgg19    |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+| inception_v3 |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|   resnet50   |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|   densenet   |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|   xception   |       |   √   |      √     |      |       |         |    √   |      |
+|   mobilenet  |       |   √   |      √     |      |       |         |    √   |   √  |
+|    nasnet    |       |   √   |      √     |      |       |         |    √   |      |
+|     yolo2    |       |   √   |            |      |       |         |        |   √  |
 
 **√** - Correctness tested
 
