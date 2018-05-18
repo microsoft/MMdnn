@@ -17,11 +17,11 @@ class GraphNode(object):
 
     @property
     def variable_name(self):
-        return self.real_name.replace('/', '_').replace('-', '_')
+        return self.real_name.replace('/', '_').replace('-', '_').replace('[','_').replace(']','_')
 
     @property
     def real_variable_name(self):
-        return self.real_name.replace('/', '_').replace('-', '_')
+        return self.real_name.replace('/', '_').replace('-', '_').replace('[','_').replace(']','_')
 
 
 

@@ -336,20 +336,40 @@ def KitModel(weight_file = None):
                     assert e == 1
 
             pool_size = IR_node.get_attr('kernel_shape')[1:-1]
-            pool_size = ', '.join('%s' % i for i in pool_size)
+
             strides = IR_node.get_attr('strides')[1:-1]
-            strides = ', '.join('%s' % i for i in strides)
+            padding = IR_node.get_attr('pads')[1:dim]
 
-            input_node, padding = self._defuse_padding(IR_node)
+            if pooling_type == "AVG" and pool_size.count(pool_size[0]) == len(pool_size) and strides[0] == 1 and strides.count(strides[0]) == len(strides) and padding.count(padding[0]) == len(padding) and pool_size[0] == padding[0]*2 + 1:
+                pool_size = ', '.join('%s' % i for i in pool_size)
+                strides = ', '.join('%s' % i for i in strides)
+                self.add_body(1, "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
+                    IR_node.variable_name,
+                    pool_name,
+                    IR_node.name,
+                    pool_size,
+                    strides,
+                    'same',
+                    self.parent_variable_name(IR_node)
+                    ))
 
-            self.add_body(1, "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
-                IR_node.variable_name,
-                pool_name,
-                IR_node.name,
-                pool_size,
-                strides,
-                padding,
-                input_node))
+
+            else:
+
+                pool_size = ', '.join('%s' % i for i in pool_size)
+                strides = ', '.join('%s' % i for i in strides)
+                input_node, padding = self._defuse_padding(IR_node)
+
+                self.add_body(1, "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
+                    IR_node.variable_name,
+                    pool_name,
+                    IR_node.name,
+                    pool_size,
+                    strides,
+                    padding,
+                    input_node))
+
+
 
 
     def emit_Reshape(self, IR_node):

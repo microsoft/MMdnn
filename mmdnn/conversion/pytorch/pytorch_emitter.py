@@ -265,7 +265,7 @@ class KitModel(nn.Module):
 
     def check_if_need_transpose(self, IR_node):
         parent = self.IR_graph.get_parent(IR_node.name, [0])
-        while parent.type == 'Flatten':
+        while parent.type == 'Flatten' or parent.type == 'Dropout':
             parent = self.IR_graph.get_parent(parent.name, [0])
         dim = len(parent.layer.attr['_output_shapes'].list.shape[0].dim)
         if dim > 2:
