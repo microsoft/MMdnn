@@ -490,5 +490,23 @@ def KitModel(weight_file = None):
             ends))
         self.nodes.append(IR_node.variable_name)
 
+    def emit_LeakyRelu(self, IR_node):
+        alpha = IR_node.get_attr('alpha')
+        self.add_body(1, "{:15} = helper.make_node('LeakyRelu', inputs=['{}'], outputs=['{}'], alpha={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.variable_name,
+            alpha))
+        self.nodes.append(IR_node.variable_name)
+
+    def emit_SpaceToDepth(self, IR_node):
+        blocksize = IR_node.get_attr('blocksize')
+        self.add_body(1, "{:15} = helper.make_node('SpaceToDepth', inputs=['{}'], outputs=['{}'], blocksize={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.variable_name,
+            blocksize))
+        self.nodes.append(IR_node.variable_name)
+
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.IR_layer.name)

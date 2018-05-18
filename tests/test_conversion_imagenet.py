@@ -685,9 +685,9 @@ class TestModels(CorrectnessTest):
             'resnet50'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit],
             'densenet'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit],
             'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            'mobilenet'    : [TensorflowEmit, KerasEmit, CoreMLEmit], # TODO: MXNetEmit
+            'mobilenet'    : [CoreMLEmit, KerasEmit, OnnxEmit, TensorflowEmit], # TODO: MXNetEmit
             'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
-            'yolo2'        : [KerasEmit],
+            'yolo2'        : [KerasEmit, OnnxEmit],
         },
 
         'mxnet' : {
