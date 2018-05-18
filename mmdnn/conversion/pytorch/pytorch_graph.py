@@ -34,8 +34,12 @@ class PytorchGraphNode(GraphNode):
 
     @property
     def name(self):
-
-        return self._name + self.id
+        name = self._name + self.id
+        # Scopes created in a nested scope may have initial characters
+        # that are illegal as the initial character of an op name
+        # (viz. '-', '\', '/', and '_').
+        name = name.replace('-','n').replace('\\','n').replace('/','n').replace('_','n').replace('[','n').replace(']','n')
+        return name
 
     @property
     def type(self):
@@ -136,6 +140,7 @@ class PytorchGraph(Graph):
             node_id = PytorchGraph.get_node_id(node)
             node_scope = node.scopeName()
             node_name = node_scope + node_id
+            node_name = node_name.replace('-','n').replace('\\','n').replace('/','n').replace('_','n').replace('[','n').replace(']','n')
             output_shape_str = re.findall(r'[^()]+', node.__str__())[1]
             output_shape = [int(x) for x in output_shape_str.split(',')]
 
@@ -149,6 +154,7 @@ class PytorchGraph(Graph):
 
                 if PytorchGraph.get_node_id(node_input.node()) and node_input.node().scopeName():
                     node_input_name = node_input.node().scopeName() + PytorchGraph.get_node_id(node_input.node())
+                    node_input_name = node_input_name.replace('-','n').replace('\\','n').replace('/','n').replace('_','n').replace('[','n').replace(']','n')
                     self._make_connection(node_input_name, node_name)
                     # print(node_input_name ,'->', node_name)
 

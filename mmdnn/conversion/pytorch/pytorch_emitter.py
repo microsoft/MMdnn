@@ -201,26 +201,6 @@ class KitModel(nn.Module):
             ))
 
         else:
-            # for e in IR_node.get_attr('dilations', []):
-            #     assert e == 1
-
-            # pool_size = IR_node.get_attr('kernel_shape')[1:-1]
-            # strides = IR_node.get_attr('strides')[1:-1]
-
-
-            # padding = IR_node.get_attr('pads')[1:dim]
-            # ceil_mode = self.is_ceil_mode(IR_node.get_attr('pads'))
-
-            # # input_node = self._defuse_padding(IR_node, exstr)
-            # self.add_body(2, "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
-            #     IR_node.variable_name,
-            #     pool_name,
-            #     self.parent_variable_name(IR_node),
-            #     tuple(pool_size),
-            #     tuple(strides),
-            #     tuple(padding),
-            #     ceil_mode
-            #     ))
 
             if IR_node.get_attr('pooling_type') == "MAX":
                 # Change to padding defuse
@@ -285,7 +265,7 @@ class KitModel(nn.Module):
 
     def check_if_need_transpose(self, IR_node):
         parent = self.IR_graph.get_parent(IR_node.name, [0])
-        while parent.type == 'Flatten':
+        while parent.type == 'Flatten' or parent.type == 'Dropout':
             parent = self.IR_graph.get_parent(parent.name, [0])
         dim = len(parent.layer.attr['_output_shapes'].list.shape[0].dim)
         if dim > 2:

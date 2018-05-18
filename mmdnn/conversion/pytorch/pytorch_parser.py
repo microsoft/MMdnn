@@ -321,7 +321,7 @@ class PytorchParser(Parser):
         # weight: N x M -> C x H x W x M -> H x W x C x M -> N x M
         if self.weight_loaded:
             parent = self.src_graph.get_parent(source_node.name, [0])
-            while parent.type == 'onnx::Flatten':
+            while parent.type == 'onnx::Flatten' or parent.type == 'onnx::Dropout':
                 parent = self.src_graph.get_parent(parent.name, [0])
             if len(self.shape_dict[parent.name]) == 4:
                 #
