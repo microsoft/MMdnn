@@ -166,6 +166,34 @@ class PytorchParser(Parser):
             new_dim = IR_node.attr["shape"].shape.dim.add()
             new_dim.size = self.input_shape[index]
 
+        shape = graph_pb2.TensorShape()
+        new_dim = shape.dim.add()
+        shape_pytorch = self.input_shape
+
+        if len(shape_pytorch) == 4:
+
+            if shape_pytorch[0] == 1:
+                new_dim.size = -1
+            else:
+                new_dim.size = shape_pytorch[0]
+            for index in [2, 3, 1]:
+                new_dim = shape.dim.add()
+                dim = shape_pytorch[index]
+                new_dim.size = dim if dim else -1
+        elif len(shape_pytorch) == 2:
+            if shape_pytorch[0] == 1:
+                new_dim.size = -1
+            else:
+                new_dim.size = shape_pytorch[0]
+            for _ in range(2):
+                new_dim = shape.dim.add()
+                new_dim.size = 1
+            new_dim = shape.dim.add()
+            dim = shape_pytorch[1]
+            new_dim.size = dim if dim else -1
+
+
+        IR_node.attr["_output_shapes"].list.shape.extend([shape])
 
 
     def rename_Conv(self, source_node):
