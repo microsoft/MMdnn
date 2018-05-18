@@ -3,6 +3,7 @@ from mmdnn.conversion.common.IR.IR_graph import IRGraph
 import os.path
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 import numpy as np
+import sys
 
 
 class OnnxEmitter(Emitter):
@@ -139,6 +140,9 @@ def KitModel(weight_file = None):
         kernel_shape = list(IR_node.get_attr('kernel_shape'))[:-2]
         dilations = list(IR_node.get_attr('dilations', [1] * (len(kernel_shape) + 2)))[1:-1]
         group = IR_node.get_attr('group', 1)
+        if IR_node.type == 'DepthwiseConv':
+            group = IR_node.IR_layer.attr["kernel_shape"].list.i[-2]
+            self.weights_dict[IR_node.name]['weights'] = np.swapaxes(self.weights_dict[IR_node.name]['weights'], -1, -2)
         pads = IR_node.get_attr('pads')
         pad_length = len(pads)
         pads = pads[1:pad_length // 2 - 1] + pads[pad_length // 2 + 1:pad_length - 1]
@@ -460,6 +464,48 @@ def KitModel(weight_file = None):
                           beta,
                           bias,
                           size))
+        self.nodes.append(IR_node.variable_name)
+
+    def emit_Relu6(self, IR_node):
+        self.add_body(1, "{:15} = helper.make_node('Clip', inputs=['{}'], outputs=['{}'], min=0.0, max=6.0)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.variable_name))
+        self.nodes.append(IR_node.variable_name)
+
+    def emit_DepthwiseConv(self, IR_node):
+        self.emit_Conv(IR_node)
+
+    def emit_Slice(self, IR_node):
+        starts = IR_node.get_attr('starts')
+        starts = [starts[0], starts[-1]] + starts[1:-1]
+        ends = IR_node.get_attr('ends')
+        ends = [ends[0], ends[-1]] + ends[1:-1]
+        ends = [i if i != 0 else sys.maxsize for i in ends]
+        self.add_body(1, "{:15} = helper.make_node('Slice', inputs=['{}'], outputs=['{}'], starts={}, ends={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.variable_name,
+            starts,
+            ends))
+        self.nodes.append(IR_node.variable_name)
+
+    def emit_LeakyRelu(self, IR_node):
+        alpha = IR_node.get_attr('alpha')
+        self.add_body(1, "{:15} = helper.make_node('LeakyRelu', inputs=['{}'], outputs=['{}'], alpha={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.variable_name,
+            alpha))
+        self.nodes.append(IR_node.variable_name)
+
+    def emit_SpaceToDepth(self, IR_node):
+        blocksize = IR_node.get_attr('blocksize')
+        self.add_body(1, "{:15} = helper.make_node('SpaceToDepth', inputs=['{}'], outputs=['{}'], blocksize={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.variable_name,
+            blocksize))
         self.nodes.append(IR_node.variable_name)
 
     def emit_UNKNOWN(self, IR_node):
