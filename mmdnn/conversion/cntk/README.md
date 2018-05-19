@@ -4,11 +4,11 @@
 
 We tested some CNTK pre-trained models to others, get more detail from [this file](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/cntk/extractor.py)
 
-Models                   | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML
-:-----------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|
-Inception_v3             |       |       |     √      |  √   |       |      √     |
-ResNet 18                |   √   |   √   |     √      |  √   |   √   |      √     |
-ResNet 152               |   √   |   √   |     √      |  √   |   √   |      √     |
+|    Models    | Caffe | Keras | Tensorflow | CNTK | MXNet | PyTorch | CoreML | ONNX |
+| :----------: | :---: | :---: | :--------: | :--: | :---: | :-----: | :----: | :--: |
+| Inception_v3 |       |       |      √     |   √  |       |    √    |        |   √  |
+|   ResNet 18  |   √   |   √   |      √     |   √  |   √   |    √    |        |   √  |
+|  ResNet 152  |   √   |   √   |      √     |   √  |   √   |    √    |        |   √  |
 
 **√** - Correctness tested
 

@@ -4,15 +4,15 @@
 
 We tested some MXNet pre-trained models to others, get more detail from [this file](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/mxnet/extractor.py)
 
-Models                   | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML
-:-----------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|
-Vgg19                    |   √   |   √   |     √      |  √   |   √   |      √     |    √
-Inception_bn             |   √   |   √   |     √      |  √   |   √   |      √     |    √
-ResNet 18               |   √   |   √   |     √      |  √   |   √   |      √     |     √
-ResNet 152               |   √   |   √   |     √      |  √   |   √   |      √     |    √
-ResNext 50               |   √   |   √   |     √      |  √   |   √   |      √     |    √
-ResNext 101               |   √   |   √   |     √      |  √   |   √   |      √     |   √
-squeezenet_v1               |   √   |   √   |     √      |  √   |   √   |      √     |   √
+|     Models    | Caffe | Keras | Tensorflow | CNTK | MXNet | PyTorch | CoreML | ONNX |
+| :-----------: | :---: | :---: | :--------: | :--: | :---: | :-----: | :----: | :--: |
+|     Vgg19     |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|  Inception_bn |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|   ResNet 18   |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|   ResNet 152  |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|   ResNext 50  |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+|  ResNext 101  |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
+| squeezenet_v1 |   √   |   √   |      √     |   √  |   √   |    √    |    √   |   √  |
 
 **√** - Correctness tested
 
