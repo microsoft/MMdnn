@@ -177,20 +177,48 @@ def KitModel(weight_file = None):
                 IR_node.name))
 
         else:
-            kernel_shape_str = ', '.join('%s' % i for i in IR_node.get_attr('kernel_shape'))
-            strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides'))
+            dim = len(IR_node.get_attr("strides")) - 2
+            dilations = IR_node.get_attr('dilations')
+            if dilations:
+                for e in IR_node.get_attr('dilations'):
+                    assert e == 1
 
-            input_node, padding = self._defuse_padding(IR_node, padding_const)
+            pool_size = IR_node.get_attr('kernel_shape')[1:-1]
 
-            self.add_body(1, "{:<15} = tf.nn.{}{}({}, [{}], [{}], padding='{}', name='{}')".format(
-                IR_node.variable_name,
-                op,
-                dim_str,
-                input_node,
-                kernel_shape_str,
-                strides_str,
-                padding,
-                IR_node.name))
+            strides = IR_node.get_attr('strides')[1:-1]
+            padding = IR_node.get_attr('pads')[1:dim]
+
+            if pooling_type == "AVG" and pool_size.count(pool_size[0]) == len(pool_size) and strides[0] == 1 and strides.count(strides[0]) == len(strides) and padding.count(padding[0]) == len(padding) and pool_size[0] == padding[0]*2 + 1:
+                kernel_shape_str = ', '.join('%s' % i for i in IR_node.get_attr('kernel_shape'))
+                strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides'))
+
+
+                self.add_body(1, "{:<15} = tf.nn.{}{}({}, [{}], [{}], padding='{}', name='{}')".format(
+                    IR_node.variable_name,
+                    op,
+                    dim_str,
+                    self.parent_variable_name(IR_node),
+                    kernel_shape_str,
+                    strides_str,
+                    'SAME',
+                    IR_node.name))
+
+            else:
+
+                kernel_shape_str = ', '.join('%s' % i for i in IR_node.get_attr('kernel_shape'))
+                strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides'))
+
+                input_node, padding = self._defuse_padding(IR_node, padding_const)
+
+                self.add_body(1, "{:<15} = tf.nn.{}{}({}, [{}], [{}], padding='{}', name='{}')".format(
+                    IR_node.variable_name,
+                    op,
+                    dim_str,
+                    input_node,
+                    kernel_shape_str,
+                    strides_str,
+                    padding,
+                    IR_node.name))
 
 
     def emit_UNKNOWN(self, IR_node):
