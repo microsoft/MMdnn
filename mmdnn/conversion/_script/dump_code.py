@@ -36,7 +36,7 @@ def _get_parser():
     parser = argparse.ArgumentParser(description='Dump the model code into target model.')
 
     parser.add_argument(
-        '-f', '--framework', type=_text_type, choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'torch', 'onnx'],
+        '-f', '--framework', type=_text_type, choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'pytorch', 'onnx'],
         required=True,
         help='Format of model at srcModelPath (default is to auto-detect).'
     )
