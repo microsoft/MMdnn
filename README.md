@@ -116,7 +116,7 @@ $ mmtoir -f keras -w imagenet_inception_v3.h5 -o keras_inception_v3
 
 3. Open the [MMdnn model visualizer](http://mmdnn.eastasia.cloudapp.azure.com:8080/) and choose file *keras_inception_v3.json*
 
-![Inception_v3](https://npd8fa.dm2304.livefilestore.com/y4m7KYf7_pPQkijj0qwY-35ZkSwhL3o2CzSRv5WtbZIFnmZDYBHRQ3atBMvqnK-oIqBdIiO4grUTQ3cwxDULNSN9OydRzebqXI-tumcIajDb6sIn9tyaQfrSDDkW0V-3z_fOhxa4nsO0shTNS5ix1SHnuPBBJsorNUNAJSjtT5QZWZAd2LilqiIv4zntlANLp_gL_rSwvlSzC4ATXzSnvrOdg?width=1024&height=696&cropmode=none)
+![vismmdnn](docs/vismmdnn.png)
 
 ---
 
