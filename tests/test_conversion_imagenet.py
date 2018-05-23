@@ -689,24 +689,27 @@ class TestModels(CorrectnessTest):
             os.remove(converted_file + '.npy')
 
 
+
+    # In case of odd number add the extra padding at the end for SAME_UPPER(eg. pads:[0, 2, 2, 0, 0, 3, 3, 0]) and at the beginning for SAME_LOWER(eg. pads:[0, 3, 3, 0, 0, 2, 2, 0])
+
     exception_tabel = {
-        'cntk_Keras_resnet18',                      # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
-        'cntk_Keras_resnet152',                     # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
-        'cntk_Tensorflow_resnet18',                 # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
-        'cntk_Tensorflow_resnet152',                # Cntk Padding is SAME_UPPER, but Keras Padding is SAME_LOWER, in first convolution layer.
-        'tensorflow_Cntk_inception_v1',             # TODO
-        'tensorflow_Cntk_resnet_v1_50',             # TODO
-        'tensorflow_Cntk_resnet_v2_50',             # TODO
-        'tensorflow_Cntk_resnet_v1_152',            # TODO
-        'tensorflow_Cntk_resnet_v2_152',            # TODO
-        'tensorflow_Cntk_mobilenet_v1_1.0',         # TODO
-        'tensorflow_frozen_MXNet_inception_v1',     # TODO
+        'cntk_Keras_resnet18',                      # Cntk Padding is SAME_LOWER, but Keras Padding is SAME_UPPER, in first convolution layer.
+        'cntk_Keras_resnet152',                     # Cntk Padding is SAME_LOWER, but Keras Padding is SAME_UPPER, in first convolution layer.
+        'cntk_Tensorflow_resnet18',                 # Cntk Padding is SAME_LOWER, but Keras Padding is SAME_UPPER, in first convolution layer.
+        'cntk_Tensorflow_resnet152',                # Cntk Padding is SAME_LOWER, but Keras Padding is SAME_UPPER, in first convolution layer.
+        'tensorflow_Cntk_inception_v1',             # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
+        'tensorflow_Cntk_resnet_v1_50',             # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
+        'tensorflow_Cntk_resnet_v2_50',             # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
+        'tensorflow_Cntk_resnet_v1_152',            # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
+        'tensorflow_Cntk_resnet_v2_152',            # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
+        'tensorflow_Cntk_mobilenet_v1_1.0',         # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
+        'tensorflow_frozen_MXNet_inception_v1',     # different after AvgPool. AVG POOL padding difference between these two framework. MXNet AVGPooling Padding is SAME_LOWER, Tensorflow AVGPooling Padding is SAME_UPPER
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
         'caffe_Pytorch_inception_v1',               # TODO
         'caffe_Pytorch_alexnet',                    # TODO
         'caffe_Pytorch_inception_v4',               # TODO, same with caffe_Cntk_inception_v4
-        'darknet_Keras_yolov2',                     # TODO,
-        'darknet_Keras_yolov3',                     # TODO,
+        'darknet_Keras_yolov2',                     # accumulation of small difference
+        'darknet_Keras_yolov3',                     # accumulation of small difference
     }
 
 

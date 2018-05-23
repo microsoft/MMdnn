@@ -60,8 +60,13 @@ class IRGraphNode(GraphNode):
             attr = self.layer.attr[name]
             field = attr.WhichOneof('value')
             val = getattr(attr, field) if field else default_value
+            if not val:
+                return val
             if isinstance(val, AttrValue.ListValue):
-                return list(val.ListFields()[0][1])
+                if val.ListFields():
+                    return list(val.ListFields()[0][1])
+                else:
+                    return val.ListFields()
             else:
                 return val.decode('utf-8') if isinstance(val, bytes) else val
         else:
