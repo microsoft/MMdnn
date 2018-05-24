@@ -215,7 +215,7 @@ with tf.Session(graph=tf.Graph()) as sess:
 
 Ubuntu 16.04 with
 
-- Tensorflow 1.7
+- Tensorflow 1.8
 
 @ 2018/05/23
 
