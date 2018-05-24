@@ -12,6 +12,7 @@ We tested the [slim pre-trained models](https://github.com/tensorflow/models/tre
 |   ResNet V1  |   x   |    √   |   o  |   √   |   √   |    √    |      √     |   √  |
 |   ResNet V2  |   x   |    √   |   √  |   √   |   √   |    √    |      √     |   √  |
 | MobileNet V1 |   x   |    √   |   o  |   √   |   √   |    √    |      √     |   √  |
+| MobileNet V2 |   x   |    √   |   o  |   √   |   √   |    √    |      √     |   √  |
 |   NasNet-A   |   x   |        |      |       |   √   |    √    |      √     |   √  |
 
 **√** - Correctness tested

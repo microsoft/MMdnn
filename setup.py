@@ -75,7 +75,8 @@ setup(
         'numpy >= 1.11.0',
         'protobuf >= 3.1.0',
         'six >= 1.10.0',
-        'uuid'
+        'uuid',
+        'pillow >= 3.1.0',
     ],
 
     # To provide executable scripts, use entry points in preference to the

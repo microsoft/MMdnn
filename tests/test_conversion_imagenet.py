@@ -703,6 +703,7 @@ class TestModels(CorrectnessTest):
         'tensorflow_Cntk_resnet_v1_152',            # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
         'tensorflow_Cntk_resnet_v2_152',            # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
         'tensorflow_Cntk_mobilenet_v1_1.0',         # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
+        'tensorflow_Cntk_mobilenet_v2_1.0_224',     # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
         'tensorflow_frozen_MXNet_inception_v1',     # different after AvgPool. AVG POOL padding difference between these two framework. MXNet AVGPooling Padding is SAME_LOWER, Tensorflow AVGPooling Padding is SAME_UPPER
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
         'caffe_Pytorch_inception_v1',               # TODO
@@ -766,7 +767,7 @@ class TestModels(CorrectnessTest):
             'resnet_v2_50'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
             'resnet_v2_152'         : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit],
             'mobilenet_v1_1.0'      : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
-            'mobilenet_v2_1.0_224'  : [CoreMLEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash) CntkEmit
+            'mobilenet_v2_1.0_224'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
             'nasnet-a_large'        : [MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
             # 'inception_resnet_v2' : [TensorflowEmit], # TODO PytorchEmit
 
