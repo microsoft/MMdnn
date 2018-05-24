@@ -229,7 +229,7 @@ class TestKit(object):
     def ZeroCenter(path, size, BGRTranspose=False):
         img = Image.open(path)
         img = img.resize((size, size))
-        x = np.array(img, dtype=np.float64)
+        x = np.array(img, dtype=np.float32)
 
         # Reference: 1) Keras image preprocess: https://github.com/keras-team/keras/blob/master/keras/applications/imagenet_utils.py
         #            2) tensorflow github issue: https://github.com/tensorflow/models/issues/517
@@ -250,7 +250,7 @@ class TestKit(object):
     def Normalize(path, size=224, scale=0.0392156863 ,mean=[-0.485, -0.456, -0.406], std=[0.229, 0.224, 0.225], BGRTranspose = False):
         img = Image.open(path)
         img = img.resize((size, size))
-        x = np.array(img, dtype=np.float64)
+        x = np.array(img, dtype=np.float32)
         x *= scale
         for i in range(0, 3):
             x[..., i] += mean[i]
@@ -264,7 +264,7 @@ class TestKit(object):
     def Standard(path, size, BGRTranspose=False):
         img = Image.open(path)
         img = img.resize((size, size))
-        x = np.array(img, dtype=np.float64)
+        x = np.array(img, dtype=np.float32)
         x /= 255.0
         x -= 0.5
         x *= 2.0
@@ -277,7 +277,7 @@ class TestKit(object):
     def Identity(path, size, BGRTranspose=False):
         img = Image.open(path)
         img = img.resize((size, size))
-        x = np.array(img, dtype=np.float64)
+        x = np.array(img, dtype=np.float32)
         if BGRTranspose == True:
             x = x[..., ::-1]
         return x
