@@ -7,7 +7,7 @@ from __future__ import absolute_import
 import argparse
 import numpy as np
 from six import text_type as _text_type
-from tensorflow.contrib.keras.api.keras.preprocessing import image
+from PIL import Image
 
 
 class TestKit(object):
@@ -227,8 +227,9 @@ class TestKit(object):
 
     @staticmethod
     def ZeroCenter(path, size, BGRTranspose=False):
-        img = image.load_img(path, target_size = (size, size))
-        x = image.img_to_array(img)
+        img = Image.open(path)
+        img = img.resize((size, size))
+        x = np.array(img, dtype=np.float64)
 
         # Reference: 1) Keras image preprocess: https://github.com/keras-team/keras/blob/master/keras/applications/imagenet_utils.py
         #            2) tensorflow github issue: https://github.com/tensorflow/models/issues/517
@@ -247,8 +248,9 @@ class TestKit(object):
 
     @staticmethod
     def Normalize(path, size=224, scale=0.0392156863 ,mean=[-0.485, -0.456, -0.406], std=[0.229, 0.224, 0.225], BGRTranspose = False):
-        img = image.load_img(path, target_size=(size, size))
-        x = image.img_to_array(img)
+        img = Image.open(path)
+        img = img.resize((size, size))
+        x = np.array(img, dtype=np.float64)
         x *= scale
         for i in range(0, 3):
             x[..., i] += mean[i]
@@ -260,8 +262,9 @@ class TestKit(object):
 
     @staticmethod
     def Standard(path, size, BGRTranspose=False):
-        img = image.load_img(path, target_size = (size, size))
-        x = image.img_to_array(img)
+        img = Image.open(path)
+        img = img.resize((size, size))
+        x = np.array(img, dtype=np.float64)
         x /= 255.0
         x -= 0.5
         x *= 2.0
@@ -272,8 +275,9 @@ class TestKit(object):
 
     @staticmethod
     def Identity(path, size, BGRTranspose=False):
-        img = image.load_img(path, target_size = (size, size))
-        x = image.img_to_array(img)
+        img = Image.open(path)
+        img = img.resize((size, size))
+        x = np.array(img, dtype=np.float64)
         if BGRTranspose == True:
             x = x[..., ::-1]
         return x
