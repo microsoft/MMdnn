@@ -53,6 +53,7 @@ class TensorflowParser2(Parser):
         # "Requantize",
         "ExpandDims",
         "Identity",
+        # "Mean",
         # "Cast"
         "Pack"
     ])
@@ -354,11 +355,13 @@ class TensorflowParser2(Parser):
                 continue
 
             node_type = current_node.type
+
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
 
             else:
+
                 self.rename_UNKNOWN(current_node)
 
     @staticmethod
@@ -471,6 +474,7 @@ class TensorflowParser2(Parser):
 
 
     def _convert_pooling(self, source_node, pool_type):
+
         IR_node = self._convert_identity_operation(source_node, new_op='Pool')
         kwargs = {}
 
@@ -556,6 +560,19 @@ class TensorflowParser2(Parser):
 
     def rename_CheckNumerics(self, source_node):
         return
+
+    def rename_Mean(self, source_node):
+        # ReduceMean
+        IR_node = self._convert_identity_operation(source_node, new_op='ReduceMean')
+        # keep dims
+        IR_node.attr['keepdims'].b = source_node.layer.attr['keep_dims'].b
+
+
+        # axes
+        axes = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
+        axes = tensor_util.MakeNdarray(axes)
+        IR_node.attr['axes'].list.i.extend(axes)
+
 
 
     def rename_Reshape(self, source_node):
@@ -1007,16 +1024,16 @@ class TensorflowParser2(Parser):
         # print(source_node.layer)
         # assert False
         IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'Pad')
-        # kwargs = {}
-        # kwargs['mode'] = 'constant'
+        kwargs = {}
+        kwargs['mode'] = 'constant'
         # kwargs['constant_values'] = 0.0
 
         # # paddings
-        # padding = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
-        # shapes = tensor_util.MakeNdarray(padding)
-        # kwargs['pads'] = convert_tf_pad_to_onnx(shapes)
+        padding = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
+        shapes = tensor_util.MakeNdarray(padding)
+        kwargs['pads'] = convert_tf_pad_to_onnx(shapes)
 
-        # assign_IRnode_values(IR_node, kwargs)
+        assign_IRnode_values(IR_node, kwargs)
 
     def rename_FusedBatchNorm(self, source_node):
         # print(source_node.layer)
