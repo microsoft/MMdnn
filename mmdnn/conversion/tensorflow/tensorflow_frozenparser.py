@@ -53,6 +53,7 @@ class TensorflowParser2(Parser):
         # "Requantize",
         "ExpandDims",
         "Identity",
+        # "Mean",
         # "Cast"
         "Pack"
     ])
@@ -365,6 +366,7 @@ class TensorflowParser2(Parser):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
             else:
+
                 self.rename_UNKNOWN(current_node)
 
 
@@ -478,6 +480,7 @@ class TensorflowParser2(Parser):
 
 
     def _convert_pooling(self, source_node, pool_type):
+
         IR_node = self._convert_identity_operation(source_node, new_op='Pool')
         kwargs = {}
 
@@ -565,6 +568,19 @@ class TensorflowParser2(Parser):
 
     def rename_CheckNumerics(self, source_node):
         return
+
+    def rename_Mean(self, source_node):
+        # ReduceMean
+        IR_node = self._convert_identity_operation(source_node, new_op='ReduceMean')
+        # keep dims
+        IR_node.attr['keepdims'].b = source_node.layer.attr['keep_dims'].b
+
+
+        # axes
+        axes = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
+        axes = tensor_util.MakeNdarray(axes)
+        IR_node.attr['axes'].list.i.extend(axes)
+
 
 
     def rename_Reshape(self, source_node):
@@ -1069,7 +1085,6 @@ class TensorflowParser2(Parser):
 
         # # paddings
         padding = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
-        # print(padding)
         shapes = tensor_util.MakeNdarray(padding)
         kwargs['pads'] = convert_tf_pad_to_onnx(shapes)
 
