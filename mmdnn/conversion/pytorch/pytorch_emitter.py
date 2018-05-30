@@ -566,7 +566,6 @@ class KitModel(nn.Module):
 
     def emit_Split(self, IR_node):
         print(IR_node.layer)
-        assert False
 
 
     def _layer_Conv(self):

@@ -151,23 +151,23 @@ class TensorflowParser2(Parser):
                 tensor_input = tensorflow.TensorShape(input_list)
                 output_shape_map[input_node_names[0]] = tensor_input
 
-        # assert False
+
         self.tf_graph = TensorflowGraph(model)
         for node in self.tf_graph.model.node:
             if (node.name + ':0') in output_shape_map and node.op != 'Placeholder':
                 node.attr['_output_shapes'].list.shape.extend([output_shape_map[node.name + ':0'].as_proto()])
 
-            if  node.op == 'MirrorPad':
+            if node.op == 'MirrorPad':
                 node.attr['paddings'].list.shape.extend([input_shape_map[node.name + '/paddings:0'].as_proto()])
 
-            if  node.op == 'QuantizeV2':
+            if node.op == 'QuantizeV2':
                 node.attr['shape'].list.shape.extend([input_shape_map[node.name + ':0'].as_proto()])
 
-            if  node.op == 'RequantizationRange':
+            if node.op == 'RequantizationRange':
                 map_key = node.name.split('eightbit')[0] + "eightbit_quantized_conv:0"
                 node.attr['shape'].list.shape.extend([input_shape_map[map_key].as_proto()])
 
-            if  node.op == 'Requantize':
+            if node.op == 'Requantize':
                 map_key = node.name.replace("requantize", "quantized_conv")+":0"
                 node.attr['shape'].list.shape.extend([input_shape_map[map_key].as_proto()])
 
@@ -175,6 +175,17 @@ class TensorflowParser2(Parser):
                 if node.name in output_shape_map.keys():
                     node.attr['shape'].list.shape.extend([output_shape_map[node.name].as_proto()])
                     node.attr['_output_shapes'].list.shape.extend([output_shape_map[node.name].as_proto()])
+
+            # if node.op == 'Split':
+            #     print(node.name)
+            #     # print(output_shape_map[node.input[1]])
+            #     # print(dir(node))
+            #     if not node.attr['_output_shapes'].list.shape[0].dim:
+            #         node.attr['_output_shapes'].list.shape.extend([output_shape_map[node.input[1]].as_proto()])
+
+                    # print("&&&")
+                # print(type(node.attr['_output_shapes']))
+
 
         self.tf_graph.build()
 
@@ -498,6 +509,7 @@ class TensorflowParser2(Parser):
 
 
         assign_IRnode_values(IR_node, kwargs)
+
 
     def _convert_identity_operation(self, source_node, start_idx = 0, end_idx = None, new_op = None):
         IR_node = self.IR_graph.node.add()
@@ -895,6 +907,7 @@ class TensorflowParser2(Parser):
 
 
     def rename_MaxPool(self, source_node):
+        # print(source_node.layer)
         self._convert_pooling(source_node, b'MAX')
 
 
