@@ -275,7 +275,6 @@ class TensorflowParser(Parser):
                 continue
 
             node_type = current_node.type
-
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
@@ -511,12 +510,26 @@ class TensorflowParser(Parser):
         IR_node = self._convert_identity_operation(source_node)
         IR_node.attr['axes'].MergeFromString(source_node.layer.attr['squeeze_dims'].SerializeToString())
 
+    def rename_QueueDequeueUpToV2(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, in_edge_count = 0, new_op = 'DataInput')
+        IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['_output_shapes'].list.shape[0].SerializeToString())
+        IR_node.attr['shape'].shape.dim[0].size = -1
+        IR_node.attr['dtype'].type = self.dtype_map[source_node.layer.attr['component_types'].list.type[0]]
+
+
 
     def rename_QueueDequeueManyV2(self, source_node):
         IR_node = self._convert_identity_operation(source_node, in_edge_count = 0, new_op = 'DataInput')
         IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['_output_shapes'].list.shape[0].SerializeToString())
         IR_node.attr['shape'].shape.dim[0].size = -1
         IR_node.attr['dtype'].type = self.dtype_map[source_node.layer.attr['component_types'].list.type[0]]
+
+    # def rename_RandomShuffleQueueV2(self, source_node):
+    #     # print(source_node.layer)
+    #     IR_node = self._convert_identity_operation(source_node, in_edge_count = 0, new_op = 'DataInput')
+    #     # IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['_output_shapes'].list.shape[0].SerializeToString())
+    #     # IR_node.attr['shape'].shape.dim[0].size = -1
+    #     IR_node.attr['dtype'].type = self.dtype_map[source_node.layer.attr['component_types'].list.type[0]]
 
 
     def rename_Pad(self, source_node):
@@ -605,6 +618,28 @@ class TensorflowParser(Parser):
             self.set_weight(source_node.name, 'mean', self.ckpt_data[mean.name])
             self.set_weight(source_node.name, 'var', self.ckpt_data[var.name])
 
+    def rename_Shape(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, in_edge_count=1, new_op='Shape')
+
+    def rename_Pack(self, source_node):
+        N = len(source_node.layer.input)
+        for i in range(N):
+            this_node = self.get_parent(source_node.name, [i])
+            if this_node.type == 'Const':
+
+                IR_node = self.IR_graph.node.add()
+                TensorflowParser._copy_and_reop(this_node, IR_node, 'Const')
+                kwargs = {
+                    'value' : this_node.layer.attr['value'].tensor.int_val[0],
+                }
+                assign_IRnode_values(IR_node, kwargs)
+
+        IR_node = self._convert_identity_operation(source_node, new_op='Pack')
+        kwargs = {
+            'axis' : source_node.layer.attr['axis'].i,
+            'N'    : source_node.layer.attr['N'].i
+        }
+        assign_IRnode_values(IR_node, kwargs)
 
     def rename_Transpose(self, source_node):
         IR_node = self._convert_identity_operation(source_node, in_edge_count=1)
@@ -618,6 +653,17 @@ class TensorflowParser(Parser):
 
 
     def rename_Mul(self, source_node):
+        N = len(source_node.layer.input)
+        for i in range(N):
+            this_node = self.get_parent(source_node.name, [i])
+            if this_node.type == 'Const':
+
+                IR_node = self.IR_graph.node.add()
+                TensorflowParser._copy_and_reop(this_node, IR_node, 'Const')
+                kwargs = {
+                    'value' : this_node.layer.attr['value'].tensor.float_val[0],
+                }
+                assign_IRnode_values(IR_node, kwargs)
         self._convert_identity_operation(source_node)
 
 
@@ -636,6 +682,15 @@ class TensorflowParser(Parser):
 
     def rename_StridedSlice(self, source_node):
         # TODO: Current it is only for slice
+        # print(source_node.layer)
+        # print('='*10)
+        # print(self.get_parent(source_node.name, [1]).layer)
+        # print('='*10)
+        # print(self.get_parent(source_node.name, [2]).layer)
+        # print('='*10)
+        # print(self.get_parent(source_node.name, [3]).layer)
+        # print('='*10)
+
         IR_node = self._convert_identity_operation(source_node, in_edge_count=1, new_op='Slice')
         kwargs = {
             'begin_mask' : source_node.get_attr('begin_mask'),
