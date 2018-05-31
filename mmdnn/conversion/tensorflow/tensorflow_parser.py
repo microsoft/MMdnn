@@ -653,18 +653,56 @@ class TensorflowParser(Parser):
 
 
     def rename_Mul(self, source_node):
-        N = len(source_node.layer.input)
-        for i in range(N):
-            this_node = self.get_parent(source_node.name, [i])
-            if this_node.type == 'Const':
+        # N = len(source_node.layer.input)
+        # for i in range(N):
+        #     this_node = self.get_parent(source_node.name, [i])
+        #     if this_node.type == 'Const':
 
-                IR_node = self.IR_graph.node.add()
-                TensorflowParser._copy_and_reop(this_node, IR_node, 'Const')
-                kwargs = {
-                    'value' : this_node.layer.attr['value'].tensor.float_val[0],
-                }
-                assign_IRnode_values(IR_node, kwargs)
-        self._convert_identity_operation(source_node)
+        #         IR_node = self.IR_graph.node.add()
+        #         TensorflowParser._copy_and_reop(this_node, IR_node, 'Const')
+        #         kwargs = {
+        #             'value' : this_node.layer.attr['value'].tensor.float_val[0],
+        #         }
+        #         assign_IRnode_values(IR_node, kwargs)
+
+
+
+        # gamma (scale)
+        scale = self.get_parent(source_node.name, [1], True)
+
+        shape = self.tensor_shape_to_list(source_node.get_attr('_output_shapes'))[0]
+        shape[0] = 1
+        channel_shape = shape[-1]
+
+        if scale.type == 'Const':
+
+            IR_node = self._convert_identity_operation(source_node, in_edge_count=1, new_op='Scale')
+            IR_node.attr['epsilon'].f = source_node.get_attr('epsilon', 0)
+
+            value = scale.get_attr('value')
+
+
+            assert len(value.float_val) == 1
+            value = value.float_val[0]
+
+
+            IR_node.attr['scale'].b = True
+            if self.weight_loaded:
+                self.set_weight(source_node.name, 'scale', np.array([value]* channel_shape, dtype=np.float32))
+
+            # bias
+            IR_node.attr['use_bias'].b = True
+            if self.weight_loaded:
+                self.set_weight(source_node.name, 'bias', np.zeros( channel_shape, dtype=np.float32 ))
+                self.set_weight(source_node.name, 'scale_mean', np.zeros( shape, dtype=np.float32 ))
+                self.set_weight(source_node.name, 'scale_var', np.ones( shape, dtype=np.float32 ))
+
+
+
+        else:
+
+            self._convert_identity_operation(source_node)
+
 
 
     def rename_Split(self, source_node):
@@ -682,14 +720,7 @@ class TensorflowParser(Parser):
 
     def rename_StridedSlice(self, source_node):
         # TODO: Current it is only for slice
-        # print(source_node.layer)
-        # print('='*10)
-        # print(self.get_parent(source_node.name, [1]).layer)
-        # print('='*10)
-        # print(self.get_parent(source_node.name, [2]).layer)
-        # print('='*10)
-        # print(self.get_parent(source_node.name, [3]).layer)
-        # print('='*10)
+
 
         IR_node = self._convert_identity_operation(source_node, in_edge_count=1, new_op='Slice')
         kwargs = {

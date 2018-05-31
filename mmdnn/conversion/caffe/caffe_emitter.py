@@ -482,3 +482,20 @@ bias_term={}, ntop=1)".format(
 
     def emit_DepthwiseConv(self, IR_node):
         self.emit_Conv(IR_node)
+
+    def emit_Const(self, IR_node):
+        pass
+    def emit_Shape(self, IR_node):
+        pass
+    def emit_Reshape(self, IR_node):
+        # currently for the flatten layer
+        self.add_body(1, "n.{:<15} = L.Flatten(n.{})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            ))
+
+    def emit_Slice(self, IR_node):
+        pass
+
+    def emit_Pack(self, IR_node):
+        pass

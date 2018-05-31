@@ -441,6 +441,14 @@ def KitModel(weight_file = None):
             IR_node.name))
 
 
+    def emit_Scale(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        self.add_body(1, "{:<15} = scale({}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name))
+
+
     def emit_Pad(self, IR_node):
         padding = IR_node.get_attr('pads')
         padding = convert_onnx_pad_to_tf(padding)
@@ -616,6 +624,17 @@ def batch_normalization(input, name, **kwargs):
     offset = tf.Variable(__weights_dict[name]['bias'], name = name + "_bias", trainable = is_train) if 'bias' in __weights_dict[name] else None
     scale = tf.Variable(__weights_dict[name]['scale'], name = name + "_scale", trainable = is_train) if 'scale' in __weights_dict[name] else None
     return tf.nn.batch_normalization(input, mean, variance, offset, scale, name = name, **kwargs)
+""")
+
+
+    def _layer_Scale(self):
+        self.add_body(0, """
+def scale(input, name, **kwargs):
+    mean = tf.Variable(__weights_dict[name]['scale_mean'], name = name + "_mean", trainable = is_train)
+    variance = tf.Variable(__weights_dict[name]['scale_var'], name = name + "_var", trainable = is_train)
+    offset = tf.Variable(__weights_dict[name]['bias'], name = name + "_bias", trainable = is_train) if 'bias' in __weights_dict[name] else None
+    scale = tf.Variable(__weights_dict[name]['scale'], name = name + "_scale", trainable = is_train) if 'scale' in __weights_dict[name] else None
+    return tf.nn.batch_normalization(input, mean, variance, offset, scale, variance_epsilon = 0, name = name)
 """)
 
 

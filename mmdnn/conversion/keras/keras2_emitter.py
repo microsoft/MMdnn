@@ -113,8 +113,8 @@ def KitModel(weight_file = None):
 
         self.add_body(1, "{:<15} = Model(inputs = [{}], outputs = [{}])".format(
             "model",
-            ', '.join([self.IR_graph.get_node(i).real_variable_name for i in self.IR_graph.input_layers]),
-            ', '.join([self.IR_graph.get_node(i).real_variable_name for i in self.IR_graph.output_layers])))
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']),
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack'])))
         self.add_body(1, ["set_layer_weights(model, weights_dict)", "return model"])
 
         for i in self.used_layers:
@@ -507,6 +507,29 @@ def KitModel(weight_file = None):
             IR_node.get_attr('k'),
             IR_node.name,
             self.parent_variable_name(IR_node)))
+
+    def emit_Const(self, IR_node):
+        pass
+
+
+
+    def emit_Shape(self, IR_node):
+        pass
+
+
+    def emit_Slice(self, IR_node):
+        pass
+        # It arouses some problems:
+        # it can be implemented by Lambda Layer
+        # https://github.com/keras-team/keras/issues/890
+
+
+    def emit_Pack(self, IR_node):
+        pass
+
+
+
+
 
 
 
