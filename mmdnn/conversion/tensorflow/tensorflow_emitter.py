@@ -83,9 +83,12 @@ def KitModel(weight_file = None):
                 print("TensorflowEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
 
+
         self.add_body(1, "return {}, {}".format(
-            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers]),
-            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers])))
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']),
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack'])))
+
+
 
         self.add_body(0, "")
         for i in self.used_layers:
@@ -309,6 +312,28 @@ def KitModel(weight_file = None):
             IR_node.variable_name,
             ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
 
+    def emit_Const(self, IR_node):
+        if 'dtype' in IR_node.layer.attr:
+            dtype_str = "dtype={}".format(self.dtype_map[IR_node.layer.attr['dtype'].type])
+            if 'int' in dtype_str:
+                self.add_body(1, "{:<15} = tf.constant({}, {}, shape=(1,))".format(
+                    IR_node.variable_name,
+                    IR_node.layer.attr['value'].i,
+                    dtype_str))
+            else:
+                self.add_body(1, "{:<15} = tf.constant({}, {}, shape=(1,))".format(
+                    IR_node.variable_name,
+                    IR_node.layer.attr['value'].f,
+                    dtype_str))
+
+        else:
+            dtype_str = "dtype=tf.float32"
+            self.add_body(1, "{:<15} = tf.constant({}, {}, shape=(1,))".format(
+                IR_node.variable_name,
+                IR_node.layer.attr['value'].f,
+                dtype_str))
+
+
 
     def emit_Reshape(self, IR_node):
         self.add_body(1, "{:<15} = tf.reshape({}, [{}], '{}')".format(
@@ -413,6 +438,14 @@ def KitModel(weight_file = None):
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('epsilon'),
+            IR_node.name))
+
+
+    def emit_Scale(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        self.add_body(1, "{:<15} = scale({}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
             IR_node.name))
 
 
@@ -532,6 +565,20 @@ def KitModel(weight_file = None):
             extra_str,
             IR_node.name))
 
+    def emit_Shape(self, IR_node):
+        self.add_body(1, "{:<15} = tf.shape({}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name))
+
+    def emit_Pack(self, IR_node):
+        self.add_body(1, "{:<15} = tf.stack({}, axis={}, name='{}')".format(
+            IR_node.variable_name,
+            '[' +  ','.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges) + ']',
+            IR_node.get_attr('axis'),
+            IR_node.name))
+
+
 
     def emit_Split(self, IR_node):
         self.add_body(1, "{:<15} = tf.split({}, {}, {}, name='{}')".format(
@@ -577,6 +624,17 @@ def batch_normalization(input, name, **kwargs):
     offset = tf.Variable(__weights_dict[name]['bias'], name = name + "_bias", trainable = is_train) if 'bias' in __weights_dict[name] else None
     scale = tf.Variable(__weights_dict[name]['scale'], name = name + "_scale", trainable = is_train) if 'scale' in __weights_dict[name] else None
     return tf.nn.batch_normalization(input, mean, variance, offset, scale, name = name, **kwargs)
+""")
+
+
+    def _layer_Scale(self):
+        self.add_body(0, """
+def scale(input, name, **kwargs):
+    mean = tf.Variable(__weights_dict[name]['scale_mean'], name = name + "_mean", trainable = is_train)
+    variance = tf.Variable(__weights_dict[name]['scale_var'], name = name + "_var", trainable = is_train)
+    offset = tf.Variable(__weights_dict[name]['bias'], name = name + "_bias", trainable = is_train) if 'bias' in __weights_dict[name] else None
+    scale = tf.Variable(__weights_dict[name]['scale'], name = name + "_scale", trainable = is_train) if 'scale' in __weights_dict[name] else None
+    return tf.nn.batch_normalization(input, mean, variance, offset, scale, variance_epsilon = 0, name = name)
 """)
 
 

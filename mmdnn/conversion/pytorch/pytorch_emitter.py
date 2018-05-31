@@ -15,14 +15,14 @@ from mmdnn.conversion.common.utils import *
 class PytorchEmitter(Emitter):
 
     dtype_map = {
-        graph_pb2.DT_FLOAT16 : "float16",
-        graph_pb2.DT_FLOAT32 : "float32",
-        graph_pb2.DT_FLOAT64 : "float64",
-        graph_pb2.DT_INT16 : "int16",
-        graph_pb2.DT_INT32 : "int32",
-        graph_pb2.DT_INT64 : "int64",
-        graph_pb2.DT_UINT8 : "uint8",
-        graph_pb2.DT_UINT16 : "uint16"
+        graph_pb2.DT_FLOAT16 : "torch.float16",
+        graph_pb2.DT_FLOAT32 : "torch.float32",
+        graph_pb2.DT_FLOAT64 : "torch.float64",
+        graph_pb2.DT_INT16 : "torch.int16",
+        graph_pb2.DT_INT32 : "torch.int32",
+        graph_pb2.DT_INT64 : "torch.int64",
+        graph_pb2.DT_UINT8 : "torch.uint8",
+        graph_pb2.DT_UINT16 : "torch.uint16"
     }
 
     # Base Functions
@@ -99,7 +99,7 @@ class KitModel(nn.Module):
                 self.emit_UNKNOWN(current_node)
 
         self.add_body(2, "return {}".format(
-            ','.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers])))
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack'])))
 
         self.add_body(0, "")
         for i in self.used_layers:
@@ -544,12 +544,47 @@ class KitModel(nn.Module):
     def emit_DepthwiseConv(self, IR_node):
         self.emit_Conv(IR_node)
 
+    def emit_Const(self, IR_node):
+        if 'dtype' in IR_node.layer.attr:
+            dtype_str = "dtype={}".format(self.dtype_map[IR_node.layer.attr['dtype'].type])
+            if 'int' in dtype_str:
+                self.add_body(2, "{:<15} = torch.tensor({}, {})".format(
+                    IR_node.variable_name,
+                    IR_node.layer.attr['value'].i,
+                    dtype_str))
+            else:
+                self.add_body(2, "{:<15} = torch.tensor({}, {})".format(
+                    IR_node.variable_name,
+                    IR_node.layer.attr['value'].f,
+                    dtype_str))
+
+        else:
+            dtype_str = "dtype=torch.float32"
+            self.add_body(2, "{:<15} = torch.tensor({}, {})".format(
+                IR_node.variable_name,
+                IR_node.layer.attr['value'].f,
+                dtype_str))
+
+
+    def emit_Shape(self, IR_node):
+        self.add_body(2, "{:<15} = list({}.size())".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)
+            ))
+
+    def emit_Pack(self, IR_node):
+        self.add_body(2, "{:<15} = {}".format(
+            IR_node.variable_name,
+            '[' +  ','.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges) + ']',
+            ))
 
     def emit_Slice(self, IR_node):
         starts = IR_node.get_attr('starts')
-        starts = [starts[0], starts[-1]] + starts[1:-1]
+        if len(starts) > 1:
+            starts = [starts[0], starts[-1]] + starts[1:-1]
         ends = IR_node.get_attr('ends')
-        ends = [ends[0], ends[-1]] + ends[1:-1]
+        if len(ends) > 1:
+            ends = [ends[0], ends[-1]] + ends[1:-1]
         extra_str = ""
         for idx, _ in enumerate(starts):
             if idx:
@@ -557,7 +592,6 @@ class KitModel(nn.Module):
             extra_str += "{}:".format(starts[idx])
             if ends[idx]:
                 extra_str += "{}".format(ends[idx])
-
         self.add_body(2, "{:<15} = {}[{}]".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
