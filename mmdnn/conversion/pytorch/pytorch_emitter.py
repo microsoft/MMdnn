@@ -598,6 +598,9 @@ class KitModel(nn.Module):
             extra_str
         ))
 
+    def emit_Split(self, IR_node):
+        print(IR_node.layer)
+
 
     def _layer_Conv(self):
         self.add_body(0, """
