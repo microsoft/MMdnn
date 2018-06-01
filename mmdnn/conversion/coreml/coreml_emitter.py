@@ -41,13 +41,20 @@ class CoreMLEmitter(Emitter):
         input_features = []
         output_features = []
         for input_node in self.IR_graph.input_layers:
+            if self.IR_graph.get_node(input_node).type == 'Const':
+                continue
             shape = shape_to_list(self.IR_graph.get_node(input_node).get_attr('shape'))
             shape = _infer_coreml_input_shape(shape)
             input_features.append((str(input_node), shape))
             print("CoreML Model Input Layer: [{}] {}".format(input_node, shape))
 
         for output_node in self.IR_graph.output_layers:
+
             node = self.IR_graph.get_node(output_node)
+
+            if node.type == 'Pack':
+                continue
+
             node.out_edges.append(node.name)
             shape = node.get_attr('_output_shapes')
             if shape:
@@ -60,6 +67,7 @@ class CoreMLEmitter(Emitter):
             output_features.append((str(output_node), shape))
 
             print("CoreML Model Output Layer: [{}] {}".format(output_node, shape))
+
 
         return list(input_features), list(output_features)
 
@@ -967,3 +975,13 @@ class CoreMLEmitter(Emitter):
                 output_name = output_name,
                 dilation_factors = [1,1])
 
+
+    def emit_Slice(self, IR_node):
+        pass
+    def emit_Const(self, IR_node):
+        pass
+
+    def emit_Shape(self, IR_node):
+        pass
+    def emit_Pack(self, IR_node):
+        pass
