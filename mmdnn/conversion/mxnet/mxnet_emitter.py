@@ -95,7 +95,8 @@ def RefactorModel():
             elif hasattr(self, "emit_" + node_type):
                 func = getattr(self, "emit_" + node_type)
                 line = func(current_node)
-                self.add_body(1, line)
+                if line != None:
+                    self.add_body(1, line)
             else:
                 print("MXNet Emitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
@@ -128,8 +129,8 @@ def RefactorModel():
         comment = "\n    # if a GPU is available, change mx.cpu() to mx.gpu()"
         last_line = "{:<15} = mx.mod.Module(symbol = {}, context = mx.cpu(), data_names = ['{}'])".format(
             "model",
-            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers]),
-            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers]))
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack']),
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']))
 
         self.add_body(1, comment)
         self.add_body(1, last_line)
@@ -558,10 +559,37 @@ def predict(model, labels, url):
             return code
 
     def emit_Scale(self, IR_node):
-        code = "{:<15} = mx.sym.identity(data = {}, name='{}')".format(
+        if self.weight_loaded:
+            weight_dict = self.weights[IR_node.name]
+
+        # axis = IR_node.IR_layer.attr["axis"].i
+        axis = 1
+        eps = 0.0
+        momentum = 0.0
+
+        fix_gamma = not IR_node.IR_layer.attr["scale"].b
+
+        if self.weight_loaded:
+            if not fix_gamma:
+                self.output_weights[IR_node.name + "_gamma"] = weight_dict['scale']
+            self.output_weights[IR_node.name + "_beta"] = weight_dict['bias']
+
+        # not supported yet
+        use_global_stats = "False"
+        if self.weight_loaded:
+            self.output_weights[IR_node.name + "_moving_var"] = weight_dict['scale_var']
+            self.output_weights[IR_node.name + "_moving_mean"] = weight_dict['scale_mean']
+
+        code = "{:<15} = mx.sym.BatchNorm(data = {}, axis = {}, eps = {}, momentum = {}, fix_gamma = {}, use_global_stats = {}, name = '{}')".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
+                axis,
+                eps,
+                momentum,
+                fix_gamma,
+                use_global_stats,
                 IR_node.name)
+
         return code
 
 
@@ -776,7 +804,6 @@ def predict(model, labels, url):
 
     # reverse cannot support yet
     def emit_Reshape(self, IR_node):
-
         shape = list()
         for e in IR_node.IR_layer.attr["shape"].list.i:
             shape.append(e)
@@ -942,22 +969,32 @@ def predict(model, labels, url):
         return ""
 
 
-    def emit_Slice(self, IR_node):
-        starts = IR_node.get_attr('starts')
-        starts = [starts[0], starts[-1]] + starts[1:-1]
-        ends = IR_node.get_attr('ends')
-        ends = [ends[0], ends[-1]] + ends[1:-1]
-        ends = [i if i else None for i in ends]
-        strides = IR_node.get_attr('strides')
-        if strides:
-            strides = [strides[0], strides[-1]] + strides[1:-1]
+    # def emit_Slice(self, IR_node):
+    #     starts = IR_node.get_attr('starts')
+    #     starts = [starts[0], starts[-1]] + starts[1:-1]
+    #     ends = IR_node.get_attr('ends')
+    #     ends = [ends[0], ends[-1]] + ends[1:-1]
+    #     ends = [i if i else None for i in ends]
+    #     strides = IR_node.get_attr('strides')
+    #     if strides:
+    #         strides = [strides[0], strides[-1]] + strides[1:-1]
 
-        self.add_body(1, "{:<15} = mx.sym.slice({}, begin={}, end={}, step={}, name='{}')".format(
-            IR_node.real_variable_name,
-            self.parent_variable_name(IR_node),
-            starts,
-            ends,
-            strides,
-            IR_node.name
-        ))
-        return ""
+    #     self.add_body(1, "{:<15} = mx.sym.slice({}, begin={}, end={}, step={}, name='{}')".format(
+    #         IR_node.real_variable_name,
+    #         self.parent_variable_name(IR_node),
+    #         starts,
+    #         ends,
+    #         strides,
+    #         IR_node.name
+    #     ))
+    #     return ""
+
+    def emit_Slice(self, IR_node):
+        pass
+    def emit_Const(self, IR_node):
+        pass
+
+    def emit_Shape(self, IR_node):
+        pass
+    def emit_Pack(self, IR_node):
+        pass

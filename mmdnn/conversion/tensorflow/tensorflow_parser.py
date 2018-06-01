@@ -618,6 +618,7 @@ class TensorflowParser(Parser):
             self.set_weight(source_node.name, 'mean', self.ckpt_data[mean.name])
             self.set_weight(source_node.name, 'var', self.ckpt_data[var.name])
 
+
     def rename_Shape(self, source_node):
         IR_node = self._convert_identity_operation(source_node, in_edge_count=1, new_op='Shape')
 
@@ -653,26 +654,12 @@ class TensorflowParser(Parser):
 
 
     def rename_Mul(self, source_node):
-        # N = len(source_node.layer.input)
-        # for i in range(N):
-        #     this_node = self.get_parent(source_node.name, [i])
-        #     if this_node.type == 'Const':
-
-        #         IR_node = self.IR_graph.node.add()
-        #         TensorflowParser._copy_and_reop(this_node, IR_node, 'Const')
-        #         kwargs = {
-        #             'value' : this_node.layer.attr['value'].tensor.float_val[0],
-        #         }
-        #         assign_IRnode_values(IR_node, kwargs)
-
-
 
         # gamma (scale)
         scale = self.get_parent(source_node.name, [1], True)
 
         shape = self.tensor_shape_to_list(source_node.get_attr('_output_shapes'))[0]
-        shape[0] = 1
-        channel_shape = shape[-1]
+        shape = shape[-1]
 
         if scale.type == 'Const':
 
@@ -688,14 +675,19 @@ class TensorflowParser(Parser):
 
             IR_node.attr['scale'].b = True
             if self.weight_loaded:
-                self.set_weight(source_node.name, 'scale', np.array([value]* channel_shape, dtype=np.float32))
+                self.set_weight(source_node.name, 'scale', np.array([value]* shape, dtype=np.float32))
 
             # bias
             IR_node.attr['use_bias'].b = True
             if self.weight_loaded:
-                self.set_weight(source_node.name, 'bias', np.zeros( channel_shape, dtype=np.float32 ))
+                self.set_weight(source_node.name, 'bias', np.zeros( shape, dtype=np.float32 ))
                 self.set_weight(source_node.name, 'scale_mean', np.zeros( shape, dtype=np.float32 ))
                 self.set_weight(source_node.name, 'scale_var', np.ones( shape, dtype=np.float32 ))
+                self.set_weight(source_node.name, 'shapeScale', shape)
+                self.set_weight(source_node.name, 'shapeBias', shape)
+
+
+
 
 
 
