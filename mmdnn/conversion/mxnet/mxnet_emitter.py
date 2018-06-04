@@ -969,28 +969,29 @@ def predict(model, labels, url):
         return ""
 
 
-    # def emit_Slice(self, IR_node):
-    #     starts = IR_node.get_attr('starts')
-    #     starts = [starts[0], starts[-1]] + starts[1:-1]
-    #     ends = IR_node.get_attr('ends')
-    #     ends = [ends[0], ends[-1]] + ends[1:-1]
-    #     ends = [i if i else None for i in ends]
-    #     strides = IR_node.get_attr('strides')
-    #     if strides:
-    #         strides = [strides[0], strides[-1]] + strides[1:-1]
-
-    #     self.add_body(1, "{:<15} = mx.sym.slice({}, begin={}, end={}, step={}, name='{}')".format(
-    #         IR_node.real_variable_name,
-    #         self.parent_variable_name(IR_node),
-    #         starts,
-    #         ends,
-    #         strides,
-    #         IR_node.name
-    #     ))
-    #     return ""
-
     def emit_Slice(self, IR_node):
-        pass
+        if self.IR_graph.get_parent(IR_node.name, [0]).type == 'Shape':
+            pass
+        else:
+            starts = IR_node.get_attr('starts')
+            starts = [starts[0], starts[-1]] + starts[1:-1]
+            ends = IR_node.get_attr('ends')
+            ends = [ends[0], ends[-1]] + ends[1:-1]
+            ends = [i if i else None for i in ends]
+            strides = IR_node.get_attr('strides')
+            if strides:
+                strides = [strides[0], strides[-1]] + strides[1:-1]
+
+            self.add_body(1, "{:<15} = mx.sym.slice({}, begin={}, end={}, step={}, name='{}')".format(
+                IR_node.real_variable_name,
+                self.parent_variable_name(IR_node),
+                starts,
+                ends,
+                strides,
+                IR_node.name
+            ))
+            return ""
+
     def emit_Const(self, IR_node):
         pass
 
