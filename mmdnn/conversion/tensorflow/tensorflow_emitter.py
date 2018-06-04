@@ -86,7 +86,7 @@ def KitModel(weight_file = None):
 
         self.add_body(1, "return {}, {}".format(
             ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']),
-            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack'])))
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack' and  self.IR_graph.get_node(name).type !='Shape'])))
 
 
 
