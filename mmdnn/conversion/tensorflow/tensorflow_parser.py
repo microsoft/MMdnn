@@ -656,17 +656,20 @@ class TensorflowParser(Parser):
     def rename_Mul(self, source_node):
 
         # gamma (scale)
-        scale = self.get_parent(source_node.name, [1], True)
-
         shape = self.tensor_shape_to_list(source_node.get_attr('_output_shapes'))[0]
         shape = shape[-1]
 
-        if scale.type == 'Const':
+
+
+        scale1 = self.get_parent(source_node.name, [1], True)
+        scale2 = self.get_parent(source_node.name, [0], True)
+
+        if scale1.type == 'Const':
 
             IR_node = self._convert_identity_operation(source_node, in_edge_count=1, new_op='Scale')
             IR_node.attr['epsilon'].f = source_node.get_attr('epsilon', 0)
 
-            value = scale.get_attr('value')
+            value = scale1.get_attr('value')
 
 
             assert len(value.float_val) == 1
@@ -686,8 +689,30 @@ class TensorflowParser(Parser):
                 self.set_weight(source_node.name, 'shapeScale', shape)
                 self.set_weight(source_node.name, 'shapeBias', shape)
 
+        elif scale2.type == 'Const':
+
+            IR_node = self._convert_identity_operation(source_node, start_edge_id = 1, in_edge_count=1, new_op='Scale')
+            IR_node.attr['epsilon'].f = source_node.get_attr('epsilon', 0)
+
+            value = scale2.get_attr('value')
 
 
+            assert len(value.float_val) == 1
+            value = value.float_val[0]
+
+
+            IR_node.attr['scale'].b = True
+            if self.weight_loaded:
+                self.set_weight(source_node.name, 'scale', np.array([value]* shape, dtype=np.float32))
+
+            # bias
+            IR_node.attr['use_bias'].b = True
+            if self.weight_loaded:
+                self.set_weight(source_node.name, 'bias', np.zeros( shape, dtype=np.float32 ))
+                self.set_weight(source_node.name, 'scale_mean', np.zeros( shape, dtype=np.float32 ))
+                self.set_weight(source_node.name, 'scale_var', np.ones( shape, dtype=np.float32 ))
+                self.set_weight(source_node.name, 'shapeScale', shape)
+                self.set_weight(source_node.name, 'shapeBias', shape)
 
 
 
