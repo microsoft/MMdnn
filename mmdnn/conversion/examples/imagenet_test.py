@@ -218,6 +218,13 @@ class TestKit(object):
             default=None,
             help='Model detection result path.')
 
+        # tensorflow dump tag
+        parser.add_argument('--dump_tag',
+            type=_text_type,
+            default=None,
+            help='Tensorflow model dump type',
+            choices=['SERVING', 'TRAINING'])
+
 
         self.args = parser.parse_args()
         if self.args.n.endswith('.py'):
