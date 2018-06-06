@@ -78,6 +78,7 @@ def KitModel(weight_file = None):
 
         self._process_output_layers()
 
+
         self.add_body(1, "graph = helper.make_graph([{}], 'mmdnn', [{}], [{}], [{}])".format(', '.join(self.nodes),
                                                                                              ', '.join(self.inputs),
                                                                                              ', '.join(self.outputs),
@@ -107,6 +108,8 @@ def KitModel(weight_file = None):
     def _process_output_layers(self):
         for name in self.IR_graph.output_layers:
             IR_node = self.IR_graph.get_node(self.IR_graph.get_node(name).real_name)
+            if IR_node.type == 'Shape':
+                continue
             shape_str = IRGraph.shapeToStr(IR_node.layer.attr["_output_shapes"].list.shape[0])
             if IR_node.layer.attr['dtype'].type == graph_pb2.DT_UNDEFINED:
                 IR_node.layer.attr['dtype'].type = graph_pb2.DT_FLOAT32
@@ -256,6 +259,69 @@ def KitModel(weight_file = None):
         self.nodes.append(IR_node.variable_name + '_mean')
         self.nodes.append(IR_node.variable_name + '_var')
         self.nodes.append(IR_node.variable_name)
+
+
+    def emit_Scale(self, IR_node):
+        epsilon = 1e-5
+        if IR_node.get_attr('scale'):
+            self.add_body(1, "{:15} = __weights_dict['{}']['scale']".format(
+                IR_node.variable_name + '_scale_array',
+                IR_node.name))
+        else:
+            self.add_body(1, "{:15} = np.ndarray(__weights_dict['{}']['bias'].shape, dtype=__weights_dict['{}']['bias'].dtype)".format(
+                              IR_node.variable_name + '_scale_array',
+                              IR_node.name,
+                              IR_node.name))
+            self.add_body(1, "{:15}.fill(1)".format(IR_node.variable_name + '_scale_array'))
+        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
+                          IR_node.variable_name + '_scale',
+                          IR_node.variable_name + '_scale',
+                          IR_node.variable_name + '_scale_array',
+                          IR_node.variable_name + '_scale_array',
+                          IR_node.variable_name + '_scale_array'))
+        self.add_body(1, "{:15} = __weights_dict['{}']['bias']".format(
+            IR_node.variable_name + '_bias_array',
+            IR_node.name))
+        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
+                          IR_node.variable_name + '_bias',
+                          IR_node.variable_name + '_bias',
+                          IR_node.variable_name + '_bias_array',
+                          IR_node.variable_name + '_bias_array',
+                          IR_node.variable_name + '_bias_array'))
+        self.add_body(1, "{:15} = __weights_dict['{}']['scale_mean']".format(
+            IR_node.variable_name + '_mean_array',
+            IR_node.name))
+        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
+                          IR_node.variable_name + '_mean',
+                          IR_node.variable_name + '_mean',
+                          IR_node.variable_name + '_mean_array',
+                          IR_node.variable_name + '_mean_array',
+                          IR_node.variable_name + '_mean_array'))
+        self.add_body(1, "{:15} = __weights_dict['{}']['scale_var']".format(
+                          IR_node.variable_name + '_var_array',
+                          IR_node.name))
+        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
+                          IR_node.variable_name + '_var',
+                          IR_node.variable_name + '_var',
+                          IR_node.variable_name + '_var_array',
+                          IR_node.variable_name + '_var_array',
+                          IR_node.variable_name + '_var_array'))
+        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={}, is_test={})".format(
+                          IR_node.variable_name,
+                          self.parent_variable_name(IR_node),
+                          IR_node.variable_name + '_scale',
+                          IR_node.variable_name + '_bias',
+                          IR_node.variable_name + '_mean',
+                          IR_node.variable_name + '_var',
+                          IR_node.variable_name,
+                          epsilon,
+                          0 if self.phase == 'train' else 1))
+        self.nodes.append(IR_node.variable_name + '_scale')
+        self.nodes.append(IR_node.variable_name + '_bias')
+        self.nodes.append(IR_node.variable_name + '_mean')
+        self.nodes.append(IR_node.variable_name + '_var')
+        self.nodes.append(IR_node.variable_name)
+
 
     def emit_Relu(self, IR_node):
         self.add_body(1, "{:15} = helper.make_node('Relu', inputs=['{}'], outputs=['{}'])".format(

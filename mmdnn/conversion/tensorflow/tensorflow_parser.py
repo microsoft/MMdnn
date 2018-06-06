@@ -450,6 +450,7 @@ class TensorflowParser(Parser):
 
             # get Bias
             B = self.tf_graph.get_node(self.tf_graph.get_node(source_node.out_edges[0]).in_edges[1]).in_edges[0]
+
             if self.weight_loaded:
                 self.set_weight(source_node.name, 'bias', self.ckpt_data[B])
             IR_node.attr['use_bias'].b = True
@@ -458,6 +459,8 @@ class TensorflowParser(Parser):
             # Matmul Layer
             TensorflowParser._copy_and_reop(source_node, IR_node, 'FullyConnected')
             assign_IRnode_values(IR_node, {'use_bias' : False})
+            if self.weight_loaded:
+                self.set_weight(source_node.name, 'bias', np.zeros(units))
 
 
     def rename_RealDiv(self, source_node):
