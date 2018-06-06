@@ -145,7 +145,7 @@ class NodeMapper(object):
     def map_p_re_lu(cls, node):
         # print(node.parameters)
         # assert False
-        try
+        try:
             scale_value = float(node.parameters.filler.value)
             kwargs = {'gamma' : scale_value}
         except ConversionError:
