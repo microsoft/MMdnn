@@ -59,7 +59,7 @@ class TestTF(TestKit):
     def dump(self, path = None):
         dump_tag = self.args.dump_tag
         if dump_tag == 'SERVING':
-            tag_list = [tf.saved_model.tag_constants.TRAINING]
+            tag_list = [tf.saved_model.tag_constants.SERVING]
         else:
             tag_list = [tf.saved_model.tag_constants.TRAINING]
 
