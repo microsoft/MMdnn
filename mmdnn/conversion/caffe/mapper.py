@@ -145,8 +145,11 @@ class NodeMapper(object):
     def map_p_re_lu(cls, node):
         # print(node.parameters)
         # assert False
-        scale_value = float(node.parameters.filler.value)
-        kwargs = {'gamma' : scale_value}
+        try
+            scale_value = float(node.parameters.filler.value)
+            kwargs = {'gamma' : scale_value}
+        except ConversionError:
+            kwargs = {'gamma' : 0.25}
         cls._convert_output_shape(kwargs, node)
         return Node.create('PRelu', **kwargs)
 
