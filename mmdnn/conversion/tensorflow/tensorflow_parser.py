@@ -173,7 +173,6 @@ class TensorflowParser(Parser):
                 self.set_weight(source_node.name, 'bias', self.ckpt_data[bias.name])
 
         # input node
-        # print(output_node.layer)
         assert output_node.type == 'Add'
         input_node = self.get_parent(output_node.name, [0, 0])
         IR_node.input.append(input_node.real_name)
@@ -690,11 +689,8 @@ class TensorflowParser(Parser):
     def rename_Mul(self, source_node):
 
         # gamma (scale)
-        print(source_node.layer)
         shape = self.tensor_shape_to_list(source_node.get_attr('_output_shapes'))[0]
         shape = shape[-1]
-
-
 
         scale1 = self.get_parent(source_node.name, [1], True)
         scale2 = self.get_parent(source_node.name, [0], True)
