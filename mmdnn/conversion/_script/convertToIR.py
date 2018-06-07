@@ -48,7 +48,10 @@ def _convert(args):
             parser = TensorflowParser2(args.frozen_pb, args.inputShape, args.inNodeName, args.dstNodeName)
         else:
             from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
-            parser = TensorflowParser(args.network, args.weights, args.frozen_pb, args.dstNodeName)
+            if args.inNodeName and args.inputShape:
+                parser = TensorflowParser(args.network, args.weights, args.dstNodeName, args.inputShape, args.inNodeName)
+            else:
+                parser = TensorflowParser(args.network, args.weights, args.dstNodeName)
 
     elif args.srcFramework == 'mxnet':
         assert args.inputShape != None

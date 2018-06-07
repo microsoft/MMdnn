@@ -174,8 +174,8 @@ if __name__=='__main__':
             pad_h = IR_parent_node.get_attr('pads')[1]
             pad_w = IR_parent_node.get_attr('pads')[2]
         else:
-            pad_h = IR_node.get_attr('pads')[1]
-            pad_w = IR_node.get_attr('pads')[2]
+            pad_h = IR_node.get_attr('pads')[6]
+            pad_w = IR_node.get_attr('pads')[5]
 
         num_output = IR_node.get_attr('kernel_shape')[-1]
         if IR_node.type == "DepthwiseConv":
@@ -240,6 +240,8 @@ bias_term={}, ntop=1)".format(
         shape = shape_to_list(shape)
         ir_ho = shape[1]
         ir_wo = shape[2]
+        if ir_ho <0 or ir_wo<0:
+            return
         if IR_node.type == 'Pool':
             k_h = IR_node.get_attr('kernel_shape')[1]
             k_w = IR_node.get_attr('kernel_shape')[2]

@@ -109,7 +109,6 @@ class TestModels(CorrectnessTest):
         parser = TensorflowParser(
             TestModels.cachedir + "imagenet_" + architecture_name + ".ckpt.meta",
             TestModels.cachedir + "imagenet_" + architecture_name + ".ckpt",
-            None,
             "MMdnn_Output")
         parser.run(IR_file)
         del parser
@@ -879,48 +878,48 @@ class TestModels(CorrectnessTest):
 
 
 
-    def test_caffe(self):
-        try:
-            import caffe
-            self._test_function('caffe', self.CaffeParse)
-        except ImportError:
-            print('Please install caffe! Or caffe is not supported in your platform.', file=sys.stderr)
+    # def test_caffe(self):
+    #     try:
+    #         import caffe
+    #         self._test_function('caffe', self.CaffeParse)
+    #     except ImportError:
+    #         print('Please install caffe! Or caffe is not supported in your platform.', file=sys.stderr)
 
 
-    def test_cntk(self):
-        try:
-            import cntk
-            self._test_function('cntk', self.CntkParse)
-        except ImportError:
-            print('Please install cntk! Or cntk is not supported in your platform.', file=sys.stderr)
+    # def test_cntk(self):
+    #     try:
+    #         import cntk
+    #         self._test_function('cntk', self.CntkParse)
+    #     except ImportError:
+    #         print('Please install cntk! Or cntk is not supported in your platform.', file=sys.stderr)
 
 
-    def test_coreml(self):
-        from coremltools.models.utils import macos_version
-        if macos_version() < (10, 13):
-            print('Coreml is not supported in your platform.', file=sys.stderr)
-        else:
-            self._test_function('coreml', self.CoremlParse)
+    # def test_coreml(self):
+    #     from coremltools.models.utils import macos_version
+    #     if macos_version() < (10, 13):
+    #         print('Coreml is not supported in your platform.', file=sys.stderr)
+    #     else:
+    #         self._test_function('coreml', self.CoremlParse)
 
 
-    def test_keras(self):
-        self._test_function('keras', self.KerasParse)
+    # def test_keras(self):
+    #     self._test_function('keras', self.KerasParse)
 
 
-    def test_mxnet(self):
-        self._test_function('mxnet', self.MXNetParse)
+    # def test_mxnet(self):
+    #     self._test_function('mxnet', self.MXNetParse)
 
 
-    def test_darknet(self):
-        self._test_function('darknet', self.DarknetParse)
+    # def test_darknet(self):
+    #     self._test_function('darknet', self.DarknetParse)
 
-    def test_pytorch(self):
-        self._test_function('pytorch', self.PytorchParse)
+    # def test_pytorch(self):
+    #     self._test_function('pytorch', self.PytorchParse)
 
 
     def test_tensorflow(self):
         self._test_function('tensorflow', self.TensorFlowParse)
 
 
-    def test_tensorflow_frozen(self):
-        self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
+    # def test_tensorflow_frozen(self):
+    #     self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
