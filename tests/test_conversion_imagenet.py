@@ -109,7 +109,6 @@ class TestModels(CorrectnessTest):
         parser = TensorflowParser(
             TestModels.cachedir + "imagenet_" + architecture_name + ".ckpt.meta",
             TestModels.cachedir + "imagenet_" + architecture_name + ".ckpt",
-            None,
             "MMdnn_Output")
         parser.run(IR_file)
         del parser

@@ -1,7 +1,11 @@
 import tensorflow as tf
 
 
-def save_model(MainModel, network_filepath, weight_filepath, dump_filepath):
+def save_model(MainModel, network_filepath, weight_filepath, dump_filepath, dump_tag = 'SERVING'):
+    if dump_tag == 'SERVING':
+        tag_list = [tf.saved_model.tag_constants.SERVING]
+    else:
+        tag_list = [tf.saved_model.tag_constants.TRAINING]
     input, model = MainModel.KitModel(weight_filepath)
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -21,7 +25,7 @@ def save_model(MainModel, network_filepath, weight_filepath, dump_filepath):
 
         builder.add_meta_graph_and_variables(
             sess,
-            [tf.saved_model.tag_constants.TRAINING],
+            tag_list,
             signature_def_map={
                 tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: prediction_signature
             }

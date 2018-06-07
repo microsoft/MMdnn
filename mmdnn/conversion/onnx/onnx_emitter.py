@@ -578,6 +578,15 @@ def KitModel(weight_file = None):
             alpha))
         self.nodes.append(IR_node.variable_name)
 
+    def emit_PRelu(self, IR_node):
+      slope = IR_node.get_attr('gamma')
+      self.add_body(1, "{:15} = helper.make_node('PRelu', inputs=['{}'], outputs=['{}'], slope={})".format(
+          IR_node.variable_name,
+          self.parent_variable_name(IR_node),
+          IR_node.variable_name,
+          slope))
+      self.nodes.append(IR_node.variable_name)
+
     def emit_SpaceToDepth(self, IR_node):
         blocksize = IR_node.get_attr('blocksize')
         self.add_body(1, "{:15} = helper.make_node('SpaceToDepth', inputs=['{}'], outputs=['{}'], blocksize={})".format(

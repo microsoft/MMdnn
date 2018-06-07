@@ -37,6 +37,13 @@ def _get_parser():
         type=_text_type,
         required=True,
         help='Path to save the destination model')
+    parser.add_argument(
+        '--dump_tag',
+        type=_text_type,
+        default=None,
+        help='Tensorflow model dump type',
+        choices=['SERVING', 'TRAINING'])
+
     return parser
 
 
@@ -102,7 +109,7 @@ def _main():
         if int(ret) != 0:
             _sys.exit(int(ret))
         from mmdnn.conversion._script.dump_code import dump_code
-        dump_code(args.dstFramework, network_filename + '.py', temp_filename + '.npy', args.outputModel)
+        dump_code(args.dstFramework, network_filename + '.py', temp_filename + '.npy', args.outputModel, args.dump_tag)
         remove_temp_files(temp_filename)
 
     else:
