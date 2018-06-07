@@ -57,6 +57,12 @@ class TestTF(TestKit):
 
 
     def dump(self, path = None):
+        dump_tag = self.args.dump_tag
+        if dump_tag == 'SERVING':
+            tag_list = [tf.saved_model.tag_constants.SERVING]
+        else:
+            tag_list = [tf.saved_model.tag_constants.TRAINING]
+
         if path is None: path = self.args.dump
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -76,7 +82,7 @@ class TestTF(TestKit):
 
             builder.add_meta_graph_and_variables(
                 sess,
-                [tf.saved_model.tag_constants.TRAINING],
+                tag_list,
                 signature_def_map={
                     tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: prediction_signature
                 }
@@ -91,6 +97,9 @@ class TestTF(TestKit):
 if __name__=='__main__':
     tester = TestTF()
     if tester.args.dump:
-        tester.dump()
+        if tester.args.dump_tag:
+            tester.dump()
+        else:
+            raise ValueError("Need to provide the model type of Tensorflow model.")
     else:
         tester.inference(tester.args.image)

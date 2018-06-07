@@ -495,6 +495,8 @@ class MXNetParser(Parser):
             weight = self.weight_data.get(source_node.name + "_weight").asnumpy()
             if not layout in MXNetParser.channels_last:
                 weight = MXNetParser.transpose(weight, dim)
+                if IR_node.op == "DepthwiseConv":
+                    weight = weight.transpose(0, 1, 3, 2)
             self.set_weight(source_node.name, "weights", weight)
 
             if IR_node.attr["use_bias"].b:
