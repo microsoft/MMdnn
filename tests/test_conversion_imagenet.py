@@ -769,7 +769,7 @@ class TestModels(CorrectnessTest):
             'mobilenet_v1_1.0'      : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
             'mobilenet_v2_1.0_224'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
             'nasnet-a_large'        : [MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
-            'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always crashed
+            'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, OnnxEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always crashed
 
         },
 
