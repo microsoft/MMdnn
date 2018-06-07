@@ -262,6 +262,8 @@ def KitModel(weight_file = None):
 
 
     def emit_Scale(self, IR_node):
+        dims = [i.size for i in IR_node.layer.attr['_output_shapes'].list.shape[0].dim[1:]]
+        units = dims[-1]
         epsilon = 1e-5
         if IR_node.get_attr('scale'):
             self.add_body(1, "{:15} = __weights_dict['{}']['scale']".format(
@@ -288,18 +290,18 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_bias_array',
                           IR_node.variable_name + '_bias_array',
                           IR_node.variable_name + '_bias_array'))
-        self.add_body(1, "{:15} = __weights_dict['{}']['scale_mean']".format(
+        self.add_body(1, "{:15} = np.zeros({}, dtype=np.float32)".format(
             IR_node.variable_name + '_mean_array',
-            IR_node.name))
+            units))
         self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
                           IR_node.variable_name + '_mean',
                           IR_node.variable_name + '_mean',
                           IR_node.variable_name + '_mean_array',
                           IR_node.variable_name + '_mean_array',
                           IR_node.variable_name + '_mean_array'))
-        self.add_body(1, "{:15} = __weights_dict['{}']['scale_var']".format(
+        self.add_body(1, "{:15} = np.ones({}, dtype=np.float32)".format(
                           IR_node.variable_name + '_var_array',
-                          IR_node.name))
+                          units))
         self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
                           IR_node.variable_name + '_var',
                           IR_node.variable_name + '_var',
