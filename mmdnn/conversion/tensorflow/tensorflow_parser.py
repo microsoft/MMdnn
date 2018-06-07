@@ -140,6 +140,7 @@ class TensorflowParser(Parser):
 
         # moving variance (var)
         moving_variance = self.get_parent(source_node.name, [0, 0])
+        # print(moving_variance.name)
         if self.weight_loaded and moving_variance.name in self.ckpt_data.keys():
             self.set_weight(source_node.name, 'var', self.ckpt_data[moving_variance.name])
 
@@ -154,6 +155,8 @@ class TensorflowParser(Parser):
             if self.weight_loaded:
                 self.set_weight(source_node.name, 'scale', self.ckpt_data[gamma.name])
             output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
+            if output_node.type == 'Sub':
+                output_node = self.get_son(source_node.name, [0, 0, 1, 0], True)
 
         # mean
         mean = self.get_parent(output_node.name, [1, 1, 0, 0], True)
@@ -178,7 +181,7 @@ class TensorflowParser(Parser):
         output_node.real_name = source_node.name
 
 
-    def __init__(self, meta_file, checkpoint_file, frozen_file, dest_nodes = None):
+    def __init__(self, meta_file, checkpoint_file, dest_nodes, inputShape = None, in_nodes = None):
         super(TensorflowParser, self).__init__()
 
         # load model files into TensorFlow graph
@@ -189,12 +192,40 @@ class TensorflowParser(Parser):
             self.ckpt_data = TensorflowParser._load_weights(checkpoint_file)
             self.weight_loaded = True
 
-        if dest_nodes != None:
+        # extract subgraph using in_nodes and dest_nodes
+        if in_nodes != None and inputShape != None:
+            from tensorflow.python.tools import strip_unused_lib
+            from tensorflow.python.framework import dtypes
+            from tensorflow.python.platform import gfile
+            input_node_names = in_nodes.split(',')
+            output_node_names = dest_nodes.split(',')
+            model = strip_unused_lib.strip_unused(
+                    input_graph_def = model,
+                    input_node_names = input_node_names,
+                    output_node_names = output_node_names,
+                    placeholder_type_enum = dtypes.float32.as_datatype_enum)
+
+            input_list = [None]
+            for i in range(len(inputShape)):
+                input_list.append(tensorflow.Dimension(inputShape[i]))
+            tensor_input = tensorflow.TensorShape(input_list)
+            # Build network graph
+            self.tf_graph = TensorflowGraph(model)
+            for node in self.tf_graph.model.node:
+                if node.name in input_node_names:
+                    node.attr['shape'].list.shape.extend([tensor_input.as_proto()])
+                    node.attr['_output_shapes'].list.shape.pop()  #unknown_rank pop
+                    node.attr['_output_shapes'].list.shape.extend([tensor_input.as_proto()])
+
+        # extract subgraph using dest_nodes
+        elif dest_nodes != None:
             from tensorflow.python.framework.graph_util import extract_sub_graph
             model = extract_sub_graph(model, dest_nodes.split(','))
+            self.tf_graph = TensorflowGraph(model)
 
-        # Build network graph
-        self.tf_graph = TensorflowGraph(model)
+        else:
+            self.tf_graph = TensorflowGraph(model)
+
         self.tf_graph.build()
 
 
@@ -334,7 +365,10 @@ class TensorflowParser(Parser):
     @staticmethod
     def _copy_shape(source_node, IR_node):
         assert 'shape' in source_node.layer.attr
-        IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['shape'].shape.SerializeToString())
+        if source_node.layer.attr['shape'].list.shape:
+            IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['shape'].list.shape[0].SerializeToString())
+        else:
+            IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['shape'].shape.SerializeToString())
 
 
     def rename_UNKNOWN(self, source_node):
@@ -347,7 +381,6 @@ class TensorflowParser(Parser):
 
     def rename_Placeholder(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
-
         # shape
         TensorflowParser._copy_shape(source_node, IR_node)
 
@@ -658,8 +691,6 @@ class TensorflowParser(Parser):
         # gamma (scale)
         shape = self.tensor_shape_to_list(source_node.get_attr('_output_shapes'))[0]
         shape = shape[-1]
-
-
 
         scale1 = self.get_parent(source_node.name, [1], True)
         scale2 = self.get_parent(source_node.name, [0], True)
