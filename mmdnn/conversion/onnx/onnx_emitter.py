@@ -85,7 +85,7 @@ def KitModel(weight_file = None):
                                                                                              ', '.join(
                                                                                                  self.initializer))
                       )
-        self.add_body(1, "return helper.make_model(graph)")
+        self.add_body(1, "return helper.make_model(graph, opset_imports=[helper.make_opsetid('', 6)])")
         return self.body_code
 
     def run(self, dstNetworkPath, dstWeightPath=None, phase='test'):
