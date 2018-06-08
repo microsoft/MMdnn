@@ -174,8 +174,8 @@ if __name__=='__main__':
             pad_h = IR_parent_node.get_attr('pads')[1]
             pad_w = IR_parent_node.get_attr('pads')[2]
         else:
-            pad_h = IR_node.get_attr('pads')[6]
-            pad_w = IR_node.get_attr('pads')[5]
+            pad_h = IR_node.get_attr('pads')[1]
+            pad_w = IR_node.get_attr('pads')[2]
 
         num_output = IR_node.get_attr('kernel_shape')[-1]
         if IR_node.type == "DepthwiseConv":

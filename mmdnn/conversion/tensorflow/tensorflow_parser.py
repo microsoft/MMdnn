@@ -273,7 +273,7 @@ class TensorflowParser(Parser):
                 input_shape,
                 kernel_size,
                 source_node.get_attr('strides'))
-            assign_IRnode_values(IR_node, {'auto_pad' : "SAME_LOWER", 'pads' : padding})
+            assign_IRnode_values(IR_node, {'auto_pad' : "SAME_UPPER", 'pads' : padding})
 
         else:
             assert False
