@@ -493,6 +493,7 @@ class TensorflowParser(Parser):
 
             # get Bias
             B = self.tf_graph.get_node(self.tf_graph.get_node(source_node.out_edges[0]).in_edges[1]).in_edges[0]
+
             if self.weight_loaded:
                 self.set_weight(source_node.name, 'bias', self.ckpt_data[B])
             IR_node.attr['use_bias'].b = True
