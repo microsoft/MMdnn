@@ -42,7 +42,8 @@ class TensorflowParser(Parser):
         "Const",
         "Assign",
         "RandomUniform",
-        "FIFOQueueV2"
+        "FIFOQueueV2",
+        "Identity"
     ])
 
     dtype_map = {
@@ -458,6 +459,16 @@ class TensorflowParser(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
 
+    def rename_Abs(self, source_node):
+        # print(source_node.layer)
+        IR_node = self._convert_identity_operation(source_node, in_edge_count = 1, new_op = 'Abs')
+
+
+    def rename_Square(self, source_node):
+        # print(source_node.layer)
+        IR_node = self._convert_identity_operation(source_node, in_edge_count = 1, new_op = 'Square')
+
+
     def rename_MatMul(self, source_node):
         """
         weights: name_weights, name_bias
@@ -483,7 +494,6 @@ class TensorflowParser(Parser):
 
             # get Bias
             B = self.tf_graph.get_node(self.tf_graph.get_node(source_node.out_edges[0]).in_edges[1]).in_edges[0]
-
             if self.weight_loaded:
                 self.set_weight(source_node.name, 'bias', self.ckpt_data[B])
             IR_node.attr['use_bias'].b = True
@@ -536,8 +546,8 @@ class TensorflowParser(Parser):
         self._convert_pooling(source_node, b'AVG')
 
 
-    def rename_Identity(self, source_node):
-        source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
+    # def rename_Identity(self, source_node):
+    #     source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
 
 
     def rename_Squeeze(self, source_node):
@@ -746,12 +756,14 @@ class TensorflowParser(Parser):
                 self.set_weight(source_node.name, 'shapeScale', shape)
                 self.set_weight(source_node.name, 'shapeBias', shape)
 
-
-
-        else:
-
+        elif scale2.type == 'Identity':
+            scale2 = self.get_parent(scale2.name, [0], True)
+            assert scale2.type == "VariableV2"
+            self.set_weight(source_node.name, 'alpha', self.ckpt_data[scale2.name])
             self._convert_identity_operation(source_node)
 
+        else:
+            self._convert_identity_operation(source_node)
 
 
     def rename_Split(self, source_node):
