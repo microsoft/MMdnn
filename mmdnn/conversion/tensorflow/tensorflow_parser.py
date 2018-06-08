@@ -42,7 +42,8 @@ class TensorflowParser(Parser):
         "Const",
         "Assign",
         "RandomUniform",
-        "FIFOQueueV2"
+        "FIFOQueueV2",
+        "Identity"
     ])
 
     dtype_map = {
@@ -493,7 +494,6 @@ class TensorflowParser(Parser):
 
             # get Bias
             B = self.tf_graph.get_node(self.tf_graph.get_node(source_node.out_edges[0]).in_edges[1]).in_edges[0]
-
             if self.weight_loaded:
                 self.set_weight(source_node.name, 'bias', self.ckpt_data[B])
             IR_node.attr['use_bias'].b = True
@@ -546,8 +546,8 @@ class TensorflowParser(Parser):
         self._convert_pooling(source_node, b'AVG')
 
 
-    def rename_Identity(self, source_node):
-        source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
+    # def rename_Identity(self, source_node):
+    #     source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
 
 
     def rename_Squeeze(self, source_node):
@@ -760,6 +760,7 @@ class TensorflowParser(Parser):
             scale2 = self.get_parent(scale2.name, [0], True)
             assert scale2.type == "VariableV2"
             self.set_weight(source_node.name, 'alpha', self.ckpt_data[scale2.name])
+            self._convert_identity_operation(source_node)
 
         else:
             self._convert_identity_operation(source_node)
