@@ -550,14 +550,166 @@
             },
             "version":""
         },
+
+
+
         {
-            "name": "",
+            "name": "vgg16",
             "framework":"tensorflow",
             "description":"",
             "link":
             {
-                "architecture":"",
-                "weights":""
+                "architecture":"http://download.tensorflow.org/models/vgg_16_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg19",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v1",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/inception_v1_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v1_frozen",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://storage.googleapis.com/download.tensorflow.org/models/inception_v1_2016_08_28_frozen.pb.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v3",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v3_frozen",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://storage.googleapis.com/download.tensorflow.org/models/inception_v3_2016_08_28_frozen.pb.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet_v1_50",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/resnet_v1_50_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet_v1_152",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/resnet_v1_152_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet_v2_50",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/resnet_v2_50_2017_04_14.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet_v2_152",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/resnet_v2_152_2017_04_14.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet_v2_200",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/resnet_v2_200_2017_04_14.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "mobilenet_v1_1.0",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/mobilenet_v1_1.0_224_2017_06_14.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "mobilenet_v1_1.0_frozen",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://storage.googleapis.com/download.tensorflow.org/models/mobilenet_v1_1.0_224_frozen.tgz"
+            },
+            "version":""
+        },
+        {
+            "name": "mobilenet_v2_1.0_224",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://storage.googleapis.com/mobilenet_v2/checkpoints/mobilenet_v2_1.0_224.tgz"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_resnet_v2",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "nasnet-a_large",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://storage.googleapis.com/download.tensorflow.org/models/nasnet-a_large_04_10_2017.tar.gz"
             },
             "version":""
         }
