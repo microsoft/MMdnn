@@ -400,7 +400,7 @@ bias_term={}, ntop=1)".format(
         shape = shape_to_list(shape)
         dim_str = "'dim': {}".format(shape)
         dim_str = " reshape_param={'shape': { " + dim_str + '} }'
-        self.add_body(1, "n.{:<15} = L.Flatten(n.{}, {})".format(
+        self.add_body(1, "n.{:<15} = L.Reshape(n.{}, {})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             dim_str
