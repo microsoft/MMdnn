@@ -751,6 +751,7 @@ class CoremlParser(Parser):
 
     def rename_scale(self, coreml_node):
 
+
         IR_node = self.IR_graph.node.add()
 
         coreml_node_layer = coreml_node.layer
@@ -767,15 +768,17 @@ class CoremlParser(Parser):
         # bias
         IR_node.attr['use_bias'].b = coreml_node_scale.hasBias
 
+        IR_node.attr['scale'].b = True
 
-        self.set_weight(coreml_node_layer.name, "scale", np.array(coreml_node_scale.scale.floatValue))
+
+        self.set_weight(coreml_node_layer.name, "scale", np.array(coreml_node_scale.scale.floatValue).astype(np.float32))
 
         self.set_weight(coreml_node_layer.name, "shapeScale", coreml_node_scale.shapeScale[0])
 
 
 
         if IR_node.attr['use_bias'].b:
-            self.set_weight(coreml_node_layer.name, "bias", np.array(coreml_node_scale.bias.floatValue))
+            self.set_weight(coreml_node_layer.name, "bias", np.array(coreml_node_scale.bias.floatValue).astype(np.float32))
             self.set_weight(coreml_node_layer.name, "shapeBias", coreml_node_scale.shapeBias[0])
 
     def rename_Pooling(self, coreml_node):
@@ -880,9 +883,10 @@ class CoremlParser(Parser):
         IR_node.attr['use_bias'].b = source_node_inner.hasBias
 
         # weights
-        self.set_weight(source_node_layer.name, 'weights', np.array(source_node_inner.weights.floatValue).reshape( source_node_inner.outputChannels,  source_node_inner.inputChannels).transpose() )
+        self.set_weight(source_node_layer.name, 'weights', np.array(source_node_inner.weights.floatValue).astype(np.float32).reshape( source_node_inner.outputChannels,  source_node_inner.inputChannels).transpose() )
         if IR_node.attr['use_bias'].b:
-            self.set_weight(source_node_layer.name, 'bias', np.array(source_node_inner.bias.floatValue) )
+            self.set_weight(source_node_layer.name, 'bias', np.array(source_node_inner.bias.floatValue).astype(np.float32) )
+        # change to single because of the tf matmul
 
 
     def rename_Padding(self, source_node):
