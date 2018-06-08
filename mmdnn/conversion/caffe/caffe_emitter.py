@@ -174,8 +174,8 @@ if __name__=='__main__':
             pad_h = IR_parent_node.get_attr('pads')[1]
             pad_w = IR_parent_node.get_attr('pads')[2]
         else:
-            pad_h = IR_node.get_attr('pads')[6]
-            pad_w = IR_node.get_attr('pads')[5]
+            pad_h = IR_node.get_attr('pads')[1]
+            pad_w = IR_node.get_attr('pads')[2]
 
         num_output = IR_node.get_attr('kernel_shape')[-1]
         if IR_node.type == "DepthwiseConv":
@@ -396,7 +396,15 @@ bias_term={}, ntop=1)".format(
 
 
     def emit_Squeeze(self, IR_node):
-        IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        shape = IR_node.get_attr("_output_shapes")[0]
+        shape = shape_to_list(shape)
+        dim_str = "'dim': {}".format(shape)
+        dim_str = " reshape_param={'shape': { " + dim_str + '} }'
+        self.add_body(1, "n.{:<15} = L.Flatten(n.{}, {})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            dim_str
+            ))
 
 
     def emit_Concat(self, IR_node):
@@ -501,3 +509,26 @@ bias_term={}, ntop=1)".format(
 
     def emit_Pack(self, IR_node):
         pass
+
+    def emit_Abs(self, IR_node):
+        self.add_body(1, "n.{:<15} = L.AbsVal(n.{}, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)))
+
+    def emit_Sub(self, IR_node):
+        input_layers = ', '.join(('n.' + self.IR_graph.get_node(edge).real_variable_name) for edge in IR_node.in_edges)
+        self.add_body(1, "n.{:<15} = L.Eltwise({}, coeff = [1, -1], ntop=1)".format(
+            IR_node.variable_name,
+            input_layers))
+
+    def emit_Mul(self, IR_node):
+        self.emit_Scale(IR_node)
+
+
+    # def emit_Square(self, IR_node):
+    #     input_layers = ', '.join(('n.' + self.IR_graph.get_node(edge).real_variable_name) for edge in IR_node.in_edges)
+    #     self.add_body(1, "n.{:<15} = L.Square({}, ntop=1)".format(
+    #         IR_node.variable_name,
+    #         input_layers))
+
+

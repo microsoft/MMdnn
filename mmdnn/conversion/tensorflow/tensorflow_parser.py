@@ -458,6 +458,16 @@ class TensorflowParser(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
 
+    def rename_Abs(self, source_node):
+        # print(source_node.layer)
+        IR_node = self._convert_identity_operation(source_node, in_edge_count = 1, new_op = 'Abs')
+
+
+    def rename_Square(self, source_node):
+        # print(source_node.layer)
+        IR_node = self._convert_identity_operation(source_node, in_edge_count = 1, new_op = 'Square')
+
+
     def rename_MatMul(self, source_node):
         """
         weights: name_weights, name_bias
@@ -745,12 +755,13 @@ class TensorflowParser(Parser):
                 self.set_weight(source_node.name, 'shapeScale', shape)
                 self.set_weight(source_node.name, 'shapeBias', shape)
 
-
+        elif scale2.type == 'Identity':
+            scale2 = self.get_parent(scale2.name, [0], True)
+            assert scale2.type == "VariableV2"
+            self.set_weight(source_node.name, 'alpha', self.ckpt_data[scale2.name])
 
         else:
-
             self._convert_identity_operation(source_node)
-
 
 
     def rename_Split(self, source_node):
