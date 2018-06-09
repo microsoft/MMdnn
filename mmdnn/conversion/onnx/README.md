@@ -28,36 +28,11 @@ See [here](https://keras.io/#installation) for more infomation.
 
 #### Install ONNX frontend and backend
 
-Here we use [ONNX-TensorFlow](https://github.com/onnx/onnx-tensorflow) to install ONNX and its TensorFlow backend. For complicate reasons, we use the **master branch** of ONNX-TensorFlow:
+Here we use [ONNX-TensorFlow](https://github.com/onnx/onnx-tensorflow) to install ONNX and its TensorFlow backend.
 
 ```bash
-git clone https://github.com/onnx/onnx-tensorflow.git
-pip3 install -e onnx-tensorflow/
+pip install onnx-tf
 ```
-
-#### Install latest ONNX
-
-We only support the **master branch** of ONNX (for complicate reasons), so we need to uninstall the ONNX installed by ONNX-TensorFlow, and install the latest ONNX from source.
-
-To uninstall current ONNX:
-
-```bash
-pip3 uninstall onnx
-```
-
-Here is a brief guide for installing onnx in Ubuntu 16.04:
-
-```bash
-sudo apt update
-sudo apt upgrade
-sudo apt install python3-pip cmake protobuf-compiler libprotoc-dev
-pip3 install numpy
-sudo ln -s /usr/bin/python3 /usr/bin/python
-git clone --recursive https://github.com/onnx/onnx.git
-pip3 install -e onnx/ 
-```
-
-See [here](https://github.com/onnx/onnx/blob/master/docs/CONTRIBUTING.md) for more infomation.
 
 #### Install latest MMdnn
 
@@ -85,7 +60,7 @@ from keras.applications.densenet import preprocess_input, decode_predictions
 import numpy as np
 
 model = DenseNet121(include_top=True, weights='imagenet', input_tensor=None,
-                                                input_shape=None, pooling=None, classes=1000)
+                    input_shape=None, pooling=None, classes=1000)
 
 model.save('densenet121.keras')
 
@@ -165,13 +140,7 @@ Is that the same with Keras output?
 Ubuntu 16.04 with
 
 - Keras 2.1.6
-- onnx-tf 1.0 (master)
-- ONNX 1.1.1 (master)
+- onnx-tf 1.1.2
+- ONNX 1.2.1
 
-@ 2018/04/25
-
-## Limitation
-
-- Tested only Keras DenseNet model
-- Need ONNX master branch
-- Need ONNX-Tensorflow master branch
+@ 2018/06/09
