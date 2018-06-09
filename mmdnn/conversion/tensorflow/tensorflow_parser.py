@@ -42,8 +42,7 @@ class TensorflowParser(Parser):
         "Const",
         "Assign",
         "RandomUniform",
-        "FIFOQueueV2",
-        "Identity"
+        "FIFOQueueV2"
     ])
 
     dtype_map = {
@@ -546,8 +545,8 @@ class TensorflowParser(Parser):
         self._convert_pooling(source_node, b'AVG')
 
 
-    # def rename_Identity(self, source_node):
-    #     source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
+    def rename_Identity(self, source_node):
+        source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
 
 
     def rename_Squeeze(self, source_node):

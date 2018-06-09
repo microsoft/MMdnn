@@ -398,13 +398,16 @@ bias_term={}, ntop=1)".format(
     def emit_Squeeze(self, IR_node):
         shape = IR_node.get_attr("_output_shapes")[0]
         shape = shape_to_list(shape)
-        dim_str = "'dim': {}".format(shape)
-        dim_str = " reshape_param={'shape': { " + dim_str + '} }'
-        self.add_body(1, "n.{:<15} = L.Reshape(n.{}, {})".format(
-            IR_node.variable_name,
-            self.parent_variable_name(IR_node),
-            dim_str
-            ))
+        if shape:
+            dim_str = "'dim': {}".format(shape)
+            dim_str = " reshape_param={'shape': { " + dim_str + '} }'
+            self.add_body(1, "n.{:<15} = L.Reshape(n.{}, {})".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                dim_str
+                ))
+        else:
+            IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
 
 
     def emit_Concat(self, IR_node):
