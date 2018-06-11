@@ -1,0 +1,211 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>MMDNN Model Zoo</title>
+    <meta name="description" content="The novel open toolbox for AI models conversion">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- MMDNN title font -->
+    <link href="https://fonts.googleapis.com/css?family=Dosis" rel="stylesheet">
+    <!-- style for our model zoo -->
+    <link rel="stylesheet" href="css/table.css">
+    <!-- our js version -->
+    <script src="js/jquery-3.2.1.min.js"></script>
+</head>
+
+<body>
+    <div class="table-box">
+        <!-- title -->
+        <div class="brand">
+            <span>MMDNN&nbsp;Model&nbsp;Zoo</span>
+        </div>
+        <div class="table-content">
+            <!-- search -->
+            <div class="search-box">
+                <div class="search-input">
+                    <input type="text" placeholder="please input your keys">
+                </div>
+                <div class="search-btn">
+                    <img class="img-btn" src="assets/search.png" alt="">
+                </div>
+            </div>
+            <!-- table data -->
+            <table class="table">
+                <thead class="table-head">
+                    <td>Id</td>
+                    <td>
+                        Framework
+                        <span class="fiter">
+                            <img src="assets/filter.png" onclick="filter()" alt="">
+                        </span>
+                    </td>
+                    <td>Model Name</td>
+                    <td>Download Link</td>
+                    <td>Description</td>
+                    <td>Convert Button</td>
+                </thead>
+                <tbody class="table-tbody">
+                    <!-- <tr class="tab-content">
+                        <td>小红</td>
+                        <td>小明</td>
+                        <td>小黑</td>
+                        <td>
+                            <a class="art" href="">art</a>
+                            <a class="wei" href="">wei</a>
+                        </td>
+                        <td>
+                            <button class="convert_btu" onclick="getDescription(this)">convert</button>
+                        </td>
+                    </tr> -->
+                </tbody>
+            </table>
+            <!-- table page -->
+            <div class="table_page"></div>
+            <!-- description model window -->
+            <div class="des_window disappear_des">
+                <div class="close" onclick="getCloseDescrip()">×</div>
+                <div class="content"></div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+<script>
+    // 出现弹窗
+    function getDescription(obj) {
+        // 弹窗出现
+        $('body').addClass('body_grey');
+        $('.des_window').removeClass('disappear_des').addClass('display_des');
+        let userId = $(obj).parents("tr").children("td:nth-child(1)").text();
+        // 呈现内容
+        Object.keys(table_data).map(item => {
+            // console.info(table_data[item]);
+            let temp = table_data[item].id;
+            if (temp == userId) {
+                let tempDescription = table_data[item].description;
+                $('.des_window .content').text(tempDescription);
+            }
+        });
+    }
+    // 弹窗关闭
+    function getCloseDescrip() {
+        $('.des_window').removeClass('display_des').addClass('disappear_des');
+        $('body').removeClass('body_grey');
+    }
+    // 存储数据
+    let table_data = null;
+    function getTableContent() {
+        // get all source type
+        $.ajax({
+            type: 'GET',
+            url: 'json/modelmap2.json',
+            // async: false,
+            success: function (data) {
+                let models_data = data.models;
+                printTable(models_data);
+                table_data = models_data;
+            },
+            error: function () {
+                console.info(error);
+            }
+        });
+    }
+
+    // 绘制初始的完整的表格
+    function printTable(models_data) {
+
+        let id = 1;
+        Object.keys(models_data).map(item => {
+            let tempObj = models_data[item];
+            // description = tempObj.description;
+            // 加入主鍵key
+            tempObj.id = id;
+            id++;
+            let archi = tempObj.link.architecture;
+            let wei = tempObj.link.weights;
+            let str_archi = (archi == undefined || archi == '') ? '' : '<a class="art" href=' + archi + '>architecture</a>';
+            let str_wei = (wei == undefined || wei == '') ? '' : '<a class="art" href=' + wei + '>weights</a>';
+            let strTemp = '<tr class="tab-content">' +
+                '<td>' + tempObj.id + '</td>' +
+                '<td>' + tempObj.framework + '</td>' +
+                '<td>' + tempObj.name + '</td>' +
+                '<td>' + str_archi + str_wei + '</td>' +
+                '<td><button class="convert_btu descrip_select" onClick="getDescription(this)"' + tempObj.name + '">description</button></td>' +
+                '<td><button class="convert_btu convert_select">convert</button></td>' +
+                '</tr>';
+            $('.table .table-tbody').append(strTemp);
+        });
+        paging();
+    }
+    function printPartTable(models_data) {
+
+        Object.keys(models_data).map(item => {
+            let tempObj = models_data[item];
+            let archi = tempObj.link.architecture;
+            let wei = tempObj.link.weights;
+            let str_archi = (archi == undefined || archi == '') ? '' : '<a class="art" href=' + archi + '>architecture</a>';
+            let str_wei = (wei == undefined || wei == '') ? '' : '<a class="art" href=' + wei + '>weights</a>';
+            let strTemp = '<tr class="tab-content">' +
+                '<td>' + tempObj.id + '</td>' +
+                '<td>' + tempObj.framework + '</td>' +
+                '<td>' + tempObj.name + '</td>' +
+                '<td>' + str_archi + str_wei + '</td>' +
+                '<td><button class="convert_btu descrip_select" onClick="getDescription(this)"' + tempObj.name + '">description</button></td>' +
+                '<td><button class="convert_btu convert_select">convert</button></td>' +
+                '</tr>';
+            $('.table .table-tbody').append(strTemp);
+        });
+        paging();
+    }
+
+    // filter framework
+    function filter() {
+        alert('filter');
+    }
+    function paging() {
+        $('.table_page').html('');
+        let $table = $('table');
+        let currentPage = 0;
+        let pagesize = 8;
+        $table.bind('paging', function () {
+            $table.find('tbody tr').hide().slice(currentPage * pagesize, (currentPage + 1) * pagesize).show();
+        });
+        let sumRows = $table.find('tbody tr').length;
+        let sumPages = Math.ceil(sumRows / pagesize);
+        let $pager = $('.table_page');
+
+        for (let pageIndex = 0; pageIndex < sumPages; pageIndex++) {
+            $('<a href="#"><span>' + (pageIndex + 1) + '</span></a>').bind("click", { "newPage": pageIndex }, function (event) {
+                currentPage = event.data["newPage"];
+                $table.trigger("paging");
+            }).appendTo($pager);
+            $pager.append("");
+        }
+        // $('.table_page a:first-child span').css('background','#3c8dbc');
+        // $('.table_page a:first-child span').css('color','white');
+        $pager.insertAfter($table);
+        $table.trigger("paging");
+    }
+    // description click 
+    $(function () {
+        getTableContent();
+        // fuzzy query
+        $(".img-btn").click(function () {
+            $('tbody[class="table-tbody"').html('');
+            let search_val = $('.search-input input').val().trim();
+            let temp_result = [];
+            Object.keys(table_data).map(item => {
+                let temp = table_data[item];
+                if (temp.name.includes(search_val)) {
+                    console.info(temp);
+                    temp_result.push(temp);
+                }
+            });
+            printPartTable(temp_result);
+        });
+    });
+</script>
