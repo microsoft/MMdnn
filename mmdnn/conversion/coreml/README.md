@@ -3,13 +3,15 @@
 
 We tested the [Awesome-CoreML-Models](https://github.com/likedan/Awesome-CoreML-Models) and the parser works. Any contribution is welcome.
 
-Models                   | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | TensorFlow
-:-----------------------:|:-----:|:------:|:----:|:-----:|:-----:|:-------:|:------:|
-Vgg16                    |   √   |   √    |      |   √   |   √   |    √    | √
-Inception_v3             |   √   |   √    |      |   √   |   √   |    √    | √
-ResNet 50                |   √   |   √    |      |   √   |   √   |    √    | √
-MobileNet V1             |   √   |   √    |      |   √   |   √   |    √    | √
-Tiny-yolo                |       |   √    |      |   √   |   √   |    √    | √
+Models                   | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | TensorFlow| Onnx
+:-----------------------:|:-----:|:------:|:----:|:-----:|:-----:|:-------:|:------:|:------:|
+alexnet                  |   √   |   √    |      |   √   |   √   |    √    | √       | √
+densenet201              |   √   |   √    |      |   √   |   √   |    √    | √       | √
+inception_v3             |   √   |   √    |      |   √   |       |    √    | √       | √
+vgg19                    |   √   |   √    |      |   √   |   √   |    √    | √       | √
+vgg19_bn                 |   √   |   √    |      |   √   |   √   |    √    | √       | √
+resnet152                |   √   |   √    |      |   √   |   √   |    √    | √       | √
+
 
 **√** - Correctness tested
 

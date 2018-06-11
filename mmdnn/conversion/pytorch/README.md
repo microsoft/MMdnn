@@ -2,6 +2,21 @@
 
 Currently, we have already implemented both the the PyTorch -> IR part and the IR -> PyTorch part.
 
+Models                   | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | TensorFlow| Onnx
+:-----------------------:|:-----:|:------:|:----:|:-----:|:-----:|:-------:|:------:|:------:|
+Vgg16                    |   √   |   √    |      |   √   |   √   |    √    | √       | √
+Inception_v3             |   √   |   √    |      |   √   |   √   |    √    | √       | √
+ResNet 50                |   √   |   √    |      |   √   |   √   |    √    | √       | √
+MobileNet V1             |   √   |   √    |      |   √   |   √   |    √    | √       | √
+Tiny-yolo                |       |   √    |      |   √   |   √   |    √    | √       | √
+
+**√** - Correctness tested
+
+**o** - Some difference after conversion
+
+**space** - not tested
+
+
 The PyTorch parser is modified from branch [pytorch](https://github.com/Microsoft/MMdnn/tree/pytorch) , using jit CppOP to build the graph.
 
 Any contribution is welcome.
