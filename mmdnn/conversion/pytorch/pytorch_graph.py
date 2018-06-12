@@ -4,8 +4,6 @@
 #----------------------------------------------------------------------------------------------
 
 from mmdnn.conversion.common.DataStructure.graph import GraphNode, Graph
-from tensorflow.core.framework.node_def_pb2 import NodeDef
-from tensorflow.core.framework import attr_value_pb2
 import torch
 import torch.jit
 import torch.autograd

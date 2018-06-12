@@ -68,7 +68,12 @@ class PytorchParser(Parser):
             print("Pytorch model file [{}] is not found.".format(model_file_name))
             assert False
         # test
-        model = torch.load(model_file_name)
+
+        # cpu: https://github.com/pytorch/pytorch/issues/5286
+        try:
+            model = torch.load(model_file_name)
+        except:
+            model = torch.load(model_file_name, map_location='cpu')
 
         self.weight_loaded = True
 
