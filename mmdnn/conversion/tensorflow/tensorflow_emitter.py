@@ -300,6 +300,16 @@ def KitModel(weight_file = None):
             self.add_body(1, code)
 
 
+    def emit_UpSampling2D(self, IR_node):
+        size = IR_node.get_attr('size')
+        size = tuple(size)
+        self.add_body(1, "{:<15} = tf.keras.layers.UpSampling2D(size={})({})".format(
+            IR_node.variable_name,
+            size,
+            self.parent_variable_name(IR_node)))
+
+
+
     def emit_Flatten(self, IR_node):
         #self._emit_unary_operation(IR_node, "contrib.layers.flatten")
         self.add_body(1, "{:<15} = tf.contrib.layers.flatten({})".format(
