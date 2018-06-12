@@ -7,6 +7,7 @@ import os
 from six import string_types as _string_types
 import keras as _keras
 from keras import backend as _K
+
 from mmdnn.conversion.keras.keras2_graph import Keras2Graph
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
@@ -63,9 +64,18 @@ class Keras2Parser(Parser):
         json_file.close()
 
         # Load the model weights
-        loaded_model = model_from_json(loaded_model_json, custom_objects={
+
+        try:
+            loaded_model = model_from_json(loaded_model_json, custom_objects={
             'relu6': _keras.applications.mobilenet.relu6,
             'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D})
+        except:
+            from keras_applications import mobilenet
+            import keras.layers as layers
+            loaded_model = model_from_json(loaded_model_json, custom_objects={
+            'relu6': mobilenet.relu6,
+            'DepthwiseConv2D': layers.DepthwiseConv2D})
+
 
         if model_weight_path:
             if os.path.isfile(model_weight_path):
@@ -88,13 +98,24 @@ class Keras2Parser(Parser):
 
         # load model files into Keras graph
         if isinstance(model, _string_types):
-            model = _keras.models.load_model(
-                model,
-                custom_objects={
-                    'relu6': _keras.applications.mobilenet.relu6,
-                    'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D
-                }
-            )
+            try:
+                model = _keras.models.load_model(
+                    model,
+                    custom_objects={
+                        'relu6': _keras.applications.mobilenet.relu6,
+                        'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D
+                    }
+                )
+            except:
+                from keras_applications import mobilenet
+                import keras.layers as layers
+                model = _keras.models.load_model(
+                    model,
+                    custom_objects={
+                        'relu6': mobilenet.relu6,
+                        'DepthwiseConv2D': layers.DepthwiseConv2D
+                    }
+                )
             self.weight_loaded = True
 
         elif isinstance(model, tuple):
@@ -510,6 +531,21 @@ class Keras2Parser(Parser):
 
         # input edge
         self.convert_inedge(source_node, IR_node)
+
+    def rename_UpSampling2D(self, source_node):
+        IR_node = self.IR_graph.node.add()
+
+        # name, op
+        Keras2Parser._copy_and_reop(source_node, IR_node)
+
+        # input edge
+        self.convert_inedge(source_node, IR_node)
+
+        # size
+        IR_node.attr["size"].list.i.extend(source_node.keras_layer.size)
+        
+
+
 
 
     def rename_Embedding(self, source_node):
