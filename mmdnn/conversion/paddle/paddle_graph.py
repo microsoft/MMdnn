@@ -56,11 +56,9 @@ class PaddleGraph(Graph):
                     if layer.full_name not in nodes:
                         self.layer_map[layer.full_name] = PaddleGraphNode(layer)
                         self.layer_name_map[layer.full_name] = layer.full_name
-                        self._make_connection(layer.full_name, out.full_name)
-                        new_outs.append(layer)
-                    if not layer.parents:
-                        self.input_layers.append(layer)
+                        nodes.append(layer.full_name)
+                    self._make_connection(layer.full_name, out.full_name)
+                    new_outs.append(layer)
             outs = new_outs
-
 
         super(PaddleGraph, self).build()
