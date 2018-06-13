@@ -6,7 +6,8 @@ from six import text_type as _text_type
 def _convert(args):
     if args.srcFramework == 'caffe':
         from mmdnn.conversion.caffe.transformer import CaffeTransformer
-        transformer = CaffeTransformer(args.network, args.weights, "tensorflow", args.inputShape, phase = args.caffePhase)
+        inputshape = [int(x) for x in args.inputShape]
+        transformer = CaffeTransformer(args.network, args.weights, "tensorflow", inputshape, phase = args.caffePhase)
         graph = transformer.transform_graph()
         data = transformer.transform_data()
 
