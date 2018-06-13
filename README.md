@@ -183,6 +183,22 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
+## Authors
+
+Cheng CHEN (Microsoft Research Asia): Project Manager; Caffe, CNTK, CoreML Emitter, Keras, MXNet, TensorFlow
+
+Jiahao YAO (Peking University): CoreML, MXNet Emitter, PyTorch Parser; HomePage
+
+Ru ZHANG (Chinese Academy of Sciences): CoreML Emitter, DarkNet Parser, Keras, TensorFlow frozen graph Parser; Yolo and SSD models; Tests
+
+Yuhao ZHOU (Shanghai Jiao Tong University): MXNet
+
+Tingting QIN (Microsoft Research Asia): Caffe Emitter
+
+Tong ZHAN (Microsoft): ONNX Emitter
+
+Qianwen WANG (Hong Kong University of Science and Technology): Visualization
+
 ## Acknowledgements
 
 Thanks to [Saumitro Dasgupta](https://github.com/ethereon), the initial code of *caffe -> IR converting* is references to his project [caffe-tensorflow](https://github.com/ethereon/caffe-tensorflow).
