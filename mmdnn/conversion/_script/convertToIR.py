@@ -4,9 +4,9 @@ from six import text_type as _text_type
 
 
 def _convert(args):
+    inputshape = [int(x) for x in args.inputShape]
     if args.srcFramework == 'caffe':
         from mmdnn.conversion.caffe.transformer import CaffeTransformer
-        inputshape = [int(x) for x in args.inputShape]
         transformer = CaffeTransformer(args.network, args.weights, "tensorflow", inputshape, phase = args.caffePhase)
         graph = transformer.transform_graph()
         data = transformer.transform_data()
@@ -46,24 +46,24 @@ def _convert(args):
         # assert args.network or args.frozen_pb
         if args.frozen_pb:
             from mmdnn.conversion.tensorflow.tensorflow_frozenparser import TensorflowParser2
-            parser = TensorflowParser2(args.frozen_pb, args.inputShape, args.inNodeName, args.dstNodeName)
+            parser = TensorflowParser2(args.frozen_pb, inputshape, args.inNodeName, args.dstNodeName)
         else:
             from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
-            if args.inNodeName and args.inputShape:
-                parser = TensorflowParser(args.network, args.weights, args.dstNodeName, args.inputShape, args.inNodeName)
+            if args.inNodeName and inputshape:
+                parser = TensorflowParser(args.network, args.weights, args.dstNodeName, inputshape, args.inNodeName)
             else:
                 parser = TensorflowParser(args.network, args.weights, args.dstNodeName)
 
     elif args.srcFramework == 'mxnet':
-        assert args.inputShape != None
+        assert inputshape != None
         if args.weights == None:
-            model = (args.network, args.inputShape)
+            model = (args.network, inputshape)
         else:
             import re
             if re.search('.', args.weights):
                 args.weights = args.weights[:-7]
             prefix, epoch = args.weights.rsplit('-', 1)
-            model = (args.network, prefix, epoch, args.inputShape)
+            model = (args.network, prefix, epoch, inputshape)
 
         from mmdnn.conversion.mxnet.mxnet_parser import MXNetParser
         parser = MXNetParser(model)
@@ -74,8 +74,7 @@ def _convert(args):
         parser = CntkParser(model)
 
     elif args.srcFramework == 'pytorch':
-        assert args.inputShape != None
-        inputshape = [int(x) for x in args.inputShape]
+        assert inputshape != None
         from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser
         parser = PytorchParser(args.network, inputshape)
 
@@ -83,7 +82,7 @@ def _convert(args):
         from mmdnn.conversion.torch.torch_parser import TorchParser
         model = args.network or args.weights
         assert model != None
-        parser = TorchParser(model, args.inputShape)
+        parser = TorchParser(model, inputshape)
 
     elif args.srcFramework == 'onnx':
         from mmdnn.conversion.onnx.onnx_parser import ONNXParser
