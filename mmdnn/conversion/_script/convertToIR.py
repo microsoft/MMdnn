@@ -4,7 +4,10 @@ from six import text_type as _text_type
 
 
 def _convert(args):
-    inputshape = [int(x) for x in args.inputShape]
+    if args.inputShape != None:
+        inputshape = [int(x) for x in args.inputShape]
+    else:
+        inputshape = None
     if args.srcFramework == 'caffe':
         from mmdnn.conversion.caffe.transformer import CaffeTransformer
         transformer = CaffeTransformer(args.network, args.weights, "tensorflow", inputshape, phase = args.caffePhase)
