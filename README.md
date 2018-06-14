@@ -54,7 +54,7 @@ We provide a model converter to help developers convert models between framework
 The model conversion between currently supported frameworks is tested on some **ImageNet** models.
 
 Models | Caffe | Keras | Tensorflow | CNTK | MXNet | PyTorch  | CoreML | ONNX
-:-----:|:-----:|:-----:|:----------:|:----:|:-----:|:--------:|:------:|-----:|
+:-----:|:-----:|:-----:|:----------:|:----:|:-----:|:--------:|:------:|:-----:|
 [VGG 19](http://arxiv.org/abs/1409.1556.pdf) | √ | √ | √ | √ | √ | √ | √ | √
 [Inception V1](http://arxiv.org/abs/1409.4842v1) | √ | √ | √ | √ | √ | √ | √ | √
 [Inception V3](http://arxiv.org/abs/1512.00567)  | √ | √ | √ | √ | √ | √ | √ | √
