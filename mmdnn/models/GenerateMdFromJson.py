@@ -65,12 +65,12 @@ def GenerateModelBlock(model):
 def GenerateModelsList(data):
     colnum = 3
     add_header(1, "Models")
-    add_header(2, "ImageNet")
+    add_header(2, "Image Classification")
     draw_line(colnum)
     models = data["models"]
     num = 0
     for i in range(len(data["models"])):
-        if (models[i]["framework"]!="keras") and (models[i]["framework"]!="pytorch"):
+        if (models[i]["framework"]!="keras") and (models[i]["framework"]!="pytorch" and (models[i]["link"]["architecture"]!="")):
             GenerateModelBlock(models[i])
             num += 1
             if num % colnum == 0:
@@ -79,27 +79,31 @@ def GenerateModelsList(data):
 def GenerateIntroductionAndTutorial():
     # MMdnn introduction
     add_header(1, "Introduction")
-    text_intro='''MMDNN is a comprehensive, cross-framework solution to convert,
-    visualize and diagnosis deep neural network models.
-    With MMDNN, the gaps between different deep learning frameworks is narrowed or even eliminated.
-    MMDNN is developed and supported by Microsoft and other community partners.\n\n'''
+    text_intro='''This is a collection of pre-trained models in different deep learning frameworks.\n
+    You can download the model you want by simply click the download link.\n
+    With the download model, you can convert them to different frameworks.\n
+    Next session show an example to show you how to convert pre-trained model between frameworks.\n\n'''
     add_code(text_intro)
 
     # steps for model conversion
     add_header(2, "Steps to Convert Model")
-    text_example='''**Convert vgg19 model from Tensorflow to CNTK**\n
+    text_example='''**Example: Convert vgg19 model from Tensorflow to CNTK**\n
 1. Install the stable version of MMdnn
 ```bash
 pip install mmdnn
 ```
 2. Download Tensorflow pre-trained model
 ```bash
+    -[] Directly download from below model collection :smile:
+    -[] Use command line
 $ mmdownload -f tensorflow -n vgg19
 
 Downloading file [./vgg_19_2016_08_28.tar.gz] from [http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz]
 progress: 520592.0 KB downloaded, 100%
 Model saved in file: ./imagenet_vgg19.ckpt
 ```
+**NOTICE:** _the model name after the **'-n'** argument must be the models appearence in the below model collection._ :smile:
+
 3. Convert model architecture(*.ckpt.meta) and weights(.ckpt) from Tensorflow to IR
 ```bash
 $ mmtoir -f tensorflow -d vgg19 -n imagenet_vgg19.ckpt.meta -w imagenet_vgg19.ckpt  --dstNodeName MMdnn_Output
@@ -128,6 +132,7 @@ Notice that you may need [pytorch_vgg19.py] to load the model back.
 ```
 '''
     add_code(text_example)
+    add_code("\n\n")
 
 def main():
     parser = argparse.ArgumentParser()
