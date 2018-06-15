@@ -11,7 +11,7 @@ def visualize(model_filename, log_dir):
         train_writer.add_graph(sess.graph)
         train_writer.close()
 
-if __name__ == "__main__":
+def _main():
     """
     Visualize the frozen TF graph using tensorboard.
 
@@ -31,8 +31,11 @@ if __name__ == "__main__":
     """
 
     if len(sys.argv) != 3:
-        raise ValueError("Usage: python visualize_pb.py /path/to/frozen.pb /path/to/log/directory")
+        raise ValueError("Usage: python vis_meta.py /path/to/model.meta /path/to/log/directory")
     # load file
     visualize(sys.argv[1], sys.argv[2])
     os.system("tensorboard --logdir=" + sys.argv[2])
 
+
+if __name__ == "__main__":
+    _main()

@@ -52,7 +52,9 @@ layer_num_to_name = {
     36: 'Silence',
     37: 'ContrastiveLoss',
     38: 'Exp',
-    39: 'Deconvolution'}
+    39: 'Deconvolution',
+    40: 'PReLU'
+    }
 
 LAYER_DESCRIPTORS = {
     # Caffe Types
@@ -99,8 +101,9 @@ LAYER_DESCRIPTORS = {
     'TanH': shape_identity,
     'WindowData': shape_not_implemented,
     'Threshold': shape_identity,
-    'Reshape' : shape_reshape
-}
+    'Reshape' : shape_reshape,
+    'PReLU'   : shape_identity
+    }
 
 LAYER_TYPES = LAYER_DESCRIPTORS.keys()
 

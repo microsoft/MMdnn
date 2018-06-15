@@ -9,9 +9,12 @@ import keras
 from keras import backend as K
 from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.examples.extractor import base_extractor
+from mmdnn.conversion.common.utils import download_file
 
 
 class keras_extractor(base_extractor):
+
+    MMDNN_BASE_URL = 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/'
 
     architecture_map = {
         'inception_v3'        : lambda : keras.applications.inception_v3.InceptionV3(input_shape=(299, 299, 3)),
@@ -23,6 +26,10 @@ class keras_extractor(base_extractor):
         'inception_resnet_v2' : lambda : keras.applications.inception_resnet_v2.InceptionResNetV2(input_shape=(299, 299, 3)),
         'densenet'            : lambda : keras.applications.densenet.DenseNet201(),
         'nasnet'              : lambda : keras.applications.nasnet.NASNetLarge()
+    }
+
+    thirdparty_map = {
+        'yolo2'    : MMDNN_BASE_URL + 'keras/yolo2.h5',
     }
 
     image_size = {
@@ -37,10 +44,18 @@ class keras_extractor(base_extractor):
         'nasnet'            : 331,
     }
 
+    @classmethod
+    def help(cls):
+        print ('Support frameworks: {}'.format(set().union(cls.architecture_map.keys(), cls.thirdparty_map.keys())))
+
 
     @classmethod
     def download(cls, architecture, path="./"):
-        if cls.sanity_check(architecture):
+        if architecture in cls.thirdparty_map:
+            weight_file = download_file(cls.thirdparty_map[architecture], directory=path)
+            return weight_file
+
+        elif cls.sanity_check(architecture):
             output_filename = path + 'imagenet_{}.h5'.format(architecture)
             if os.path.exists(output_filename) == False:
                 model = cls.architecture_map[architecture]()
@@ -53,14 +68,23 @@ class keras_extractor(base_extractor):
             else:
                 print("File [{}] existed, skip download.".format(output_filename))
                 return output_filename
+
         else:
             return None
 
 
     @classmethod
-    def inference(cls, architecture, path, image_path):
-        if cls.sanity_check(architecture):
+    def inference(cls, architecture, files, path, image_path):
+        if architecture in cls.thirdparty_map:
+            model = keras.models.load_model(files)
+
+        elif cls.sanity_check(architecture):
             model = cls.architecture_map[architecture]()
+
+        else:
+            model = None
+
+        if model:
             import numpy as np
             func = TestKit.preprocess_func['keras'][architecture]
             img = func(image_path)

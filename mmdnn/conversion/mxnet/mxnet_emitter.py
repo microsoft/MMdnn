@@ -25,11 +25,10 @@ class MXNetEmitter(Emitter):
     }
 
     activation_map = {
-        "relu6"   : "Relu",
-        "relu"    : "Relu",
-        "sigmoid" : "Sigmoid",
-        "tanh"    : "Tanh",
-        "elu"     : "Elu"
+        "relu"      : "Relu",
+        "sigmoid"   : "Sigmoid",
+        "tanh"      : "Tanh",
+        "elu"       : "Elu"
     }
 
     transpose_map = {
@@ -84,6 +83,7 @@ def RefactorModel():
             current_node = self.IR_graph.get_node(layer)
             node_type = current_node.type
 
+
             if len(current_node.in_edges) == 0:
                 current_node.in_edges.append('data')
 
@@ -91,10 +91,12 @@ def RefactorModel():
                 func = getattr(self, "emit_Activation")
                 line = func(current_node, MXNetEmitter.activation_map[node_type.lower()].lower())
                 self.add_body(1, line)
+
             elif hasattr(self, "emit_" + node_type):
                 func = getattr(self, "emit_" + node_type)
                 line = func(current_node)
-                self.add_body(1, line)
+                if line != None:
+                    self.add_body(1, line)
             else:
                 print("MXNet Emitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
@@ -127,8 +129,8 @@ def RefactorModel():
         comment = "\n    # if a GPU is available, change mx.cpu() to mx.gpu()"
         last_line = "{:<15} = mx.mod.Module(symbol = {}, context = mx.cpu(), data_names = ['{}'])".format(
             "model",
-            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers]),
-            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers]))
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack']),
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']))
 
         self.add_body(1, comment)
         self.add_body(1, last_line)
@@ -158,12 +160,11 @@ def RefactorModel():
 """
             code = self.body_code + weight_code + train_code + main_code
         else:
-            test_code = """import matplotlib.pyplot as plt
-from collections import namedtuple
+            test_code = """from collections import namedtuple
 Batch = namedtuple('Batch', ['data'])
 
 
-def get_image(url, show = False):
+def get_image(url, show=False):
     import cv2
     # download and show the image
     fname = mx.test_utils.download(url)
@@ -171,6 +172,7 @@ def get_image(url, show = False):
     if img is None:
         return None
     if show:
+        import matplotlib.pyplot as plt
         plt.imshow(img)
         plt.axis('off')
     # convert into format (batch, RGB, width, height)
@@ -294,7 +296,7 @@ def predict(model, labels, url):
 
     def set_pad(self, IR_node, code, pad, _max_pool):
         if _max_pool:
-            constant_value = "-math.inf"
+            constant_value = "float('-inf')"
         else:
             constant_value = "0.0"
 
@@ -321,7 +323,7 @@ def predict(model, labels, url):
         if self.weight_loaded:
             weight_dict = self.weights[IR_node.name]
             parent = self.IR_graph.get_parent(IR_node.name, [0])
-            while parent.type == "Flatten":
+            while parent.type == "Flatten" or parent.type == 'Dropout':
                 parent = self.IR_graph.get_parent(parent.name, [0])
             dim = len(parent.layer.attr['_output_shapes'].list.shape[0].dim)
             if dim > 2:
@@ -365,6 +367,7 @@ def predict(model, labels, url):
         dilate = list()
         for e in IR_node.IR_layer.attr["dilations"].list.i[1:-1]:
             dilate.append(e)
+        if dilate == []: dilate = [1, 1]
         dilate = ', '.join('%s' % i for i in dilate)
 
         defuse_pad = False
@@ -485,13 +488,84 @@ def predict(model, labels, url):
 
 
     def emit_BatchNorm(self, IR_node):
+        IR_node_after = self.IR_graph.get_son(IR_node.name, [0])
+        if IR_node_after.type == 'Scale':
+            if self.weight_loaded:
+                weight_dict = self.weights[IR_node.name]
+                weight_dict_scale = self.weights[IR_node_after.name]
+
+            # axis = IR_node.IR_layer.attr["axis"].i
+            axis = 1
+            eps = IR_node.IR_layer.attr["epsilon"].f
+            momentum = IR_node.IR_layer.attr["momentum"].f
+
+            fix_gamma = not IR_node.IR_layer.attr["scale"].b
+
+            if self.weight_loaded:
+                if not fix_gamma:
+                    self.output_weights[IR_node.name + "_gamma"] = np.multiply(weight_dict['scale'], weight_dict_scale['scale'])
+                self.output_weights[IR_node.name + "_beta"] = np.multiply(weight_dict['bias'], weight_dict_scale['scale']) + weight_dict_scale['bias']
+
+            # not supported yet
+            use_global_stats = "False"
+            if self.weight_loaded:
+                self.output_weights[IR_node.name + "_moving_var"] = weight_dict['var']
+                self.output_weights[IR_node.name + "_moving_mean"] = weight_dict['mean']
+
+            code = "{:<15} = mx.sym.BatchNorm(data = {}, axis = {}, eps = {}, momentum = {}, fix_gamma = {}, use_global_stats = {}, name = '{}')".format(
+                    IR_node.variable_name,
+                    self.parent_variable_name(IR_node),
+                    axis,
+                    eps,
+                    momentum,
+                    fix_gamma,
+                    use_global_stats,
+                    IR_node.name)
+
+            return code
+
+        else:
+            if self.weight_loaded:
+                weight_dict = self.weights[IR_node.name]
+
+            # axis = IR_node.IR_layer.attr["axis"].i
+            axis = 1
+            eps = IR_node.IR_layer.attr["epsilon"].f
+            momentum = IR_node.IR_layer.attr["momentum"].f
+
+            fix_gamma = not IR_node.IR_layer.attr["scale"].b
+
+            if self.weight_loaded:
+                if not fix_gamma:
+                    self.output_weights[IR_node.name + "_gamma"] = weight_dict['scale']
+                self.output_weights[IR_node.name + "_beta"] = weight_dict['bias']
+
+            # not supported yet
+            use_global_stats = "False"
+            if self.weight_loaded:
+                self.output_weights[IR_node.name + "_moving_var"] = weight_dict['var']
+                self.output_weights[IR_node.name + "_moving_mean"] = weight_dict['mean']
+
+            code = "{:<15} = mx.sym.BatchNorm(data = {}, axis = {}, eps = {}, momentum = {}, fix_gamma = {}, use_global_stats = {}, name = '{}')".format(
+                    IR_node.variable_name,
+                    self.parent_variable_name(IR_node),
+                    axis,
+                    eps,
+                    momentum,
+                    fix_gamma,
+                    use_global_stats,
+                    IR_node.name)
+
+            return code
+
+    def emit_Scale(self, IR_node):
         if self.weight_loaded:
             weight_dict = self.weights[IR_node.name]
 
         # axis = IR_node.IR_layer.attr["axis"].i
         axis = 1
-        eps = IR_node.IR_layer.attr["epsilon"].f
-        momentum = IR_node.IR_layer.attr["momentum"].f
+        eps = 0.0
+        momentum = 0.0
 
         fix_gamma = not IR_node.IR_layer.attr["scale"].b
 
@@ -503,8 +577,8 @@ def predict(model, labels, url):
         # not supported yet
         use_global_stats = "False"
         if self.weight_loaded:
-            self.output_weights[IR_node.name + "_moving_var"] = weight_dict['var']
-            self.output_weights[IR_node.name + "_moving_mean"] = weight_dict['mean']
+            self.output_weights[IR_node.name + "_moving_var"] = weight_dict['scale_var']
+            self.output_weights[IR_node.name + "_moving_mean"] = weight_dict['scale_mean']
 
         code = "{:<15} = mx.sym.BatchNorm(data = {}, axis = {}, eps = {}, momentum = {}, fix_gamma = {}, use_global_stats = {}, name = '{}')".format(
                 IR_node.variable_name,
@@ -517,6 +591,7 @@ def predict(model, labels, url):
                 IR_node.name)
 
         return code
+
 
 
     def emit_Pool(self, IR_node):
@@ -693,15 +768,26 @@ def predict(model, labels, url):
         return code
 
 
-    # def emit_LeakyReLU(self, IR_node):
+    def emit_LeakyRelu(self, IR_node):
+        alpha = IR_node.IR_layer.attr['alpha'].f
+        code = "{:<15} = mx.sym.LeakyReLU(data = {}, slope = {}, name = '{}')".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                alpha,
+                IR_node.name
+        )
+        return code
 
-    #     # IR only support Elu, the same problem with func emit_Activation
-
-    #     code = "{:<15} = mx.sym.LeakyReLU(data = {}, )".format()
-
-    #     return code
-    #     raise NotImplementedError
-
+    def emit_Elu(self, IR_node):
+        alpha = IR_node.IR_layer.attr['alpha'].f
+        code = "{:<15} = mx.sym.LeakyReLU(data = {}, slope = {}, act_type = {}, name = '{}')".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                alpha,
+                'elu',
+                IR_node.name
+        )
+        return code
 
     def emit_Dropout(self, IR_node):
         p = IR_node.IR_layer.attr["keep_prob"].f
@@ -718,7 +804,6 @@ def predict(model, labels, url):
 
     # reverse cannot support yet
     def emit_Reshape(self, IR_node):
-
         shape = list()
         for e in IR_node.IR_layer.attr["shape"].list.i:
             shape.append(e)
@@ -856,3 +941,61 @@ def predict(model, labels, url):
                 IR_node.name)
 
         return code
+
+    def emit_Constant(self, IR_node):
+        raise NotImplementedError()
+        code = "{:<15} = mx.sym.identity(name='{}')".format(IR_node.variable_name, IR_node.name)
+        self.output_weights[IR_node.name + '_data'] = self.weights[IR_node.name]['value']
+        return code
+
+    def emit_Sub(self, IR_node):
+        code = "{:<15} = mx.sym.broadcast_sub({}, {})".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                self.parent_variable_name(IR_node, [1]))
+
+        return code
+
+
+    def emit_Relu6(self, IR_node):
+        self.add_body(1, self.emit_Activation(IR_node, 'relu'))
+        old_name = IR_node.variable_name
+        IR_node.real_name = IR_node.real_name + "_clip"
+        self.add_body(1, "{:<15} = mx.sym.clip({}, a_min=0, a_max=6, name='{}')".format(
+            IR_node.real_variable_name,
+            old_name,
+            IR_node.real_name))
+
+        return ""
+
+
+    def emit_Slice(self, IR_node):
+        if self.IR_graph.get_parent(IR_node.name, [0]).type == 'Shape':
+            pass
+        else:
+            starts = IR_node.get_attr('starts')
+            starts = [starts[0], starts[-1]] + starts[1:-1]
+            ends = IR_node.get_attr('ends')
+            ends = [ends[0], ends[-1]] + ends[1:-1]
+            ends = [i if i else None for i in ends]
+            strides = IR_node.get_attr('strides')
+            if strides:
+                strides = [strides[0], strides[-1]] + strides[1:-1]
+
+            self.add_body(1, "{:<15} = mx.sym.slice({}, begin={}, end={}, step={}, name='{}')".format(
+                IR_node.real_variable_name,
+                self.parent_variable_name(IR_node),
+                starts,
+                ends,
+                strides,
+                IR_node.name
+            ))
+            return ""
+
+    def emit_Const(self, IR_node):
+        pass
+
+    def emit_Shape(self, IR_node):
+        pass
+    def emit_Pack(self, IR_node):
+        pass

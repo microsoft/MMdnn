@@ -1,6 +1,23 @@
 # CoreML README
 
-Currently we only implemented the CoreML emitter (IR -> CoreML) part. Any contribution to CoreML model parser (CoreML -> IR) part or emitter part is welcome.
+
+We tested the [Awesome-CoreML-Models](https://github.com/likedan/Awesome-CoreML-Models) and the parser works. Any contribution is welcome.
+
+Models                   | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | TensorFlow| Onnx
+:-----------------------:|:-----:|:------:|:----:|:-----:|:-----:|:-------:|:------:|:------:|
+alexnet                  |   √   |   √    |      |   √   |   √   |    √    | √       | √
+densenet201              |   √   |   √    |      |   √   |   √   |    √    | √       | √
+inception_v3             |   √   |   √    |      |   √   |       |    √    | √       | √
+vgg19                    |   √   |   √    |      |   √   |   √   |    √    | √       | √
+vgg19_bn                 |   √   |   √    |      |   √   |   √   |    √    | √       | √
+resnet152                |   √   |   √    |      |   √   |   √   |    √    | √       | √
+
+
+**√** - Correctness tested
+
+**o** - Some difference after conversion
+
+**space** - not tested
 
 ---
 
@@ -39,6 +56,35 @@ IR weights are saved as [keras_mobilenet.npy].
 ```
 
 Then we got the IR format model.
+
+### Slim Model Extractor
+
+You can refer [Slim Model Extractor](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/coreml/extractor.py) to extract your own coreml model, which is a sample tool to extract both architecture and weights from slim pre-trained models.
+
+Support frameworks: ['inception_v3', 'mobilenet', 'resnet50', 'tinyyolo', 'vgg16']
+
+Example:
+
+```bash
+$ mmdownload -f coreml -n mobilenet
+
+Downloading file [./MobileNet.mlmodel] from [https://docs-assets.developer.apple.com/coreml/models/MobileNet.mlmodel]
+progress: 16736.0 KB downloaded, 100%
+Coreml model mobilenet is saved in [./]
+```
+
+
+## Convert model (including architecture and weights) from Coreml to IR
+
+You can use following bash command to convert the checkpoint files to IR architecture file [*resnet152.pb*], [*resnet152.json*] and IR weights file [*resnet152.npy*]
+
+```bash
+$ mmtoir -f coreml -d mobilenet -n MobileNet.mlmodel --dstNodeName MMdnn_Output
+
+IR network structure is saved as [mobilenet.json].
+IR network structure is saved as [mobilenet.pb].
+IR weights are saved as [mobilenet.npy].
+```
 
 ### Convert to CoreML
 
@@ -90,7 +136,7 @@ The inference result is slightly different from the original keras model. Curren
 
 ## Develop version
 
-macOS High Sierra 10.13.2 (17C205)
+macOS High Sierra 10.13.3 (17C205)
 
 @ 2018/01/10
 

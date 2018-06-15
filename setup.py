@@ -1,8 +1,9 @@
 from __future__ import absolute_import
 from setuptools import setup, find_packages
+from io import open
 
 # Get the long description from the README file
-with open('README.md') as f:
+with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
@@ -11,7 +12,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.3',
+    version='0.2.2',
 
     description='Deep learning model converter, visualization and editor.',
     long_description=long_description,
@@ -20,7 +21,7 @@ setup(
     url='https://github.com/Microsoft/MMdnn',
 
     # Author details
-    author = 'cncng, Microsoft',
+    author = 'Cheng CHEN, System Research Group, Microsoft Research Asia',
     author_email='cncng@microsoft.com',
 
     # Choose your license
@@ -52,7 +53,7 @@ setup(
     ],
 
     # What does your project relate to?
-    keywords='deeplearning model converter visualization',
+    keywords='deep learning model converter visualization',
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
@@ -73,7 +74,9 @@ setup(
     install_requires=[
         'numpy >= 1.11.0',
         'protobuf >= 3.1.0',
-        'six >= 1.10.0'
+        'six >= 1.10.0',
+        'uuid',
+        'pillow >= 3.1.0',
     ],
 
     # To provide executable scripts, use entry points in preference to the
@@ -81,8 +84,12 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'convertToIR=mmdnn.conversion._script.convertToIR:main',
-            'IRToCode=mmdnn.conversion._script.IRToCode:main',
+            'mmconvert  = mmdnn.conversion._script.convert:_main',
+            'mmdownload = mmdnn.conversion._script.extractModel:_main',
+            'mmvismeta  = mmdnn.conversion.examples.tensorflow.vis_meta:_main',
+            'mmtoir     = mmdnn.conversion._script.convertToIR:_main',
+            'mmtocode   = mmdnn.conversion._script.IRToCode:_main',
+            'mmtomodel  = mmdnn.conversion._script.dump_code:_main',
         ],
     },
 )

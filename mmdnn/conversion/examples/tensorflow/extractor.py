@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import
 
+import os
 import tensorflow as tf
 
 from tensorflow.contrib.slim.nets import vgg
@@ -14,6 +15,7 @@ from tensorflow.contrib.slim.nets import resnet_v2
 from mmdnn.conversion.examples.tensorflow.models import inception_resnet_v2
 from mmdnn.conversion.examples.tensorflow.models import mobilenet_v1
 from mmdnn.conversion.examples.tensorflow.models import nasnet
+from mmdnn.conversion.examples.tensorflow.models.mobilenet import mobilenet_v2
 slim = tf.contrib.slim
 
 from mmdnn.conversion.examples.imagenet_test import TestKit
@@ -24,6 +26,14 @@ from mmdnn.conversion.common.utils import download_file
 class tensorflow_extractor(base_extractor):
 
     architecture_map = {
+        'vgg16' : {
+            'url'         : 'http://download.tensorflow.org/models/vgg_16_2016_08_28.tar.gz',
+            'filename'    : 'vgg_16.ckpt',
+            'builder'     : lambda : vgg.vgg_16,
+            'arg_scope'   : vgg.vgg_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'num_classes' : 1000,
+        },
         'vgg19' : {
             'url'         : 'http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz',
             'filename'    : 'vgg_19.ckpt',
@@ -40,12 +50,28 @@ class tensorflow_extractor(base_extractor):
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
             'num_classes' : 1001,
         },
+        'inception_v1_frozen' : {
+            'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/inception_v1_2016_08_28_frozen.pb.tar.gz',
+            'filename'    : 'inception_v1_2016_08_28_frozen.pb',
+            'tensor_out'  : 'InceptionV1/Logits/Predictions/Reshape_1:0',
+            'tensor_in'   : 'input:0',
+            'input_shape' : [224, 224, 3],
+            'num_classes' : 1001,
+        },
         'inception_v3' : {
             'url'         : 'http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz',
             'filename'    : 'inception_v3.ckpt',
             'builder'     : lambda : inception.inception_v3,
             'arg_scope'   : inception.inception_v3_arg_scope,
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
+            'num_classes' : 1001,
+        },
+        'inception_v3_frozen' : {
+            'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/inception_v3_2016_08_28_frozen.pb.tar.gz',
+            'filename'    : 'inception_v3_2016_08_28_frozen.pb',
+            'tensor_out'  : 'InceptionV3/Predictions/Softmax:0',
+            'tensor_in'   : 'input:0',
+            'input_shape' : [299, 299, 3],
             'num_classes' : 1001,
         },
         'resnet_v1_50' : {
@@ -96,6 +122,22 @@ class tensorflow_extractor(base_extractor):
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
             'num_classes' : 1001,
         },
+        'mobilenet_v1_1.0_frozen' : {
+            'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/mobilenet_v1_1.0_224_frozen.tgz',
+            'filename'    : 'mobilenet_v1_1.0_224/frozen_graph.pb',
+            'tensor_out'  : 'MobilenetV1/Predictions/Softmax:0',
+            'tensor_in'   : 'input:0',
+            'input_shape' : [224, 224, 3],
+            'num_classes' : 1001,
+        },
+        'mobilenet_v2_1.0_224':{
+            'url'         : 'https://storage.googleapis.com/mobilenet_v2/checkpoints/mobilenet_v2_1.0_224.tgz',
+            'filename'    : 'mobilenet_v2_1.0_224.ckpt',
+            'builder'     : lambda : mobilenet_v2.mobilenet,
+            'arg_scope'   : mobilenet_v2.training_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 224, 224, 3]),
+            'num_classes' : 1001,
+        },
         'inception_resnet_v2' : {
             'url'         : 'http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz',
             'filename'    : 'inception_resnet_v2_2016_08_30.ckpt',
@@ -123,12 +165,15 @@ class tensorflow_extractor(base_extractor):
                 data_input,
                 num_classes=cls.architecture_map[architecture]['num_classes'],
                 is_training=False)
-            labels = tf.squeeze(logits, name='MMdnn_Output')
+
+            if logits.op.type == 'Squeeze':
+                labels = tf.identity(logits, name='MMdnn_Output')
+            else:
+                labels = tf.squeeze(logits, name='MMdnn_Output')
+
 
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
-            writer = tf.summary.FileWriter('./graphs', sess.graph)
-            writer.close()
             sess.run(init)
             saver = tf.train.Saver()
             saver.restore(sess, path + cls.architecture_map[architecture]['filename'])
@@ -141,8 +186,13 @@ class tensorflow_extractor(base_extractor):
 
     @classmethod
     def handle_frozen_graph(cls, architecture, path):
-        raise NotImplementedError()
+        return
+        # raise NotImplementedError()
 
+    @classmethod
+    def get_frozen_para(cls, architecture):
+        frozenname = architecture + '_frozen'
+        return cls.architecture_map[frozenname]['filename'], cls.architecture_map[frozenname]['input_shape'], cls.architecture_map[frozenname]['tensor_in'], cls.architecture_map[frozenname]['tensor_out']
 
     @classmethod
     def download(cls, architecture, path="./"):
@@ -150,6 +200,8 @@ class tensorflow_extractor(base_extractor):
             architecture_file = download_file(cls.architecture_map[architecture]['url'], directory=path, auto_unzip=True)
             if not architecture_file:
                 return None
+
+            tf.reset_default_graph()
 
             if cls.architecture_map[architecture]['filename'].endswith('ckpt'):
                 cls.handle_checkpoint(architecture, path)
@@ -167,33 +219,57 @@ class tensorflow_extractor(base_extractor):
 
 
     @classmethod
-    def inference(cls, architecture, path, image_path):
-        if cls.download(architecture, path):
+    def inference(cls, architecture, files, path, image_path, is_frozen=False):
+        if is_frozen:
+            architecture_ = architecture + "_frozen"
+        else:
+            architecture_ = architecture
+
+        if cls.download(architecture_, path):
             import numpy as np
             func = TestKit.preprocess_func['tensorflow'][architecture]
             img = func(image_path)
             img = np.expand_dims(img, axis=0)
 
-            with slim.arg_scope(cls.architecture_map[architecture]['arg_scope']()):
-                data_input = cls.architecture_map[architecture]['input']()
-                logits, endpoints = cls.architecture_map[architecture]['builder']()(
-                    data_input,
-                    num_classes=cls.architecture_map[architecture]['num_classes'],
-                    is_training=False)
-                labels = tf.squeeze(logits)
+            if is_frozen:
+                tf_model_path = cls.architecture_map[architecture_]['filename']
+                with open(path + tf_model_path, 'rb') as f:
+                    serialized = f.read()
+                tf.reset_default_graph()
+                original_gdef = tf.GraphDef()
+                original_gdef.ParseFromString(serialized)
+                tf_output_name =  cls.architecture_map[architecture_]['tensor_out']
+                tf_input_name =  cls.architecture_map[architecture_]['tensor_in']
 
-            init = tf.global_variables_initializer()
-            with tf.Session() as sess:
-                sess.run(init)
-                saver = tf.train.Saver()
-                saver.restore(sess, path + cls.architecture_map[architecture]['filename'])
-                predict = sess.run(logits, feed_dict = {data_input : img})
+                with tf.Graph().as_default() as g:
+                    tf.import_graph_def(original_gdef, name='')
+                with tf.Session(graph = g) as sess:
+                    tf_out = sess.run(tf_output_name, feed_dict={tf_input_name: img})
+                predict = np.squeeze(tf_out)
+                return predict
 
-            import tensorflow.contrib.keras as keras
-            keras.backend.clear_session()
+            else:
+                with slim.arg_scope(cls.architecture_map[architecture]['arg_scope']()):
+                    data_input = cls.architecture_map[architecture]['input']()
+                    logits, endpoints = cls.architecture_map[architecture]['builder']()(
+                        data_input,
+                        num_classes=cls.architecture_map[architecture]['num_classes'],
+                        is_training=False)
+                    labels = tf.squeeze(logits)
 
-            predict = np.squeeze(predict)
-            return predict
+                init = tf.global_variables_initializer()
+                with tf.Session() as sess:
+                    sess.run(init)
+                    saver = tf.train.Saver()
+                    saver.restore(sess, path + cls.architecture_map[architecture]['filename'])
+                    predict = sess.run(logits, feed_dict = {data_input : img})
+
+                import tensorflow.contrib.keras as keras
+                keras.backend.clear_session()
+
+                predict = np.squeeze(predict)
+                return predict
 
         else:
             return None
+

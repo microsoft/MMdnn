@@ -7,9 +7,10 @@ from six import text_type as _text_type
 def _convert(args):
     if args.dstFramework == 'caffe':
         from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
-        if args.IRWeightPath == None:        
+        if args.IRWeightPath is None:
             emitter = CaffeEmitter(args.IRModelPath)
         else:
+            assert args.dstWeightPath
             emitter = CaffeEmitter((args.IRModelPath, args.IRWeightPath))
 
     elif args.dstFramework == 'keras':
@@ -48,7 +49,12 @@ def _convert(args):
             if args.dstWeightPath is None:
                 raise ValueError("MXNet emitter needs argument [dstWeightPath(dw)], like -dw mxnet_converted-0000.param")
             emitter = MXNetEmitter((args.IRModelPath, args.IRWeightPath, args.dstWeightPath))
-
+    elif args.dstFramework == 'onnx':
+        from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
+        if args.IRWeightPath is None:
+            raise NotImplementedError("ONNX emitter needs IR weight file")
+        else:
+            emitter = OnnxEmitter(args.IRModelPath, args.IRWeightPath)
     else:
         assert False
 
@@ -57,7 +63,7 @@ def _convert(args):
     return 0
 
 
-def _main():
+def _get_parser():
     import argparse
 
     parser = argparse.ArgumentParser(description = 'Convert IR model file formats to other format.')
@@ -73,7 +79,7 @@ def _main():
     parser.add_argument(
         '--dstFramework', '-f',
         type=_text_type,
-        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch'],
+        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch', 'onnx'],
         required=True,
         help='Format of model at srcModelPath (default is to auto-detect).')
 
@@ -102,7 +108,11 @@ def _main():
         type=_text_type,
         default=None,
         help='[MXNet] Path to save the destination weight.')
+    return parser
 
+
+def _main():
+    parser=_get_parser()
     args = parser.parse_args()
     ret = _convert(args)
     _sys.exit(int(ret)) # cast to int or else the exit code is always 1

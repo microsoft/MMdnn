@@ -6,7 +6,7 @@ const miniH = (window.innerHeight-85) * 0.98
 let rankBT = true
 
 
-/*hanle import model*/
+/*handle import model*/
 const handleFileSelect = (evt) => {
     let file = evt.target.files[0]
     let reader = new FileReader()
@@ -17,6 +17,7 @@ const handleFileSelect = (evt) => {
     }
     reader.readAsText(file)
 }
+
 document.getElementById('importModel').addEventListener('change', handleFileSelect, false);
 //default, draw the model.json file
 // window.onload = () => {
@@ -37,8 +38,8 @@ getDag = (layers, mode, margin) => {
     g.setGraph({ranksep:20, marginx:margin, marginy:margin, rankdir:rankBT?'BT':'TB'});
     g.setDefaultEdgeLabel(() => { return {}; });
     layers.forEach(layer => {
-        label = mode == "IR" ? `${layer.name}|${layer.op}` : `${layer.name}:${layer.class_name}`
-        g.setNode(layer.name, { label: label, width: label.split('/').pop().length * 8, height: nodeH })
+        label = mode == "IR" ? `${layer.name}:${layer.op}` : `${layer.name}:${layer.class_name}`
+        g.setNode(layer.name, { label: label, width: label.split(':').pop().length * 12, height: nodeH })
         //IR model or keras model
         if (mode == "IR" && layer.input) {
             layer.input.forEach(input => {
@@ -89,7 +90,7 @@ const COLORs = d3.schemeCategory20
 
 // select a layer
 const selectLayer = (layer, info, mode) => {
-    name = layer.label.split("|")[0]
+    name = layer.label.split(":")[0]
     layerInfo = info.filter(i => i.name == name)[0]
     if (mode == "IR") {
         config = layerInfo.attr
@@ -99,16 +100,21 @@ const selectLayer = (layer, info, mode) => {
         name = layerInfo.label
     }
     config = obj2str(config)
-    const max_len = 20
-    if(name.length>max_len){
-        document.getElementById('layerName').innerText = name.slice(0, max_len-1)+"..."
-    }else{
-        document.getElementById('layerName').innerText = name
-    }
-    
+
+    document.getElementById('layerName').innerText = name
+
     document.getElementById('layerName').title = name
-    
-    document.getElementById('layerConfig').innerHTML = config
+
+    // remove list
+    config = config.split('<br/> <p>&nbsp&nbsp<b>list</b>:<br/> ').join('')
+    config = config.split('dim</b>: <br/>').join('dim</b>: [ ')
+    config = config.split(',  </p>').join(' ] </p>')
+    config = config.split('<p>&nbsp&nbsp<b>shape</b>:<br/>').join('')
+    config = config.split('<p>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp<b>shape</b>: <br/>').join('')
+
+
+    document.getElementById('layerConfig').innerHTML =config
+
 }
 //draw
 const draw = (json) => {
@@ -116,7 +122,7 @@ const draw = (json) => {
     d3.select('.miniMap').remove() //remove previous graph
 
 
-    let mode;
+    // mode;
     let margin = 10
     if (json.node) {
         info = json.node
@@ -130,7 +136,7 @@ const draw = (json) => {
     let edges = dag.edges
     let height = dag.height
     let width = dag.width
-    
+
     // let scale = Math.min(window.innerWidth*0.85 / width, (window.innerHeight-85)/height)
     let scale = 1
     let x_shift = 0
@@ -180,10 +186,10 @@ const draw = (json) => {
     .attr('class', 'shiftMargin')
     .attr("transform", `translate(${window.innerWidth*(0.15) }, 0) scale(1)`)
 
-    let g = shiftMargin.append('g')
+    g = shiftMargin.append('g')
         .attr('class', 'scene')
         .attr("transform", `translate(0, 0) scale(1)`)
-    
+
     let g2 = g.append('g')
         .attr("class", "graph")
         .attr('transform', `translate(${x_shift}, ${y_shift}) scale(${scale})`)
@@ -195,6 +201,7 @@ const draw = (json) => {
         .attr('class', 'nodeMask')
         .attr("width", d => 1.2*d.width)
         .attr("height", 1.2*nodeH)
+        .attr('id', d => d.label.split(':')[0].split('/').join('_'))
         // .attr('rx', nodeH / 5)
         // .attr('ry', nodeH / 5)
         .attr("transform", d => { return `translate( ${-d.width * 0.6},${-nodeH * 0.6})` })
@@ -211,7 +218,9 @@ const draw = (json) => {
                 .style("stroke-width", 5)
             selectLayer(d, info, mode)
         })
-    
+
+
+
     let miniScale = Math.min(miniW / width, miniH / height)
     if(height/width > miniH/miniW ||true){
         miniMap(nodes, edges, width, height, miniScale)
@@ -227,11 +236,11 @@ const draw = (json) => {
    d3.select("body")
    .on("keydown", keyZoom)
    .on("keyup", ()=>{shiftDown=false})
-    
+
     function pan(e) {
         let { movementX:x_, movementY:y_ } = d3.event.sourceEvent
         let { k, x, y } = transformParser(d3.select('.scene').attr('transform'))
-        
+
         // k = parseFloat(k)*parseFloat(k_)
         x = parseFloat(x_) + parseFloat(x)
         y = parseFloat(y_) + parseFloat(y)
@@ -261,7 +270,7 @@ const draw = (json) => {
         d3.select(".mapMask")
         .attr("y", (-y) / k *miniScale)
         .attr("height", miniH*miniScale / k)
-        
+
     }
     function keyZoom(e){
         if(d3.event.keyCode==16 ){
@@ -282,6 +291,9 @@ const draw = (json) => {
             .attr("height", miniH*miniScale / k)
         }
         }
+
+
+
 }
 
 const miniMap = (nodes, edges, width, height, miniScale) => {
@@ -330,7 +342,7 @@ const miniMap = (nodes, edges, width, height, miniScale) => {
         d3.select(this).classed("dragging", false);
     }
 
-    
+
 }
 
 //  ulti function
@@ -368,9 +380,9 @@ const buildGraph = (g2, nodes, edges, label=true) => {
         let labels = drawNode.append("text")
         .attr('class', 'labels')
         .style("text-anchor", "middle")
-        .text(d => d.label.split("/").pop())
+        .text(d => d.label.split(":").pop())
     }
-    
+
     let drawLink = g2.selectAll(".link")
         .data(edges)
         .enter()
@@ -398,12 +410,23 @@ const getColor = (op) => {
 const obj2str = (obj, i = 0) => {
     br = ''
     arr = Object.keys(obj).map(k => {
+
+
         v = obj[k]
+
+        // rm the '_'
+        if (k == '_output_shapes'){
+            k = 'output shape'
+        } else if (k == 'kernel_shape'){
+            k = 'kernel shape'
+        }
+
         space = Array(i).fill('&nbsp&nbsp').join('')
         if(i==0){
             br="<br/>"
         }
-        // space = ''
+
+
         if (v == null) {
             return `${br}<p>${space}<b>${k}</b>: null </p>`
         } else if (typeof (v) == "object" && Array.isArray(v)) {
@@ -411,13 +434,61 @@ const obj2str = (obj, i = 0) => {
                 return `${br}<p>${space}<b>${k}</b>: ${v.join(',')} </p>`
             } else {
                 v = v.map(d => obj2str(d, i + 1))
+
                 return `${br}<p>${space}<b>${k}</b>: <br/>${v.join(' ')} </p>`
             }
         } else if (typeof (v) == "object") {
             return `${br}<p>${space}<b>${k}</b>:<br/> ${obj2str(v, i + 1)} </p>`
-        } else {
+        } else if (k == 's'){
+            // Base64 encode: https://developers.google.com/protocol-buffers/docs/proto3
+            return `${br}<p>${space}<b>${k}</b>: ${atob(v)} </p>`
+        } else if (k == 'size'){
+            if (v == -1){
+                return `1, `
+            }
+            return `${v}, `
+        }
+        else{
             return `${br}<p>${space}<b>${k}</b>: ${v} </p>`
         }
     })
     return arr.join('')
+}
+
+
+// Search the node
+function search(){
+    var search_name = document.getElementById('uname').value
+    let nodes = dag.nodes
+    let height = dag.height
+    nodes.forEach((v) => {
+        name = v.label.split(':')[0]
+        if(name == search_name){
+
+                d3.selectAll('.nodeMask')
+                    .style('stroke', "none")
+
+                // select by id: https://stackoverflow.com/questions/37270787/uncaught-syntaxerror-failed-to-execute-queryselector-on-document
+                d3.select('#'+search_name.split('/').join('_'))
+                    .style("stroke", "red")
+                    .style("stroke-width", 5)
+
+
+
+                selectLayer(v, info, mode)
+
+                // Scroll
+                let new_y = 0
+                d3.selectAll('.node')
+                    .filter(function(d){
+                        if (d.label.split(':')[0] == search_name)
+                            new_y = d.y;
+                            return 1;})
+
+                let { k, x, y } = transformParser(d3.select('.scene').attr('transform'))
+                y = 0.4 * window.innerHeight -new_y*k;
+                y= Math.min(0.4 * window.innerHeight, Math.max(-height*k + 0.4*window.innerHeight, y))
+                g.attr('transform', `translate(${x}, ${y}) scale(${k})`);
+        }
+    })
 }

@@ -38,11 +38,8 @@ class TestCaffe(TestKit):
 
 
     def print_result(self):
-        self.model.blobs['data'].data[...] = self.data
-        if 'prob' in self.model.blobs:
-            predict = self.model.forward()['prob'][0]
-        else:
-            predict = self.model.forward()['softmax'][0]
+        self.model.blobs['input'].data[...] = self.data
+        predict = self.model.forward()[self.model._layer_names[-1]][0]
         super(TestCaffe, self).print_result(predict)
 
 
@@ -54,9 +51,9 @@ class TestCaffe(TestKit):
     def inference(self, image_path):
         self.preprocess(image_path)
 
-        # self.print_intermediate_result('', False)
-
         self.print_result()
+
+        # self.print_intermediate_result('pooling0', False)
 
         self.test_truth()
 

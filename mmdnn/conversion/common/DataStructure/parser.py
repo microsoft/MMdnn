@@ -93,3 +93,12 @@ class Parser(object):
     @staticmethod
     def channel_first_shape_to_IR(shape):
         return [shape[0]] + list(shape[2:]) + [shape[1]]
+
+    @staticmethod
+    def channel_first_axis_to_IR(index):
+        if index == 0:
+            return 0
+        elif index == 1:
+            return -1
+        else:
+            return index - 1

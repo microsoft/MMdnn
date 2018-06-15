@@ -11,12 +11,13 @@ Basically, it converts many DNN models that trained by one framework into others
 - **Model Visualization** Visualizing DNN network architecture and parameters for frameworks
 - **Model compatibility testing** (On-going)
 
+This project is designed and developed by [Microsoft Research (MSR)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/). We also encourage researchers and students leverage this project to analysis DNN models and we welcome any new ideas to extend this project.
 
 ## Installation
 
 You can get stable version of MMdnn by
 ```bash
-pip install https://github.com/Microsoft/MMdnn/releases/download/0.1.3/mmdnn-0.1.3-py2.py3-none-any.whl
+pip install mmdnn
 ```
 
 or you can try the newest version by
@@ -30,7 +31,7 @@ pip install -U git+https://github.com/Microsoft/MMdnn.git@master
 
 Across the industry and academia, there are a number of existing frameworks available for developers and researchers to design a model, where each framework has its own network structure definition and saving model format. The gaps between frameworks impede the inter-operation of the models.
 
-<img src="https://github.com/Microsoft/MMdnn/blob/master/docs/supported.jpg" width="633" height="640">
+<img src="https://github.com/Microsoft/MMdnn/blob/master/docs/supported.jpg" width="633" >
 
 We provide a model converter to help developers convert models between frameworks, through an intermediate representation format.
 
@@ -39,44 +40,61 @@ We provide a model converter to help developers convert models between framework
 > [Note] You can click the links to get detail README of each framework
 
 - [Caffe](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/caffe/README.md)
+- [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md)
+- [CoreML](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/coreml/README.md)
 - [Keras](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/keras/README.md)
 - [MXNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/mxnet/README.md)
+- [ONNX](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/onnx/README.md) (Destination only)
+- [PyTorch](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/pytorch/README.md)
 - [Tensorflow](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md) (Experimental) (Highly recommend you read the README of tensorflow firstly)
-- [Microsoft Cognitive Toolkit (CNTK)](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/cntk/README.md) (Destination only)
-- [PyTorch](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/pytorch/README.md) (Destination only)
-- [CoreML](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/coreml/README.md) (Experimental, Destination only)
+- [DarkNet](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/darknet/README.md) (Source only, Experiment)
 
 #### Tested models
 
 The model conversion between currently supported frameworks is tested on some **ImageNet** models.
 
-Models                                              | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML
-:--------------------------------------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|
-[Inception V1](http://arxiv.org/abs/1409.4842v1)    |   √   |   √   |     √      |   √  |   √   | x (No LRN) | √
-[Inception V3](http://arxiv.org/abs/1512.00567)     |   ×   |   √   |     √      |   √  |   √   |    √ | √
-[Inception V4](http://arxiv.org/abs/1512.00567)     |   √   |       |            |      |       |
-[ResNet V1 50](https://arxiv.org/abs/1512.03385)    |   ×   |   √   |     √      |   o  |   √   |    √ | √
-[ResNet V2 152](https://arxiv.org/abs/1603.05027)   |   √   |   √   |     √      |   √  |   √   |    √
-[VGG 19](http://arxiv.org/abs/1409.1556.pdf)        |   √   |   √   |     √      |   √  |   √   |    √       |    √
-[MobileNet_v1](https://arxiv.org/pdf/1704.04861.pdf)|   ×   |   √   |     √      | × (no DepthwiseConv) |   ×   |    ×       |    √
-[Xception](https://arxiv.org/pdf/1610.02357.pdf)    |   ×   |   √   |     √      | × (no SeparableConv) |   ×   |    ×
-[SqueezeNet](https://arxiv.org/pdf/1602.07360)      |   √   |   √   |     √      |   √  |   √   |    ×
-DenseNet                                            |       |   √   |     √      |   √  |       |            |
-[NASNet](https://arxiv.org/abs/1707.07012)          |       |   √   |     √      | × (no SeparableConv)
-[ResNext]                                           |       |   √   |     √      |   √  |   √   |
+Models | Caffe | Keras | Tensorflow | CNTK | MXNet | PyTorch  | CoreML | ONNX
+:-----:|:-----:|:-----:|:----------:|:----:|:-----:|:--------:|:------:|:-----:|
+[VGG 19](http://arxiv.org/abs/1409.1556.pdf) | √ | √ | √ | √ | √ | √ | √ | √
+[Inception V1](http://arxiv.org/abs/1409.4842v1) | √ | √ | √ | √ | √ | √ | √ | √
+[Inception V3](http://arxiv.org/abs/1512.00567)  | √ | √ | √ | √ | √ | √ | √ | √
+[Inception V4](http://arxiv.org/abs/1512.00567)  | √ | √ | √ | o | √ | √ | √ | √
+[ResNet V1](https://arxiv.org/abs/1512.03385)                               |   ×   |   √   |     √      |   o  |   √   |    √ | √ | √
+[ResNet V2](https://arxiv.org/abs/1603.05027)                               |   √   |   √   |     √      |   √  |   √   | √ | √ | √
+[MobileNet V1](https://arxiv.org/pdf/1704.04861.pdf)                        |   ×   |   √   |     √      |   o  |   √   |    √       | √ | √ | √
+[MobileNet V2](https://arxiv.org/pdf/1704.04861.pdf)                        |   ×   |   √   |     √      |   o  |   √   |    √       | √ | √ | √
+[Xception](https://arxiv.org/pdf/1610.02357.pdf)                            |   √   |   √   |     √      |   o  |   ×   |    √ | √ | √ | √
+[SqueezeNet](https://arxiv.org/pdf/1602.07360)                              |   √   |   √   |     √      |   √  |   √   |    √ | √ | √ | √
+[DenseNet](https://arxiv.org/abs/1608.06993)                                |   √   |   √   |     √      |   √  |   √   |    √       | √ | √
+[NASNet](https://arxiv.org/abs/1707.07012)                                  |   x   |   √   |     √      |   o  |   √   | √ | √ | x
+[ResNext](https://arxiv.org/abs/1611.05431)                                 |   √   |   √   |     √      |   √  |   √   | √ | √ | √ | √ | √
+[voc FCN](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf) |       |       |     √      |   √  |       |
+Yolo3                                                                       |       |   √   |            |   √  |
+
+#### Usage
+
+One command to achieve the conversion. Use a TensorFlow **ResNet V2 152** to PyTorch as our example.
+
+```bash
+$ mmdownload -f tensorflow -n resnet_v2_152 -o ./
+$ mmconvert -sf tensorflow -in imagenet_resnet_v2_152.ckpt.meta -iw imagenet_resnet_v2_152.ckpt --dstNode MMdnn_Output -df pytorch -om tf_resnet_to_pth.pth
+```
+
+Done.
 
 #### On-going frameworks
 
-- PyTorch (Source)
-- CNTK (Source)
-- [Caffe2](https://caffe2.ai/)
-- ONNX
+- Paddle Paddle
+- Torch7 (help wants)
+- Chainer (help wants)
 
 #### On-going Models
 
-- RNN
+- Face Detection
+- Semantic Segmentation
 - Image Style Transfer
 - Object Detection
+- RNN
 
 ---
 
@@ -89,38 +107,44 @@ Use the [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-m
 1. Download the pre-trained models
 
 ```bash
-python -m mmdnn.conversion.examples.keras.extract_model -n inception_v3
+$ mmdownload -f keras -n inception_v3
 ```
 
 2. Convert the pre-trained model files into intermediate representation
 
 ```bash
-python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -n imagenet_inception_v3.json
+$ mmtoir -f keras -w imagenet_inception_v3.h5 -o keras_inception_v3
 ```
 
 3. Open the [MMdnn model visualizer](http://mmdnn.eastasia.cloudapp.azure.com:8080/) and choose file *keras_inception_v3.json*
 
-![Inception_v3](https://npd8fa.dm2304.livefilestore.com/y4m7KYf7_pPQkijj0qwY-35ZkSwhL3o2CzSRv5WtbZIFnmZDYBHRQ3atBMvqnK-oIqBdIiO4grUTQ3cwxDULNSN9OydRzebqXI-tumcIajDb6sIn9tyaQfrSDDkW0V-3z_fOhxa4nsO0shTNS5ix1SHnuPBBJsorNUNAJSjtT5QZWZAd2LilqiIv4zntlANLp_gL_rSwvlSzC4ATXzSnvrOdg?width=1024&height=696&cropmode=none)
+![vismmdnn](docs/vismmdnn.png)
 
 ---
 
 ## Examples
 
-### Offical Tutorial
+### Official Tutorial
 
-- [Keras "inception_v3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
+- [Keras "inception V3" to CNTK](https://github.com/Microsoft/MMdnn/blob/master/docs/keras2cntk.md) and [related issue](https://github.com/Microsoft/MMdnn/issues/19)
+
+- [Tensorflow slim model "ResNet V2 152" to PyTorch](https://github.com/Microsoft/MMdnn/blob/master/docs/tf2pytorch.md)
+
+- [Mxnet model "LResNet50E-IR" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/85) and [related issue](https://github.com/Microsoft/MMdnn/issues/135)
 
 ### Users' Examples
 
-- [MXNet "resnet 152 11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
+- [MXNet "ResNet-152-11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
 
-- [MXNet "resnext" to Keras](https://github.com/Microsoft/MMdnn/issues/58)
+- [MXNet "ResNeXt" to Keras](https://github.com/Microsoft/MMdnn/issues/58)
 
-- [Tensorflow "resnet 101" to PyTorch](https://github.com/Microsoft/MMdnn/issues/22)
+- [Tensorflow "ResNet-101" to PyTorch](https://github.com/Microsoft/MMdnn/issues/22)
 
 - [Tensorflow "mnist mlp model" to CNTK](https://github.com/Microsoft/MMdnn/issues/11)
 
 - [Tensorflow "Inception_v3" to MXNet](https://github.com/Microsoft/MMdnn/issues/30)
+
+- [Caffe "voc-fcn" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/29)
 
 - [Caffe "AlexNet" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/10)
 
@@ -128,7 +152,7 @@ python3 -m mmdnn.conversion._script.convertToIR -f keras -d keras_inception_v3 -
 
 - [Caffe "VGG16_SOD" to Tensorflow](https://github.com/Microsoft/MMdnn/issues/27)
 
-- [Caffe "Squeezenet v1.1" to CNTK](https://github.com/Microsoft/MMdnn/issues/48)
+- [Caffe "SqueezeNet v1.1" to CNTK](https://github.com/Microsoft/MMdnn/issues/48)
 
 ---
 
@@ -144,7 +168,7 @@ Details are in [ops.txt](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/co
 
 ### Frameworks
 
-We are working on other frameworks conversion and visualization, such as Caffe2, PyTorch, CoreML and so on. And more RNN related operators are investigating. Any contributions and suggestions are welcome!
+We are working on other frameworks conversion and visualization, such as PyTorch, CoreML and so on. And more RNN related operators are investigating. Any contributions and suggestions are welcome! Details in [Contribution Guideline](https://github.com/Microsoft/MMdnn/wiki/Contribution-Guideline)
 
 ### License
 
@@ -158,6 +182,22 @@ provided by the bot. You will only need to do this once across all repos using o
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+## Authors
+
+Cheng CHEN (Microsoft Research Asia): Project Manager; Caffe, CNTK, CoreML Emitter, Keras, MXNet, TensorFlow
+
+Jiahao YAO (Peking University): CoreML, MXNet Emitter, PyTorch Parser; HomePage
+
+Ru ZHANG (Chinese Academy of Sciences): CoreML Emitter, DarkNet Parser, Keras, TensorFlow frozen graph Parser; Yolo and SSD models; Tests
+
+Yuhao ZHOU (Shanghai Jiao Tong University): MXNet
+
+Tingting QIN (Microsoft Research Asia): Caffe Emitter
+
+Tong ZHAN (Microsoft): ONNX Emitter
+
+Qianwen WANG (Hong Kong University of Science and Technology): Visualization
 
 ## Acknowledgements
 

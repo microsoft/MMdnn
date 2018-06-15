@@ -3,7 +3,12 @@
 #  Licensed under the MIT License. See License.txt in the project root for license information.
 #----------------------------------------------------------------------------------------------
 
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import division
+
 import os
+from six.moves import xrange
 
 import cntk
 from mmdnn.conversion.common.IR.IR_graph import IRGraph, IRGraphNode
@@ -37,6 +42,7 @@ class CntkEmitter(Emitter):
 
         self.IR_graph = IRGraph(network_path)
         super(CntkEmitter, self)._build()
+        self.yolo_parameter = []
 
 
     @property
@@ -98,6 +104,7 @@ def KitModel(weight_file = None):
         new_shape = filter(lambda x:x >- 1, [dim.size for dim in shapes.dim])
         return ', '.join('%s' % i for i in new_shape)
 
+
     @staticmethod
     def is_valid_padding(auto_pad, pads):
         """
@@ -129,19 +136,62 @@ def KitModel(weight_file = None):
             return True
 
 
+    def _defuse_padding(self, IR_node):
+        auto_pad = IR_node.get_attr('auto_pad')
+        if auto_pad:
+            input_node = self.parent_variable_name(IR_node)
+            if auto_pad == 'VALID':
+                padding = False
+            elif auto_pad.startswith("SAME"):
+                padding = True
+            else:
+                raise ValueError("Unknown padding type [{}].".format(auto_pad))
+
+            return input_node, padding
+
+        else:
+            padding = IR_node.get_attr('pads')
+            if not is_valid_padding(padding):
+                dim = len(padding) // 2
+                padding_str = list()
+                for i in xrange(1, dim):
+                    padding_str.append((padding[i], padding[i + dim]))
+                input_node = IR_node.variable_name + '_pad'
+                self.add_body(1, "{:<15} = cntk.pad({}, pattern={})".format(
+                    input_node,
+                    self.parent_variable_name(IR_node),
+                    padding_str))
+
+            else:
+                input_node = self.parent_variable_name(IR_node)
+
+            return input_node, False
+
+
+
     def emit_Conv(self, IR_node):
         if self.weight_loaded:
-            self.used_layers.add(IR_node.type)
+            self.used_layers.add('Conv')
+            input_node, padding = self._defuse_padding(IR_node)
+
             dim = len(IR_node.get_attr('strides')) - 2
-            padding = not self.is_valid_padding(IR_node.get_attr('auto_pad'), IR_node.get_attr('pads'))
             padding = [False] + [padding] * dim
-            self.add_body(1, "{:<15} = convolution({}, strides={}, auto_padding={}, dilation={}, groups={}, name='{}')".format(
+
+            if IR_node.type == 'DepthwiseConv':
+                groups = IR_node.get_attr('kernel_shape')[-2]
+                self.add_body(1, "__weights_dict['{}']['weights'] = np.swapaxes(__weights_dict['{}']['weights'], -1, -2)".format(
+                    IR_node.real_name, IR_node.real_name))
+            else:
+                groups = IR_node.get_attr('group', 1)
+
+            self.add_body(1, "{:<15} = convolution({}, is_transpose={}, strides={}, auto_padding={}, dilation={}, groups={}, name='{}')".format(
                 IR_node.variable_name,
-                self.parent_variable_name(IR_node),
+                input_node,
+                IR_node.type == 'ConvTranspose',
                 tuple(IR_node.get_attr('strides')[1:-1]),
                 padding,
                 tuple(IR_node.get_attr('dilations', [1])),
-                IR_node.get_attr('group', 1),
+                groups,
                 IR_node.name))
 
         else:
@@ -288,32 +338,37 @@ def KitModel(weight_file = None):
     def emit_LSTM(self, IR_node):
         return self.emit_RNNs(IR_node, "LSTM")
 
-
     def emit_GRU(self, IR_node):
         return self.emit_RNNs(IR_node, "GRU")
 
 
     def emit_Add(self, IR_node):
         if len(IR_node.in_edges) > 1:
-            inputs = ' +'.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
+            inputs = ' + '.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
             self.add_body(1, "{:<15} = {}".format(
                 IR_node.variable_name,
                 inputs))
 
     def emit_Sub(self, IR_node):
         if len(IR_node.in_edges) > 1:
-            inputs = ' -'.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
+            inputs = ' - '.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
             self.add_body(1, "{:<15} = {}".format(
                 IR_node.variable_name,
                 inputs))
+
 
     def emit_Mul(self, IR_node):
         if len(IR_node.in_edges) > 1:
-            inputs = ' *'.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
+            inputs = ' * '.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
             self.add_body(1, "{:<15} = {}".format(
                 IR_node.variable_name,
                 inputs))
 
+
+    def emit_Constant(self, IR_node):
+        self.add_body(1, "{:<15} = cntk.Constant(value=__weights_dict['{}']['value'])".format(
+            IR_node.variable_name, IR_node.name
+        ))
 
 
     def emit_Concat(self, IR_node):
@@ -358,6 +413,27 @@ def KitModel(weight_file = None):
         IR_node.real_name = self.IR_graph.get_node(IR_node.in_edges[0]).real_name
 
 
+    def emit_Log(self, IR_node):
+        self.add_body(1, "{:<15} = _cntk.log({}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name))
+
+
+    def emit_Exp(self, IR_node):
+        self.add_body(1, "{:<15} = _cntk.exp({}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name))
+
+
+    def emit_Reciprocal(self, IR_node):
+        self.add_body(1, "{:<15} = _cntk.reciprocal({}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name))
+
+
     def emit_ReduceMean(self, IR_node):
         self.add_body(1, "{:<15} = ops.reduce_mean({}, axis = ({}), name = '{}')".format(
             IR_node.variable_name,
@@ -375,6 +451,120 @@ def KitModel(weight_file = None):
             IR_node.layer.attr['alpha'].f,
             IR_node.layer.attr['beta'].f,
             IR_node.name))
+
+    # ??
+    def emit_LeakRelu(self, IR_node):
+        self.add_body(1, "{:<15} = _cntk.relu({}) - {} * _cntk.relu(-{})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('alpha'),
+            self.parent_variable_name(IR_node)))
+
+
+    def emit_LeakyRelu(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        self.add_body(1, "{:<15} = _leaky_relu({}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('alpha'),
+            IR_node.name))
+
+
+
+    def emit_upsample(self, IR_node):
+        # print(IR_node.layer)
+        # assert False
+        self.used_layers.add(IR_node.type)
+        self.add_body(1, "{:<15} = Upsampling2D({}, stride = {}, name = '{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('strides'),
+            IR_node.name))
+
+
+    def emit_ConvTranspose(self, IR_node):
+        self.emit_Conv(IR_node)
+
+
+    def emit_yolo(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        self.add_body(1, "{:<15} = {}".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)
+        ))
+        # print(IR_node.layer)
+        self.yolo_parameter = [IR_node.get_attr('anchors'),
+            IR_node.get_attr('classes'),
+            IR_node.get_attr("ignore_thresh"),
+            IR_node.get_attr("jitter")]
+        # assert False
+
+
+    def emit_Crop(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        output_shape = IR_node.get_attr('_output_shapes')[0]
+        output_shape = shape_to_list(output_shape)[1:]
+        self.add_body(1, "{:<15} = _crop({}, {}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('border')[:2],
+            output_shape,
+            IR_node.real_name
+        ))
+
+
+    def emit_Relu6(self, IR_node):
+        self.emit_Relu(IR_node)
+        self.add_body(1, "{:<15} = cntk.clip({}, 0, 6, name='{}_clip')".format(
+            IR_node.variable_name + "_clip",
+            IR_node.variable_name,
+            IR_node.name
+        ))
+        IR_node.real_name = IR_node.name + '_clip'
+
+
+    def emit_DepthwiseConv(self, IR_node):
+        self.emit_Conv(IR_node)
+
+
+    def _layer_Crop(self):
+        self.add_body(0, '''
+def _crop(input, border, output_shape, **kwargs):
+    dim = len(output_shape)
+    output_shape = [output_shape[-1]] + output_shape[:-1]
+    ref_tensor = np.zeros(shape=output_shape, dtype=np.float32)
+
+    input = cntk.transpose(input, [dim - 1] + list(range(0, dim - 1)))
+    layer = cntk.crop_manual(node_input=input, node_referent=ref_tensor, offset_x=border[0], offset_y=border[1])
+    layer = cntk.transpose(layer, list(range(1, dim)) + [0])
+    return layer
+''')
+
+
+    def _layer_LeakyRelu(self):
+        self.add_body(0, '''
+def _leaky_relu(x, leak, name):
+    return cntk.param_relu(cntk.constant((np.ones(x.shape)*leak).astype(np.float32)), x, name = name)
+''')
+
+
+    def _layer_yolo(self):
+        self.add_body(0, '''
+def yolo_parameter():
+    return {}
+'''.format(self.yolo_parameter))
+
+
+    def _layer_upsample(self):
+        self.add_body(0, '''
+def Upsampling2D(x, stride, name):
+    assert stride == 2
+    xr = cntk.reshape(x, (x.shape[0], 1, x.shape[1], 1, x.shape[2]))
+    xx = cntk.splice(xr, xr, axis = -2)
+    xy = cntk.splice(xx, xx, axis = -4)
+    r = cntk.reshape(xy, (x.shape[0] * 2, x.shape[1] * 2, x.shape[2]), name = name)
+    return r
+''')
 
 
     def _layer_LRN(self):
@@ -399,15 +589,22 @@ def dense(input, name, **kwargs):
 
     def _layer_Conv(self):
         self.add_body(0, """
-def convolution(input, name, **kwargs):
+def convolution(input, is_transpose, name, **kwargs):
     dim = __weights_dict[name]['weights'].ndim
 
-    weight = np.transpose(__weights_dict[name]['weights'], [dim - 1, dim - 2] + list(range(0, dim - 2)))
+    if is_transpose:
+        weight = np.transpose(__weights_dict[name]['weights'], [dim - 2, dim - 1] + list(range(0, dim - 2)))
+        kwargs.pop('groups', None)
+    else:
+        weight = np.transpose(__weights_dict[name]['weights'], [dim - 1, dim - 2] + list(range(0, dim - 2)))
     w = cntk.Parameter(init=weight, name=name + '_weight')
 
     input = cntk.transpose(input, [dim - 2] + list(range(0, dim - 2)))
 
-    layer = ops.convolution(w, input, **kwargs)
+    if is_transpose:
+        layer = ops.convolution_transpose(w, input, **kwargs)
+    else:
+        layer = ops.convolution(w, input, **kwargs)
     if 'bias' in __weights_dict[name]:
         bias = np.reshape(__weights_dict[name]['bias'], [-1] + [1] * (dim - 2))
         b = cntk.Parameter(init=bias, name=name + '_bias')

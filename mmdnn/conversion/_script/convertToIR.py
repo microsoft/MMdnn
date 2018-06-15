@@ -4,9 +4,13 @@ from six import text_type as _text_type
 
 
 def _convert(args):
+    if args.inputShape != None:
+        inputshape = [int(x) for x in args.inputShape]
+    else:
+        inputshape = None
     if args.srcFramework == 'caffe':
         from mmdnn.conversion.caffe.transformer import CaffeTransformer
-        transformer = CaffeTransformer(args.network, args.weights, "tensorflow", args.inputShape, phase = args.caffePhase)
+        transformer = CaffeTransformer(args.network, args.weights, "tensorflow", inputshape, phase = args.caffePhase)
         graph = transformer.transform_graph()
         data = transformer.transform_data()
 
@@ -42,21 +46,27 @@ def _convert(args):
         if args.dstNodeName is None:
             raise ValueError("Need to provide the output node of Tensorflow model.")
 
-        assert args.network or args.frozen_pb
-
-        from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
-        parser = TensorflowParser(args.network, args.weights, args.frozen_pb, args.dstNodeName)
+        # assert args.network or args.frozen_pb
+        if args.frozen_pb:
+            from mmdnn.conversion.tensorflow.tensorflow_frozenparser import TensorflowParser2
+            parser = TensorflowParser2(args.frozen_pb, inputshape, args.inNodeName, args.dstNodeName)
+        else:
+            from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
+            if args.inNodeName and inputshape:
+                parser = TensorflowParser(args.network, args.weights, args.dstNodeName, inputshape, args.inNodeName)
+            else:
+                parser = TensorflowParser(args.network, args.weights, args.dstNodeName)
 
     elif args.srcFramework == 'mxnet':
-        assert args.inputShape != None
+        assert inputshape != None
         if args.weights == None:
-            model = (args.network, args.inputShape)
+            model = (args.network, inputshape)
         else:
             import re
             if re.search('.', args.weights):
                 args.weights = args.weights[:-7]
             prefix, epoch = args.weights.rsplit('-', 1)
-            model = (args.network, prefix, epoch, args.inputShape)
+            model = (args.network, prefix, epoch, inputshape)
 
         from mmdnn.conversion.mxnet.mxnet_parser import MXNetParser
         parser = MXNetParser(model)
@@ -66,6 +76,29 @@ def _convert(args):
         model = args.network or args.weights
         parser = CntkParser(model)
 
+    elif args.srcFramework == 'pytorch':
+        assert inputshape != None
+        from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser
+        parser = PytorchParser(args.network, inputshape)
+
+    elif args.srcFramework == 'torch' or args.srcFramework == 'torch7':
+        from mmdnn.conversion.torch.torch_parser import TorchParser
+        model = args.network or args.weights
+        assert model != None
+        parser = TorchParser(model, inputshape)
+
+    elif args.srcFramework == 'onnx':
+        from mmdnn.conversion.onnx.onnx_parser import ONNXParser
+        parser = ONNXParser(args.network)
+
+    elif args.srcFramework == 'darknet':
+        from mmdnn.conversion.darknet.darknet_parser import DarknetParser
+        parser = DarknetParser(args.network, args.weights, args.darknetYolo)
+
+    elif args.srcFramework == 'coreml':
+        from mmdnn.conversion.coreml.coreml_parser import CoremlParser
+        parser = CoremlParser(args.network)
+
     else:
         raise ValueError("Unknown framework [{}].".format(args.srcFramework))
 
@@ -74,7 +107,7 @@ def _convert(args):
     return 0
 
 
-def _main():
+def _get_parser():
     import argparse
 
     parser = argparse.ArgumentParser(description = 'Convert other model file formats to IR format.')
@@ -82,7 +115,7 @@ def _main():
     parser.add_argument(
         '--srcFramework', '-f',
         type=_text_type,
-        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf'],
+        choices=["caffe", "caffe2", "cntk", "mxnet", "keras", "tensorflow", 'tf', 'torch', 'torch7', 'onnx', 'darknet', 'coreml', 'pytorch'],
         help="Source toolkit name of the model to be converted.")
 
     parser.add_argument(
@@ -104,6 +137,12 @@ def _main():
         help='Path to save the IR model.')
 
     parser.add_argument(
+        '--inNodeName', '-inode',
+        type=_text_type,
+        default='input',
+        help="[Tensorflow] Input nodes' name of the graph.")
+
+    parser.add_argument(
         '--dstNodeName', '-node',
         type=_text_type,
         default=None,
@@ -119,9 +158,9 @@ def _main():
     parser.add_argument(
         '--inputShape',
         nargs='+',
-        type=int,
+        type=_text_type,
         default=None,
-        help='[MXNet/Caffe2] Input shape of model (channel, height, width)')
+        help='[MXNet/Caffe2/Torch7] Input shape of model (channel, height, width)')
 
 
     # Caffe
@@ -131,6 +170,19 @@ def _main():
         default='TRAIN',
         help='[Caffe] Convert the specific phase of caffe model.')
 
+
+    # Darknet
+    parser.add_argument(
+        '--darknetYolo',
+        type=_text_type,
+        choices=["yolov3", "yolov2"],
+        help='[Darknet] Convert the specific yolo model.')
+
+    return parser
+
+
+def _main():
+    parser = _get_parser()
     args = parser.parse_args()
     ret = _convert(args)
     _sys.exit(int(ret)) # cast to int or else the exit code is always 1

@@ -1,41 +1,77 @@
 # PyTorch README
 
-## Usage
+Currently, we have already implemented both the the PyTorch -> IR part and the IR -> PyTorch part.
 
-Currently, we only implemented the IR -> PyTorch part.
+Models                   | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | TensorFlow| Onnx
+:-----------------------:|:-----:|:------:|:----:|:-----:|:-----:|:-------:|:------:|:------:|
+Vgg16                    |   √   |   √    |      |   √   |   √   |    √    | √       | √
+Inception_v3             |   √   |   √    |      |   √   |   √   |    √    | √       | √
+ResNet 50                |   √   |   √    |      |   √   |   √   |    √    | √       | √
+MobileNet V1             |   √   |   √    |      |   √   |   √   |    √    | √       | √
+Tiny-yolo                |       |   √    |      |   √   |   √   |    √    | √       | √
 
-I am implementing the PyTorch parser in branch [pytorch](https://github.com/Microsoft/MMdnn/tree/pytorch) and have some issue with getting layer shape and jit CppOP. Waiting for JIT completion.
+**√** - Correctness tested
 
-Any contribution to PyTorch parser (PyTorch -> IR) is welcome.
+**o** - Some difference after conversion
 
-### Extract PyTorch pre-trained models
+**space** - not tested
 
-You can refer [PyTorch model extractor](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/pytorch/extract_model.py) to extract your pytorch models.
+
+The PyTorch parser is modified from branch [pytorch](https://github.com/Microsoft/MMdnn/tree/pytorch) , using jit CppOP to build the graph.
+
+Any contribution is welcome.
+
+## Extract PyTorch pre-trained models
+
+You can refer [PyTorch model extractor](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/pytorch/extractor.py) to extract your pytorch models.
 
 ```bash
-$ python -m mmdnn.conversion.examples.pytorch.extract_model -h
-usage: extract_model.py [-h] -n
-                        {densenet,squeezenet,vgg16,resnet152,vgg19,inception_v3}
+$ mmdownload -f pytorch -h
+Support frameworks: ['alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201', 'inception_v3', 'resnet101', 'resnet152', 'resnet18', 'resnet34', 'resnet50', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
+
+$ mmdownload -f pytorch -n resnet50 -o ./
+Downloading: "https://download.pytorch.org/models/resnet50-19c8e357.pth" to /home/ruzhang/.torch/models/resnet50-19c8e357.pth
+100%|████████████████████████████████████████████████████████████████████████| 102502400/102502400 [00:06<00:00, 15858546.50it/s]
+PyTorch pretrained model is saved as [./imagenet_resnet50.pth].
+
+```
+
+### Convert Pytorch pre-trained models to IR
+You can convert the whole pytorch model to IR structure. Please remember for the generality, we now only take the whole model `pth`, not just the state dict. To be more specific, it is save using `torch.save()` and `torch.load()` can load the whole model.
+
+```bash
+$ mmtoir -f pytorch -d resnet50 --inputShape 3 224 224 -n imagenet_resnet50.pth --dstNodeName MMdnn_Output
+```
+
+Please bear in mind that always add `--inputShape` argparse. This thing is different from other framework because pytorch is a dynamic framework.
+
+Then you will get
+```
+IR network structure is saved as [resnet50.json].
+IR network structure is saved as [resnet50.pb].
+IR weights are saved as [resnet50.npy].
 ```
 
 ### Convert models from IR to PyTorch code snippet and weights
 
-We need to transform the IR weights to PyTorch suitable weights. Use argument *-dw* to specify the output weight file name.
+You can use following bash command to convert the IR architecture file [*inception_v3.pb*] and weights file [*inception_v3.npy*] to Caffe Python code file[*pytorch_inception_v3.py*] and IR weights file suit for caffe model[*pytorch_inception_v3.npy*]
+
+> Note: We need to transform the IR weights to PyTorch suitable weights. Use argument *-dw* to specify the output weight file name.
 
 ```bash
-$ python -m mmdnn.conversion._script.IRToCode --dstModelFormat pytorch --IRModelPath inception_v3.pb --IRWeightPath inception_v3.npy --dstModelPath pytorch_inception_v3.py -dw pytorch_inception_v3.npy
+$ mmtocode -f pytorch -n inception_v3.pb --IRWeightPath inception_v3.npy --dstModelPath pytorch_inception_v3.py -dw pytorch_inception_v3.npy
 
-Parse file [kit_imagenet.pb] with binary format successfully.
+Parse file [inception_v3.pb] with binary format successfully.
 Target network code snippet is saved as [pytorch_inception_v3.py].
 Target weights are saved as [pytorch_inception_v3.npy].
 ```
 
-### Convert models from IR to PyTorch original model
+### Generate PyTorch model from code snippet file and weight file
 
-After generating the PyTorch code snippet, you can convert the code and weights file to PyTorch original model for further usage.
+You can use following bash command to generate PyTorch model file [*pytorch_inception_v3.pth*] from python code [*pytorch_inception_v3.py*] and weights file [*pytorch_inception_v3.npy*] for further usage.
 
 ```bash
-$ python -m mmdnn.conversion.examples.pytorch.imagenet_test -n pytorch_inception_v3.py -w pytorch_inception_v3.npy --dump pytorch_inception_v3.pth
+$ mmtomodel -f pytorch -n pytorch_inception_v3.py -w pytorch_inception_v3.npy --dump pytorch_inception_v3.pth
 
 PyTorch model file is saved as [pytorch_inception_v3.pth], generated by [pytorch_inception_v3.py] and [pytorch_inception_v3.npy].
 ```
@@ -48,9 +84,13 @@ Detail scripts of *Tensorflow slim resnet_v1_101 model* to *PyTorch* conversion 
 
 Ubuntu 16.04 with
 
-- PyTorch 0.4.0a0+7ddcb91
+- PyTorch 0.4.0
 
-@ 2017/12/06
+@ 2018/04/25
+
+## Links
+
+- [pytorch to keras converter](https://github.com/nerox8664/pytorch2keras)
 
 ## Limitation
 

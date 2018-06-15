@@ -11,6 +11,8 @@ import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.DataStructure.emitter import Emitter
 from mmdnn.conversion.common.utils import *
+from mmdnn.conversion.keras.extra_layers import Scale
+
 
 
 class Keras2Emitter(Emitter):
@@ -38,6 +40,8 @@ class Keras2Emitter(Emitter):
 
         self.IR_graph = IRGraph(network_path)
         self.IR_graph.build()
+        self.yolo_parameter = []
+        self.region_parameter = []
 
 
     @property
@@ -69,6 +73,11 @@ def set_layer_weights(model, weights_dict):
                 if 'bias' in cur_dict:
                     current_layer_parameters.append(cur_dict['bias'])
                 current_layer_parameters.extend([cur_dict['mean'], cur_dict['var']])
+            elif layer.__class__.__name__ == "Scale":
+                if 'scale' in cur_dict:
+                    current_layer_parameters.append(cur_dict['scale'])
+                if 'bias' in cur_dict:
+                    current_layer_parameters.append(cur_dict['bias'])
             elif layer.__class__.__name__ == "SeparableConv2D":
                 current_layer_parameters = [cur_dict['depthwise_filter'], cur_dict['pointwise_filter']]
                 if 'bias' in cur_dict:
@@ -95,6 +104,7 @@ def KitModel(weight_file = None):
             node_type = current_node.type
 
             if hasattr(self, "emit_" + node_type):
+                # print("Converting layer {}({})".format(current_node.name, node_type))
                 func = getattr(self, "emit_" + node_type)
                 func(current_node)
             else:
@@ -103,8 +113,8 @@ def KitModel(weight_file = None):
 
         self.add_body(1, "{:<15} = Model(inputs = [{}], outputs = [{}])".format(
             "model",
-            ', '.join([self.IR_graph.get_node(i).real_variable_name for i in self.IR_graph.input_layers]),
-            ', '.join([self.IR_graph.get_node(i).real_variable_name for i in self.IR_graph.output_layers])))
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']),
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack'])))
         self.add_body(1, ["set_layer_weights(model, weights_dict)", "return model"])
 
         for i in self.used_layers:
@@ -120,7 +130,7 @@ def KitModel(weight_file = None):
 
 
     def _emit_activation(self, IR_node, op):
-        self.add_body(1, "{:<15} = layers.Activation(name = '{}', activation = '{}')({})".format(
+        self.add_body(1, "{:<15} = layers.Activation(name='{}', activation='{}')({})".format(
             IR_node.variable_name,
             IR_node.name,
             op,
@@ -141,6 +151,7 @@ def KitModel(weight_file = None):
     @staticmethod
     def _convert_padding(padding):
         padding = convert_onnx_pad_to_tf(padding)[1:-1]
+
         for idx, pad in enumerate(padding):
             padding[idx] = tuple(pad)
         padding = tuple(padding)
@@ -149,30 +160,34 @@ def KitModel(weight_file = None):
 
     def _defuse_padding(self, IR_node):
         auto_pad = IR_node.get_attr('auto_pad')
-        if auto_pad:
-            input_node = self.parent_variable_name(IR_node)
-            if auto_pad == 'VALID':
-                padding = 'valid'
-            elif auto_pad.startswith("SAME"):
-                padding = 'same'
-            else:
-                assert False
-            return input_node, padding
 
+        if auto_pad != None and auto_pad.startswith("SAME"):
+            input_node = self.parent_variable_name(IR_node)
+            padding = 'same'
+            return input_node, padding
         else:
+
             padding = IR_node.get_attr("pads")
-            padding = self._convert_padding(padding)
-            if is_valid_padding(padding) == False:
-                input_node = IR_node.variable_name + '_input'
-                self.add_body(1, "{:<15} = layers.ZeroPadding{}D(padding = {})({})".format(
-                    input_node,
-                    len(padding),
-                    padding,
-                    self.parent_variable_name(IR_node)))
+
+            if padding != None:
+                padding = self._convert_padding(padding)
+
+                if is_valid_padding(padding) == False:
+                    input_node = IR_node.variable_name + '_input'
+                    self.add_body(1, "{:<15} = layers.ZeroPadding{}D(padding = {})({})".format(
+                        input_node,
+                        len(padding),
+                        padding,
+                        self.parent_variable_name(IR_node)))
+                else:
+                    input_node = self.parent_variable_name(IR_node)
             else:
                 input_node = self.parent_variable_name(IR_node)
 
+
+            # TODO
             return input_node, 'valid'
+            # return input_node, 'same'
 
 
     def _emit_convolution(self, IR_node, conv_type):
@@ -186,12 +201,17 @@ def KitModel(weight_file = None):
             filters = IR_node.get_attr('kernel_shape')[-1]
 
         filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier={}'.format(filters)
+        # change dw from filters to 1
+
 
         input_node, padding = self._defuse_padding(IR_node)
 
         dilations = IR_node.get_attr('dilations')
-        if not dilations:
+
+        if not dilations or len(dilations) == 2:
+            # reset the default dilation
             dilations = [1] * len(IR_node.get_attr('kernel_shape'))
+
 
         self.add_body(1, "{:<15} = convolution(weights_dict, name='{}', input={}, group={}, conv_type='{}', {}, kernel_size={}, strides={}, dilation_rate={}, padding='{}', use_bias={})".format(
             IR_node.variable_name,
@@ -278,14 +298,36 @@ def KitModel(weight_file = None):
         elif pooling_type == "AVG":
             pool_name = "AveragePooling{}D".format(dim)
         else:
+            print(pooling_type)
             assert False
 
+        # TODO
         if IR_node.layer.attr['global_pooling'].b:
-            self.add_body(1, "{:<15} = layers.Global{}(name = '{}')({})".format(
+
+            shape_str = IR_node.get_attr("shape_coreml")
+            if shape_str:
+                shape_str = ','.join([str(i) for i in shape_str])
+
+                self.add_body(1, "{:<15} = layers.Global{}(name = '{}')({})".format(
+                    IR_node.variable_name+'before',
+                    pool_name,
+                    IR_node.name,
+                    self.parent_variable_name(IR_node)))
+
+                #  when converting from coreml model, reshape is needed after the global pooling
+                self.add_body(1, "{:<15} = layers.Reshape(name = '{}', target_shape = ({},))({})".format(
+                    IR_node.variable_name,
+                    IR_node.name + 'reshape',
+                    shape_str,
+                    IR_node.variable_name+'before'))
+            else:
+                self.add_body(1, "{:<15} = layers.Global{}(name = '{}')({})".format(
                 IR_node.variable_name,
                 pool_name,
                 IR_node.name,
                 self.parent_variable_name(IR_node)))
+
+
 
         else:
             dilations = IR_node.get_attr('dilations')
@@ -294,20 +336,40 @@ def KitModel(weight_file = None):
                     assert e == 1
 
             pool_size = IR_node.get_attr('kernel_shape')[1:-1]
-            pool_size = ', '.join('%s' % i for i in pool_size)
+
             strides = IR_node.get_attr('strides')[1:-1]
-            strides = ', '.join('%s' % i for i in strides)
+            padding = IR_node.get_attr('pads')[1:dim]
 
-            input_node, padding = self._defuse_padding(IR_node)
+            if pooling_type == "AVG" and pool_size.count(pool_size[0]) == len(pool_size) and strides[0] == 1 and strides.count(strides[0]) == len(strides) and padding.count(padding[0]) == len(padding) and pool_size[0] == padding[0]*2 + 1:
+                pool_size = ', '.join('%s' % i for i in pool_size)
+                strides = ', '.join('%s' % i for i in strides)
+                self.add_body(1, "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
+                    IR_node.variable_name,
+                    pool_name,
+                    IR_node.name,
+                    pool_size,
+                    strides,
+                    'same',
+                    self.parent_variable_name(IR_node)
+                    ))
 
-            self.add_body(1, "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
-                IR_node.variable_name,
-                pool_name,
-                IR_node.name,
-                pool_size,
-                strides,
-                padding,
-                input_node))
+
+            else:
+
+                pool_size = ', '.join('%s' % i for i in pool_size)
+                strides = ', '.join('%s' % i for i in strides)
+                input_node, padding = self._defuse_padding(IR_node)
+
+                self.add_body(1, "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
+                    IR_node.variable_name,
+                    pool_name,
+                    IR_node.name,
+                    pool_size,
+                    strides,
+                    padding,
+                    input_node))
+
+
 
 
     def emit_Reshape(self, IR_node):
@@ -388,12 +450,26 @@ def KitModel(weight_file = None):
             self.parent_variable_name(IR_node)))
 
 
+
+    def emit_Scale(self, IR_node):
+        self.used_layers.add('Scale')
+        axis = IR_node.layer.attr['axis'].i if 'axis' in IR_node.layer.attr else -1
+        self.add_body(1, "{:<15} = Scale(name = '{}', axis = {}, center = {}, scale = {})({})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            axis,
+            IR_node.layer.attr['use_bias'].b,
+            True,
+            self.parent_variable_name(IR_node)))
+
+
+
     def emit_Pad(self, IR_node):
         mode = IR_node.get_attr('mode', 'constant')
+        mode = mode.lower()
         if mode == "constant":
             func = "ZeroPadding"
         else:
-            print (mode)
             raise NotImplementedError()
 
         dim = len(IR_node.get_attr('pads')) // 2 - 2
@@ -432,6 +508,32 @@ def KitModel(weight_file = None):
             IR_node.name,
             self.parent_variable_name(IR_node)))
 
+    def emit_Const(self, IR_node):
+        pass
+
+
+
+    def emit_Shape(self, IR_node):
+        pass
+
+
+    def emit_Slice(self, IR_node):
+        pass
+        # It arouses some problems:
+        # it can be implemented by Lambda Layer
+        # https://github.com/keras-team/keras/issues/890
+
+
+    def emit_Pack(self, IR_node):
+        pass
+
+
+
+
+
+
+
+
 
     def emit_SeparableConv(self, IR_node):
         assert len(IR_node.get_attr("strides")) == 4
@@ -448,6 +550,7 @@ def KitModel(weight_file = None):
     def emit_DepthwiseConv(self, IR_node):
         self._emit_convolution(IR_node, 'keras.applications.mobilenet.DepthwiseConv2D')
 
+
     def emit_Crop(self, IR_node):
         border = IR_node.get_attr('border')
         rank = len(border) // 2
@@ -461,6 +564,98 @@ def KitModel(weight_file = None):
             tuple(cropping),
             IR_node.name,
             self.parent_variable_name(IR_node)))
+
+
+    def emit_LeakyRelu(self, IR_node):
+        self.add_body(1, "{:<15} = layers.LeakyReLU(name='{}', alpha = {})({})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            IR_node.get_attr('alpha'),
+            self.parent_variable_name(IR_node)
+        ))
+
+    def emit_upsample(self, IR_node):
+        self.add_body(1, "{:<15} = layers.UpSampling2D(name='{}', size= ({},{}), data_format = 'channels_last')({})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            IR_node.get_attr('strides'),
+            IR_node.get_attr('strides'),
+            self.parent_variable_name(IR_node)
+        ))
+
+
+    def emit_SpaceToDepth(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        assert IR_node.get_attr('blocksize') == 2
+        # TODO: arguments won't be saved in keras export model
+
+        blocksize = "arguments={'blocksize': %d}" % 2
+
+        self.add_body(1, "{:<15} = layers.Lambda(space_to_depth, {}, name='{}')({})".format(
+            IR_node.variable_name,
+            blocksize,
+            IR_node.name,
+            self.parent_variable_name(IR_node)
+        ))
+
+
+    def emit_yolo(self, IR_node):
+        self.used_layers.add('Yolo')
+        # print(IR_node.layer)
+        self.add_body(1, "{:<15} = {}".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)
+        ))
+        self.yolo_parameter = [IR_node.get_attr('anchors'),
+            IR_node.get_attr('classes'),
+            IR_node.get_attr("ignore_thresh"),
+            IR_node.get_attr("jitter")]
+
+
+    def emit_region(self, IR_node):
+        self.used_layers.add('Region')
+        # print(IR_node.layer)
+        self.add_body(1, "{:<15} = {}".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)
+        ))
+        self.region_parameter = [IR_node.get_attr('anchors'),
+            IR_node.get_attr('classes'),
+            IR_node.get_attr("thresh"),
+            IR_node.get_attr("softmax"),
+            IR_node.get_attr("bias_match"),
+            IR_node.get_attr("jitter"),
+            IR_node.get_attr("num"),
+            IR_node.get_attr("random"),
+            IR_node.get_attr("coords"),
+            IR_node.get_attr("absolute"),
+            IR_node.get_attr("rescore"),
+            IR_node.get_attr("class_scale"),
+            IR_node.get_attr("object_scale"),
+            IR_node.get_attr("noobject_scale"),
+            IR_node.get_attr("coord_scale"),
+            ]
+
+    def _layer_Yolo(self):
+        self.add_body(0, '''
+def yolo_parameter():
+    return {}
+'''.format(self.yolo_parameter))
+
+
+    def _layer_Region(self):
+        self.add_body(0, '''
+def region_parameter():
+    return {}
+'''.format(self.region_parameter))
+
+
+    def _layer_SpaceToDepth(self):
+        self.add_body(0, '''
+def space_to_depth(input, blocksize):
+    import tensorflow as tf
+    return tf.space_to_depth(input, block_size=blocksize)
+''')
 
 
     def _layer_Flatten(self):
@@ -547,3 +742,77 @@ def convolution(weights_dict, name, input, group, conv_type, filters=None, **kwa
         b = K.variable(weights_dict[name]['bias'], name = name + "_bias")
         layer = layer + b
     return layer""")
+
+    def _layer_Scale(self):
+        self.add_body(0, """
+from keras.engine import Layer, InputSpec
+from keras import initializers
+from keras  import backend as K
+
+
+class Scale(Layer):
+
+    def __init__(self,
+                 axis=-1,
+                 center=True,
+                 scale=True,
+                 beta_initializer='zeros',
+                 gamma_initializer='ones',
+                 **kwargs):
+        super(Scale, self).__init__(**kwargs)
+        self.supports_masking = True
+        self.axis = axis
+        self.center = center
+        self.scale = scale
+        self.beta_initializer = initializers.get(beta_initializer)
+        self.gamma_initializer = initializers.get(gamma_initializer)
+
+
+    def build(self, input_shape):
+        dim = input_shape[self.axis]
+        if dim is None:
+            raise ValueError('Axis ' + str(self.axis) + ' of '
+                             'input tensor should have a defined dimension '
+                             'but the layer received an input with shape ' +
+                             str(input_shape) + '.')
+        self.input_spec = InputSpec(ndim=len(input_shape),
+                                    axes={self.axis: dim})
+        shape = (dim,)
+
+        if self.scale:
+            self.gamma = self.add_weight(shape=shape,
+                                         name='gamma',
+                                         initializer=self.gamma_initializer)
+        else:
+            self.gamma = None
+        if self.center:
+            self.beta = self.add_weight(shape=shape,
+                                        name='beta',
+                                        initializer=self.beta_initializer)
+        else:
+            self.beta = None
+
+
+        self.built = True
+
+    def call(self, inputs, training=None):
+        input_shape = K.int_shape(inputs)
+        # Prepare broadcasting shape.
+        ndim = len(input_shape)
+        reduction_axes = list(range(len(input_shape)))
+        del reduction_axes[self.axis]
+        broadcast_shape = [1] * len(input_shape)
+        broadcast_shape[self.axis] = input_shape[self.axis]
+        return K.reshape(self.gamma, broadcast_shape) * inputs + K.reshape(self.beta, broadcast_shape)
+
+    def get_config(self):
+        config = {
+            'axis': self.axis,
+            'center': self.center,
+            'scale': self.scale,
+        }
+        base_config = super(Scale, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+    def compute_output_shape(self, input_shape):
+        return input_shape""")

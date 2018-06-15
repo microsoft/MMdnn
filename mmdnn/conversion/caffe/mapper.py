@@ -120,20 +120,39 @@ class NodeMapper(object):
         kwargs['group'] = node.parameters.group
         return Node.create('ConvTranspose', **kwargs)
 
+
     @classmethod
     def map_crop(cls, node):
+        kwargs = {}
+        cls._convert_output_shape(kwargs, node)
         offset = node.parameters.offset
         if offset:
-            kwargs = {'offset': int(node.parameters.offset[0])}
-            return Node.create('crop', **kwargs)
-        else:
-            return Node.create('crop')
+            if len(offset) == 1:
+                kwargs['border'] = [offset[0], offset[0], 0, 0]
+            else:
+                kwargs['border'] = [offset[0], offset[1], 0, 0]
+
+        return Node.create('Crop', **kwargs)
+
 
     @classmethod
     def map_relu(cls, node):
         kwargs = {}
         cls._convert_output_shape(kwargs, node)
         return Node.create('Relu', **kwargs)
+
+    @classmethod
+    def map_p_re_lu(cls, node):
+        # print(node.parameters)
+        # assert False
+        try:
+            scale_value = float(node.parameters.filler.value)
+            kwargs = {'gamma' : scale_value}
+        except ConversionError:
+            kwargs = {'gamma' : 0.25}
+        cls._convert_output_shape(kwargs, node)
+        return Node.create('PRelu', **kwargs)
+
 
     @classmethod
     def map_pooling(cls, node):
