@@ -80,9 +80,9 @@ def GenerateIntroductionAndTutorial():
     # MMdnn introduction
     add_header(1, "Introduction")
     text_intro='''This is a collection of pre-trained models in different deep learning frameworks.\n
-    You can download the model you want by simply click the download link.\n
-    With the download model, you can convert them to different frameworks.\n
-    Next session show an example to show you how to convert pre-trained model between frameworks.\n\n'''
+You can download the model you want by simply click the download link.\n
+With the download model, you can convert them to different frameworks.\n
+Next session show an example to show you how to convert pre-trained model between frameworks.\n\n'''
     add_code(text_intro)
 
     # steps for model conversion
@@ -94,15 +94,15 @@ pip install mmdnn
 ```
 2. Download Tensorflow pre-trained model
 ```bash
-    -[] Directly download from below model collection :smile:
-    -[] Use command line
-$ mmdownload -f tensorflow -n vgg19
+    -[x] Directly download from below model collection :smile:
+    -[x] Use command line
+    $ mmdownload -f tensorflow -n vgg19
 
-Downloading file [./vgg_19_2016_08_28.tar.gz] from [http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz]
-progress: 520592.0 KB downloaded, 100%
-Model saved in file: ./imagenet_vgg19.ckpt
+    Downloading file [./vgg_19_2016_08_28.tar.gz] from [http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz]
+    progress: 520592.0 KB downloaded, 100%
+    Model saved in file: ./imagenet_vgg19.ckpt
 ```
-**NOTICE:** _the model name after the **'-n'** argument must be the models appearence in the below model collection._ :smile:
+**NOTICE:** _the model name after the **'-n'** argument must be the models appearence in the below model collection._
 
 3. Convert model architecture(*.ckpt.meta) and weights(.ckpt) from Tensorflow to IR
 ```bash
