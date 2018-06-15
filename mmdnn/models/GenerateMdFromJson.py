@@ -119,7 +119,7 @@ Parse file [vgg19.pb] with binary format successfully.
 Target network code snippet is saved as [pytorch_vgg19.py].
 Target weights are saved as [pytorch_vgg19.npy].
 ```
-1. Generate PyTorch model from code snippet file and weight file
+5. Generate PyTorch model from code snippet file and weight file
 ```bash
 mmtomodel -f pytorch -in pytorch_vgg19.py -iw pytorch_vgg19.npy --o pytorch_vgg19.pth
 
