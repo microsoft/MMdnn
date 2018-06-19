@@ -711,9 +711,6 @@ class TestModels(CorrectnessTest):
         'tensorflow_Cntk_mobilenet_v2_1.0_224',     # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
         'tensorflow_frozen_MXNet_inception_v1',     # different after AvgPool. AVG POOL padding difference between these two framework. MXNet AVGPooling Padding is SAME_LOWER, Tensorflow AVGPooling Padding is SAME_UPPER
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
-        'caffe_Pytorch_inception_v1',               # TODO
-        'caffe_Pytorch_alexnet',                    # TODO
-        'caffe_Pytorch_inception_v4',               # TODO, same with caffe_Cntk_inception_v4
         'darknet_Keras_yolov2',                     # accumulation of small difference
         'darknet_Keras_yolov3',                     # accumulation of small difference
     }
@@ -840,7 +837,6 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow' : {
-                'vgg16'                 : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'vgg19'                 : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'inception_v1'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
                 'inception_v3'          : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],

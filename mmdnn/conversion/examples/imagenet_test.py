@@ -312,8 +312,12 @@ class TestKit(object):
                     with open(self.args.label, 'r') as f:
                         labels = [l.rstrip() for l in f]
 
-                for i in top_indices:
-                    print (labels[i - offset], i, predict[i])
+                    for i in top_indices:
+                        print (labels[i - offset], i, predict[i])
+
+                else:
+                    for i in top_indices:
+                        print (i, predict[i])
 
             self.result = [(i, predict[i]) for i in top_indices]
 

@@ -179,7 +179,7 @@ class CoremlParser(Parser):
 
 
     @staticmethod
-    def _copy_and_repo(source_node, IR_node, new_op = None):
+    def _copy_and_reop(source_node, IR_node, new_op = None):
         source_node_layer = source_node.layer
         IR_node.name = source_node_layer.name
 
@@ -267,18 +267,18 @@ class CoremlParser(Parser):
         kwargs['isDeconvolution'] = source_node_conv.isDeconvolution
         # name, op
         if layer_name == 'sep':
-            CoremlParser._copy_and_repo(source_node, IR_node, "Conv")
+            CoremlParser._copy_and_reop(source_node, IR_node, "Conv")
         elif layer_name == 'dw':
-            CoremlParser._copy_and_repo(source_node, IR_node, "DepthwiseConv")
+            CoremlParser._copy_and_reop(source_node, IR_node, "DepthwiseConv")
             weights = weights.transpose((0,1,3,2))
             kwargs['kernel_shape'] = list(source_node_conv.kernelSize) + [source_node_conv.outputChannels, source_node_conv.kernelChannels]
 
 
         else:
             if kwargs['isDeconvolution']:
-                CoremlParser._copy_and_repo(source_node, IR_node, "ConvTranspose")
+                CoremlParser._copy_and_reop(source_node, IR_node, "ConvTranspose")
             else:
-                CoremlParser._copy_and_repo(source_node, IR_node, "Conv")
+                CoremlParser._copy_and_reop(source_node, IR_node, "Conv")
 
         self.set_weight(source_node.name, 'weights',  weights)
         if source_node_layer.convolution.HasField('bias'):
@@ -495,7 +495,7 @@ class CoremlParser(Parser):
         IR_node = self.IR_graph.node.add()
 
         # name, op
-        CoremlParser._copy_and_repo(source_node, IR_node, new_name)
+        CoremlParser._copy_and_reop(source_node, IR_node, new_name)
 
         # input edge
         self.convert_inedge(source_node, IR_node)
@@ -511,7 +511,7 @@ class CoremlParser(Parser):
 
     def _convert_padding_api(self, source_node, IR_node):
         # name, op
-        CoremlParser._copy_and_repo(source_node, IR_node, "Pad")
+        CoremlParser._copy_and_reop(source_node, IR_node, "Pad")
 
         # input edge
         self.convert_inedge(source_node, IR_node)
@@ -561,7 +561,7 @@ class CoremlParser(Parser):
     def rename_UNKNOWN(self, source_node):
         print(source_node.layer.get_config())
         IR_node = self.IR_graph.node.add()
-        CoremlParser._copy_and_repo(source, IR_node)
+        CoremlParser._copy_and_reop(source, IR_node)
         self.convert_inedge(source_node, IR_node)
 
 
@@ -576,7 +576,7 @@ class CoremlParser(Parser):
         # name, op
         for activation_name in self.activation_map.keys():
             if coreml_node_activation.HasField(activation_name):
-                CoremlParser._copy_and_repo(coreml_node, IR_node, self.activation_map[activation_name])
+                CoremlParser._copy_and_reop(coreml_node, IR_node, self.activation_map[activation_name])
 
 
         # activation type
@@ -683,7 +683,7 @@ class CoremlParser(Parser):
 
 
         # name, op
-        CoremlParser._copy_and_repo(coreml_node, IR_node, "BatchNorm")
+        CoremlParser._copy_and_reop(coreml_node, IR_node, "BatchNorm")
 
         # input edge
         self.convert_inedge(coreml_node, IR_node)
@@ -760,7 +760,7 @@ class CoremlParser(Parser):
 
 
         # name, op
-        CoremlParser._copy_and_repo(coreml_node, IR_node, "Scale")
+        CoremlParser._copy_and_reop(coreml_node, IR_node, "Scale")
 
         # input edge
         self.convert_inedge(coreml_node, IR_node)
@@ -794,7 +794,7 @@ class CoremlParser(Parser):
 
 
         # name, op
-        CoremlParser._copy_and_repo(coreml_node, IR_node, "Pool")
+        CoremlParser._copy_and_reop(coreml_node, IR_node, "Pool")
 
         # input edge
         self.convert_inedge(coreml_node, IR_node)
@@ -844,7 +844,7 @@ class CoremlParser(Parser):
         IR_node = self.IR_graph.node.add()
 
         # name, op
-        CoremlParser._copy_and_repo(coreml_node, IR_node, 'Softmax')
+        CoremlParser._copy_and_reop(coreml_node, IR_node, 'Softmax')
 
         # input edge
         self.convert_inedge(coreml_node, IR_node)
@@ -857,7 +857,7 @@ class CoremlParser(Parser):
         IR_node = self.IR_graph.node.add()
 
         # name, op
-        CoremlParser._copy_and_repo(source_node, IR_node, 'Flatten')
+        CoremlParser._copy_and_reop(source_node, IR_node, 'Flatten')
 
         # input edge
         self.convert_inedge(source_node, IR_node)
@@ -867,7 +867,7 @@ class CoremlParser(Parser):
         IR_node = self.IR_graph.node.add()
 
         # name, op
-        CoremlParser._copy_and_repo(source_node, IR_node, "FullyConnected")
+        CoremlParser._copy_and_reop(source_node, IR_node, "FullyConnected")
 
         # input edge
         self.convert_inedge(source_node, IR_node)

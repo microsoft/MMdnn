@@ -531,18 +531,19 @@ class KitModel(nn.Module):
 
 
     def emit_LRN(self, IR_node):
-        self.used_layers.add(IR_node.type)
-        self.add_body(2, "{:<15} = self.LRN(size = {}, alpha = {}, beta = {})({})".format(
+        self.add_body(2, "{:<15} = F.local_response_norm({}, size={}, alpha={}, beta={}, k={})".format(
             IR_node.variable_name,
-            IR_node.layer.attr['size'].i * 2 - 1,
-            IR_node.layer.attr['alpha'].f,
-            IR_node.layer.attr['beta'].f,
-            self.parent_variable_name(IR_node)
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('size') * 2 - 1,
+            IR_node.get_attr('alpha'),
+            IR_node.get_attr('beta'),
+            IR_node.get_attr('k', 1)
         ))
 
 
     def emit_DepthwiseConv(self, IR_node):
         self.emit_Conv(IR_node)
+
 
     def emit_Const(self, IR_node):
         if 'dtype' in IR_node.layer.attr:
@@ -737,35 +738,3 @@ class KitModel(nn.Module):
             layer.bias.data.fill_(0)
 
         return layer""")
-
-
-
-
-    def _layer_LRN(self):
-        self.add_body(0, """
-    class LRN(nn.Module):
-        def __init__(self, size=1, alpha=1.0, beta=0.75, ACROSS_CHANNELS=False):
-            super(KitModel.LRN, self).__init__()
-            self.ACROSS_CHANNELS = ACROSS_CHANNELS
-            if self.ACROSS_CHANNELS:
-                self.average=nn.AvgPool3d(kernel_size=(size, 1, 1),
-                        stride=1,
-                        padding=(int((size-1.0)/2), 0, 0))
-            else:
-                self.average=nn.AvgPool2d(kernel_size=size,
-                        stride=1,
-                        padding=int((size-1.0)/2))
-            self.alpha = alpha
-            self.beta = beta
-
-        def forward(self, x):
-            if self.ACROSS_CHANNELS:
-                div = x.pow(2).unsqueeze(1)
-                div = self.average(div).squeeze(1)
-                div = div.mul(self.alpha).add(1.0).pow(self.beta)
-            else:
-                div = x.pow(2)
-                div = self.average(div)
-                div = div.mul(self.alpha).add(1.0).pow(self.beta)
-            x = x.div(div)
-            return x""")

@@ -1,0 +1,922 @@
+{
+    "models" : [
+        {
+            "name": "alexnet",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://raw.githubusercontent.com/BVLC/caffe/master/models/bvlc_alexnet/deploy.prototxt",
+                "weights":"http://dl.caffe.berkeleyvision.org/bvlc_alexnet.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v1",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://raw.githubusercontent.com/BVLC/caffe/master/models/bvlc_googlenet/deploy.prototxt",
+                "weights":"http://dl.caffe.berkeleyvision.org/bvlc_googlenet.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg16",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://gist.githubusercontent.com/ksimonyan/211839e770f7b538e2d8/raw/c3ba00e272d9f48594acef1f67e5fd12aff7a806/VGG_ILSVRC_16_layers_deploy.prototxt",
+                "weights":"http://data.mxnet.io/models/imagenet/test/caffe/VGG_ILSVRC_16_layers.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg19",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://gist.githubusercontent.com/ksimonyan/3785162f95cd2d5fee77/raw/bb2b4fe0a9bb0669211cf3d0bc949dfdda173e9e/VGG_ILSVRC_19_layers_deploy.prototxt",
+                "weights":"http://data.mxnet.io/models/imagenet/test/caffe/VGG_ILSVRC_19_layers.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet50",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/test/caffe/ResNet-50-deploy.prototxt",
+                "weights":"http://data.mxnet.io/models/imagenet/test/caffe/ResNet-50-model.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet101",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/test/caffe/ResNet-101-deploy.prototxt",
+                "weights":"http://data.mxnet.io/models/imagenet/test/caffe/ResNet-101-model.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet152",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/test/caffe/ResNet-152-deploy.prototxt",
+                "weights":"http://data.mxnet.io/models/imagenet/test/caffe/ResNet-152-model.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "squeezenet",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://raw.githubusercontent.com/DeepScale/SqueezeNet/master/SqueezeNet_v1.1/deploy.prototxt",
+                "weights":"https://github.com/DeepScale/SqueezeNet/raw/master/SqueezeNet_v1.1/squeezenet_v1.1.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "xception",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/xception_deploy.prototxt",
+                "weights":"http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/xception.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v4",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/inception-v4_deploy.prototxt",
+                "weights":"http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/inception-v4.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "voc-fcn8s",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://raw.githubusercontent.com/shelhamer/fcn.berkeleyvision.org/master/voc-fcn8s/deploy.prototxt",
+                "weights":"http://dl.caffe.berkeleyvision.org/fcn8s-heavy-pascal.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "voc-fcn16s",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/voc-fcn16s_deploy.prototxt",
+                "weights":"http://dl.caffe.berkeleyvision.org/fcn16s-heavy-pascal.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "voc-fcn32s",
+            "framework":"caffe",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/voc-fcn32s_deploy.prototxt",
+                "weights":"http://dl.caffe.berkeleyvision.org/fcn32s-heavy-pascal.caffemodel"
+            },
+            "version":""
+        },
+        {
+            "name": "alexnet",
+            "framework":"cntk",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://www.cntk.ai/Models/CNTK_Pretrained/AlexNet_ImageNet_CNTK.model"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v3",
+            "framework":"cntk",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://www.cntk.ai/Models/CNTK_Pretrained/InceptionV3_ImageNet_CNTK.model"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet18",
+            "framework":"cntk",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://www.cntk.ai/Models/CNTK_Pretrained/ResNet18_ImageNet_CNTK.model"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet50",
+            "framework":"cntk",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://www.cntk.ai/Models/CNTK_Pretrained/ResNet50_ImageNet_CNTK.model"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet101",
+            "framework":"cntk",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://www.cntk.ai/Models/CNTK_Pretrained/ResNet101_ImageNet_CNTK.model"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet152",
+            "framework":"cntk",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://www.cntk.ai/Models/CNTK_Pretrained/ResNet152_ImageNet_CNTK.model"
+            },
+            "version":""
+        },
+        {
+            "name": "Fast-RCNN_grocery100",
+            "framework":"cntk",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://www.cntk.ai/Models/FRCN_Grocery/Fast-RCNN_grocery100.model"
+            },
+            "version":""
+        },
+        {
+            "name": "Fast-RCNN_Pascal",
+            "framework":"cntk",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://www.cntk.ai/Models/FRCN_Pascal/Fast-RCNN.model"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v3",
+            "framework":"coreml",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://docs-assets.developer.apple.com/coreml/models/Inceptionv3.mlmodel"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg16",
+            "framework":"coreml",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://docs-assets.developer.apple.com/coreml/models/VGG16.mlmodel"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg19",
+            "framework":"coreml",
+            "description":"",
+            "link":
+            {
+                "architecture":""
+            },
+            "version":""
+        },
+        {
+            "name": "resnet50",
+            "framework":"coreml",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://docs-assets.developer.apple.com/coreml/models/Resnet50.mlmodel"
+            },
+            "version":""
+        },
+        {
+            "name": "mobilenet",
+            "framework":"coreml",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://docs-assets.developer.apple.com/coreml/models/MobileNet.mlmodel"
+            },
+            "version":""
+        },
+        {
+            "name": "xception",
+            "framework":"coreml",
+            "description":"",
+            "link":
+            {
+                "architecture":""
+            },
+            "version":""
+        },
+        {
+            "name": "inception_resnet",
+            "framework":"coreml",
+            "description":"",
+            "link":
+            {
+                "architecture":""
+            },
+            "version":""
+        },
+        {
+            "name": "densenet",
+            "framework":"coreml",
+            "description":"",
+            "link":
+            {
+                "architecture":""
+            },
+            "version":""
+        },
+        {
+            "name": "nasnet",
+            "framework":"coreml",
+            "description":"",
+            "link":
+            {
+                "architecture":""
+            },
+            "version":""
+        },
+        {
+            "name": "tinyyolo",
+            "framework":"coreml",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://s3-us-west-2.amazonaws.com/coreml-models/TinyYOLO.mlmodel"
+            },
+            "version":""
+        },
+        {
+            "name": "yolov3",
+            "framework":"darknet",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg",
+                "weights":"https://pjreddie.com/media/files/yolov3.weights"
+            },
+            "version":""
+        },
+        {
+            "name": "yolov2",
+            "framework":"darknet",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov2.cfg",
+                "weights":"https://pjreddie.com/media/files/yolov2.weights"
+            },
+            "version":""
+        },
+
+
+        {
+            "name": "",
+            "framework":"keras",
+            "description":"",
+            "link":
+            {
+                "architecture":"",
+                "weights":""
+            },
+            "version":""
+        },
+
+
+        {
+            "name": "imagenet1k-inception-bn",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/inception-bn/Inception-BN-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/inception-bn/Inception-BN-0126.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet1k-resnet-18",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/resnet/18-layers/resnet-18-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/resnet/18-layers/resnet-18-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet1k-resnet-34",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/resnet/34-layers/resnet-34-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/resnet/34-layers/resnet-34-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet1k-resnet-50",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/resnet/50-layers/resnet-50-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/resnet/50-layers/resnet-50-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet1k-resnet-101",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/resnet/101-layers/resnet-101-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/resnet/101-layers/resnet-101-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet1k-resnet-152",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/resnet/152-layers/resnet-152-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/resnet/152-layers/resnet-152-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet1k-resnext-50",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/resnext/50-layers/resnext-50-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/resnext/50-layers/resnext-50-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet1k-resnext-101",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/resnext/101-layers/resnext-101-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/resnext/101-layers/resnext-101-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet1k-resnext-101-64x4d",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/resnext/101-layers/resnext-101-64x4d-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/resnext/101-layers/resnext-101-64x4d-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet11k-resnet-152",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet-11k/resnet-152/resnet-152-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet-11k/resnet-152/resnet-152-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet11k-place365ch-resnet-152",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet-11k-place365-ch/resnet-152-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet-11k-place365-ch/resnet-152-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "imagenet11k-place365ch-resnet-50",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet-11k-place365-ch/resnet-50-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet-11k-place365-ch/resnet-50-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg19",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/vgg/vgg19-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/vgg/vgg19-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg16",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/vgg/vgg16-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/vgg/vgg16-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "squeezenet_v1.0",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/squeezenet/squeezenet_v1.0-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/squeezenet/squeezenet_v1.0-0000.params"
+            },
+            "version":""
+        },
+        {
+            "name": "squeezenet_v1.1",
+            "framework":"mxnet",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://data.mxnet.io/models/imagenet/squeezenet/squeezenet_v1.1-symbol.json",
+                "weights":"http://data.mxnet.io/models/imagenet/squeezenet/squeezenet_v1.1-0000.params"
+            },
+            "version":""
+        },
+
+
+        {
+            "name": "alexnet",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "densenet121",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/densenet121-a639ec97.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "densenet169",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/densenet169-b2777c0a.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "densenet201",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/densenet201-c1103571.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "densenet161",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/densenet161-8d451a50.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v3",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v3",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet18",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/resnet18-5c106cde.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet34",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/resnet34-333f7ec4.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet50",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/resnet50-19c8e357.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet101",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/resnet101-5d3b4d8f.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet152",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/resnet152-b121ed2d.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "squeezenet1_0",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/squeezenet1_0-a815701f.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "squeezenet1_1",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/squeezenet1_1-f364aa15.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg11",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/vgg11-bbd30ac9.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg13",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/vgg13-c768596a.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg16",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/vgg16-397923af.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg19",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/vgg19-dcbb9e9d.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg11_bn",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/vgg11_bn-6002323d.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg13_bn",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/vgg13_bn-abd245e5.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg16_bn",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/vgg16_bn-6c64b313.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg19_bn",
+            "framework":"pytorch",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://download.pytorch.org/models/vgg19_bn-c79401a0.pth"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg16",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/vgg_16_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "vgg19",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/vgg_19_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v1",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/inception_v1_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v1_frozen",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://storage.googleapis.com/download.tensorflow.org/models/inception_v1_2016_08_28_frozen.pb.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v3",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/inception_v3_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_v3_frozen",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://storage.googleapis.com/download.tensorflow.org/models/inception_v3_2016_08_28_frozen.pb.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet_v1_50",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/resnet_v1_50_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet_v1_152",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/resnet_v1_152_2016_08_28.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet_v2_50",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/resnet_v2_50_2017_04_14.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet_v2_152",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/resnet_v2_152_2017_04_14.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "resnet_v2_200",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/resnet_v2_200_2017_04_14.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "mobilenet_v1_1.0",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/mobilenet_v1_1.0_224_2017_06_14.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "mobilenet_v1_1.0_frozen",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://storage.googleapis.com/download.tensorflow.org/models/mobilenet_v1_1.0_224_frozen.tgz"
+            },
+            "version":""
+        },
+        {
+            "name": "mobilenet_v2_1.0_224",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://storage.googleapis.com/mobilenet_v2/checkpoints/mobilenet_v2_1.0_224.tgz"
+            },
+            "version":""
+        },
+        {
+            "name": "inception_resnet_v2",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz"
+            },
+            "version":""
+        },
+        {
+            "name": "nasnet-a_large",
+            "framework":"tensorflow",
+            "description":"",
+            "link":
+            {
+                "architecture":"https://storage.googleapis.com/download.tensorflow.org/models/nasnet-a_large_04_10_2017.tar.gz"
+            },
+            "version":""
+        }
+    ]
+}

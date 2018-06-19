@@ -53,22 +53,22 @@ We provide a model converter to help developers convert models between framework
 
 The model conversion between currently supported frameworks is tested on some **ImageNet** models.
 
-Models                                                                      | Caffe | Keras | Tensorflow | CNTK | MXNet |   PyTorch  | CoreML
-:--------------------------------------------------------------------------:|:-----:|:-----:|:----------:|:----:|:-----:|:----------:|:------:|
-[Inception V1](http://arxiv.org/abs/1409.4842v1)                            |   √   |   √   |     √      |   √  |   √   | x (No LRN) | √
-[Inception V3](http://arxiv.org/abs/1512.00567)                             |   ×   |   √   |     √      |   √  |   √   |    √ | √
-[Inception V4](http://arxiv.org/abs/1512.00567)                             |   √   |   √   |     √      |   o  |       | √ | √
-[ResNet V1](https://arxiv.org/abs/1512.03385)                               |   ×   |   √   |     √      |   o  |   √   |    √ | √
-[ResNet V2](https://arxiv.org/abs/1603.05027)                               |   √   |   √   |     √      |   √  |   √   |    √
-[VGG 19](http://arxiv.org/abs/1409.1556.pdf)                                |   √   |   √   |     √      |   √  |   √   |    √       |    √
-[MobileNet V1](https://arxiv.org/pdf/1704.04861.pdf)                        |   ×   |   √   |     √      |   o  |   √   |    √       |    √
-[MobileNet V2](https://arxiv.org/pdf/1704.04861.pdf)                        |   ×   |   √   |     √      |   o  |   √   |    √       |    √
-[Xception](https://arxiv.org/pdf/1610.02357.pdf)                            |   ×   |   √   |     √      |   o  |   ×   |    ×
-[SqueezeNet](https://arxiv.org/pdf/1602.07360)                              |   √   |   √   |     √      |   √  |   √   |    √
-[DenseNet](https://arxiv.org/abs/1608.06993)                                |       |   √   |     √      |   √  |   √   |    √       |
-[NASNet](https://arxiv.org/abs/1707.07012)                                  |       |   √   |     √      |   o  |   √   | √ |
-[ResNext](https://arxiv.org/abs/1611.05431)                                 |       |   √   |     √      |   √  |   √   |
-[voc FCN](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf) |       |       |     √      |   √  |       |            |
+Models | Caffe | Keras | Tensorflow | CNTK | MXNet | PyTorch  | CoreML | ONNX
+:-----:|:-----:|:-----:|:----------:|:----:|:-----:|:--------:|:------:|:-----:|
+[VGG 19](http://arxiv.org/abs/1409.1556.pdf) | √ | √ | √ | √ | √ | √ | √ | √
+[Inception V1](http://arxiv.org/abs/1409.4842v1) | √ | √ | √ | √ | √ | √ | √ | √
+[Inception V3](http://arxiv.org/abs/1512.00567)  | √ | √ | √ | √ | √ | √ | √ | √
+[Inception V4](http://arxiv.org/abs/1512.00567)  | √ | √ | √ | o | √ | √ | √ | √
+[ResNet V1](https://arxiv.org/abs/1512.03385)                               |   ×   |   √   |     √      |   o  |   √   |    √ | √ | √
+[ResNet V2](https://arxiv.org/abs/1603.05027)                               |   √   |   √   |     √      |   √  |   √   | √ | √ | √
+[MobileNet V1](https://arxiv.org/pdf/1704.04861.pdf)                        |   ×   |   √   |     √      |   o  |   √   |    √       | √ | √ | √
+[MobileNet V2](https://arxiv.org/pdf/1704.04861.pdf)                        |   ×   |   √   |     √      |   o  |   √   |    √       | √ | √ | √
+[Xception](https://arxiv.org/pdf/1610.02357.pdf)                            |   √   |   √   |     √      |   o  |   ×   |    √ | √ | √ | √
+[SqueezeNet](https://arxiv.org/pdf/1602.07360)                              |   √   |   √   |     √      |   √  |   √   |    √ | √ | √ | √
+[DenseNet](https://arxiv.org/abs/1608.06993)                                |   √   |   √   |     √      |   √  |   √   |    √       | √ | √
+[NASNet](https://arxiv.org/abs/1707.07012)                                  |   x   |   √   |     √      |   o  |   √   | √ | √ | x
+[ResNext](https://arxiv.org/abs/1611.05431)                                 |   √   |   √   |     √      |   √  |   √   | √ | √ | √ | √ | √
+[voc FCN](https://people.eecs.berkeley.edu/~jonlong/long_shelhamer_fcn.pdf) |       |       |     √      |   √  |       |
 Yolo3                                                                       |       |   √   |            |   √  |
 
 #### Usage
@@ -84,12 +84,13 @@ Done.
 
 #### On-going frameworks
 
-- PyTorch (Source)
-- Torch7 (Source)
+- Paddle Paddle
+- Torch7 (help wants)
 - Chainer (help wants)
 
 #### On-going Models
 
+- Face Detection
 - Semantic Segmentation
 - Image Style Transfer
 - Object Detection
@@ -181,6 +182,22 @@ provided by the bot. You will only need to do this once across all repos using o
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+## Authors
+
+Cheng CHEN (Microsoft Research Asia): Project Manager; Caffe, CNTK, CoreML Emitter, Keras, MXNet, TensorFlow
+
+Jiahao YAO (Peking University): CoreML, MXNet Emitter, PyTorch Parser; HomePage
+
+Ru ZHANG (Chinese Academy of Sciences): CoreML Emitter, DarkNet Parser, Keras, TensorFlow frozen graph Parser; Yolo and SSD models; Tests
+
+Yuhao ZHOU (Shanghai Jiao Tong University): MXNet
+
+Tingting QIN (Microsoft Research Asia): Caffe Emitter
+
+Tong ZHAN (Microsoft): ONNX Emitter
+
+Qianwen WANG (Hong Kong University of Science and Technology): Visualization
 
 ## Acknowledgements
 
