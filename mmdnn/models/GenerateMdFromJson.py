@@ -47,7 +47,7 @@ def GenerateModelBlock(model):
         download["json"] = link["architecture"]
         download['params'] = link["weights"]
     elif framework == "pytorch":
-        download["pth"] = ""
+        download["pth"] = link["architecture"]
     elif framework == "tensorflow":
         download["tgz"] = link["architecture"]
 
@@ -70,7 +70,7 @@ def GenerateModelsList(data):
     models = data["models"]
     num = 0
     for i in range(len(data["models"])):
-        if (models[i]["framework"]!="keras") and (models[i]["framework"]!="pytorch" and (models[i]["link"]["architecture"]!="")):
+        if ((models[i]["framework"]!="keras") and (models[i]["link"]["architecture"]!="")):
             GenerateModelBlock(models[i])
             num += 1
             if num % colnum == 0:
