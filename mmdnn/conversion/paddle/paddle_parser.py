@@ -134,7 +134,7 @@ class PaddleParser(Parser):
 
     @staticmethod
     def _copy_and_reop(source_node, IR_node, new_op = None):
-        IR_node.name = source_node.name
+        IR_node.name = source_node.name.strip('_')
         IR_node.op = source_node.type if new_op == None else new_op
 
         if hasattr(source_node.layer, "dtype"):
@@ -144,14 +144,10 @@ class PaddleParser(Parser):
 
 
     @staticmethod
-    def _copy_shape(source_node, target_node):
-        if hasattr(source_node, "output_shape"):
-            for dim in source_node.output_shape:
-                new_dim = target_node.attr["shape"].shape.dim.add()
-                new_dim.size = -1 if dim == None else dim
-
-        else:
-            target_node.attr["shape"].shape.unknown_rank = True
+    def _copy_shape(source_node, target_node, output_shapes):
+        for dim in output_shapes:
+            new_dim = target_node.attr["shape"].shape.dim.add()
+            new_dim.size =  dim
 
 
     @staticmethod
@@ -170,9 +166,9 @@ class PaddleParser(Parser):
         src_spec = self.spec_dict[source_node.name]
 
         IR_node = self.IR_graph.node.add()
-        IR_node.name = source_node.real_name + "_activation"
+        IR_node.name = source_node.real_name.strip('_') + "_activation"
         IR_node.op = PaddleParser.activation_map[src_spec.active_type.encode()]
-        IR_node.input.append(source_node.real_name)
+        IR_node.input.append(source_node.real_name.strip('_'))
 
         source_node.real_name = IR_node.name
 
@@ -224,7 +220,7 @@ class PaddleParser(Parser):
         width = spec.filter_size
         height = spec.filter_size_y if spec.HasField('filter_size_y') else spec.filter_size
         inputchannel = spec.channels
-        outputchannel = spec.filter_channels
+        outputchannel = conv_spec.num_filters
         stride_x = spec.stride
         stride_y = spec.stride_y if spec.HasField('stride_y') else stride_x
         padding_x = spec.padding
@@ -251,10 +247,14 @@ class PaddleParser(Parser):
             kwargs['isDeconvolution'] = True
             PaddleParser._copy_and_reop(source_node, IR_node, "ConvTranspose")
 
+
         w_name = conv_spec.inputs[0].input_parameter_name
         w = self.parameters.get(w_name)
 
-        self.set_weight(source_node.name, 'weights', w)
+
+        self.set_weight(IR_node.name, 'weights', w.reshape([outputchannel, inputchannel, height, width]).transpose([ 2, 3, 1, 0]))
+
+        #  it should be in the shape of height x width x inputchannel x outputchannel
 
 
 
@@ -266,13 +266,22 @@ class PaddleParser(Parser):
         # pad_dim
         pad_dim = [0, 0, padding_x, padding_y, padding_x, padding_y, 0, 0]
 
+        # fail report because of auto_pad
+        # if dilation_x == 1 and dilation_y == 1:
+        #     if output_x * stride_x == input_x and output_y * stride_y == input_y:
+        #         auto_pad = "SAME"
+        #         kwargs['auto_pad'] = auto_pad
+        #     elif output_x * stride_x == input_x - width + 1 and output_y * stride_y == input_y - height + 1:
+        #         auto_pad = "VALID"
+        #         kwargs['auto_pad'] = auto_pad
+
         if input_x == output_x and input_y == output_y:
             auto_pad = "SAME"
         else:
-            auto_pad = "VALID"
+            auto_pad = "SAME"
 
+        pad_dim = convert_tf_pad_to_onnx(pad_dim)
         kwargs['pads'] = pad_dim
-        kwargs['auto_pad'] = auto_pad
 
         kwargs['group'] = spec.groups
 
@@ -336,16 +345,16 @@ class PaddleParser(Parser):
         variance = variance.astype(np.float32)
 
         if IR_node.attr['scale'].b:
-            self.set_weight(source_node.name, "scale", gamma1)
+            self.set_weight(IR_node.name, "scale", gamma1)
 
         if IR_node.attr['bias'].b:
-            self.set_weight(source_node.name, "bias", beta1)
+            self.set_weight(IR_node.name, "bias", beta1)
 
         # mean
-        self.set_weight(source_node.name, "mean", mean)
+        self.set_weight(IR_node.name, "mean", mean)
 
         # var
-        self.set_weight(source_node.name, "var", variance)
+        self.set_weight(IR_node.name, "var", variance)
 
         # defuse the activation layer
 
@@ -368,6 +377,7 @@ class PaddleParser(Parser):
         pool_spec = self.spec_dict[source_node.name]
         spec = pool_spec.inputs[0].pool_conf
 
+        # assert False
         kwargs = dict()
 
         if spec.pool_type == 'max-projection':
@@ -405,13 +415,22 @@ class PaddleParser(Parser):
         # pad_dim
         pad_dim = [0, 0, padding_x, padding_y, padding_x, padding_y, 0, 0]
 
-        if input_x == output_x and input_y == output_y:
-            auto_pad = "SAME"
-        else:
-            auto_pad = "VALID"
 
+        # padding mode
+        # If padding == "SAME": output_spatial_shape[i] = ceil(input_spatial_shape[i] / strides[i])
+        # If padding == "VALID": output_spatial_shape[i] = ceil((input_spatial_shape[i] - (spatial_filter_shape[i]-1) * dilation_rate[i]) / strides[i]).
+
+        if output_x * stride_x == input_x and output_y * stride_y == input_y:
+            auto_pad = "SAME"
+            kwargs['auto_pad'] = auto_pad
+        elif output_x * stride_x == input_x - width + 1 and output_y * stride_y == input_y - height + 1:
+            auto_pad = "VALID"
+            kwargs['auto_pad'] = auto_pad
+
+        pad_dim = convert_tf_pad_to_onnx(pad_dim)
         kwargs['pads'] = pad_dim
-        kwargs['auto_pad'] = auto_pad
+
+
 
         assign_IRnode_values(IR_node, kwargs)
 
@@ -444,9 +463,9 @@ class PaddleParser(Parser):
         bias = self.parameters.get(bias_name)
 
         # weights
-        self.set_weight(source_node.name, 'weights', w)
+        self.set_weight(IR_node.name, 'weights', w)
         if IR_node.attr['use_bias'].b:
-            self.set_weight(source_node.name, 'bias', bias)
+            self.set_weight(IR_node.name, 'bias', bias)
 
         if fc_spec.HasField('active_type') and  fc_spec.active_type != '':
             self._defuse_activation(source_node)
@@ -456,8 +475,10 @@ class PaddleParser(Parser):
 
 
     def rename_addto(self, source_node):
+        add_spec = self.spec_dict[source_node.name]
         self._convert_merge(source_node, 'Add')
-
+        if add_spec.HasField('active_type') and  add_spec.active_type != '':
+            self._defuse_activation(source_node)
 
 
     def rename_data(self, source_node):
@@ -472,6 +493,7 @@ class PaddleParser(Parser):
         # input edge
         self.convert_inedge(source_node, IR_node)
 
+        output_shapes = [-1, 224, 224, 3]
         # shape
-        PaddleParser._copy_shape(source_node.layer, IR_node)
+        PaddleParser._copy_shape(source_node.layer, IR_node, output_shapes)
 

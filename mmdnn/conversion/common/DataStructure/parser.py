@@ -80,7 +80,7 @@ class Parser(object):
     def convert_inedge(self, source_node, IR_node, start_idx = 0, end_idx = None):
         if end_idx == None: end_idx = len(source_node.in_edges)
         for idx in range(start_idx, end_idx):
-            IR_node.input.append(self.src_graph.get_node(source_node.in_edges[idx]).real_name)
+            IR_node.input.append(self.src_graph.get_node(source_node.in_edges[idx]).real_name.strip('_'))
 
 
     @staticmethod
