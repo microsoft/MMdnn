@@ -320,8 +320,7 @@ class TensorflowParser2(Parser):
     def gen_IR(self):
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
-            print(current_node.name)
-            # continue
+
             if self._skip_node(current_node):
                 continue
 
@@ -524,15 +523,12 @@ class TensorflowParser2(Parser):
         self.set_weight(source_node.name, 'mean', mean)
 
     def rename_Placeholder(self, source_node):
-        print(source_node.layer)
-        # assert False
         # print(source_node.layer.attr["shape"].shape)
         if source_node.layer.attr["shape"].shape.unknown_rank == True:
             return
-        # assert False
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
         TensorflowParser2._copy_shape(source_node, IR_node)
-        # print(IR_node)
+
         IR_node.attr['shape'].shape.dim[0].size = -1
         IR_node.attr['_output_shapes'].list.shape[0].dim[0].size = -1
 
