@@ -40,7 +40,7 @@ PyTorch pretrained model is saved as [./imagenet_resnet50.pth].
 You can convert the whole pytorch model to IR structure. Please remember for the generality, we now only take the whole model `pth`, not just the state dict. To be more specific, it is save using `torch.save()` and `torch.load()` can load the whole model.
 
 ```bash
-$ mmtoir -f pytorch -d resnet50 --inputShape 3 224 224 -n imagenet_resnet50.pth --dstNodeName MMdnn_Output
+$ mmtoir -f pytorch -d resnet50 --inputShape 3 224 224 -n imagenet_resnet50.pth
 ```
 
 Please bear in mind that always add `--inputShape` argparse. This thing is different from other framework because pytorch is a dynamic framework.
