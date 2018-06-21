@@ -133,7 +133,7 @@ class PaddleParser(Parser):
 
     @staticmethod
     def _copy_and_reop(source_node, IR_node, new_op = None):
-        IR_node.name = source_node.name.strip('_')
+        IR_node.name = source_node.name.lstrip('_')
         IR_node.op = source_node.type if new_op == None else new_op
 
         if hasattr(source_node.layer, "dtype"):
@@ -165,9 +165,9 @@ class PaddleParser(Parser):
         src_spec = self.spec_dict[source_node.name]
 
         IR_node = self.IR_graph.node.add()
-        IR_node.name = source_node.real_name.strip('_') + "_activation"
+        IR_node.name = source_node.real_name.lstrip('_') + "_activation"
         IR_node.op = PaddleParser.activation_map[src_spec.active_type.encode()]
-        IR_node.input.append(source_node.real_name.strip('_'))
+        IR_node.input.append(source_node.real_name.lstrip('_'))
 
         source_node.real_name = IR_node.name
         return IR_node
