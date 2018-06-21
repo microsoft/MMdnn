@@ -91,6 +91,7 @@ class PaddleParser(Parser):
         self.get_spec(model)
         self.parameters = parameters
         self.weight_loaded = True
+        self.shape_dict = dict()
 
 
 
@@ -106,9 +107,7 @@ class PaddleParser(Parser):
 
 
     def gen_IR(self):
-        for layer in self.paddle_graph.topological_sort:
-            current_node = self.paddle_graph.get_node(layer)
-            print(current_node.name)
+
         for layer in self.paddle_graph.topological_sort:
             current_node = self.paddle_graph.get_node(layer)
             print(current_node.name)
@@ -118,7 +117,7 @@ class PaddleParser(Parser):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
             else:
-                print("KerasParser has not supported operator [%s]." % (node_type))
+                print("PaddleParser has not supported operator [%s]." % (node_type))
                 self.rename_UNKNOWN(current_node)
 
 
@@ -171,6 +170,8 @@ class PaddleParser(Parser):
         IR_node.input.append(source_node.real_name.strip('_'))
 
         source_node.real_name = IR_node.name
+        return IR_node
+
 
 
     def _convert_merge(self, source_node, new_name = None):
@@ -214,8 +215,6 @@ class PaddleParser(Parser):
 
         spec = conv_spec.inputs[0].conv_conf
 
-
-
         # width <=> x or height <=> y
         width = spec.filter_size
         height = spec.filter_size_y if spec.HasField('filter_size_y') else spec.filter_size
@@ -235,6 +234,7 @@ class PaddleParser(Parser):
 
         # output shape
         output_shapes = [-1, outputchannel, output_y, output_x]
+        self.shape_dict[source_node.name] = output_shapes
         PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
 
 
@@ -256,12 +256,19 @@ class PaddleParser(Parser):
 
         #  it should be in the shape of height x width x inputchannel x outputchannel
 
+        # use_bias: TODO
+        kwargs['use_bias'] = False
+        if conv_spec.HasField('bias_parameter_name'):
+            bias_name = conv_spec.bias_parameter_name
+            bias = self.parameters.get(bias_name).squeeze()
+            self.set_weight(IR_node.name, "bias", bias)
+            kwargs['use_bias'] = True
+
 
 
         kwargs['kernel_shape'] = [height, width, inputchannel, outputchannel]
 
-        # use_bias: TODO
-        kwargs['use_bias'] = False
+
 
         # pad_dim
         pad_dim = [0, 0, padding_x, padding_y, padding_x, padding_y, 0, 0]
@@ -294,7 +301,8 @@ class PaddleParser(Parser):
         # defuse the activation layer
 
         if conv_spec.HasField('active_type') and  conv_spec.active_type != '':
-            self._defuse_activation(source_node)
+            IR_node_act = self._defuse_activation(source_node)
+            PaddleParser._set_output_shape(source_node, IR_node_act, output_shapes)
 
 
     def rename_batch_norm(self, source_node):
@@ -377,6 +385,8 @@ class PaddleParser(Parser):
         pool_spec = self.spec_dict[source_node.name]
         spec = pool_spec.inputs[0].pool_conf
 
+
+
         # assert False
         kwargs = dict()
 
@@ -404,6 +414,7 @@ class PaddleParser(Parser):
 
         # output shape
         output_shapes = [-1, channel, output_y, output_x]
+        self.shape_dict[source_node.name] = output_shapes
         PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
 
 
@@ -435,7 +446,9 @@ class PaddleParser(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
         if pool_spec.HasField('active_type') and  pool_spec.active_type != '':
-            self._defuse_activation(source_node)
+            IR_node_act = self._defuse_activation(source_node)
+            PaddleParser._set_output_shape(source_node, IR_node_act, output_shapes)
+
 
     def rename_fc(self, source_node):
         IR_node = self.IR_graph.node.add()
@@ -450,8 +463,16 @@ class PaddleParser(Parser):
         fc_node = source_node.layer
         fc_spec = self.spec_dict[source_node.name]
 
+
         # units
         IR_node.attr['units'].i = fc_spec.size
+
+
+        # output shape
+        output_shapes = [-1, fc_spec.size]
+        self.shape_dict[source_node.name] = output_shapes
+        PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
+
 
         # use_bias
         IR_node.attr['use_bias'].b = fc_spec.HasField('bias_parameter_name')
@@ -460,15 +481,37 @@ class PaddleParser(Parser):
         bias_name = fc_spec.bias_parameter_name
 
         w = self.parameters.get(w_name)
+
         bias = self.parameters.get(bias_name)
 
+        # Kit weight tranpose
+        # weight: N x M -> C x H x W x M -> H x W x C x M -> N x M
+        if self.weight_loaded:
+            parent = self.src_graph.get_parent(source_node.name, [0])
+            # while parent.type == 'onnx::Flatten' or parent.type == 'onnx::Dropout':
+            #     parent = self.src_graph.get_parent(parent.name, [0])
+            if len(self.shape_dict[parent.name]) == 4:
+                #
+                original_shape = w.shape
+                channel_first_list = self.shape_dict[parent.name][1:]
+                dim = len(channel_first_list) + 1
+                weight = w.reshape(channel_first_list + [original_shape[1]])
+                assert dim > 2
+                weight = weight.transpose(list(range(1, dim-1)) + [0, dim-1])
+                w = weight.reshape(original_shape)
+        if fc_spec.HasField('drop_rate'):
+            w = w * fc_spec.drop_rate
+            if IR_node.attr['use_bias'].b:
+                bias = bias * fc_spec.drop_rate
         # weights
         self.set_weight(IR_node.name, 'weights', w)
         if IR_node.attr['use_bias'].b:
             self.set_weight(IR_node.name, 'bias', bias)
 
         if fc_spec.HasField('active_type') and  fc_spec.active_type != '':
-            self._defuse_activation(source_node)
+            IR_node_act = self._defuse_activation(source_node)
+            PaddleParser._set_output_shape(source_node, IR_node_act, output_shapes)
+
 
 
 
