@@ -64,7 +64,7 @@ Then you get the CNTK original model *keras_resnet50.dnn* converted from Caffe. 
 You can use following bash command to convert the network architecture [*imagenet_inceptionv3.json*] to IR architecture file [*inception_v3.pb*], [*inception_v3.json*]. You can convert only network structure to IR for visualization or training in other frameworks.
 
 ```bash
-$ python -m mmdnn.conversion._script.convertToIR -f keras -d inception_v3 -n imagenet_inceptionv3.json
+$ mmtoir -f keras -d inception_v3 -n imagenet_inceptionv3.json
 
 Using TensorFlow backend.
 IR network structure is saved as [inception_v3.json].
@@ -79,7 +79,7 @@ Warning: weights are not loaded.
 You can use following bash command to convert the network architecture [*imagenet_inceptionv3.json*] with weights [*imagenet_inceptionv3.h5*] to IR architecture file [*inception_v3.pb*], [*inception_v3.json*] and IR weights file [*inception_v3.npy*]
 
 ```bash
-$ python -m mmdnn.conversion._script.convertToIR -f keras -d inception_v3 -n imagenet_inceptionv3.json -w imagenet_inceptionv3.h5
+$ mmtoir -f keras -d inception_v3 -n imagenet_inceptionv3.json -w imagenet_inceptionv3.h5
 
 Using TensorFlow backend.
 .
@@ -96,7 +96,7 @@ IR weights are saved as [inception_v3.npy].
 Since the generated Keras model code snippet can restore weights from IR weights file directly, you don't need to convert weights in this step.You can use following bash command to convert the IR architecture file [*inception_v3.pb*] to Keras Python code file[*keras_inception_v3.py*]
 
 ```bash
-$ python -m mmdnn.conversion._script.IRToCode -f keras --IRModelPath inception_v3.pb --dstModelPath keras_inception_v3.py
+$ mmtocode -f keras --IRModelPath inception_v3.pb --dstModelPath keras_inception_v3.py
 
 Parse file [inception_v3.pb] with binary format successfully.
 Target network code snippet is saved as [keras_inception_v3.py].
