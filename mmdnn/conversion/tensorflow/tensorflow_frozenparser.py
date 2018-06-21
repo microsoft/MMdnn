@@ -119,74 +119,27 @@ class TensorflowParser2(Parser):
         output_shape_map = dict()
         input_shape_map = dict()
         with tensorflow.Graph().as_default() as g:
-            tensorflow.import_graph_def(model, name='')
-            ops = g.get_operations()
-            N = len(ops)
-            p = 0
-            for i in range(N):
+            x = tensorflow.placeholder(tensorflow.float32, shape = [None] + inputshape)
+            tensorflow.import_graph_def(model, name='', input_map={in_nodes + ':0' : x})
+            # ops = g.get_operations()
+            # N = len(ops)
+            # p = 0
+            # for i in range(N):
+                # print(ops[i].type)
+                # print(ops[i].name)
+                # print('input(s):')
+                # for x in ops[i].inputs:
+                #     print(x)
+                # print('output(s):')
+                # for x in ops[i].outputs:
+                #     print(x)
+                # print("*****"*10)
 
-                for x in ops[i].inputs:
-                    input_shape_map[x.name] = x.get_shape()
-                for x in ops[i].outputs:
-                    output_shape_map[x.name] = x.get_shape()
-
-        # for pytest
-        # print(inputshape)
-        if type(inputshape[2]) == int:
-            tensor_input = tensorflow.TensorShape([None, tensorflow.Dimension(inputshape[0]), tensorflow.Dimension(inputshape[1]), tensorflow.Dimension(inputshape[2])])
-            output_shape_map[input_node_names[0]] = tensor_input
-        else:
-            # for two input shape 3 256 256,26
-            if len(inputshape[2].split(',')) == 2:
-                param = inputshape[2].split(',')[1]
-                tensor_input_2 = tensorflow.TensorShape([tensorflow.Dimension(param)])
-                output_shape_map[input_node_names[1]] = tensor_input_2
-                tensor_input = tensorflow.TensorShape([None, tensorflow.Dimension(inputshape[0]), tensorflow.Dimension(inputshape[1]), tensorflow.Dimension(inputshape[2].split(',')[0])])
-                output_shape_map[input_node_names[0]] = tensor_input
-            else :
-                input_list = [None]
-                for i in range(len(inputshape)):
-                    input_list.append(tensorflow.Dimension(inputshape[i]))
-                # print(input_list)
-                tensor_input = tensorflow.TensorShape(input_list)
-                output_shape_map[input_node_names[0]] = tensor_input
-
+        with tensorflow.Session(graph = g) as sess:
+            meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
+            model = meta_graph_def.graph_def
 
         self.tf_graph = TensorflowGraph(model)
-        for node in self.tf_graph.model.node:
-            if (node.name + ':0') in output_shape_map and node.op != 'Placeholder':
-                node.attr['_output_shapes'].list.shape.extend([output_shape_map[node.name + ':0'].as_proto()])
-
-            if node.op == 'MirrorPad':
-                node.attr['paddings'].list.shape.extend([input_shape_map[node.name + '/paddings:0'].as_proto()])
-
-            if node.op == 'QuantizeV2':
-                node.attr['shape'].list.shape.extend([input_shape_map[node.name + ':0'].as_proto()])
-
-            if node.op == 'RequantizationRange':
-                map_key = node.name.split('eightbit')[0] + "eightbit_quantized_conv:0"
-                node.attr['shape'].list.shape.extend([input_shape_map[map_key].as_proto()])
-
-            if node.op == 'Requantize':
-                map_key = node.name.replace("requantize", "quantized_conv")+":0"
-                node.attr['shape'].list.shape.extend([input_shape_map[map_key].as_proto()])
-
-            if node.name in input_node_names:
-                if node.name in output_shape_map.keys():
-                    node.attr['shape'].list.shape.extend([output_shape_map[node.name].as_proto()])
-                    node.attr['_output_shapes'].list.shape.extend([output_shape_map[node.name].as_proto()])
-
-            # if node.op == 'Split':
-            #     print(node.name)
-            #     # print(output_shape_map[node.input[1]])
-            #     # print(dir(node))
-            #     if not node.attr['_output_shapes'].list.shape[0].dim:
-            #         node.attr['_output_shapes'].list.shape.extend([output_shape_map[node.input[1]].as_proto()])
-
-                    # print("&&&")
-                # print(type(node.attr['_output_shapes']))
-
-
         self.tf_graph.build()
 
     @staticmethod
@@ -367,7 +320,8 @@ class TensorflowParser2(Parser):
     def gen_IR(self):
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
-
+            print(current_node.name)
+            # continue
             if self._skip_node(current_node):
                 continue
 
@@ -570,10 +524,15 @@ class TensorflowParser2(Parser):
         self.set_weight(source_node.name, 'mean', mean)
 
     def rename_Placeholder(self, source_node):
-        # print(source_node.layer)
+        print(source_node.layer)
+        # assert False
+        # print(source_node.layer.attr["shape"].shape)
+        if source_node.layer.attr["shape"].shape.unknown_rank == True:
+            return
         # assert False
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
         TensorflowParser2._copy_shape(source_node, IR_node)
+        # print(IR_node)
         IR_node.attr['shape'].shape.dim[0].size = -1
         IR_node.attr['_output_shapes'].list.shape[0].dim[0].size = -1
 
@@ -596,9 +555,6 @@ class TensorflowParser2(Parser):
 
 
     def rename_Reshape(self, source_node):
-        # print(source_node.in_edges)
-        # print(source_node.out_edges)
-        # print(source_node.layer)
         IR_node = self._convert_identity_operation(source_node, end_idx = 1)
         kwargs = {'shape' : self.tensor_shape_to_list(source_node.get_attr('_output_shapes'))[0]}
         assign_IRnode_values(IR_node, kwargs)
@@ -608,16 +564,13 @@ class TensorflowParser2(Parser):
         input_node = self.src_graph.get_parent(source_node.name, [1])
 
         tensor_content = tensor_util.MakeNdarray(input_node.get_attr('value')).reshape(-1)
-        # print(tensor_content)
         kwargs = {}
         kwargs['mode'] = source_node.get_attr('mode')
         kwargs['pads'] = tensor_content.tolist()
 
         assign_IRnode_values(IR_node, kwargs)
-        # print(IR_node)
 
     def rename_Min(self, source_node):
-        # print(source_node.layer)
         IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op = 'Min')
         kwargs = {}
         input_node = self.src_graph.get_parent(source_node.name, [0])
@@ -626,7 +579,6 @@ class TensorflowParser2(Parser):
         input_node = self.src_graph.get_parent(source_node.name, [1])
         kwargs['shape_1'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
         assign_IRnode_values(IR_node, kwargs)
-        # assert False
 
 
     def rename_Max(self, source_node):
@@ -975,6 +927,10 @@ class TensorflowParser2(Parser):
 
     def rename_Identity(self, source_node):
         source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
+
+
+    def rename_BiasAdd(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, end_idx = 1, new_op = "Add")
 
 
     def rename_QuantizeV2(self, source_node):
