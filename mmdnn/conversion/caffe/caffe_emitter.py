@@ -154,7 +154,7 @@ if __name__=='__main__':
 
     def check_if_need_transpose(self, IR_node):
         parent = self.IR_graph.get_parent(IR_node.name, [0])
-        while parent.type == 'Flatten' or parent.type == 'Dropout':
+        while parent.type == 'Flatten' or parent.type == 'Dropout' or parent.type == 'Reshape':
             parent = self.IR_graph.get_parent(parent.name, [0])
         dim = len(parent.layer.attr['_output_shapes'].list.shape[0].dim)
         if dim > 2:
