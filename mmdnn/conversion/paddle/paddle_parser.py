@@ -540,3 +540,45 @@ class PaddleParser(Parser):
         # shape
         PaddleParser._copy_shape(source_node.layer, IR_node, output_shapes)
 
+
+    def rename_norm(self, source_node):
+        IR_node = self.IR_graph.node.add()
+
+        # name, op
+        PaddleParser._copy_and_reop(source_node, IR_node, "LRN")
+
+        # input edge
+        self.convert_inedge(source_node, IR_node)
+
+        # layer and spec
+        lrn_node = source_node.layer
+        lrn_spec = self.spec_dict[source_node.name]
+        spec = lrn_spec.inputs[0].norm_conf
+        channels = spec.channels
+        size = spec.size
+        alpha = spec.scale
+        beta = spec.pow
+        img_size_x = spec.img_size
+        img_size_y = spec.img_size_y if spec.HasField('img_size_y') else img_size_x
+        output_x = spec.output_x
+        output_y = spec.output_y if spec.HasField('output_y') else output_x
+
+
+        # output shape
+        output_shapes = [-1, channels, output_y, output_x]
+        self.shape_dict[source_node.name] = output_shapes
+        PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
+
+        # alpha
+        IR_node.attr["alpha"].f = alpha * size
+        # beta
+        IR_node.attr["beta"].f = beta
+        # nsize
+        IR_node.attr["size"].i = int((size+1)/2)
+
+
+        if lrn_spec.HasField('active_type') and  lrn_spec.active_type != '':
+            IR_node_act = self._defuse_activation(source_node)
+            PaddleParser._set_output_shape(source_node, IR_node_act, output_shapes)
+
+
