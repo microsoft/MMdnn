@@ -121,19 +121,6 @@ class TensorflowParser2(Parser):
         with tensorflow.Graph().as_default() as g:
             x = tensorflow.placeholder(tensorflow.float32, shape = [None] + inputshape)
             tensorflow.import_graph_def(model, name='', input_map={in_nodes + ':0' : x})
-            # ops = g.get_operations()
-            # N = len(ops)
-            # p = 0
-            # for i in range(N):
-                # print(ops[i].type)
-                # print(ops[i].name)
-                # print('input(s):')
-                # for x in ops[i].inputs:
-                #     print(x)
-                # print('output(s):')
-                # for x in ops[i].outputs:
-                #     print(x)
-                # print("*****"*10)
 
         with tensorflow.Session(graph = g) as sess:
             meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
