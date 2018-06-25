@@ -18,6 +18,40 @@ MODEL_URL = {
 }
 # pylint: enable=line-too-long
 
+def dump_v2_config(topology, save_path, binary=False):
+    import collections
+
+    from paddle.trainer_config_helpers.layers import LayerOutput
+    from paddle.v2.layer import parse_network
+    from paddle.proto import TrainerConfig_pb2
+    """ Dump the network topology to a specified file.
+    This function is only used to dump network defined by using PaddlePaddle V2
+    API.
+    :param topology: The output layers in the entire network.
+    :type topology: LayerOutput|List|Tuple
+    :param save_path: The path to save the dump network topology.
+    :type save_path: str
+    :param binary: Whether to dump the serialized network topology. The default
+                value is false.
+    :type binary: bool.
+    """
+
+    if isinstance(topology, LayerOutput):
+        topology = [topology]
+    elif isinstance(topology, collections.Sequence):
+        for out_layer in topology:
+            assert isinstance(out_layer, LayerOutput), (
+                "The type of each element in the parameter topology "
+                "should be LayerOutput.")
+    else:
+        raise RuntimeError("Error input type for parameter topology.")
+
+    model_str = parse_network(topology)
+    with open(save_path, "w") as fout:
+        if binary:
+            fout.write(model_str.SerializeToString())
+        else:
+            fout.write(str(model_str))
 
 def _main():
     parser = argparse.ArgumentParser()
@@ -33,11 +67,28 @@ def _main():
 
     args = parser.parse_args()
 
-    fn = download_file(MODEL_URL[args.network], directory=args.output_dir)
+    fn = download_file(MODEL_URL[args.network], local_fname = architecture + '.tar.gz', directory=args.output_dir)
     if not fn:
         return -1
 
     model = C.Function.load(fn)
+
+    DATA_DIM = 3 * 224 * 224  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
+    CLASS_DIM = 1001
+
+    if 'resnet' in architecture:
+        from mmdnn.conversion.examples.paddle.models import resnet
+        depth = int(architecture.strip('resnet'))
+        out = resnet.resnet_imagenet(image, class_dim=CLASS_DIM, depth=depth)
+    elif architecture == 'vgg16':
+        from mmdnn.conversion.examples.paddle.models import vgg
+        out = vgg.vgg16(image, class_dim=CLASS_DIM)
+    else:
+        print("Not support for {} yet.", architecture)
+        return None
+
+    dump_v2_config(out, path + architecture + '.bin')
+
 
     if len(model.outputs) > 1:
         for idx, output in enumerate(model.outputs):

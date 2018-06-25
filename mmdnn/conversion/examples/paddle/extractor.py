@@ -7,6 +7,8 @@ from __future__ import absolute_import
 from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.examples.extractor import base_extractor
 from mmdnn.conversion.common.utils import download_file
+import paddle.v2 as paddle
+import gzip
 
 
 class paddle_extractor(base_extractor):
@@ -17,26 +19,81 @@ class paddle_extractor(base_extractor):
 
 
     architecture_map = {
-            'resnet50'             : {'params' : BASE_MODEL_URL + 'f63f237a-698e-4a22-9782-baf5bb183019',}
-            'resnet101'            : {'params' : BASE_MODEL_URL + '3d5fb996-83d0-4745-8adc-13ee960fc55c',}
-            'vgg16'                : {'params': BASE_MODEL_URL + 'aa0e397e-474a-4cc1-bd8f-65a214039c2e',}
+            'resnet50'             : {'params' : _base_model_url + 'f63f237a-698e-4a22-9782-baf5bb183019',},
+            'resnet101'            : {'params' : _base_model_url + '3d5fb996-83d0-4745-8adc-13ee960fc55c',},
+            'vgg16'                : {'params': _base_model_url + 'aa0e397e-474a-4cc1-bd8f-65a214039c2e',},
 
     }
+
+
+
+
+    @classmethod
+    def dump_v2_config(cls, topology, save_path, binary=False):
+        import collections
+
+        from paddle.trainer_config_helpers.layers import LayerOutput
+        from paddle.v2.layer import parse_network
+        from paddle.proto import TrainerConfig_pb2
+        """ Dump the network topology to a specified file.
+        This function is only used to dump network defined by using PaddlePaddle V2
+        API.
+        :param topology: The output layers in the entire network.
+        :type topology: LayerOutput|List|Tuple
+        :param save_path: The path to save the dump network topology.
+        :type save_path: str
+        :param binary: Whether to dump the serialized network topology. The default
+                    value is false.
+        :type binary: bool.
+        """
+
+        if isinstance(topology, LayerOutput):
+            topology = [topology]
+        elif isinstance(topology, collections.Sequence):
+            for out_layer in topology:
+                assert isinstance(out_layer, LayerOutput), (
+                    "The type of each element in the parameter topology "
+                    "should be LayerOutput.")
+        else:
+            raise RuntimeError("Error input type for parameter topology.")
+
+        model_str = parse_network(topology)
+        with open(save_path, "w") as fout:
+            if binary:
+                fout.write(model_str.SerializeToString())
+            else:
+                fout.write(str(model_str))
 
 
     @classmethod
     def download(cls, architecture, path="./"):
         if cls.sanity_check(architecture):
-            architecture_file = download_file(cls.architecture_map[architecture]['symbol'], directory=path)
-            if not architecture_file:
-                return None
 
-            weight_file = download_file(cls.architecture_map[architecture]['params'], directory=path)
+            DATA_DIM = 3 * 224 * 224  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
+            CLASS_DIM = 1001
+
+            image = paddle.layer.data(
+                name="image_", type=paddle.data_type.dense_vector(DATA_DIM))
+            if 'resnet' in architecture:
+                from mmdnn.conversion.examples.paddle.models import resnet
+                depth = int(architecture.strip('resnet'))
+                out = resnet.resnet_imagenet(image, class_dim=CLASS_DIM, depth=depth)
+            elif architecture == 'vgg16':
+                from mmdnn.conversion.examples.paddle.models import vgg
+                out = vgg.vgg16(image, class_dim=CLASS_DIM)
+            else:
+                print("Not support for {} yet.", architecture)
+                return None
+            architecture_file = path + architecture + '.bin'
+            paddle_extractor.dump_v2_config(out, architecture_file, True)
+
+            weight_file = download_file(cls.architecture_map[architecture]['params'], directory=path, local_fname= architecture +'.tar.gz')
             if not weight_file:
                 return None
 
             print("MXNet Model {} saved as [{}] and [{}].".format(architecture, architecture_file, weight_file))
             return (architecture_file, weight_file)
+
 
         else:
             return None
@@ -44,26 +101,47 @@ class paddle_extractor(base_extractor):
 
     @classmethod
     def inference(cls, architecture, files, path, image_path):
-        import paddle.v2 as paddle
+
         import numpy as np
         if cls.sanity_check(architecture):
-            file_name = cls.architecture_map[architecture]['params'].split('/')[-1]
-            prefix, epoch_num = file_name[:-7].rsplit('-', 1)
+            # refer to https://github.com/PaddlePaddle/Paddle/issues/7403
+            paddle.init(use_gpu=False, trainer_count=1)
+            DATA_DIM = 3 * 224 * 224  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
+            CLASS_DIM = 1001
+            image = paddle.layer.data(
+                name="image", type=paddle.data_type.dense_vector(DATA_DIM))
 
-            sym, arg_params, aux_params = mx.model.load_checkpoint(path + prefix, int(epoch_num))
-            model = mx.mod.Module(symbol=sym)
-            model.bind(for_training=False,
-                       data_shapes=[('data', (1, 3, cls._image_size, cls._image_size))])
-            model.set_params(arg_params, aux_params, allow_missing=True, allow_extra=True)
+            if 'resnet' in architecture:
+                from mmdnn.conversion.examples.paddle.models import resnet
+                depth = int(architecture.strip('resnet'))
+                out = resnet.resnet_imagenet(image, class_dim=CLASS_DIM, depth=depth)
+            elif architecture == 'vgg16':
+                from mmdnn.conversion.examples.paddle.models import vgg
+                out = vgg.vgg16(image, class_dim=CLASS_DIM)
+            else:
+                print("Not support for {} yet.", architecture)
+                return None
+
+            _, parameters_file = files
+
+            with gzip.open(parameters_file, 'r') as f:
+                parameters = paddle.parameters.Parameters.from_tar(f)
+
 
             func = TestKit.preprocess_func['paddle'][architecture]
             img = func(image_path)
             img = np.transpose(img, [2, 0, 1])
             test_data = [(img.flatten(),)]
-            predict = paddle.infer(output_layer = out, parameters=parameters, input=test_data)
-            predict = np.squeeze(predict)
 
-            del model
+            print(parameters.keys())
+            predict = paddle.infer(output_layer = out, parameters=parameters, input=test_data)
+
+
+            predict = np.squeeze(predict)
+            print(predict)
+            assert False
+
+            # del model
             return predict
 
         else:

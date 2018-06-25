@@ -90,9 +90,11 @@ class PaddleParser(Parser):
         return self.paddle_graph
 
 
-    def __init__(self, model_network_path, model_weight_path):
+    def __init__(self, model):
         super(PaddleParser, self).__init__()
 
+        if isinstance(model, tuple):
+            model_network_path, model_weight_path = model
 
         # Build network graph
         model, parameters = self._load_model(model_network_path, model_weight_path)
