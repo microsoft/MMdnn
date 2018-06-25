@@ -54,17 +54,15 @@ class PaddleParser(Parser):
 
         Returns
         -------
-        model: A keras model
+        model: A paddle model
         """
-        DATA_DIM = 3 * 224 * 224
-        CLASS_DIM = 1001
-        image = paddle.layer.data(name="image", type=paddle.data_type.dense_vector(DATA_DIM))
-        out = resnet.resnet_imagenet(image, class_dim=CLASS_DIM)
-        loaded_model = out
+        from paddle.proto import ModelConfig_pb2
+        from mmdnn.conversion.common.IR.IR_graph import load_protobuf_from_file
 
+        loaded_model = ModelConfig_pb2.ModelConfig()
+        load_protobuf_from_file(loaded_model, 'model_network_path')
 
         if model_weight_path:
-            model_weight_path = '/Users/kit/Downloads/models/image_classification/models/Paddle_ResNet50.tar.gz'
             if os.path.isfile(model_weight_path):
                 parameters = paddle.parameters.Parameters.from_tar(gzip.open(model_weight_path, 'r'))
                 self.weight_loaded = True
@@ -80,30 +78,19 @@ class PaddleParser(Parser):
         return self.paddle_graph
 
 
-    def __init__(self, model, parameters):
+    def __init__(self, model_network_path, model_weight_path):
         super(PaddleParser, self).__init__()
 
 
         # Build network graph
-        # self.data_format = _keras.backend.image_data_format()
+        model, parameters = self._load_model(model_network_path, model_weight_path)
         self.paddle_graph = PaddleGraph(model)
         self.paddle_graph.build()
-        self.get_spec(model)
         self.parameters = parameters
-        self.weight_loaded = True
         self.shape_dict = dict()
 
 
 
-    def get_spec(self, model):
-        # credit to https://github.com/lcy-seso/paddle_example/blob/master/seq_slice_demo/test_seq_slice.py#L55
-        # Paddle Official: https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/layer.py#L263-L322
-        # Pb Definition: https://github.com/PaddlePaddle/Paddle/blob/d02a68c4472d3b85559f82c026896bf2cf563b07/proto/ModelConfig.proto
-        from paddle.v2.layer import parse_network
-        self.spec_dict = dict()
-        net_pb = parse_network(model)
-        for l in net_pb.layers:
-            self.spec_dict[l.name] = l
 
 
     def gen_IR(self):
