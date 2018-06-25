@@ -268,7 +268,6 @@ class CaffeGraph(object):
                 if node.output_shape is None:
                     node.output_shape = TensorShape(*NodeKind.compute_output_shape(node))
             os.close(tmp_handle)
-            os.remove(tmp_prototxt)
         else:
             for node in sorted_nodes:
                 node.output_shape = TensorShape(*NodeKind.compute_output_shape(node))
