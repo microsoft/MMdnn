@@ -4,6 +4,7 @@
 #----------------------------------------------------------------------------------------------
 
 import os
+import gzip
 from six import string_types as _string_types
 import paddle.v2 as paddle
 import paddle.trainer_config_helpers.layers as layers
@@ -40,6 +41,17 @@ class PaddleParser(Parser):
         'hard_sigmoid'  : 'HardSigmoid'
     }
 
+    layer_map = {
+        "data"          : "InputLayer",
+        "exconv"        : "Conv",
+        "addto"         : "Add",
+        "batch_norm"    : "BatchNormalization",
+        "pool"          : "Pooling",
+        "fc"            : "Dense",
+
+
+    }
+
 
     def _load_model(self, model_network_path, model_weight_path):
         """Load a paddle model from disk
@@ -60,7 +72,7 @@ class PaddleParser(Parser):
         from mmdnn.conversion.common.IR.IR_graph import load_protobuf_from_file
 
         loaded_model = ModelConfig_pb2.ModelConfig()
-        load_protobuf_from_file(loaded_model, 'model_network_path')
+        load_protobuf_from_file(loaded_model, model_network_path)
 
         if model_weight_path:
             if os.path.isfile(model_weight_path):
@@ -98,8 +110,9 @@ class PaddleParser(Parser):
         for layer in self.paddle_graph.topological_sort:
             current_node = self.paddle_graph.get_node(layer)
             print(current_node.name)
-            node_type = current_node.type
+            node_type = PaddleParser.layer_map[current_node.type]
             print(node_type)
+
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
@@ -149,7 +162,7 @@ class PaddleParser(Parser):
 
 
     def _defuse_activation(self, source_node):
-        src_spec = self.spec_dict[source_node.name]
+        src_spec = source_node.layer
 
         IR_node = self.IR_graph.node.add()
         IR_node.name = source_node.real_name.lstrip('_') + "_activation"
@@ -190,15 +203,14 @@ class PaddleParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
 
-    def rename_conv(self, source_node):
+    def rename_Conv(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # input edge
         self.convert_inedge(source_node, IR_node)
 
         # layer and spec
-        conv_node = source_node.layer
-        conv_spec = self.spec_dict[source_node.name]
+        conv_spec = source_node.layer
 
         spec = conv_spec.inputs[0].conv_conf
 
@@ -292,7 +304,7 @@ class PaddleParser(Parser):
             PaddleParser._set_output_shape(source_node, IR_node_act, output_shapes)
 
 
-    def rename_batch_norm(self, source_node):
+    def rename_BatchNormalization(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -302,8 +314,7 @@ class PaddleParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # layer and spec
-        bn_node = source_node.layer
-        bn_spec = self.spec_dict[source_node.name]
+        bn_spec = source_node.layer
 
 
         IR_node.attr['scale'].b = True
@@ -358,7 +369,7 @@ class PaddleParser(Parser):
 
 
 
-    def rename_pool(self, source_node):
+    def rename_Pooling(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -368,8 +379,7 @@ class PaddleParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # layer and spec
-        pool_node = source_node.layer
-        pool_spec = self.spec_dict[source_node.name]
+        pool_spec = source_node.layer
         spec = pool_spec.inputs[0].pool_conf
 
 
@@ -437,7 +447,7 @@ class PaddleParser(Parser):
             PaddleParser._set_output_shape(source_node, IR_node_act, output_shapes)
 
 
-    def rename_fc(self, source_node):
+    def rename_Dense(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -447,8 +457,7 @@ class PaddleParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # layer and spec
-        fc_node = source_node.layer
-        fc_spec = self.spec_dict[source_node.name]
+        fc_spec = source_node.layer
 
 
         # units
@@ -504,14 +513,14 @@ class PaddleParser(Parser):
 
 
 
-    def rename_addto(self, source_node):
-        add_spec = self.spec_dict[source_node.name]
+    def rename_Add(self, source_node):
+        add_spec = source_node.layer
         self._convert_merge(source_node, 'Add')
         if add_spec.HasField('active_type') and  add_spec.active_type != '':
             self._defuse_activation(source_node)
 
 
-    def rename_data(self, source_node):
+    def rename_InputLayer(self, source_node):
         # need the shape TODO
 
         # only for training
