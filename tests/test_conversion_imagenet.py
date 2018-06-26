@@ -810,7 +810,9 @@ class TestModels(CorrectnessTest):
             },
 
             'paddle'  : {
+                'resnet50'     : [CaffeEmit], #crash due to gflags_reporting.cc
                 'vgg16'        : [TensorflowEmit],      # First 1000 exactly the same, the last one is different
+
             },
 
             'pytorch' : {
@@ -896,8 +898,9 @@ class TestModels(CorrectnessTest):
             },
 
             'paddle' : {
-                # 'resnet50': [PytorchEmit],
-                'vgg16': [TensorflowEmit],
+                'resnet50': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash
+                'resnet101': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash
+                # 'vgg16': [TensorflowEmit],
                 # 'alexnet': [TensorflowEmit]
             },
 
@@ -1009,7 +1012,6 @@ class TestModels(CorrectnessTest):
         self._test_function('darknet', self.DarknetParse)
 
     def test_paddle(self):
-        import tensorflow as tf
         self._test_function('paddle', self.PaddleParse)
 
 
