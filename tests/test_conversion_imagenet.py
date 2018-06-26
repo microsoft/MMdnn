@@ -1012,6 +1012,8 @@ class TestModels(CorrectnessTest):
         self._test_function('darknet', self.DarknetParse)
 
     def test_paddle(self):
+        # omit tensorflow lead to crash
+        import tensorflow as tf
         self._test_function('paddle', self.PaddleParse)
 
 
