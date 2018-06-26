@@ -18,14 +18,35 @@ We tested the [paddle model zoo pre-trained models](https://github.com/PaddlePad
 **space** - not tested
 
 
-## build the graph
 
-We use the parent information of the node to build the graph. The [code](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/paddle/paddle_graph.py#L52-L62) here builds the build layerwise.
+## Dump the protobuf of the network
 
-## build the parser
+In order to be user-friendly, the paddle parser used `**.bin` for the conversion. 
 
-Since the paddlepaddle node only contains the frontend to the user. The backend information can be got from the [`parse_network`](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/paddle/paddle_parser.py#L97-L105). The `self.spec_dict` is the dict, whose key is the name of the node. This will show the information spec of neural layer.
+One might follow this to dump his/her network.
+```python
+from paddle.utils.dump_v2_config import dump_v2_config
+from mnist_v2 import network
 
+predict = network(is_infer=True)
+dump_v2_config(predict, "trainer_config.bin", True)
+```
+
+`***.bin` is actually the protobuf of the network, which contains the structure of network and layer information in the network. 
+
+The current method treat the network protobuf and parameters differently. That means the user has to give the path of their network (`**.bin`) and the parameters (`**.tar.gz`).
+
+Another approach is combine the network and parameters in one file. This is made possible by [`merge_v2_model`](http://www.paddlepaddle.org/docs/develop/documentation/zh/howto/capi/workflow_of_capi_cn.html).
+
+### Build the graph
+
+The Protobuf information in the `**.bin` is used to build the graph. 
+
+### Build the parser
+The information spec of neural layer is also contained in the `**.bin`. It is extracted to set the parameters for each layer and the weights can be obtained from  `**.tar.gz`. 
+
+
+## Tips or trouble-shooting
 Since the shape in Paddlepaddle is always one dim, we need to infer the shape of every layer. In fact, the data is channel-first, and flatten to one dim. The inference is done by brute force. Say, for the layer of conv, we get the channel, width and height, and then concatenate them into a list.
 
 Currently, the main pillars for the neural network are contained in the paddlepaddle parser.
@@ -33,6 +54,10 @@ Currently, the main pillars for the neural network are contained in the paddlepa
 Some tips for the future contributor on `padding defuse`.
 - The conv padding is now parsed using the explicit way instead of 'SAME' or 'VALID'. For paddle2tf example, a conv with 7x7 kernel, stride by 2 and (3, 3) padding from 224x224 to 112x112 , if converted using 'SAME' padding, then the conv in tensorflow will using the `BOTTOM_RIGHT_HEAVY` mode with (2, 3) padding. That will lead to a big difference.
 - The pool padding is using both explicit way and inexplicit way. For example, when converting paddle to tensorflow, a pool with kernel of 3x3, stride by 2 and (0,0) padding from 112x112 to 56x56, if converted using padding (0, 0) padding, the output of this pool will give the shape of 55x55. In this way, using the 'SAME' padding can solve the problem. Therefore, we use some special cases in the parser to solve this problem at least partially.
+- [`reset_parser()`](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/tests/test_rnn_layer.py#L35) is used at the beginning to get rid of existing layers.
+- [`paddle.init(use_gpu=False, trainer_count=1)`](https://github.com/PaddlePaddle/Paddle/issues/3533) is used to get rid of the crash.
+- `class_dim` is set to be `1000` or `1001`. That is the label of imagenet classification. For the vgg16 conversion from paddlepaddle to tensorflow, the class_dim is chosen to be `1001`. The error reaches to `1e-5`. However, inferring from the last `fullyconnected` layer's dim, the last layer's dim should be `1000`. But when the class_dim is set to be `1000`, the error is bigger. The question is that if the `fc` layer's units does not match the size of weight `w`, the framework (like `pytorch`) does not work, though tensorflow works. 
+
 
 ## Things needed
 - the api for the paddle is needed for the pytest or conversion
