@@ -48,6 +48,7 @@ class PaddleParser(Parser):
         "batch_norm"    : "BatchNormalization",
         "pool"          : "Pooling",
         "fc"            : "Dense",
+        "norm"          : "LRN",
 
 
     }
@@ -111,10 +112,7 @@ class PaddleParser(Parser):
 
         for layer in self.paddle_graph.topological_sort:
             current_node = self.paddle_graph.get_node(layer)
-            print(current_node.name)
             node_type = PaddleParser.layer_map[current_node.type]
-            print(node_type)
-
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
@@ -486,8 +484,6 @@ class PaddleParser(Parser):
         # weight: N x M -> C x H x W x M -> H x W x C x M -> N x M
         if self.weight_loaded:
             parent = self.src_graph.get_parent(source_node.name, [0])
-            # while parent.type == 'onnx::Flatten' or parent.type == 'onnx::Dropout':
-            #     parent = self.src_graph.get_parent(parent.name, [0])
             if len(self.shape_dict[parent.name]) == 4:
                 #
                 original_shape = w.shape
@@ -539,7 +535,7 @@ class PaddleParser(Parser):
         PaddleParser._copy_shape(source_node.layer, IR_node, output_shapes)
 
 
-    def rename_norm(self, source_node):
+    def rename_LRN(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -549,8 +545,7 @@ class PaddleParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # layer and spec
-        lrn_node = source_node.layer
-        lrn_spec = self.spec_dict[source_node.name]
+        lrn_spec = source_node.layer
         spec = lrn_spec.inputs[0].norm_conf
         channels = spec.channels
         size = spec.size

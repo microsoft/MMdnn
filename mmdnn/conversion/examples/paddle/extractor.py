@@ -9,6 +9,8 @@ from mmdnn.conversion.examples.extractor import base_extractor
 from mmdnn.conversion.common.utils import download_file
 import paddle.v2 as paddle
 import gzip
+from paddle.trainer_config_helpers.config_parser_utils import \
+    reset_parser
 
 
 class paddle_extractor(base_extractor):
@@ -68,8 +70,10 @@ class paddle_extractor(base_extractor):
     @classmethod
     def download(cls, architecture, path="./"):
         if cls.sanity_check(architecture):
+            reset_parser()
 
-            DATA_DIM = 3 * 224 * 224  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
+
+            DATA_DIM = 3 * paddle_extractor._image_size * paddle_extractor._image_size  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
             CLASS_DIM = 1001
 
             image = paddle.layer.data(
@@ -104,9 +108,13 @@ class paddle_extractor(base_extractor):
 
         import numpy as np
         if cls.sanity_check(architecture):
+            # refer to https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/tests/test_rnn_layer.py#L35
+            reset_parser()
+
             # refer to https://github.com/PaddlePaddle/Paddle/issues/7403
             paddle.init(use_gpu=False, trainer_count=1)
-            DATA_DIM = 3 * 224 * 224  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
+
+            DATA_DIM = 3 * paddle_extractor._image_size * paddle_extractor._image_size  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
             CLASS_DIM = 1001
             image = paddle.layer.data(
                 name="image", type=paddle.data_type.dense_vector(DATA_DIM))
@@ -124,6 +132,7 @@ class paddle_extractor(base_extractor):
 
             _, parameters_file = files
 
+
             with gzip.open(parameters_file, 'r') as f:
                 parameters = paddle.parameters.Parameters.from_tar(f)
 
@@ -133,16 +142,11 @@ class paddle_extractor(base_extractor):
             img = np.transpose(img, [2, 0, 1])
             test_data = [(img.flatten(),)]
 
-            print(parameters.keys())
             predict = paddle.infer(output_layer = out, parameters=parameters, input=test_data)
-
-
             predict = np.squeeze(predict)
-            print(predict)
-            assert False
 
-            # del model
             return predict
+
 
         else:
             return None
