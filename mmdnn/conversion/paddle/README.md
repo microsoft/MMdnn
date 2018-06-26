@@ -63,6 +63,7 @@ Other tricks involved:
 - [`reset_parser()`](https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/tests/test_rnn_layer.py#L35) is used at the beginning to get rid of existing layers.
 - [`paddle.init(use_gpu=False, trainer_count=1)`](https://github.com/PaddlePaddle/Paddle/issues/3533) is used to get rid of the crash.
 - `class_dim` is set to be `1000` or `1001`. That is the label of imagenet classification. For the vgg16 conversion from paddlepaddle to tensorflow, the class_dim is chosen to be `1001`. The error reaches to `1e-5`. However, inferring from the last `fullyconnected` layer's dim, the last layer's dim should be `1000`. But when the class_dim is set to be `1000`, the error is bigger. The question is that if the `fc` layer's units does not match the size of weight `w`, the framework (like `pytorch`) does not work, though tensorflow works. 
+- `import tensorflow as tf` in the middle might lead to `floating point exception`.
 
 
 ## Things needed
