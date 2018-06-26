@@ -6,9 +6,10 @@ We tested the [paddle model zoo pre-trained models](https://github.com/PaddlePad
 
 |    Models    | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | TensorFlow | ONNX |
 | :----------: | :---: | :----: | :--: | :---: | :---: | :-----: | :--------: | :--: |
-|     Alexnet  |   √   |    √   |   √  |   √   |   √   |    √    |      √     |   √  |
-|     Vgg19    |   √   |    √   |   √  |   √   |   √   |    √    |      √     |   √  |
-|     ResNet   |   √   |    √   |   √  |   √   |   √   |    √    |      √     |   √  |
+|     Alexnet  |       |    √   |   √  |   √   |   √   |    √    |      √     |   √  |
+|     Vgg16    |       |    √   |   √  |   √   |   √   |    √    |      √     |   √  |
+|     ResNet50 |       |    √   |   √  |   √   |   √   |    √    |      √     |   √  |
+|    ResNet101 |       |    √   |   √  |   √   |   √   |    √    |      √     |   √  |
 
 
 **√** - Correctness tested
@@ -34,24 +35,27 @@ dump_v2_config(predict, "trainer_config.bin", True)
 
 `***.bin` is actually the protobuf of the network, which contains the structure of network and layer information in the network. 
 
-The current method treat the network protobuf and parameters differently. That means the user has to give the path of their network (`**.bin`) and the parameters (`**.tar.gz`).
+The current method treats the network protobuf and parameters differently. That means the user has to give the path of his or her network (`**.bin`) and the parameters (`**.tar.gz`).
 
-Another approach is combine the network and parameters in one file. This is made possible by [`merge_v2_model`](http://www.paddlepaddle.org/docs/develop/documentation/zh/howto/capi/workflow_of_capi_cn.html).
+Another approach is to combine the network and parameters in one file. This is made possible by [`merge_v2_model`](http://www.paddlepaddle.org/docs/develop/documentation/zh/howto/capi/workflow_of_capi_cn.html).
 
 ### Build the graph
 
-The Protobuf information in the `**.bin` is used to build the graph. 
+The protobuf information in the `**.bin` is used to build the graph. 
 
 ### Build the parser
-The information spec of neural layer is also contained in the `**.bin`. It is extracted to set the parameters for each layer and the weights can be obtained from  `**.tar.gz`. 
+The information spec of neural layer is also contained in the `**.bin`. It is extracted to set the parameters for each layer. The weights for such layers like `conv`, `fc` or `bn` can be obtained from  `**.tar.gz`. 
 
 
 ## Tips or trouble-shooting
-Since the shape in Paddlepaddle is always one dim, we need to infer the shape of every layer. In fact, the data is channel-first, and flatten to one dim. The inference is done by brute force. Say, for the layer of conv, we get the channel, width and height, and then concatenate them into a list.
-
 Currently, the main pillars for the neural network are contained in the paddlepaddle parser.
 
-Some tips for the future contributor on `padding defuse`.
+Some tips for the shape inference in paddle parser:
+
+- Since the shape in Paddlepaddle is always one dim, we need to infer the shape of every layer. In fact, the data is channel-first, and flatten to one dim. The inference is done by brute force. Say, for the layer of conv, we get the channel, width and height, and then concatenate them into a list.
+
+
+Some tips for the future contributor on `padding defuse`:
 - The conv padding is now parsed using the explicit way instead of 'SAME' or 'VALID'. For paddle2tf example, a conv with 7x7 kernel, stride by 2 and (3, 3) padding from 224x224 to 112x112 , if converted using 'SAME' padding, then the conv in tensorflow will using the `BOTTOM_RIGHT_HEAVY` mode with (2, 3) padding. That will lead to a big difference.
 - The pool padding is using both explicit way and inexplicit way. For example, when converting paddle to tensorflow, a pool with kernel of 3x3, stride by 2 and (0,0) padding from 112x112 to 56x56, if converted using padding (0, 0) padding, the output of this pool will give the shape of 55x55. In this way, using the 'SAME' padding can solve the problem. Therefore, we use some special cases in the parser to solve this problem at least partially.
 
@@ -62,11 +66,11 @@ Other tricks involved:
 
 
 ## Things needed
-- the api for the paddle is needed for the pytest or conversion
+- ~~the api for the paddle is needed for the pytest or conversion~~
 - The emit of paddle is yet to be implemented.
 
 ## Things yet to check
-I find it puzzled between `img_x == width, img_y == height` and `img_y == width, img_x == height`. It might not arouse error because usually the width is equal to the height.
+I find it puzzled between `img_x == width, img_y == height` and `img_y == width, img_x == height`. It might not arouse error currently because usually the width is equal to the height.
 
 ## Usage
 
@@ -87,7 +91,7 @@ The installation of paddle can be tricky at first. One has to change the `libpyt
 
 ## Limitation
 
-- Currently no RNN related operations support.
+- Currently, no RNN related operations support.
 
 ## Link
 - [fuild-onnx](https://github.com/PaddlePaddle/paddle-onnx)
