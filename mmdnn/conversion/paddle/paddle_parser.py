@@ -232,7 +232,7 @@ class PaddleParser(Parser):
 
 
         # output shape
-        output_shapes = [-1, outputchannel, output_y, output_x]
+        output_shapes = [-1, output_y, output_x, outputchannel]
         self.shape_dict[source_node.name] = output_shapes
         PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
 
@@ -317,6 +317,19 @@ class PaddleParser(Parser):
         bn_spec = source_node.layer
 
 
+
+        # output shape
+        if  bn_spec.inputs[0].HasField("image_conf"):
+            img_conf = bn_spec.inputs[0].image_conf
+            output_x = img_conf.img_size
+            output_y = img_conf.img_size_y if img_conf.HasField('img_size_y') else output_x
+            outputchannel = img_conf.channels
+
+            output_shapes = [-1, output_y, output_x, outputchannel]
+            self.shape_dict[source_node.name] = output_shapes
+            PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
+
+
         IR_node.attr['scale'].b = True
         IR_node.attr['bias'].b = bn_spec.HasField('bias_parameter_name')
 
@@ -350,6 +363,14 @@ class PaddleParser(Parser):
         mean = mean.astype(np.float32)
         variance = variance.astype(np.float32)
 
+        # flatten
+        gamma1 = gamma1.flatten()
+        beta1 = beta1.flatten()
+        mean = mean.flatten()
+        variance = variance.flatten()
+
+
+
         if IR_node.attr['scale'].b:
             self.set_weight(IR_node.name, "scale", gamma1)
 
@@ -365,7 +386,9 @@ class PaddleParser(Parser):
         # defuse the activation layer
 
         if bn_spec.HasField('active_type') and  bn_spec.active_type != '':
-            self._defuse_activation(source_node)
+            IR_node_act = self._defuse_activation(source_node)
+            if  bn_spec.inputs[0].HasField("image_conf"):
+                PaddleParser._set_output_shape(source_node, IR_node_act, output_shapes)
 
 
 
@@ -410,7 +433,7 @@ class PaddleParser(Parser):
 
 
         # output shape
-        output_shapes = [-1, channel, output_y, output_x]
+        output_shapes = [-1, output_y, output_x, channel]
         self.shape_dict[source_node.name] = output_shapes
         PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
 
@@ -478,7 +501,7 @@ class PaddleParser(Parser):
 
         w = self.parameters.get(w_name)
 
-        bias = self.parameters.get(bias_name)
+        bias = self.parameters.get(bias_name).flatten()
 
         # Kit weight tranpose
         # weight: N x M -> C x H x W x M -> H x W x C x M -> N x M
@@ -497,6 +520,8 @@ class PaddleParser(Parser):
             w = w * fc_spec.drop_rate
             if IR_node.attr['use_bias'].b:
                 bias = bias * fc_spec.drop_rate
+
+
         # weights
         self.set_weight(IR_node.name, 'weights', w)
         if IR_node.attr['use_bias'].b:
@@ -558,7 +583,7 @@ class PaddleParser(Parser):
 
 
         # output shape
-        output_shapes = [-1, channels, output_y, output_x]
+        output_shapes = [-1, output_y, output_x, channels]
         self.shape_dict[source_node.name] = output_shapes
         PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
 

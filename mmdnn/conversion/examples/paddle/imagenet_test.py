@@ -9,6 +9,9 @@ import sys
 import os
 from mmdnn.conversion.examples.imagenet_test import TestKit
 import paddle.v2 as paddle
+import gzip
+from paddle.trainer_config_helpers.config_parser_utils import \
+    reset_parser
 
 
 class TestPaddle(TestKit):
@@ -39,11 +42,16 @@ class TestPaddle(TestKit):
             default=224, help='Paddle Input Image Size')
 
 
+
+
         self.args = parser.parse_args()
 
         print("Loading model [{}].".format(self.args.model))
 
-        self.model = coremltools.models.MLModel(self.args.model.encode())
+        # import self.model
+        # self.model
+
+        # how the model can not load from `***.bin`
 
         print("Model loading success.")
 
@@ -53,24 +61,30 @@ class TestPaddle(TestKit):
         img = img.resize((self.args.size, self.args.size))
         self.data = img
 
-    # def print_result(self):
-    #     coreml_inputs = {self.args.input: self.data}
-    #     self.coreml_output = self.model.predict(coreml_inputs, useCPUOnly=False)
-    #     predict = self.coreml_output[self.args.output]
-    #     super(TestPaddle, self).print_result(predict)
+    def print_result(self):
+        reset_parser()
+        img = np.transpose(self.data, (2, 0, 1))
+        test_data = [(img.flatten(),)]
+
+        parameters_file = self.args.w
+        with gzip.open(parameters_file, 'r') as f:
+            parameters = paddle.parameters.Parameters.from_tar(f)
 
 
-    # def print_intermediate_result(self, layer_name, if_transpose = False):
-    #     super(TestPaddle, self).print_intermediate_result(self.coreml_output[layer_name], if_transpose)
+        predict = paddle.infer(output_layer = self.model, parameters=parameters, input=test_data)
+        predict = np.squeeze(predict)
+
+        super(TestPaddle, self).print_result(predict)
+
+
+    def print_intermediate_result(self, layer_name, if_transpose = False):
+        super(TestPaddle, self).print_intermediate_result(self.model.name, if_transpose)
 
 
     def inference(self, image_path):
         self.preprocess(image_path)
-
         self.print_result()
 
-
-        # self.test_truth()
 
 if __name__=='__main__':
     tester = TestPaddle()

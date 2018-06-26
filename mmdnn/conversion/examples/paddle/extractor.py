@@ -27,6 +27,13 @@ class paddle_extractor(base_extractor):
 
     }
 
+    class_dim_map = {
+            'resnet50'             : 1000,
+            'resnet101'            : 1000,
+            'vgg16'                : 1001, # work at 1001, but fail at 1000
+            'alexnet'              : 1001,
+    }
+
 
 
 
@@ -74,10 +81,10 @@ class paddle_extractor(base_extractor):
 
 
             DATA_DIM = 3 * paddle_extractor._image_size * paddle_extractor._image_size  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
-            CLASS_DIM = 1001
+            CLASS_DIM = paddle_extractor.class_dim_map[architecture]
 
             image = paddle.layer.data(
-                name="image_", type=paddle.data_type.dense_vector(DATA_DIM))
+                name="image", type=paddle.data_type.dense_vector(DATA_DIM))
             if 'resnet' in architecture:
                 from mmdnn.conversion.examples.paddle.models import resnet
                 depth = int(architecture.strip('resnet'))
@@ -115,7 +122,7 @@ class paddle_extractor(base_extractor):
             paddle.init(use_gpu=False, trainer_count=1)
 
             DATA_DIM = 3 * paddle_extractor._image_size * paddle_extractor._image_size  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
-            CLASS_DIM = 1001
+            CLASS_DIM = paddle_extractor.class_dim_map[architecture]
             image = paddle.layer.data(
                 name="image", type=paddle.data_type.dense_vector(DATA_DIM))
 

@@ -6,8 +6,11 @@
 import argparse
 import os
 from six import text_type as _text_type
-import paddle.v2 as paddle
 from mmdnn.conversion.common.utils import download_file
+import paddle.v2 as paddle
+import gzip
+from paddle.trainer_config_helpers.config_parser_utils import \
+    reset_parser
 
 BASE_MODEL_URL = 'http://cloud.dlnel.org/filepub/?uuid='
 # pylint: disable=line-too-long
@@ -17,6 +20,13 @@ MODEL_URL = {
     'vgg16'                : BASE_MODEL_URL + 'aa0e397e-474a-4cc1-bd8f-65a214039c2e',
 }
 # pylint: enable=line-too-long
+IMG_SIZE = 224
+CLASS_DIMS = {
+        'resnet50'             : 1000,
+        'resnet101'            : 1000,
+        'vgg16'                : 1001, # work at 1001, but fail at 1000
+        'alexnet'              : 1001,
+}
 
 def dump_v2_config(topology, save_path, binary=False):
     import collections
@@ -71,11 +81,18 @@ def _main():
     if not fn:
         return -1
 
-    model = C.Function.load(fn)
 
-    DATA_DIM = 3 * 224 * 224  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
-    CLASS_DIM = 1001
+    DATA_DIM = 3 * IMG_SIZE * IMG_SIZE  # Use 3 * 331 * 331 or 3 * 299 * 299 for Inception-ResNet-v2.
+    CLASS_DIM = CLASS_DIMS[args.network]
 
+    # refer to https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/tests/test_rnn_layer.py#L35
+    reset_parser()
+
+    # refer to https://github.com/PaddlePaddle/Paddle/issues/7403
+    paddle.init(use_gpu=False, trainer_count=1)
+
+    image = paddle.layer.data(
+        name="image", type=paddle.data_type.dense_vector(DATA_DIM))
     if 'resnet' in architecture:
         from mmdnn.conversion.examples.paddle.models import resnet
         depth = int(architecture.strip('resnet'))
@@ -87,27 +104,23 @@ def _main():
         print("Not support for {} yet.", architecture)
         return None
 
-    dump_v2_config(out, path + architecture + '.bin')
+    dump_v2_config(out, args.output_dir + architecture + '.bin')
 
 
-    if len(model.outputs) > 1:
-        for idx, output in enumerate(model.outputs):
-            if len(output.shape) > 0:
-                eval_node = idx
-                break
-
-        model = C.as_composite(model[eval_node].owner)
-        model.save(fn)
-
-        print("Model {} is saved as {}.".format(args.network, fn))
+    print("Model {} is saved as {} and {}.".format(args.network,  args.output_dir + architecture + '.bin', fn))
 
     if args.image:
+
         import numpy as np
         from mmdnn.conversion.examples.imagenet_test import TestKit
         func = TestKit.preprocess_func['paddle'][args.network]
         img = func(args.image)
         img = np.transpose(img, (2, 0, 1))
         test_data = [(img.flatten(),)]
+
+        with gzip.open(parameters_file, 'r') as f:
+            parameters = paddle.parameters.Parameters.from_tar(f)
+
         predict = paddle.infer(output_layer = out, parameters=parameters, input=test_data)
         predict = np.squeeze(predict)
         top_indices = predict.argsort()[-5:][::-1]
