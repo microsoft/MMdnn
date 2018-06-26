@@ -140,11 +140,10 @@ def KitModel(weight_file = None):
     def _emit_merge(self, IR_node, func):
         inputs = ', '.join('%s' % self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
         axis = ' axis = {},'.format(IR_node.get_attr('axis')) if 'axis' in IR_node.layer.attr else ""
-        self.add_body(1, "{:<15} = layers.{}(name = '{}',{} inputs = [{}])".format(
+        self.add_body(1, "{:<15} = layers.{}(name = '{}', inputs = [{}])".format(
             IR_node.variable_name,
             func,
             IR_node.name,
-            axis,
             inputs))
 
 

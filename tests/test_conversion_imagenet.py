@@ -268,6 +268,26 @@ class TestModels(CorrectnessTest):
         del CoremlParser
         return original_predict
 
+    @staticmethod
+    def PaddleParse(architecture_name, image_path):
+        from mmdnn.conversion.examples.paddle.extractor import paddle_extractor
+        from mmdnn.conversion.paddle.paddle_parser import PaddleParser
+
+        # download model
+        model_filename = paddle_extractor.download(architecture_name, TestModels.cachedir)
+
+        # get original model prediction result
+        original_predict = paddle_extractor.inference(architecture_name, model_filename, TestModels.cachedir, image_path)
+        del paddle_extractor
+
+        # original to IR
+        IR_file = TestModels.tmpdir + 'paddle_' + architecture_name + "_converted"
+
+        parser = PaddleParser(model_filename)
+        parser.run(IR_file)
+        del parser
+        del PaddleParser
+        return original_predict
 
     @staticmethod
     def PytorchParse(architecture_name, image_path):
@@ -360,7 +380,6 @@ class TestModels(CorrectnessTest):
     def TensorflowEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         import tensorflow as tf
         from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
-
         # IR to code
         converted_file = original_framework + '_tensorflow_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
@@ -379,6 +398,7 @@ class TestModels(CorrectnessTest):
         func = TestKit.preprocess_func[original_framework][architecture_name]
         img = func(image_path)
         input_data = np.expand_dims(img, 0)
+
         with tf.Session() as sess:
             init = tf.global_variables_initializer()
             sess.run(init)
@@ -789,8 +809,16 @@ class TestModels(CorrectnessTest):
             'darknet' : {
             },
 
+            'paddle'  : {
+                'resnet50'     : [CaffeEmit], #crash due to gflags_reporting.cc
+                'vgg16'        : [TensorflowEmit],      # First 1000 exactly the same, the last one is different
+
+            },
+
             'pytorch' : {
-            }
+            },
+
+
         }
 
     else:
@@ -869,6 +897,13 @@ class TestModels(CorrectnessTest):
                 'yolov3': [KerasEmit],
             },
 
+            'paddle' : {
+                'resnet50': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash
+                'resnet101': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash
+                # 'vgg16': [TensorflowEmit],
+                # 'alexnet': [TensorflowEmit]
+            },
+
             'pytorch' : {
                 'alexnet'     : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'densenet201' : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
@@ -918,7 +953,6 @@ class TestModels(CorrectnessTest):
                     IR_file + ".pb",
                     IR_file + ".npy",
                     self.image_path)
-
                 self._compare_outputs(
                     original_framework,
                     target_framework,
@@ -976,6 +1010,11 @@ class TestModels(CorrectnessTest):
 
     def test_darknet(self):
         self._test_function('darknet', self.DarknetParse)
+
+    def test_paddle(self):
+        # omit tensorflow lead to crash
+        import tensorflow as tf
+        self._test_function('paddle', self.PaddleParse)
 
 
     def test_pytorch(self):

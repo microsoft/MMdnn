@@ -4,6 +4,7 @@
 #----------------------------------------------------------------------------------------------
 
 import os
+import gzip
 from six import string_types as _string_types
 import paddle.v2 as paddle
 import paddle.trainer_config_helpers.layers as layers
@@ -40,6 +41,18 @@ class PaddleParser(Parser):
         'hard_sigmoid'  : 'HardSigmoid'
     }
 
+    layer_map = {
+        "data"          : "InputLayer",
+        "exconv"        : "Conv",
+        "addto"         : "Add",
+        "batch_norm"    : "BatchNormalization",
+        "pool"          : "Pooling",
+        "fc"            : "Dense",
+        "norm"          : "LRN",
+
+
+    }
+
 
     def _load_model(self, model_network_path, model_weight_path):
         """Load a paddle model from disk
@@ -54,17 +67,15 @@ class PaddleParser(Parser):
 
         Returns
         -------
-        model: A keras model
+        model: A paddle model
         """
-        DATA_DIM = 3 * 224 * 224
-        CLASS_DIM = 1001
-        image = paddle.layer.data(name="image", type=paddle.data_type.dense_vector(DATA_DIM))
-        out = resnet.resnet_imagenet(image, class_dim=CLASS_DIM)
-        loaded_model = out
+        from paddle.proto import ModelConfig_pb2
+        from mmdnn.conversion.common.IR.IR_graph import load_protobuf_from_file
 
+        loaded_model = ModelConfig_pb2.ModelConfig()
+        load_protobuf_from_file(loaded_model, model_network_path)
 
         if model_weight_path:
-            model_weight_path = '/Users/kit/Downloads/models/image_classification/models/Paddle_ResNet50.tar.gz'
             if os.path.isfile(model_weight_path):
                 parameters = paddle.parameters.Parameters.from_tar(gzip.open(model_weight_path, 'r'))
                 self.weight_loaded = True
@@ -80,39 +91,28 @@ class PaddleParser(Parser):
         return self.paddle_graph
 
 
-    def __init__(self, model, parameters):
+    def __init__(self, model):
         super(PaddleParser, self).__init__()
 
+        if isinstance(model, tuple):
+            model_network_path, model_weight_path = model
 
         # Build network graph
-        # self.data_format = _keras.backend.image_data_format()
+        model, parameters = self._load_model(model_network_path, model_weight_path)
         self.paddle_graph = PaddleGraph(model)
         self.paddle_graph.build()
-        self.get_spec(model)
         self.parameters = parameters
-        self.weight_loaded = True
         self.shape_dict = dict()
 
 
 
-    def get_spec(self, model):
-        # credit to https://github.com/lcy-seso/paddle_example/blob/master/seq_slice_demo/test_seq_slice.py#L55
-        # Paddle Official: https://github.com/PaddlePaddle/Paddle/blob/develop/python/paddle/v2/layer.py#L263-L322
-        # Pb Definition: https://github.com/PaddlePaddle/Paddle/blob/d02a68c4472d3b85559f82c026896bf2cf563b07/proto/ModelConfig.proto
-        from paddle.v2.layer import parse_network
-        self.spec_dict = dict()
-        net_pb = parse_network(model)
-        for l in net_pb.layers:
-            self.spec_dict[l.name] = l
 
 
     def gen_IR(self):
 
         for layer in self.paddle_graph.topological_sort:
             current_node = self.paddle_graph.get_node(layer)
-            print(current_node.name)
-            node_type = current_node.type
-            print(node_type)
+            node_type = PaddleParser.layer_map[current_node.type]
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
@@ -162,7 +162,7 @@ class PaddleParser(Parser):
 
 
     def _defuse_activation(self, source_node):
-        src_spec = self.spec_dict[source_node.name]
+        src_spec = source_node.layer
 
         IR_node = self.IR_graph.node.add()
         IR_node.name = source_node.real_name.lstrip('_') + "_activation"
@@ -203,15 +203,14 @@ class PaddleParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
 
-    def rename_conv(self, source_node):
+    def rename_Conv(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # input edge
         self.convert_inedge(source_node, IR_node)
 
         # layer and spec
-        conv_node = source_node.layer
-        conv_spec = self.spec_dict[source_node.name]
+        conv_spec = source_node.layer
 
         spec = conv_spec.inputs[0].conv_conf
 
@@ -233,7 +232,7 @@ class PaddleParser(Parser):
 
 
         # output shape
-        output_shapes = [-1, outputchannel, output_y, output_x]
+        output_shapes = [-1, output_y, output_x, outputchannel]
         self.shape_dict[source_node.name] = output_shapes
         PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
 
@@ -305,7 +304,7 @@ class PaddleParser(Parser):
             PaddleParser._set_output_shape(source_node, IR_node_act, output_shapes)
 
 
-    def rename_batch_norm(self, source_node):
+    def rename_BatchNormalization(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -315,8 +314,20 @@ class PaddleParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # layer and spec
-        bn_node = source_node.layer
-        bn_spec = self.spec_dict[source_node.name]
+        bn_spec = source_node.layer
+
+
+
+        # output shape
+        if  bn_spec.inputs[0].HasField("image_conf"):
+            img_conf = bn_spec.inputs[0].image_conf
+            output_x = img_conf.img_size
+            output_y = img_conf.img_size_y if img_conf.HasField('img_size_y') else output_x
+            outputchannel = img_conf.channels
+
+            output_shapes = [-1, output_y, output_x, outputchannel]
+            self.shape_dict[source_node.name] = output_shapes
+            PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
 
 
         IR_node.attr['scale'].b = True
@@ -352,6 +363,14 @@ class PaddleParser(Parser):
         mean = mean.astype(np.float32)
         variance = variance.astype(np.float32)
 
+        # flatten
+        gamma1 = gamma1.flatten()
+        beta1 = beta1.flatten()
+        mean = mean.flatten()
+        variance = variance.flatten()
+
+
+
         if IR_node.attr['scale'].b:
             self.set_weight(IR_node.name, "scale", gamma1)
 
@@ -367,11 +386,13 @@ class PaddleParser(Parser):
         # defuse the activation layer
 
         if bn_spec.HasField('active_type') and  bn_spec.active_type != '':
-            self._defuse_activation(source_node)
+            IR_node_act = self._defuse_activation(source_node)
+            if  bn_spec.inputs[0].HasField("image_conf"):
+                PaddleParser._set_output_shape(source_node, IR_node_act, output_shapes)
 
 
 
-    def rename_pool(self, source_node):
+    def rename_Pooling(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -381,8 +402,7 @@ class PaddleParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # layer and spec
-        pool_node = source_node.layer
-        pool_spec = self.spec_dict[source_node.name]
+        pool_spec = source_node.layer
         spec = pool_spec.inputs[0].pool_conf
 
 
@@ -413,7 +433,7 @@ class PaddleParser(Parser):
 
 
         # output shape
-        output_shapes = [-1, channel, output_y, output_x]
+        output_shapes = [-1, output_y, output_x, channel]
         self.shape_dict[source_node.name] = output_shapes
         PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
 
@@ -450,7 +470,7 @@ class PaddleParser(Parser):
             PaddleParser._set_output_shape(source_node, IR_node_act, output_shapes)
 
 
-    def rename_fc(self, source_node):
+    def rename_Dense(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -460,8 +480,7 @@ class PaddleParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # layer and spec
-        fc_node = source_node.layer
-        fc_spec = self.spec_dict[source_node.name]
+        fc_spec = source_node.layer
 
 
         # units
@@ -482,14 +501,12 @@ class PaddleParser(Parser):
 
         w = self.parameters.get(w_name)
 
-        bias = self.parameters.get(bias_name)
+        bias = self.parameters.get(bias_name).flatten()
 
         # Kit weight tranpose
         # weight: N x M -> C x H x W x M -> H x W x C x M -> N x M
         if self.weight_loaded:
             parent = self.src_graph.get_parent(source_node.name, [0])
-            # while parent.type == 'onnx::Flatten' or parent.type == 'onnx::Dropout':
-            #     parent = self.src_graph.get_parent(parent.name, [0])
             if len(self.shape_dict[parent.name]) == 4:
                 #
                 original_shape = w.shape
@@ -503,6 +520,8 @@ class PaddleParser(Parser):
             w = w * fc_spec.drop_rate
             if IR_node.attr['use_bias'].b:
                 bias = bias * fc_spec.drop_rate
+
+
         # weights
         self.set_weight(IR_node.name, 'weights', w)
         if IR_node.attr['use_bias'].b:
@@ -517,14 +536,14 @@ class PaddleParser(Parser):
 
 
 
-    def rename_addto(self, source_node):
-        add_spec = self.spec_dict[source_node.name]
+    def rename_Add(self, source_node):
+        add_spec = source_node.layer
         self._convert_merge(source_node, 'Add')
         if add_spec.HasField('active_type') and  add_spec.active_type != '':
             self._defuse_activation(source_node)
 
 
-    def rename_data(self, source_node):
+    def rename_InputLayer(self, source_node):
         # need the shape TODO
 
         # only for training
@@ -541,7 +560,7 @@ class PaddleParser(Parser):
         PaddleParser._copy_shape(source_node.layer, IR_node, output_shapes)
 
 
-    def rename_norm(self, source_node):
+    def rename_LRN(self, source_node):
         IR_node = self.IR_graph.node.add()
 
         # name, op
@@ -551,8 +570,7 @@ class PaddleParser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # layer and spec
-        lrn_node = source_node.layer
-        lrn_spec = self.spec_dict[source_node.name]
+        lrn_spec = source_node.layer
         spec = lrn_spec.inputs[0].norm_conf
         channels = spec.channels
         size = spec.size
@@ -565,7 +583,7 @@ class PaddleParser(Parser):
 
 
         # output shape
-        output_shapes = [-1, channels, output_y, output_x]
+        output_shapes = [-1, output_y, output_x, channels]
         self.shape_dict[source_node.name] = output_shapes
         PaddleParser._set_output_shape(source_node, IR_node, output_shapes)
 

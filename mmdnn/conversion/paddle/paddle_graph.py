@@ -16,12 +16,12 @@ class PaddleGraphNode(GraphNode):
 
     @property
     def name(self):
-        return self.layer.full_name
+        return self.layer.name
 
 
     @property
     def type(self):
-        return self.layer.layer_type
+        return self.layer.type
 
 
     @property
@@ -33,8 +33,9 @@ class PaddleGraphNode(GraphNode):
 class PaddleGraph(Graph):
 
     def __init__(self, model):
+        from paddle.proto import ModelConfig_pb2
         # sanity check.
-        if not type(model) == layers.LayerOutput:
+        if not isinstance(model, ModelConfig_pb2.ModelConfig):
             raise TypeError("PaddlePaddle layer of type %s is not supported." % type(model))
         super(PaddleGraph, self).__init__(model)
         self.model = model
@@ -42,23 +43,11 @@ class PaddleGraph(Graph):
 
     def build(self):
         self.input_layers = list()
-        nodes = list()
-        outs = list()
-        layer = self.model
-        self.layer_map[layer.full_name] = PaddleGraphNode(layer)
-        self.layer_name_map[layer.full_name] = layer.full_name
-        nodes.append(layer.full_name)
-        outs.append(layer)
-        while outs:
-            new_outs = list()
-            for out in outs:
-                for layer in out.parents:
-                    if layer.full_name not in nodes:
-                        self.layer_map[layer.full_name] = PaddleGraphNode(layer)
-                        self.layer_name_map[layer.full_name] = layer.full_name
-                        nodes.append(layer.full_name)
-                    self._make_connection(layer.full_name, out.full_name)
-                    new_outs.append(layer)
-            outs = new_outs
+        for layer in self.model.layers:
+            self.layer_map[layer.name] = PaddleGraphNode(layer)
+            self.layer_name_map[layer.name] = layer.name
+
+            for input_layer in layer.inputs:
+                self._make_connection(input_layer.input_layer_name, layer.name)
 
         super(PaddleGraph, self).build()

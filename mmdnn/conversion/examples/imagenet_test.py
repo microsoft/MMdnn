@@ -182,6 +182,12 @@ class TestKit(object):
             'vgg16'             : lambda path : TestKit.ZeroCenter(path, 224, True),
             'resnet50'          : lambda path : TestKit.ZeroCenter(path, 224, True),
             'tinyyolo'          : lambda path : TestKit.Normalize(path, 416, 0.00392156863, [0, 0, 0], [1.0, 1.0, 1.0], False),
+        },
+
+        'paddle' : {
+            'resnet50'       : lambda path : TestKit.Standard(path, 224),
+            'resnet101'      : lambda path : TestKit.Standard(path, 224),
+            'vgg16'          : lambda path : TestKit.Standard(path, 224),
         }
 
     }
