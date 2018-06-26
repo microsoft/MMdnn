@@ -101,3 +101,4 @@ The installation of paddle can be tricky at first. One has to change the `libpyt
 - [paddle model zoo](https://github.com/PaddlePaddle/models)
 - issue about the pretrained model: [paddle](https://github.com/PaddlePaddle/Paddle/issues/11650), [paddle model](https://github.com/PaddlePaddle/models/issues/1001)
 - [dump the model](http://www.paddlepaddle.org/docs/develop/documentation/zh/howto/capi/workflow_of_capi_cn.html)
+- [trouble shooting](http://www.cnblogs.com/charlotte77/p/8270710.html)
