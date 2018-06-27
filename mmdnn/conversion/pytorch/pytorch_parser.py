@@ -456,7 +456,7 @@ class PytorchParser(Parser):
         if source_node.name.startswith('Max'):
             kwargs['pooling_type'] = 'MAX'
         elif source_node.name.startswith('Avg'):
-            kwargs['pooling_type'] = 'MAX'
+            kwargs['pooling_type'] = 'AVG'
         else:
             raise ValueError('Unknown pooling type')
 
