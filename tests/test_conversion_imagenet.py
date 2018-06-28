@@ -1014,7 +1014,13 @@ class TestModels(CorrectnessTest):
     def test_paddle(self):
         # omit tensorflow lead to crash
         import tensorflow as tf
-        self._test_function('paddle', self.PaddleParse)
+        try:
+            import paddle.v2 as paddle
+            self._test_function('paddle', self.PaddleParse)
+        except ImportError:
+            print('Please install Paddlepaddle! Or Paddlepaddle is not supported in your platform.', file=sys.stderr)
+
+        
 
 
     def test_pytorch(self):
