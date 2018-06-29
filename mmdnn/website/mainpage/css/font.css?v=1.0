@@ -1,0 +1,20 @@
+
+@font-face {
+	font-family: 'Freight Sans';
+	src: url('fonts/freigsanpromed.eot');
+	src: url('fonts/freigsanpromed.eot?') format('embedded-opentype'),
+		url('fonts/freigsanpromed.woff') format('woff'),
+		url('fonts/freigsanpromed.ttf') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'Freight Sans';
+	src: url('fonts/freigsanprolig.eot');
+	src: url('fonts/freigsanprolig.eot?') format('embedded-opentype'),
+		url('fonts/freigsanprolig.woff') format('woff'),
+		url('fonts/freigsanprolig.ttf') format('truetype');
+	font-weight: 300;
+	font-style: normal;
+}
