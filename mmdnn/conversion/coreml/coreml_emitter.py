@@ -666,15 +666,6 @@ class CoreMLEmitter(Emitter):
 
 
 
-    def emit_Tanh(self, IR_node):
-        assert False
-        code = "{:<15} = Activation(name = '{}', activation = tanh)({})".format(
-                IR_node.replace_scope(IR_node.name),
-                IR_node.name,
-                IR_node.replace_scope(IR_node.in_edges[0]))
-        return code
-
-
     def _emit_activation(self, IR_node, act, params=None):
         # Get input and output names
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
@@ -692,6 +683,8 @@ class CoreMLEmitter(Emitter):
     # activation emit
     def emit_Relu(self, IR_node):
         self._emit_activation(IR_node, 'RELU')
+    def emit_Tanh(self, IR_node):
+        self._emit_activation(IR_node, 'TANH')
     def emit_PRelu(self, IR_node):
         self._emit_activation(IR_node, 'PRELU', IR_node.get_attr('gamma', 0) )
     def emit_LeakyRelu(self, IR_node):
