@@ -414,6 +414,11 @@ class KitModel(nn.Module):
         self.add_body(2, "{:<15} = {}".format(
             IR_node.variable_name,
             ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
+        
+    def emit_MatMul(self, IR_node):
+        self.add_body(2, "{:<15} = torch.matmul({})".format(
+            IR_node.variable_name,
+            ' , '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
 
 
     def emit_Constant(self, IR_node):

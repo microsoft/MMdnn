@@ -29,10 +29,10 @@ You can refer [PyTorch model extractor](https://github.com/Microsoft/MMdnn/blob/
 $ mmdownload -f pytorch -h
 Support frameworks: ['alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201', 'inception_v3', 'resnet101', 'resnet152', 'resnet18', 'resnet34', 'resnet50', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
 
-$ mmdownload -f pytorch -n resnet50 -o ./
-Downloading: "https://download.pytorch.org/models/resnet50-19c8e357.pth" to /home/ruzhang/.torch/models/resnet50-19c8e357.pth
-100%|████████████████████████████████████████████████████████████████████████| 102502400/102502400 [00:06<00:00, 15858546.50it/s]
-PyTorch pretrained model is saved as [./imagenet_resnet50.pth].
+$ mmdownload -f pytorch -n resnet101 -o ./
+Downloading: "https://download.pytorch.org/models/resnet101-5d3b4d8f.pth" to /home/ruzhang/.torch/models/resnet101-5d3b4d8f.pth
+███████████████████| 102502400/102502400 [00:06<00:00, 15858546.50it/s]
+PyTorch pretrained model is saved as [./imagenet_resnet101.pth].
 
 ```
 
@@ -40,16 +40,16 @@ PyTorch pretrained model is saved as [./imagenet_resnet50.pth].
 You can convert the whole pytorch model to IR structure. Please remember for the generality, we now only take the whole model `pth`, not just the state dict. To be more specific, it is save using `torch.save()` and `torch.load()` can load the whole model.
 
 ```bash
-$ mmtoir -f pytorch -d resnet50 --inputShape 3 224 224 -n imagenet_resnet50.pth
+$ mmtoir -f pytorch -d resnet101 --inputShape 3 224 224 -n imagenet_resnet101.pth
 ```
 
 Please bear in mind that always add `--inputShape` argparse. This thing is different from other framework because pytorch is a dynamic framework.
 
 Then you will get
 ```
-IR network structure is saved as [resnet50.json].
-IR network structure is saved as [resnet50.pb].
-IR weights are saved as [resnet50.npy].
+IR network structure is saved as [resnet101.json].
+IR network structure is saved as [resnet101.pb].
+IR weights are saved as [resnet101.npy].
 ```
 
 ### Convert models from IR to PyTorch code snippet and weights
