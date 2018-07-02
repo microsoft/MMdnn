@@ -131,7 +131,7 @@ class TestModels(CorrectnessTest):
         # original to IR
         IR_file = TestModels.tmpdir + 'tensorflow_frozen_' + architecture_name + "_converted"
         parser = TensorflowParser2(
-            TestModels.cachedir + para[0], para[1], para[2].split(':')[0], para[3].split(':')[0])
+            TestModels.cachedir + para[0], [para[1]], [para[2].split(':')[0]], [para[3].split(':')[0]])
         parser.run(IR_file)
         del parser
         del TensorflowParser2
@@ -1020,7 +1020,7 @@ class TestModels(CorrectnessTest):
         except ImportError:
             print('Please install Paddlepaddle! Or Paddlepaddle is not supported in your platform.', file=sys.stderr)
 
-        
+
 
 
     def test_pytorch(self):

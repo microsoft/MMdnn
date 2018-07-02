@@ -197,12 +197,10 @@ class TensorflowParser(Parser):
             from tensorflow.python.tools import strip_unused_lib
             from tensorflow.python.framework import dtypes
             from tensorflow.python.platform import gfile
-            input_node_names = in_nodes.split(',')
-            output_node_names = dest_nodes.split(',')
             model = strip_unused_lib.strip_unused(
                     input_graph_def = model,
-                    input_node_names = input_node_names,
-                    output_node_names = output_node_names,
+                    input_node_names = in_nodes,
+                    output_node_names = dest_nodes,
                     placeholder_type_enum = dtypes.float32.as_datatype_enum)
 
             input_list = [None]
@@ -212,7 +210,7 @@ class TensorflowParser(Parser):
             # Build network graph
             self.tf_graph = TensorflowGraph(model)
             for node in self.tf_graph.model.node:
-                if node.name in input_node_names:
+                if node.name in in_nodes:
                     node.attr['shape'].list.shape.extend([tensor_input.as_proto()])
                     node.attr['_output_shapes'].list.shape.pop()  #unknown_rank pop
                     node.attr['_output_shapes'].list.shape.extend([tensor_input.as_proto()])
