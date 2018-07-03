@@ -95,16 +95,19 @@ class TensorflowParser2(Parser):
         original_gdef = tensorflow.GraphDef()
 
         original_gdef.ParseFromString(serialized)
-        # model = original_gdef
+
+        in_type_list = {}
+        for n in original_gdef.node:
+            if n.name in in_nodes:
+                in_type_list[n.name] = n.attr['dtype'].type
+
         from tensorflow.python.tools import strip_unused_lib
         from tensorflow.python.framework import dtypes
         from tensorflow.python.platform import gfile
-        input_node_names = in_nodes.split(',')
-        output_node_names = dest_nodes.split(',')
         original_gdef = strip_unused_lib.strip_unused(
                 input_graph_def = original_gdef,
-                input_node_names = input_node_names,
-                output_node_names = output_node_names,
+                input_node_names = in_nodes,
+                output_node_names = dest_nodes,
                 placeholder_type_enum = dtypes.float32.as_datatype_enum)
         # Save it to an output file
         frozen_model_file = './frozen.pb'
@@ -118,13 +121,23 @@ class TensorflowParser2(Parser):
 
         output_shape_map = dict()
         input_shape_map = dict()
+
         with tensorflow.Graph().as_default() as g:
-            x = tensorflow.placeholder(tensorflow.float32, shape = [None] + inputshape)
-            tensorflow.import_graph_def(model, name='', input_map={in_nodes + ':0' : x})
+            input_map = {}
+            for i in range(len(inputshape)):
+                if in_type_list[in_nodes[i]] == 1:
+                    dtype = tensorflow.float32
+                elif in_type_list[in_nodes[i]] == 3:
+                    dtype = tensorflow.int32
+                x = tensorflow.placeholder(dtype, shape = [None] + inputshape[i])
+                input_map[in_nodes[i] + ':0'] = x
+
+            tensorflow.import_graph_def(model, name='', input_map=input_map)
 
         with tensorflow.Session(graph = g) as sess:
             meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
             model = meta_graph_def.graph_def
+
 
         self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
@@ -510,12 +523,11 @@ class TensorflowParser2(Parser):
         self.set_weight(source_node.name, 'mean', mean)
 
     def rename_Placeholder(self, source_node):
-        # print(source_node.layer.attr["shape"].shape)
+        # print(source_node.layer)
         if source_node.layer.attr["shape"].shape.unknown_rank == True:
             return
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
         TensorflowParser2._copy_shape(source_node, IR_node)
-
         IR_node.attr['shape'].shape.dim[0].size = -1
         IR_node.attr['_output_shapes'].list.shape[0].dim[0].size = -1
 
