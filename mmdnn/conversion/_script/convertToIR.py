@@ -46,13 +46,20 @@ def _convert(args):
         parser = Keras2Parser(model)
 
     elif args.srcFramework == 'tensorflow' or args.srcFramework == 'tf':
+
         if args.dstNodeName is None:
             raise ValueError("Need to provide the output node of Tensorflow model.")
 
         # assert args.network or args.frozen_pb
         if args.frozen_pb:
+            import tensorflow as tf
+            if tf.__version__ < '1.8.0':
+                raise ImportError(
+                            'Your TensorFlow version %s is outdated. '
+                            'MMdnn requires tensorflow>=1.8.0' % tf.__version__)
             if args.inNodeName is None:
                 raise ValueError("Need to provide the input node of Tensorflow model.")
+
             from mmdnn.conversion.tensorflow.tensorflow_frozenparser import TensorflowParser2
             parser = TensorflowParser2(args.frozen_pb, inputshape, args.inNodeName, args.dstNodeName)
         else:

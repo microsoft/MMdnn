@@ -134,7 +134,14 @@ class TensorflowParser2(Parser):
 
             tensorflow.import_graph_def(model, name='', input_map=input_map)
 
+        # graph_options = tensorflow.GraphOptions(
+        #     optimizer_options=tensorflow.OptimizerOptions(
+        #         opt_level=tensorflow.OptimizerOptions.L0, do_function_inlining=False))
+
+        # config = tensorflow.ConfigProto(graph_options=graph_options)
+        # with tensorflow.Session(graph = g, config=config) as sess:
         with tensorflow.Session(graph = g) as sess:
+
             meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
             model = meta_graph_def.graph_def
 
@@ -171,12 +178,12 @@ class TensorflowParser2(Parser):
 
 
     def _convert_layers_batchnorm(self, source_node):
-        # name, op
         IR_node = self.IR_graph.node.add()
         TensorflowParser2._copy_and_reop(source_node, IR_node, 'BatchNorm')
         is_transformed = False
 
         test = self.get_parent(source_node.name, [0])
+
         if test.type == 'Mul':
             is_transformed = True
 
@@ -201,10 +208,6 @@ class TensorflowParser2(Parser):
             input_node = self.get_parent(source_node.name, [0])
             IR_node.input.append(input_node.real_name)
 
-            # print(IR_node.input)
-            # print(IR_node.output)
-            # assert False
-
         else:
             # epsilon
             epsilon = self.get_parent(source_node.name, [1])
@@ -225,27 +228,27 @@ class TensorflowParser2(Parser):
 
             # gamma (scale)
             Rsqrt = self.get_son(source_node.name, [0], True)
+            # print(Rsqrt.out_edges)
+
             if len(Rsqrt.out_edges) == 2:
                 IR_node.attr['scale'].b = False
-                output_node = self.get_son(source_node.name, [0, 0, 0], True)
-                Mul = self.get_son(source_node.name, [0, 1], True)
+                output_node = self.get_son(Rsqrt.name, [1, 0], True)
+                Mul = self.get_son(Rsqrt.name, [0], True)
             else:
                 IR_node.attr['scale'].b = True
-                son = self.get_son(source_node.name, [0, 0, 0], True)
+                son = self.get_son(Rsqrt.name, [0, 0], True)
                 gamma_from = self.get_parent(son.name, [1, 1], True)
                 gamma = self.check_const(gamma_from)
-                # gamma = self.get_parent(son.name, [1, 1, 0, 0, 0, 1], True)
                 gamma_tensor = gamma.get_attr('value')
                 scale = tensor_util.MakeNdarray(gamma_tensor)
                 self.set_weight(source_node.name, 'scale', scale)
-                output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
-                # print(output_node.layer)
-                Mul = self.get_son(source_node.name, [0, 0, 1], True)
-                # print(Mul.layer)
+                output_node = self.get_son(source_node.name, [0, 0, 0, 0, 0], True)
+                Mul = self.get_son(Rsqrt.name, [0, 0], True)
+
 
             # beta  (bias)
             beta = self.get_parent(output_node.name, [1, 0, 0], True).get_attr('value')
-            bias = tensor_util.MakeNdarray(beta)  #(96,)
+            bias = tensor_util.MakeNdarray(beta)
             IR_node.attr['bias'].b = True
             self.set_weight(source_node.name, 'bias', bias)
 
@@ -258,7 +261,8 @@ class TensorflowParser2(Parser):
             assert output_node.type == 'Add'
             input_node = self.get_parent(output_node.name, [0, 0])
             IR_node.input.append(input_node.real_name)
-
+            # print(IR_node)
+            # assert False
             # output node
             output_node.real_name = source_node.name
 
@@ -325,6 +329,7 @@ class TensorflowParser2(Parser):
                 continue
 
             node_type = current_node.type
+            # print(current_node.name)
 
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
@@ -577,7 +582,6 @@ class TensorflowParser2(Parser):
 
 
     def rename_Max(self, source_node):
-        # print(source_node.layer)
         IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op = 'Max')
         kwargs = {}
         input_node = self.src_graph.get_parent(source_node.name, [0])
@@ -586,26 +590,15 @@ class TensorflowParser2(Parser):
         input_node = self.src_graph.get_parent(source_node.name, [1])
         kwargs['shape_1'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
         assign_IRnode_values(IR_node, kwargs)
-        # assert False
 
 
     def rename_Mul(self, source_node):
-        # print(source_node.layer)
-        # print(source_node.in_edges)
-        # print(source_node.out_edges)
-        # assert False
-        # input_node_0 = self.src_graph.get_parent(source_node.name, [0])
+        scopes = self._get_scopes(source_node.name)
+        if scopes[-2] == "batchnorm":
+            return
+        else:
+            IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='Mul')
 
-        # # mean/read
-        # if input_node_0.type == 'Identity':
-        #     input_node_0_read = self.src_graph.get_parent(input_node_0.name, [0])
-        #     tensor_content = input_node_0_read.get_attr('value')
-        #     tensor_content = tensor_util.MakeNdarray(tensor_content)
-        #     self.set_weight(source_node.name, 'weights', tensor_content)
-        #     IR_node = self._convert_identity_operation(source_node, start_idx = 1)
-
-        # else:
-        IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='Mul')
 
 
     def rename_Add(self, source_node):
@@ -617,11 +610,8 @@ class TensorflowParser2(Parser):
                 elif scopes[-3] == 'InstanceNorm':
                     self._convert_layers_instancenorm(source_node)
             else:
-                # print(scopes)
                 IR_node = self._convert_identity_operation(source_node, new_op = "Add")
         else:
-            # print(scopes)
-            # print(source_node.layer)
             IR_node = self._convert_identity_operation(source_node, new_op = "Add")
 
 
