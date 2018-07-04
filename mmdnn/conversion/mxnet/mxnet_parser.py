@@ -565,6 +565,7 @@ class MXNetParser(Parser):
         kernel_shape = MXNetParser.str2intList(source_node.get_attr("kernel"))
 
         if MXNetParser.str2bool(source_node.get_attr("global_pool", "False")):
+
             IR_node.attr['global_pooling'].b = True
             IR_node.attr["kernel_shape"].list.i[:] = [1] * (len(kernel_shape) + 2)
             IR_node.attr["strides"].list.i[:] = [1] * (len(kernel_shape) + 2)
@@ -587,6 +588,8 @@ class MXNetParser(Parser):
             if "pad" in source_node.attr:
                 pad = MXNetParser.str2intList(source_node.get_attr("pad"))
                 IR_node.attr["pads"].list.i.extend(([0]+pad+[0])*2)
+            else:
+                IR_node.attr["pads"].list.i.extend(([0])*8)
 
         # output shape
         self.set_output_shape(source_node, IR_node)

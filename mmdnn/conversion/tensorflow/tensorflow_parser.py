@@ -218,7 +218,7 @@ class TensorflowParser(Parser):
         # extract subgraph using dest_nodes
         elif dest_nodes != None:
             from tensorflow.python.framework.graph_util import extract_sub_graph
-            model = extract_sub_graph(model, dest_nodes.split(','))
+            model = extract_sub_graph(model, dest_nodes)
             self.tf_graph = TensorflowGraph(model)
 
         else:
