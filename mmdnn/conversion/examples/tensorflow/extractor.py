@@ -194,6 +194,7 @@ class tensorflow_extractor(base_extractor):
         frozenname = architecture + '_frozen'
         return cls.architecture_map[frozenname]['filename'], cls.architecture_map[frozenname]['input_shape'], cls.architecture_map[frozenname]['tensor_in'], cls.architecture_map[frozenname]['tensor_out']
 
+
     @classmethod
     def download(cls, architecture, path="./"):
         if cls.sanity_check(architecture):

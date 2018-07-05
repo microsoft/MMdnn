@@ -50,18 +50,16 @@ def _convert(args):
         if args.dstNodeName is None:
             raise ValueError("Need to provide the output node of Tensorflow model.")
 
-        # assert args.network or args.frozen_pb
-        if args.frozen_pb:
-            import tensorflow as tf
-            if tf.__version__ < '1.8.0':
-                raise ImportError(
-                            'Your TensorFlow version %s is outdated. '
-                            'MMdnn requires tensorflow>=1.8.0' % tf.__version__)
+        assert args.network or args.weights
+        if not args.network:
             if args.inNodeName is None:
                 raise ValueError("Need to provide the input node of Tensorflow model.")
-
+            if inputshape is None:
+                raise ValueError("Need to provide the input node shape of Tensorflow model.")
+            assert len(args.inNodeName) == len(inputshape)
             from mmdnn.conversion.tensorflow.tensorflow_frozenparser import TensorflowParser2
-            parser = TensorflowParser2(args.frozen_pb, inputshape, args.inNodeName, args.dstNodeName)
+            parser = TensorflowParser2(args.weights, inputshape, args.inNodeName, args.dstNodeName)
+
         else:
             from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
             if args.inNodeName and inputshape[0]:
@@ -161,13 +159,6 @@ def _get_parser():
         type=_text_type,
         default=None,
         help="[Tensorflow] Output nodes' name of the graph.")
-
-    parser.add_argument(
-        '--frozen_pb',
-        type=_text_type,
-        default=None,
-        help="[Tensorflow] frozen model file.")
-
 
     parser.add_argument(
         '--inputShape',

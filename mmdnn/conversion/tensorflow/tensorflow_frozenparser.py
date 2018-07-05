@@ -85,6 +85,11 @@ class TensorflowParser2(Parser):
         return self.tf_graph
 
     def __init__(self, frozen_file, inputshape, in_nodes, dest_nodes):
+        if tensorflow.__version__ < '1.8.0':
+            raise ImportError(
+                'Your TensorFlow version %s is outdated. '
+                'MMdnn requires tensorflow>=1.8.0' % tf.__version__)
+
         super(TensorflowParser2, self).__init__()
 
         self.weight_loaded = True
