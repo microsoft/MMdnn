@@ -134,12 +134,11 @@ class PytorchGraph(Graph):
         # build each layer
         for node in nodes:
 
-
             node_id = PytorchGraph.get_node_id(node)
             node_scope = node.scopeName()
             node_name = node_scope + node_id
             node_name = node_name.replace('-','n').replace('\\','n').replace('/','n').replace('_','n').replace('[','n').replace(']','n')
-            output_shape_str = re.findall(r'[^()]+', node.__str__())[1]
+            output_shape_str = re.findall(r'[^()!]+', node.__str__())[1]
             output_shape = [int(x) for x in output_shape_str.split(',')]
 
 
