@@ -40,6 +40,8 @@ $ mmdownload -f tensorflow -n resnet_v2_152
 Downloading file [./resnet_v2_152_2017_04_14.tar.gz] from [http://download.tensorflow.org/models/resnet_v2_152_2017_04_14.tar.gz]
 100% [......................................................................] 675629399 / 675629399
 Model saved in file: ./imagenet_resnet_v2_152.ckpt
+
+$ mmconvert -sf tensorflow -in ./imagenet_resnet_v2_152.ckpt.meta -iw ./imagenet_resnet_v2_152.ckpt -df caffe --dstNodeName MMdnn_Output -om mobilenet_v1_caffe
 ```
 
 > [Note!] The extractor create a Squeeze operator named **MMdnn_Output** as the output node of the models.
