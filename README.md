@@ -77,7 +77,7 @@ One command to achieve the conversion. Use a TensorFlow **ResNet V2 152** to PyT
 
 ```bash
 $ mmdownload -f tensorflow -n resnet_v2_152 -o ./
-$ mmconvert -sf tensorflow -in imagenet_resnet_v2_152.ckpt.meta -iw imagenet_resnet_v2_152.ckpt --dstNode MMdnn_Output -df pytorch -om tf_resnet_to_pth.pth
+$ mmconvert -sf tensorflow -in imagenet_resnet_v2_152.ckpt.meta -iw imagenet_resnet_v2_152.ckpt --dstNodeName MMdnn_Output -df pytorch -om tf_resnet_to_pth.pth
 ```
 
 Done.
