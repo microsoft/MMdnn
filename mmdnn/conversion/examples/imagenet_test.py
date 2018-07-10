@@ -235,9 +235,8 @@ class TestKit(object):
 
 
         self.args = parser.parse_args()
-        if self.args.n.endswith('.py'):
-            self.args.n = self.args.n[:-3]
-        self.MainModel = __import__(self.args.n)
+        import imp
+        self.MainModel = imp.load_source('MainModel', self.args.n)
 
 
     @staticmethod
