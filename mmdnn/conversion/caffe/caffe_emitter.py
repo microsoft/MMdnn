@@ -293,6 +293,15 @@ bias_term={}, ntop=1)".format(
             # check if need crop output shape
             self.check_if_need_crop(IR_node)
 
+    def emit_ResizeBilinear(self, IR_node):
+        in_place = True
+        shape = IR_node.get_attr("_output_shapes")[0]
+        shape = shape_to_list(shape)
+        self.add_body(1, "n.{:<15} = L.ResizeBilinear(n.{}, height={}, width={}, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            shape[1],
+            shape[2]))
 
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.IR_layer.name)

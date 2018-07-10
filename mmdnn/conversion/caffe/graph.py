@@ -102,6 +102,7 @@ LAYER_DESCRIPTORS = {
     'WindowData': shape_not_implemented,
     'Threshold': shape_identity,
     'Reshape' : shape_reshape,
+    'ResizeBilinear': shape_reshape,
     'PReLU'   : shape_identity
     }
 
