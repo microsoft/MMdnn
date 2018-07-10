@@ -294,7 +294,6 @@ bias_term={}, ntop=1)".format(
             self.check_if_need_crop(IR_node)
 
     def emit_ResizeBilinear(self, IR_node):
-        in_place = True
         shape = IR_node.get_attr("_output_shapes")[0]
         shape = shape_to_list(shape)
         self.add_body(1, "n.{:<15} = L.ResizeBilinear(n.{}, height={}, width={}, ntop=1)".format(
