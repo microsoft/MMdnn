@@ -4,6 +4,7 @@ from __future__ import print_function
 import os
 TEST_ONNX = os.environ.get('TEST_ONNX')
 import sys
+import imp
 import unittest
 import numpy as np
 
@@ -363,14 +364,14 @@ class TestModels(CorrectnessTest):
         del emitter
         del CntkEmitter
 
-        model_converted = __import__(converted_file).KitModel(weight_path)
+        model_converted = imp.load_source('CntkModel', converted_file + '.py').KitModel(weight_path)
 
         func = TestKit.preprocess_func[original_framework][architecture_name]
         img = func(image_path)
         predict = model_converted.eval({model_converted.arguments[0]:[img]})
         converted_predict = np.squeeze(predict)
         del model_converted
-        del sys.modules[converted_file]
+        del sys.modules['CntkModel']
         os.remove(converted_file + '.py')
 
         return converted_predict
@@ -391,7 +392,8 @@ class TestModels(CorrectnessTest):
         del TensorflowEmitter
 
         # import converted model
-        model_converted = __import__(converted_file).KitModel(weight_path)
+        model_converted = imp.load_source('TFModel', converted_file + '.py').KitModel(weight_path)
+
         input_tf, model_tf = model_converted
 
         original_framework = checkfrozen(original_framework)
@@ -404,7 +406,7 @@ class TestModels(CorrectnessTest):
             sess.run(init)
             predict = sess.run(model_tf, feed_dict = {input_tf : input_data})
         del model_converted
-        del sys.modules[converted_file]
+        del sys.modules['TFModel']
         os.remove(converted_file + '.py')
         converted_predict = np.squeeze(predict)
 
@@ -427,7 +429,8 @@ class TestModels(CorrectnessTest):
 
         # import converted model
         import torch
-        model_converted = __import__(converted_file).KitModel(converted_file + '.npy')
+        model_converted = imp.load_source('PytorchModel', converted_file + '.py').KitModel(converted_file + '.npy')
+
         model_converted.eval()
 
         func = TestKit.preprocess_func[original_framework][architecture_name]
@@ -442,7 +445,7 @@ class TestModels(CorrectnessTest):
         converted_predict = np.squeeze(predict)
 
         del model_converted
-        del sys.modules[converted_file]
+        del sys.modules['PytorchModel']
         del torch
         os.remove(converted_file + '.py')
         os.remove(converted_file + '.npy')
@@ -466,7 +469,8 @@ class TestModels(CorrectnessTest):
 
 
         # import converted model
-        model_converted = __import__(converted_file).KitModel(weight_path)
+        model_converted = imp.load_source('KerasModel', converted_file + '.py').KitModel(weight_path)
+
         func = TestKit.preprocess_func[original_framework][architecture_name]
 
         img = func(image_path)
@@ -480,7 +484,7 @@ class TestModels(CorrectnessTest):
             converted_predict = np.squeeze(predict)
 
         del model_converted
-        del sys.modules[converted_file]
+        del sys.modules['KerasModel']
 
         import keras.backend as K
         K.clear_session()
@@ -510,7 +514,8 @@ class TestModels(CorrectnessTest):
         del MXNetEmitter
 
         # import converted model
-        imported = __import__(converted_file)
+        imported = imp.load_source('MXNetModel', converted_file + '.py')
+
         model_converted = imported.RefactorModel()
         model_converted = imported.deploy_weight(model_converted, output_weights_file)
 
@@ -524,7 +529,7 @@ class TestModels(CorrectnessTest):
         converted_predict = np.squeeze(predict)
 
         del model_converted
-        del sys.modules[converted_file]
+        del sys.modules['MXNetModel']
         del mxnet
 
         os.remove(converted_file + '.py')
@@ -549,7 +554,8 @@ class TestModels(CorrectnessTest):
         del CaffeEmitter
 
         # import converted model
-        imported = __import__(converted_file)
+        imported = imp.load_source('CaffeModel', converted_file + '.py')
+
         imported.make_net(converted_file + '.prototxt')
         imported.gen_weight(converted_file + '.npy', converted_file + '.caffemodel', converted_file + '.prototxt')
         model_converted = caffe.Net(converted_file + '.prototxt', converted_file + '.caffemodel', caffe.TEST)
@@ -564,7 +570,7 @@ class TestModels(CorrectnessTest):
         converted_predict = np.squeeze(predict)
 
         del model_converted
-        del sys.modules[converted_file]
+        del sys.modules['CaffeModel']
         del caffe
         os.remove(converted_file + '.py')
         os.remove(converted_file + '.npy')
@@ -687,7 +693,8 @@ class TestModels(CorrectnessTest):
 
             # import converted model
             from onnx_tf.backend import prepare
-            model_converted = __import__(converted_file).KitModel(converted_file + '.npy')
+            model_converted = imp.load_source('OnnxModel', converted_file + '.py').KitModel(converted_file + '.npy')
+
             tf_rep = prepare(model_converted)
 
             func = TestKit.preprocess_func[original_framework][architecture_name]
@@ -708,7 +715,7 @@ class TestModels(CorrectnessTest):
             del prepare
             del model_converted
             del tf_rep
-            del sys.modules[converted_file]
+            del sys.modules['OnnxModel']
 
             os.remove(converted_file + '.py')
             os.remove(converted_file + '.npy')

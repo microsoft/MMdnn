@@ -1,6 +1,7 @@
 import sys as _sys
 from six import text_type as _text_type
 import sys
+import imp
 import os.path
 
 
@@ -8,7 +9,7 @@ def dump_code(framework, network_filepath, weight_filepath, dump_filepath, dump_
     if network_filepath.endswith('.py'):
         network_filepath = network_filepath[:-3]
     sys.path.insert(0, os.path.dirname(os.path.abspath(network_filepath)))
-    MainModel = __import__(network_filepath)
+    MainModel = imp.load_source('MainModel', network_filepath + '.py')
     if framework == 'caffe':
         from mmdnn.conversion.caffe.saver import save_model
     elif framework == 'cntk':
