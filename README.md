@@ -15,6 +15,8 @@ This project is designed and developed by [Microsoft Research (MSR)](https://www
 
 ## Installation
 
+### Install manually
+
 You can get stable version of MMdnn by
 ```bash
 pip install mmdnn
@@ -24,6 +26,22 @@ or you can try the newest version by
 ```bash
 pip install -U git+https://github.com/Microsoft/MMdnn.git@master
 ```
+
+### Install with docker image
+
+MMdnn provides a docker image, which packaged mmdnn, deep learning frameworks we supported and other dependencies in one image. You can easily get the image in several steps:
+
+1. Install Docker Community Edition(CE)
+
+    [_Learn more about how to install docker_](https://github.com/Microsoft/MMdnn/blob/master/docs/InstallDockerCE.md)
+1. Pull MMdnn docker image
+    ```bash
+    docker pull mmdnn/mmdnn:cpu.small
+    ```
+3. Run image in interactive mode
+    ```bash
+    docker run -it mmdnn/mmdnn:cpu.small
+    ```
 
 ## Features
 
