@@ -447,7 +447,11 @@ bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             in_place))
-
+        
+    def emit_Tanh(self, IR_node):
+        self.add_body(1, "n.{:<15} = L.TanH(n.{}, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)))
 
     def emit_Softmax(self, IR_node):
         self.add_body(1, "n.{:<15} = L.Softmax(n.{}, ntop=1)".format(

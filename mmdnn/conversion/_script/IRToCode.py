@@ -97,7 +97,7 @@ def _get_parser():
         help = 'Path to the IR network structure file.')
 
     parser.add_argument(
-        '--dstModelPath', '-d',
+        '--dstModelPath', '-d', '-o',
         type = _text_type,
         required = True,
         help = 'Path to save the destination model')
