@@ -307,15 +307,10 @@ class TensorflowParser2(Parser):
         # assert False
 
 
-    def _get_node_weight(self, input_node_weight):
-        if input_node_weight.type == 'Const':
-            tensor_content = input_node_weight.get_attr('value')
-        else:
-            input_node_weight_read = self.src_graph.get_parent(input_node_weight.name, [0])
-            tensor_content = input_node_weight_read.get_attr('value')
+    def _get_node_weight(self, node):
+        tensor_content = self.check_const(node).get_attr('value')
         W = tensor_util.MakeNdarray(tensor_content)
         return W   
-
 
 
     @classmethod
