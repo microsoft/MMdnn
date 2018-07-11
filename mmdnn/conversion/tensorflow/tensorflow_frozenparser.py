@@ -307,6 +307,16 @@ class TensorflowParser2(Parser):
         # assert False
 
 
+    def _get_node_weight(self, input_node_weight):
+        if input_node_weight.type == 'Const':
+            tensor_content = input_node_weight.get_attr('value')
+        else:
+            input_node_weight_read = self.src_graph.get_parent(input_node_weight.name, [0])
+            tensor_content = input_node_weight_read.get_attr('value')
+        W = tensor_util.MakeNdarray(tensor_content)
+        return W   
+
+
 
     @classmethod
     def _skip_node(cls, source_node):
@@ -603,7 +613,9 @@ class TensorflowParser2(Parser):
             return
         else:
             IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='Mul')
-
+            input_node_weight = self.src_graph.get_parent(source_node.name, [1])
+            W = self._get_node_weight(input_node_weight)
+            self.set_weight(source_node.name, 'weights', W)
 
 
     def rename_Add(self, source_node):
@@ -812,8 +824,6 @@ class TensorflowParser2(Parser):
 
         assign_IRnode_values(IR_node, kwargs)
 
-
-
     def rename_Conv2D(self, source_node):
         IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'Conv')
         kwargs = {}
@@ -825,12 +835,7 @@ class TensorflowParser2(Parser):
 
         # weights
         input_node_weight = self.src_graph.get_parent(source_node.name, [1])
-        if input_node_weight.type == 'Const':
-            tensor_content = input_node_weight.get_attr('value')
-        else:
-            input_node_weight_read = self.src_graph.get_parent(input_node_weight.name, [0])
-            tensor_content = input_node_weight_read.get_attr('value')
-        W = tensor_util.MakeNdarray(tensor_content)
+        W = self._get_node_weight(input_node_weight)
 
         kwargs['kernel_shape'] = self.tensor_shape_to_list(input_node_weight.get_attr('_output_shapes'))[0]
 
