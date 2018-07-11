@@ -48,7 +48,7 @@ MXNet Model imagenet1k-resnet-50 saved as [./resnet-50-symbol.json] and [./resne
 Above MMdnn@0.1.4, we provide one command to achieve the conversion
 
 ```bash
-$  mmconvert -sf mxnet -in resnet-50-symbol.json -iw resnet-50-0000.params -df cntk -om mxnet_resnet50.dnn --inputShape 3 224 224
+$  mmconvert -sf mxnet -in resnet-50-symbol.json -iw resnet-50-0000.params -df cntk -om mxnet_resnet50.dnn --inputShape 3,224,224
 .
 .
 .
@@ -67,7 +67,7 @@ Then you get the CNTK original model *mxnet_resnet152.dnn* converted from MXNet.
 You can use following bash command to convert the network architecture [*mxnet/models/resnet-50-symbol.json*] to IR architecture file [*resnet50.pb*], [*resnet50.json*]. You can convert only network structure to IR for visualization or training in other frameworks.
 
 ```bash
-$ mmtoir -f mxnet -n mxnet/models/resnet-50-symbol.json -d resnet50 --inputShape 3 224 224
+$ mmtoir -f mxnet -n mxnet/models/resnet-50-symbol.json -d resnet50 --inputShape 3,224,224
 .
 .
 .
@@ -83,7 +83,7 @@ You can use following bash command to convert the network architecture [*mxnet/m
 > The input data shape is not in the architecture description of MXNet, we need to specify the data shape in conversion command.
 
 ```bash
-$ mmtoir -f mxnet -n mxnet/models/resnet-50-symbol.json -w mxnet/models/resnet-50-0000.params -d resnet50 --inputShape 3 224 224
+$ mmtoir -f mxnet -n mxnet/models/resnet-50-symbol.json -w mxnet/models/resnet-50-0000.params -d resnet50 --inputShape 3,224,224
 .
 .
 .
