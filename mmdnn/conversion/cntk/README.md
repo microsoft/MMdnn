@@ -43,7 +43,7 @@ Cntk Model resnet50 saved as [./ResNet50_ImageNet_CNTK.model].
 Above MMdnn@0.1.4, we provide one command to achieve the conversion
 
 ```bash
-$  mmconvert -sf cntk -iw ResNet50_ImageNet_CNTK.model -df cntk -om cntk_resnet50.dnn --inputShape 3 224 224
+$  mmconvert -sf cntk -iw ResNet50_ImageNet_CNTK.model -df cntk -om cntk_resnet50.dnn --inputShape 3,224,224
 .
 .
 .

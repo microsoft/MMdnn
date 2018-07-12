@@ -40,9 +40,13 @@ class MXNetGraphNode(GraphNode):
 
 
     def get_attr(self, name, default_value=None):
-        assert self.attr
-        return self.attr.get(name, default_value)
-
+        if self.attr:
+            if name in self.attr.keys():
+                return self.attr.get(name)
+            else:
+                return default_value
+        else:
+            return default_value
 
 class MXNetGraph(Graph):
 
