@@ -60,7 +60,11 @@ setup(
     packages=find_packages(),
 
     package_data={
-        'mmdnn':['visualization/*']
+        'mmdnn':['visualization/public/*',
+                'visualization/*.json',
+                'visualization/*.js',
+                'visualization/*.html',
+                'visualization/*.css']
     },
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
