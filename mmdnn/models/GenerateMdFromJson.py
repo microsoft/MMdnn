@@ -52,14 +52,17 @@ def GenerateModelBlock(model):
         download["tgz"] = link["architecture"]
 
     # generate makedown script
-    add_code("|<b>{}</b><br />Framework: {}<br />Description:{} <br />Download: ".format(
+    add_code('''|<b>{}</b><br />Framework: {}<br />Dataset: _{}_ <br />Download: '''.format(
         model["name"],
         model["framework"],
-        model["description"],
+        model["dataset"],
     ))
     for k in download.keys():
         if download[k]:
             add_code("[{}]({}) ".format(k, download[k]))
+    add_code("<br />Source: ")
+    if (model["source"]!=""):
+        add_code("[Link]({})".format(model["source"]))
     add_code("<br />")
 
 def GenerateModelsList(data):
