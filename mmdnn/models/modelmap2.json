@@ -124,7 +124,7 @@
             "name": "voc-fcn8s",
             "framework":"caffe",
             "source":"https://github.com/shelhamer/fcn.berkeleyvision.org",
-            "dataset":"imagenet",
+            "dataset":"Pascal VOC",
             "link":
             {
                 "architecture":"https://raw.githubusercontent.com/shelhamer/fcn.berkeleyvision.org/master/voc-fcn8s/deploy.prototxt",
@@ -136,7 +136,7 @@
             "name": "voc-fcn16s",
             "framework":"caffe",
             "source":"https://github.com/shelhamer/fcn.berkeleyvision.org",
-            "dataset":"imagenet",
+            "dataset":"Pascal VOC",
             "link":
             {
                 "architecture":"http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/voc-fcn16s_deploy.prototxt",
@@ -148,7 +148,7 @@
             "name": "voc-fcn32s",
             "framework":"caffe",
             "source":"https://github.com/shelhamer/fcn.berkeleyvision.org",
-            "dataset":"imagenet",
+            "dataset":"Pascal VOC",
             "link":
             {
                 "architecture":"http://mmdnn.eastasia.cloudapp.azure.com:89/models/caffe/voc-fcn32s_deploy.prototxt",
@@ -226,7 +226,7 @@
             "name": "Fast-RCNN_grocery100",
             "framework":"cntk",
             "source":"https://docs.microsoft.com/en-us/cognitive-toolkit/object-detection-using-fast-r-cnn",
-            "dataset":"imagenet",
+            "dataset":"grocery100",
             "link":
             {
                 "architecture":"https://www.cntk.ai/Models/FRCN_Grocery/Fast-RCNN_grocery100.model"
@@ -237,7 +237,7 @@
             "name": "Fast-RCNN_Pascal",
             "framework":"cntk",
             "source":"https://docs.microsoft.com/en-us/cognitive-toolkit/object-detection-using-fast-r-cnn#train-on-pascal-voc",
-            "dataset":"imagenet",
+            "dataset":"Pascal VOC",
             "link":
             {
                 "architecture":"https://www.cntk.ai/Models/FRCN_Pascal/Fast-RCNN.model"
@@ -347,7 +347,7 @@
             "name": "tinyyolo",
             "framework":"coreml",
             "source":"https://coreml.store/tinyyolo",
-            "dataset":"imagenet",
+            "dataset":"Pascal VOC",
             "link":
             {
                 "architecture":"https://s3-us-west-2.amazonaws.com/coreml-models/TinyYOLO.mlmodel"
@@ -357,8 +357,8 @@
         {
             "name": "yolov3",
             "framework":"darknet",
-            "source":"",
-            "dataset":"imagenet",
+            "source":"https://pjreddie.com/darknet/yolo/",
+            "dataset":"Pascal VOC",
             "link":
             {
                 "architecture":"https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov3.cfg",
@@ -369,8 +369,8 @@
         {
             "name": "yolov2",
             "framework":"darknet",
-            "source":"",
-            "dataset":"imagenet",
+            "source":"https://pjreddie.com/darknet/yolo/",
+            "dataset":"Pascal VOC",
             "link":
             {
                 "architecture":"https://raw.githubusercontent.com/pjreddie/darknet/master/cfg/yolov2.cfg",
@@ -806,7 +806,7 @@
         {
             "name": "vgg16",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -817,7 +817,7 @@
         {
             "name": "vgg19",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -828,7 +828,7 @@
         {
             "name": "inception_v1",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -839,7 +839,7 @@
         {
             "name": "inception_v1_frozen",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -850,7 +850,7 @@
         {
             "name": "inception_v3",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -861,7 +861,7 @@
         {
             "name": "inception_v3_frozen",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -872,7 +872,7 @@
         {
             "name": "resnet_v1_50",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -883,7 +883,7 @@
         {
             "name": "resnet_v1_152",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -894,7 +894,7 @@
         {
             "name": "resnet_v2_50",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -905,7 +905,7 @@
         {
             "name": "resnet_v2_152",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -916,7 +916,7 @@
         {
             "name": "resnet_v2_200",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -927,7 +927,7 @@
         {
             "name": "mobilenet_v1_1.0",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -938,7 +938,7 @@
         {
             "name": "mobilenet_v1_1.0_frozen",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -949,7 +949,7 @@
         {
             "name": "mobilenet_v2_1.0_224",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -960,7 +960,7 @@
         {
             "name": "inception_resnet_v2",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
@@ -971,7 +971,7 @@
         {
             "name": "nasnet-a_large",
             "framework":"tensorflow",
-            "source":"",
+            "source":"https://github.com/tensorflow/models/tree/master/research/slim#Pretrained",
             "dataset":"imagenet",
             "link":
             {
