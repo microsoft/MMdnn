@@ -14,7 +14,7 @@ frame_model_map = {
      'pytorch': {'architecture':'pth'},
      'tensorflow': {'architecture':'tgz'}
 }  # Haven't add 'keras' yet
-dataset_list = ['imagenet', 'imagenet1k', 'imagenet11k', 'Pascal VOC', 'grocery100']
+dataset_list = ['imagenet', 'imagenet11k', 'Pascal VOC', 'grocery100']
 
 def add_code(code):
     global markdown_code
