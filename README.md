@@ -25,7 +25,7 @@ In MMdnn, we focus on helping user handle their work better.
 - **Find model**
 
   - We provide a [model collection](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/models/README.md) to help you find some popular models.
-  - We provide a <a href="#visualization">model visualizer</a> to help you y
+  - We provide a <a href="#visualization">model visualizer</a> to display the network architecture more intuitively.
 
 - <a href="#conversion">**Conversion**</a>
 
