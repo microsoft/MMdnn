@@ -37,36 +37,73 @@ def LoadJson(json_path):
         data = json.load(f)
     return data
 
-def GenerateModelBlock(model):
-    link = model["link"]
-    framework = model["framework"]
+def RegenerateJsonByDataset(data):
+    new_data = {}
+    new_data['dataset'] = {}
+    for i in range(len(dataset_list)):
+        new_data['dataset'][dataset_list[i]] = []
+    for mo in data['models']:
+        ds = mo['dataset']
+        item = {}
+        item['name'] = mo['name']
+        item['framework'] = mo['framework']
+        item['source'] = mo['source']
+        item['link'] = mo['link']
+        item['version'] = ""
+        new_data['dataset'][ds].append(item)
+
+    # with open('modelmapbydataset.json', 'w') as outfile:
+    #     json.dump(new_data, outfile)
+    return new_data
+
+def GenerateModelBlock_v2(model):
+    link = model['link']
+    framework = model['framework']
 
     # generate makedown script
-    add_code('''|<b>{}</b><br />Framework: {}<br />Dataset: _{}_ <br />Download: '''.format(
-        model["name"],
-        model["framework"],
-        model["dataset"],
+    add_code('''|<b>{}</b><br />Framework: {}<br />Download: '''.format(
+        model['name'],
+        model['framework']
     ))
     for k in link.keys():
         if link[k]:
-            add_code("[{}]({}) ".format(frame_model_map[framework][k], link[k]))
+            add_code("[{}]({}) ".format(
+                frame_model_map[framework][k],
+                link[k]
+            ))
     add_code("<br />Source: ")
-    if (model["source"]!=""):
-        add_code("[Link]({})".format(model["source"]))
+    if (model['source']!=""):
+        add_code("[Link]({})".format(model['source']))
     add_code("<br />")
 
-def GenerateModelsList(data):
+def DrawTableBlock(data, dataset_name):
     colnum = 3
-    add_header(1, "Model Collection")
+    add_header(3, dataset_name)
     draw_line(colnum)
-    models = data["models"]
+    models = data['dataset'][dataset_name]
     num = 0
-    for i in range(len(data["models"])):
-        if ((models[i]["framework"]!="keras") and (models[i]["link"]["architecture"]!="")):
-            GenerateModelBlock(models[i])
+    for i in range(len(models)):
+        if ((models[i]['framework']!='keras') and (models[i]['link']['architecture']!="")):
+            GenerateModelBlock_v2(models[i])
             num += 1
             if num % colnum == 0:
                 add_code("\n")
+    add_code("\n")
+
+def GenerateModelsList_v2(data):
+
+    add_header(1, "Model Collection")
+
+    # add Image Classification
+    add_header(2, "Image Classification")
+    for ds_name in ['imagenet', 'imagenet11k']:
+        DrawTableBlock(data, ds_name)
+
+    # add Object Detection
+    add_header(2, "Object Detection")
+    for ds_name in ['Pascal VOC', 'grocery100']:
+        DrawTableBlock(data, ds_name)
+
     add_code("\n")
 
 def GenerateIntroductionAndTutorial():
@@ -130,7 +167,7 @@ Next session show an example to show you how to convert pre-trained model betwee
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--file', type=str, default="modelmap2.json", help="the path of json file")
-    parser.add_argument('-d', '--distFile', type=str, default="README.md", help="the path of the readme file")
+    parser.add_argument('-d', '--distFile', type=str, default="Collection_v2.md", help="the path of the readme file")
     args = parser.parse_args()
 
     # Generate model converter description
@@ -138,7 +175,8 @@ def main():
 
     # Generate models list
     data = LoadJson(args.file)
-    GenerateModelsList(data)
+    new_data = RegenerateJsonByDataset(data)
+    GenerateModelsList_v2(new_data)
     save_code(args.distFile)
 
 if __name__ == "__main__":

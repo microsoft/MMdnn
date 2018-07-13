@@ -490,7 +490,7 @@
             "name": "imagenet11k-resnet-152",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet11k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet-11k/resnet-152/resnet-152-symbol.json",
@@ -502,7 +502,7 @@
             "name": "imagenet11k-place365ch-resnet-152",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet11k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet-11k-place365-ch/resnet-152-symbol.json",
@@ -514,7 +514,7 @@
             "name": "imagenet11k-place365ch-resnet-50",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet11k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet-11k-place365-ch/resnet-50-symbol.json",
