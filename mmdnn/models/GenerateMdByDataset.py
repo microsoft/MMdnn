@@ -52,8 +52,8 @@ def RegenerateJsonByDataset(data):
         item['version'] = ""
         new_data['dataset'][ds].append(item)
 
-    with open('modelmapbydataset.json', 'w') as outfile:
-        json.dump(new_data, outfile)
+    # with open('modelmapbydataset.json', 'w') as outfile:
+    #     json.dump(new_data, outfile)
     return new_data
 
 def GenerateModelBlock_v2(model):

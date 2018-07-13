@@ -1,9 +1,20 @@
 import json
-from pprint import pprint
 import os
 import argparse
 
 markdown_code = str()
+
+framework_list = ['caffe', 'cntk', 'coreml', 'darknet', 'mxnet', 'pytorch', 'tensorflow']  # Haven't add 'keras' yet
+frame_model_map = {
+     'caffe': {'architecture':'prototxt', 'weights':'caffemodel'},
+     'cntk': {'architecture':'model'},
+     'coreml': {'architecture':'mlmodel'},
+     'darknet': {'architecture':'cfg', 'weights':'weights'},
+     'mxnet': {'architecture':'json', 'weights':'params'},
+     'pytorch': {'architecture':'pth'},
+     'tensorflow': {'architecture':'tgz'}
+}  # Haven't add 'keras' yet
+dataset_list = ['imagenet', 'imagenet1k', 'imagenet11k', 'Pascal VOC', 'grocery100']
 
 def add_code(code):
     global markdown_code
@@ -24,32 +35,11 @@ def save_code(filepath):
 def LoadJson(json_path):
     with open(json_path, encoding='utf-8') as f:
         data = json.load(f)
-    # pprint(data)
     return data
 
 def GenerateModelBlock(model):
     link = model["link"]
     framework = model["framework"]
-    download = dict()
-    if framework == "caffe":
-        download['prototxt'] = link["architecture"]
-        download['caffemodel'] = link["weights"]
-    elif framework == "cntk":
-        download["model"] = link["architecture"]
-    elif framework == "coreml":
-        download["mlmodel"] = link["architecture"]
-    elif framework == "darknet":
-        download["cfg"] = link["architecture"]
-        download['weights'] = link["weights"]
-    elif framework == "keras":
-        download["h5"] = ""
-    elif framework == "mxnet":
-        download["json"] = link["architecture"]
-        download['params'] = link["weights"]
-    elif framework == "pytorch":
-        download["pth"] = link["architecture"]
-    elif framework == "tensorflow":
-        download["tgz"] = link["architecture"]
 
     # generate makedown script
     add_code('''|<b>{}</b><br />Framework: {}<br />Dataset: _{}_ <br />Download: '''.format(
@@ -57,9 +47,9 @@ def GenerateModelBlock(model):
         model["framework"],
         model["dataset"],
     ))
-    for k in download.keys():
-        if download[k]:
-            add_code("[{}]({}) ".format(k, download[k]))
+    for k in link.keys():
+        if link[k]:
+            add_code("[{}]({}) ".format(frame_model_map[framework][k], link[k]))
     add_code("<br />Source: ")
     if (model["source"]!=""):
         add_code("[Link]({})".format(model["source"]))
@@ -67,8 +57,7 @@ def GenerateModelBlock(model):
 
 def GenerateModelsList(data):
     colnum = 3
-    add_header(1, "Models")
-    add_header(2, "Image Classification")
+    add_header(1, "Model Collection")
     draw_line(colnum)
     models = data["models"]
     num = 0
@@ -78,6 +67,7 @@ def GenerateModelsList(data):
             num += 1
             if num % colnum == 0:
                 add_code("\n")
+    add_code("\n")
 
 def GenerateIntroductionAndTutorial():
     # MMdnn introduction
