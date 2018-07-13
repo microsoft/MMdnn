@@ -4,12 +4,42 @@
 
 A comprehensive, cross-framework solution to convert, visualize and diagnosis deep neural network models. The "MM" in MMdnn stands for model management and "dnn" is an acronym for deep neural network.
 
-Basically, it converts many DNN models that trained by one framework into others. The major features include:
+Typically people use deep neural network with following steps:
 
-- **Model File Converter** Converting DNN models between frameworks
-- **Model Code Snippet Generator** Generating training or inference code snippet for frameworks
-- **Model Visualization** Visualizing DNN network architecture and parameters for frameworks
-- **Model compatibility testing** (On-going)
+```
+--------------                                               --------------
+| Find model | --------------------------------------------> | Deployment |
+--------------      |                                        --------------
+                    |                                            ^    ^
+                    |        --------------                      |    |
+                    -------> | Conversion | ----------------------    |
+                             --------------                           |
+                                   |                                  |
+                                   |           -----------            |
+                                   ----------> | Retrain | ------------
+                                               -----------
+```
+
+In MMdnn, we focus on helping user handle their work better.
+
+- **Find model**
+
+  - We provide a [model collection](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/models/README.md) to help you find some popular models.
+  - We provide a <a href="#visualization">model visualizer</a> to help you y
+
+- <a href="#conversion">**Conversion**</a>
+
+  - We implement an universal convertor to convert DNN models between frameworks, which means you can train on one framework and deploy on another.
+
+- **Retrain**
+
+  - In convertor, we can generate some training/inference code snippet to simplify the retrain/evaluate work.
+
+- **Deployment**
+
+  - We provide some guidelines to help you deploy your models to other hardware platform.
+    - [Android](https://github.com/Microsoft/MMdnn/wiki/Deploy-your-TensorFlow-Lite-Model-in-Android)
+    - [Serving](https://github.com/Microsoft/MMdnn/wiki/Tensorflow-Serving-Via-Docker)
 
 This project is designed and developed by [Microsoft Research (MSR)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/). We also encourage researchers and students leverage this project to analysis DNN models and we welcome any new ideas to extend this project.
 
@@ -18,11 +48,13 @@ This project is designed and developed by [Microsoft Research (MSR)](https://www
 ### Install manually
 
 You can get stable version of MMdnn by
+
 ```bash
 pip install mmdnn
 ```
 
 or you can try the newest version by
+
 ```bash
 pip install -U git+https://github.com/Microsoft/MMdnn.git@master
 ```
@@ -34,18 +66,21 @@ MMdnn provides a docker image, which packaged mmdnn, deep learning frameworks we
 1. Install Docker Community Edition(CE)
 
     [_Learn more about how to install docker_](https://github.com/Microsoft/MMdnn/blob/master/docs/InstallDockerCE.md)
+
 1. Pull MMdnn docker image
     ```bash
     docker pull mmdnn/mmdnn:cpu.small
     ```
-3. Run image in interactive mode
+
+1. Run image in interactive mode
+
     ```bash
     docker run -it mmdnn/mmdnn:cpu.small
     ```
 
 ## Features
 
-### Model Conversion
+### <a name="conversion">Model Conversion</a>
 
 Across the industry and academia, there are a number of existing frameworks available for developers and researchers to design a model, where each framework has its own network structure definition and saving model format. The gaps between frameworks impede the inter-operation of the models.
 
@@ -102,7 +137,6 @@ Done.
 
 #### On-going frameworks
 
-- Paddle Paddle
 - Torch7 (help wants)
 - Chainer (help wants)
 
@@ -116,7 +150,7 @@ Done.
 
 ---
 
-### Model Visualization
+### <a name="visualization">Model Visualization</a>
 
 You can use the [MMdnn model visualizer](http://vis.mmdnn.com/) and submit your IR json file to visualize your model.  In order to run the commands below, you will need to install [requests](https://anaconda.org/anaconda/requests), [keras](https://anaconda.org/anaconda/keras), and [Tensorflow](https://anaconda.org/anaconda/tensorflow) using your favorite package manager.
 

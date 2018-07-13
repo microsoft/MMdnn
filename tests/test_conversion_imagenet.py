@@ -844,7 +844,7 @@ class TestModels(CorrectnessTest):
                 'densenet'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'xception'     : [TensorflowEmit, KerasEmit, CoreMLEmit],
                 'mobilenet'    : [CoreMLEmit, KerasEmit, TensorflowEmit], # TODO: MXNetEmit
-                'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
+                # 'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
                 'yolo2'        : [KerasEmit],
             },
 
