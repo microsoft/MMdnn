@@ -382,7 +382,7 @@
             "name": "imagenet1k-inception-bn",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet1k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet/inception-bn/Inception-BN-symbol.json",
@@ -394,7 +394,7 @@
             "name": "imagenet1k-resnet-18",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet1k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet/resnet/18-layers/resnet-18-symbol.json",
@@ -406,7 +406,7 @@
             "name": "imagenet1k-resnet-34",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet1k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet/resnet/34-layers/resnet-34-symbol.json",
@@ -418,7 +418,7 @@
             "name": "imagenet1k-resnet-50",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet1k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet/resnet/50-layers/resnet-50-symbol.json",
@@ -430,7 +430,7 @@
             "name": "imagenet1k-resnet-101",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet1k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet/resnet/101-layers/resnet-101-symbol.json",
@@ -442,7 +442,7 @@
             "name": "imagenet1k-resnet-152",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet1k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet/resnet/152-layers/resnet-152-symbol.json",
@@ -454,7 +454,7 @@
             "name": "imagenet1k-resnext-50",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet1k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet/resnext/50-layers/resnext-50-symbol.json",
@@ -466,7 +466,7 @@
             "name": "imagenet1k-resnext-101",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet1k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet/resnext/101-layers/resnext-101-symbol.json",
@@ -478,7 +478,7 @@
             "name": "imagenet1k-resnext-101-64x4d",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet1k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet/resnext/101-layers/resnext-101-64x4d-symbol.json",
@@ -490,7 +490,7 @@
             "name": "imagenet11k-resnet-152",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet11k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet-11k/resnet-152/resnet-152-symbol.json",
@@ -502,7 +502,7 @@
             "name": "imagenet11k-place365ch-resnet-152",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet11k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet-11k-place365-ch/resnet-152-symbol.json",
@@ -514,7 +514,7 @@
             "name": "imagenet11k-place365ch-resnet-50",
             "framework":"mxnet",
             "source":"http://data.mxnet.io/models/imagenet/",
-            "dataset":"imagenet",
+            "dataset":"imagenet11k",
             "link":
             {
                 "architecture":"http://data.mxnet.io/models/imagenet-11k-place365-ch/resnet-50-symbol.json",
