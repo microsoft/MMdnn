@@ -141,7 +141,7 @@ The you can use **tf_mobilenet.prototxt** and **tf_mobilenet.caffemodel** in Caf
 
 ### Convert models from IR to Tensorflow code snippet
 
-We can convert IR files to Tensorflow code snippet.
+We will give you an example to convert models from other frameworks to tensorflow.
 
 ```bash
 $ mmtocode -f tensorflow --IRModelPath resnet152.pb --IRWeightPath resnet152.npy --dstModelPath tf_resnet152.py
