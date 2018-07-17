@@ -433,6 +433,7 @@ class TestModels(CorrectnessTest):
 
         model_converted.eval()
 
+        original_framework = checkfrozen(original_framework)
         func = TestKit.preprocess_func[original_framework][architecture_name]
         img = func(image_path)
         img = np.transpose(img, (2, 0, 1))
@@ -457,8 +458,6 @@ class TestModels(CorrectnessTest):
     def KerasEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
         from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
 
-        original_framework = checkfrozen(original_framework)
-
         # IR to code
         converted_file = original_framework + '_keras_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
@@ -471,6 +470,7 @@ class TestModels(CorrectnessTest):
         # import converted model
         model_converted = imp.load_source('KerasModel', converted_file + '.py').KitModel(weight_path)
 
+        original_framework = checkfrozen(original_framework)
         func = TestKit.preprocess_func[original_framework][architecture_name]
 
         img = func(image_path)
@@ -500,8 +500,6 @@ class TestModels(CorrectnessTest):
         from collections import namedtuple
         Batch = namedtuple('Batch', ['data'])
 
-        original_framework = checkfrozen(original_framework)
-
         import mxnet
 
         # IR to code
@@ -519,6 +517,7 @@ class TestModels(CorrectnessTest):
         model_converted = imported.RefactorModel()
         model_converted = imported.deploy_weight(model_converted, output_weights_file)
 
+        original_framework = checkfrozen(original_framework)
         func = TestKit.preprocess_func[original_framework][architecture_name]
         img = func(image_path)
         img = np.transpose(img, (2, 0, 1))
@@ -543,8 +542,6 @@ class TestModels(CorrectnessTest):
         import caffe
         from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
 
-        original_framework = checkfrozen(original_framework)
-
         # IR to code
         converted_file = original_framework + '_caffe_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
@@ -560,6 +557,7 @@ class TestModels(CorrectnessTest):
         imported.gen_weight(converted_file + '.npy', converted_file + '.caffemodel', converted_file + '.prototxt')
         model_converted = caffe.Net(converted_file + '.prototxt', converted_file + '.caffemodel', caffe.TEST)
 
+        original_framework = checkfrozen(original_framework)
         func = TestKit.preprocess_func[original_framework][architecture_name]
         img = func(image_path)
         img = np.transpose(img, [2, 0, 1])
@@ -587,8 +585,6 @@ class TestModels(CorrectnessTest):
         import coremltools
         from PIL import Image
 
-        original_framework = checkfrozen(original_framework)
-
         def prep_for_coreml(prename, BGRTranspose):
             # The list is in RGB oder
             if prename == 'Standard':
@@ -604,6 +600,7 @@ class TestModels(CorrectnessTest):
         # converted_file = original_framework + '_coreml_' + architecture_name + "_converted"
         # converted_file = converted_file.replace('.', '_')
 
+        original_framework = checkfrozen(original_framework)
         func = TestKit.preprocess_func[original_framework][architecture_name]
 
         import inspect
@@ -681,8 +678,6 @@ class TestModels(CorrectnessTest):
         try:
             from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
 
-            original_framework = checkfrozen(original_framework)
-
             # IR to code
             converted_file = original_framework + '_onnx_' + architecture_name + "_converted"
             converted_file = converted_file.replace('.', '_')
@@ -697,6 +692,7 @@ class TestModels(CorrectnessTest):
 
             tf_rep = prepare(model_converted)
 
+            original_framework = checkfrozen(original_framework)
             func = TestKit.preprocess_func[original_framework][architecture_name]
             img = func(image_path)
             input_data = np.expand_dims(img, 0)
