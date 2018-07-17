@@ -227,7 +227,7 @@ if __name__=='__main__':
             pad_h, pad_w = self._get_symmetric_padding(IR_node)
             stride_h = IR_node.get_attr('strides')[1]
             stride_w = IR_node.get_attr('strides')[2]
-            
+
             if IR_node.type == 'Pool':
                 h_o = (h_i + 2 * pad_h - kernel_h + stride_h - 1) // stride_h + 1
                 w_o = (w_i + 2 * pad_w - kernel_w + stride_w - 1) // stride_w + 1
