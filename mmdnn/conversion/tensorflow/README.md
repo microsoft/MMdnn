@@ -155,7 +155,7 @@ Target network code snippet is saved as [tf_resnet152.py].
 After generating the Tensorflow code snippet, you can convert the Tensorflow code snippet and IR weights file to Tensorflow original model for further usage.There are two types of dump tags: SERVING and TRAINING.
 
 ```bash
-$ mmdownload -n tf_resnet152.py -w resnet152.npy --dump tf_resnet152 --dump_tag SERVING
+$ mmtomodel -f tensorflow -in tf_resnet152.py -iw resnet152.npy -o tf_resnet152 --dump_tag SERVING
 .
 .
 .
