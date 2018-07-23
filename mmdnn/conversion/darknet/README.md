@@ -34,8 +34,10 @@ Darknet Model yolov3 saved as [./yolov3.cfg] and [./yolov3.weights].
 
 You can use following bash command to convert the network architecture [*./yolov3.cfg*] with weights [*./yolov3.weights*] to IR architecture file [*darknet_yolov3.pb*], [*darknet_yolov3.json*] and IR weights file [*darknet_yolov3.npy*]
 
+'darknetStart' is to decide the start buf offsize to parse the darknet weight file.
+
 ```bash
-$ mmtoir -f darknet -n yolov3.cfg -w yolov3.weights -o darknet_yolov3
+$ mmtoir -f darknet -n yolov3.cfg -w yolov3.weights -o darknet_yolov3 --darknetStart 0
 .
 .
 .
