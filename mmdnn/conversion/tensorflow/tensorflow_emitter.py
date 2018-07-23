@@ -498,13 +498,13 @@ def KitModel(weight_file = None):
 
 
     def emit_LRN(self, IR_node):
-        self.add_body(1, "{:<15} = tf.nn.lrn({}, {}, alpha={}, beta={}, bias={}, name='{}')".format(
+        self.add_body(1, "{:<15} = tf.nn.lrn({}, depth_radius={}, bias={}, alpha={}, beta={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('size') - 1,
+            IR_node.get_attr('bias', 1),
             IR_node.get_attr('alpha') / (IR_node.get_attr('size') * 2 - 1),
             IR_node.get_attr('beta'),
-            IR_node.get_attr('bias', 0),
             IR_node.name))
 
 
