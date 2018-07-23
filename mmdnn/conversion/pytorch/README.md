@@ -97,3 +97,23 @@ Ubuntu 16.04 with
 - The main dataflow in a pytorch network is converted from NHWC(channel last) to NCHW(channel first) format, but some operators (like Concat) with axis may not transform correctly. You may need to correct it manually.
 
 - Currently, no RNN-related operations supported
+
+## FAQ
+
+- There are two types models saved in PyTorch. One is including architecture and weights, which is supported in the MMdnn now. The other  one is only including the weights, which is not supported now.
+
+```python
+only_weight_file = "./alexnet-owt-4df8aa71.pth"      # Download from the model zoo
+architecture_weight_file = "imagenet_alexnet.pth"    # Download using mmdownload()
+
+m = torch.load(only_weight_file)                    # <class 'collections.OrderedDict'>
+m_1 = torch.load(architecture_weight_file)          # <class 'torchvision.models.alexnet.AlexNet'> supported!
+
+```
+- When you get the error "AttributeError: 'collections.OrderedDict' object has no attribute 'state_dict'" , it's because you use the model only include weights part. You need to save a new model with archietecture
+
+```python
+torch.save(model, filename)
+```
+
+

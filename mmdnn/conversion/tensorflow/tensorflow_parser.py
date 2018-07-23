@@ -505,7 +505,7 @@ class TensorflowParser(Parser):
         scopes = self._get_scopes(source_node.name)
 
         # Deal Dropout
-        if scopes[-2] == 'dropout':
+        if len(scopes) > 1 and scopes[-2][:7] == 'dropout':
             IR_node = self._convert_identity_operation(source_node, in_edge_count = 1, new_op = 'Dropout')
 
             # keep prob
@@ -527,6 +527,8 @@ class TensorflowParser(Parser):
             floor_node.covered = True
 
         else:
+            print (source_node)
+            print (source_node.layer)
             assert False
 
 
@@ -779,7 +781,6 @@ class TensorflowParser(Parser):
     def rename_StridedSlice(self, source_node):
         # TODO: Current it is only for slice
 
-
         IR_node = self._convert_identity_operation(source_node, in_edge_count=1, new_op='Slice')
         kwargs = {
             'begin_mask' : source_node.get_attr('begin_mask'),
@@ -799,4 +800,15 @@ class TensorflowParser(Parser):
             strides = tensor_util.MakeNdarray(strides).tolist()
             kwargs['strides'] = strides
 
+        assign_IRnode_values(IR_node, kwargs)
+
+
+    def rename_LRN(self, source_node):
+        IR_node = self._convert_identity_operation(source_node)
+        kwargs = {
+            "alpha" : source_node.get_attr('alpha') * (source_node.get_attr('depth_radius') * 2 + 1),
+            "beta" : source_node.get_attr('beta'),
+            "bias" : source_node.get_attr('bias'),
+            'size' : source_node.get_attr('depth_radius') + 1
+        }
         assign_IRnode_values(IR_node, kwargs)

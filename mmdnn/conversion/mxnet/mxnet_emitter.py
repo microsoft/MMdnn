@@ -777,6 +777,17 @@ def predict(model, labels, url):
                 IR_node.name
         )
         return code
+    
+    def emit_PRelu(self, IR_node):
+        slope = IR_node.get_attr('gamma')
+        code = "{:<15} = mx.sym.LeakyReLU(data = {}, slope = {}, act_type = '{}', name = '{}')".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                slope,
+                'prelu',
+                IR_node.name
+        )
+        return code
 
     def emit_Elu(self, IR_node):
         alpha = IR_node.IR_layer.attr['alpha'].f
