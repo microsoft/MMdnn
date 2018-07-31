@@ -51,6 +51,7 @@ from keras.models import Model
 from keras import layers
 import keras.backend as K
 import numpy as np
+import keras_applications
 
 
 def load_weights_from_file(weight_file):
@@ -199,7 +200,7 @@ def KitModel(weight_file = None):
         else:
             filters = IR_node.get_attr('kernel_shape')[-1]
 
-        filters_str = 'filters={}'.format(filters) if conv_type.startswith('layer') else 'depth_multiplier={}'.format(filters)
+        filters_str = 'filters={}'.format(filters) if not conv_type.endswith('DepthwiseConv2D') else 'depth_multiplier={}'.format(filters)
         # change dw from filters to 1
 
 
@@ -540,14 +541,27 @@ def KitModel(weight_file = None):
 
 
     def emit_Relu6(self, IR_node):
-        self.add_body(1, "{:<15} = layers.Activation(keras.applications.mobilenet.relu6, name = '{}')({})".format(
+        try:
+            from keras.applications.mobilenet import relu6
+            str_relu6 = 'keras.applications.mobilenet.relu6'
+        except:
+            from keras_applications import mobilenet_v2
+            mobilenet_v2.layers.ReLU
+            str_relu6 = "keras_applications.mobilenet_v2.layers.ReLU(6, name='relu6')"
+
+        self.add_body(1, "{:<15} = layers.Activation({}, name = '{}')({})".format(
             IR_node.variable_name,
+            str_relu6,
             IR_node.name,
             self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name))
 
 
     def emit_DepthwiseConv(self, IR_node):
-        self._emit_convolution(IR_node, 'keras.applications.mobilenet.DepthwiseConv2D')
+        try:
+            keras.applications.mobilenet.DepthwiseConv2D
+            self._emit_convolution(IR_node, 'keras.applications.mobilenet.DepthwiseConv2D')
+        except:
+            self._emit_convolution(IR_node, 'layers.DepthwiseConv2D')
 
 
     def emit_Crop(self, IR_node):
@@ -712,6 +726,10 @@ class LRN(Layer):
 def convolution(weights_dict, name, input, group, conv_type, filters=None, **kwargs):
     if not conv_type.startswith('layer'):
         layer = keras.applications.mobilenet.DepthwiseConv2D(name=name, **kwargs)(input)
+        return layer
+
+    elif conv_type == 'layers.DepthwiseConv2D':
+        layer = layers.DepthwiseConv2D(name=name, **kwargs)(input)
         return layer
 
     grouped_channels = int(filters / group)

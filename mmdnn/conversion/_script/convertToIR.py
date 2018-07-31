@@ -10,7 +10,7 @@ def _convert(args):
             shape = x.split(',')
             inputshape.append([int(x) for x in shape])
     else:
-        inputshape = None
+        inputshape = [None]
     if args.srcFramework == 'caffe':
         from mmdnn.conversion.caffe.transformer import CaffeTransformer
         transformer = CaffeTransformer(args.network, args.weights, "tensorflow", inputshape[0], phase = args.caffePhase)
