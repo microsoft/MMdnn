@@ -79,7 +79,6 @@ setup(
         'numpy >= 1.11.0',
         'protobuf >= 3.1.0',
         'six >= 1.10.0',
-        'uuid',
         'pillow >= 3.1.0',
     ],
 
