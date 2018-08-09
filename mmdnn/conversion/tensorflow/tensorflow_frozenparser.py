@@ -442,8 +442,10 @@ class TensorflowParser2(Parser):
             return
 
         variable = self.tf_graph.get_node(add_node.in_edges[1]) #add_bias node
-        if variable.type == 'Identity':
-            variable = self.tf_graph.get_node(variable.in_edges[0])
+        if variable.type != 'Identity':
+            return
+        
+        variable = self.tf_graph.get_node(variable.in_edges[0])
 
         bias_value = variable.get_attr('value')
         bias = tensor_util.MakeNdarray(bias_value)
