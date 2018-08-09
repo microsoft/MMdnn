@@ -237,8 +237,8 @@ class TensorflowParser2(Parser):
 
             if len(Rsqrt.out_edges) == 2:
                 IR_node.attr['scale'].b = False
-                output_node = self.get_son(Rsqrt.name, [1, 0], True)
-                Mul = self.get_son(Rsqrt.name, [0], True)
+                output_node = self.get_son(Rsqrt.name, [0, 0], True)
+                Mul = self.get_son(Rsqrt.name, [1], True)
             else:
                 IR_node.attr['scale'].b = True
                 son = self.get_son(Rsqrt.name, [0, 0], True)
