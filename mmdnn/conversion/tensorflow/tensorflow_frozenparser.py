@@ -619,7 +619,7 @@ class TensorflowParser2(Parser):
         scopes = self._get_scopes(source_node.name)
         if len(scopes) > 2:
             if scopes[-2] == 'batchnorm':
-                if scopes[-3] == 'BatchNorm':
+                if scopes[-3] == 'BatchNorm' or scopes[-3] == 'batch_normalization':
                     self._convert_layers_batchnorm(source_node)
                 elif scopes[-3] == 'InstanceNorm':
                     self._convert_layers_instancenorm(source_node)
