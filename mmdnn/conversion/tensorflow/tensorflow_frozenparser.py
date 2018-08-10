@@ -247,8 +247,8 @@ class TensorflowParser2(Parser):
                 gamma_tensor = gamma.get_attr('value')
                 scale = tensor_util.MakeNdarray(gamma_tensor)
                 self.set_weight(source_node.name, 'scale', scale)
-                output_node = self.get_son(source_node.name, [0, 0, 0, 0, 0], True)
-                Mul = self.get_son(Rsqrt.name, [0, 0], True)
+                output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
+                Mul = self.get_son(Rsqrt.name, [0, 1], True)
 
 
             # beta  (bias)
