@@ -56,6 +56,7 @@ class TensorflowParser(Parser):
         7  : graph_pb2.DT_STRING,
         9  : graph_pb2.DT_INT64,
         10 : graph_pb2.DT_BOOL,
+        19 : graph_pb2.DT_FLOAT16
     }
 
 
