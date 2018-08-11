@@ -240,11 +240,28 @@ class CntkParser(Parser):
     def rename_AveragePooling(self, source_node):
         self.rename_Pooling(source_node)
 
+    def rename_Slice(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Slice')
+        kwargs = dict()
+        kwargs['axis'] = source_node.get_attr('axis')[-1] + 1
+        kwargs['ends'] = source_node.get_attr('endIndex')
+        kwargs['starts'] = source_node.get_attr('beginIndex')
+        kwargs['strides'] = source_node.get_attr('sliceStrides')
+        assign_IRnode_values(IR_node, kwargs)
+
 
     def rename_Splice(self, source_node):
+        if len(source_node.in_edges) == 1:
+            source_node.in_edges.append(source_node.in_edges[0])
         IR_node = self._convert_identity_operation(source_node, new_op='Concat')
         assign_IRnode_values(IR_node, {'axis' : source_node.get_attr('axis')[-1] + 1})
 
+
+    def rename_StableSigmoid(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op='Sigmoid')
+
+    def rename_BinaryCrossEntropy(self, source_node):
+        pass
 
     def rename_Pooling(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Pool')
