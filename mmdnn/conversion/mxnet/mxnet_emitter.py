@@ -127,10 +127,15 @@ def RefactorModel():
                 np.save(outfile, self.output_weights)
 
         comment = "\n    # if a GPU is available, change mx.cpu() to mx.gpu()"
+        # We use the real_name for specifying the input layer in data_names
+        # since MXNet API wants the actual name of the layer. On the other
+        # hand, the module API wants the last symbol in the symbol chain, so
+        # for the output node we need to use the actual python variable name
+        # of the last layer (real_variable_name).
         last_line = "{:<15} = mx.mod.Module(symbol = {}, context = mx.cpu(), data_names = ['{}'])".format(
             "model",
             ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack']),
-            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']))
+            ', '.join([self.IR_graph.get_node(name).real_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']))
 
         self.add_body(1, comment)
         self.add_body(1, last_line)
@@ -777,7 +782,7 @@ def predict(model, labels, url):
                 IR_node.name
         )
         return code
-    
+
     def emit_PRelu(self, IR_node):
         slope = IR_node.get_attr('gamma')
         code = "{:<15} = mx.sym.LeakyReLU(data = {}, slope = {}, act_type = '{}', name = '{}')".format(
