@@ -27,6 +27,7 @@ class PytorchParser(Parser):
     'onnx::Concat': 'Concat',
     'onnx::Relu': 'Relu',
     'onnx::Tanh': 'Tanh',
+    'onnx::Constant' : 'Constant',
 
 
     # TODO

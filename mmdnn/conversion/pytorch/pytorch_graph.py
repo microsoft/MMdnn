@@ -65,13 +65,15 @@ class PytorchGraph(Graph):
         # run dce first to eliminate dead parts of the graph that might have been
         # left behind by things like symbolic_override
 
+        from torch.onnx import ONNX_ARCHIVE_MODEL_PROTO_NAME, ExportTypes, OperatorExportTypes
+
         torch._C._jit_pass_dce(graph)
         torch._C._jit_pass_lint(graph)
 
         torch._C._jit_pass_peephole(graph)
         torch._C._jit_pass_lint(graph)
         if not export_raw_ir:
-            graph = torch._C._jit_pass_onnx(graph, aten)
+            graph = torch._C._jit_pass_onnx(graph, OperatorExportTypes.ONNX)
             torch._C._jit_pass_lint(graph)
             torch._C._jit_pass_onnx_peephole(graph)
             torch._C._jit_pass_lint(graph)
@@ -108,6 +110,14 @@ class PytorchGraph(Graph):
                 model.train(old_mode)
 
 
+    @staticmethod
+    def convert_to_int(x):
+        try:
+            return int(x)
+        except (TypeError, ValueError):
+            return None
+
+
     def build(self, shape):
         """
         build graph for pytorch 0.4.0
@@ -132,6 +142,8 @@ class PytorchGraph(Graph):
 
 
         # build each layer
+        import unicodedata
+
         for node in nodes:
 
             node_id = PytorchGraph.get_node_id(node)
@@ -139,7 +151,7 @@ class PytorchGraph(Graph):
             node_name = node_scope + node_id
             node_name = node_name.replace('-','n').replace('\\','n').replace('/','n').replace('_','n').replace('[','n').replace(']','n')
             output_shape_str = re.findall(r'[^()!]+', node.__str__())[1]
-            output_shape = [int(x.replace('!', '')) for x in output_shape_str.split(',')]
+            output_shape = [self.convert_to_int(x.replace('!', '')) for x in output_shape_str.split(',')]
 
 
             self.shape_dict[node_name] = output_shape
