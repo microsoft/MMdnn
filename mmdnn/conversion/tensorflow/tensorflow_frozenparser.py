@@ -238,7 +238,11 @@ class TensorflowParser2(Parser):
             if len(Rsqrt.out_edges) == 2:
                 IR_node.attr['scale'].b = False
                 output_node = self.get_son(Rsqrt.name, [0, 0], True)
-                Mul = self.get_son(Rsqrt.name, [1], True)
+                if output_node.type == 'Sub': 
+                    output_node = self.get_son(Rsqrt.name, [1, 0], True)
+                    Mul = self.get_son(Rsqrt.name, [0], True)
+                else: 
+                    Mul = self.get_son(Rsqrt.name, [1], True)
             else:
                 IR_node.attr['scale'].b = True
                 son = self.get_son(Rsqrt.name, [0, 0], True)
@@ -248,8 +252,11 @@ class TensorflowParser2(Parser):
                 scale = tensor_util.MakeNdarray(gamma_tensor)
                 self.set_weight(source_node.name, 'scale', scale)
                 output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
-                Mul = self.get_son(Rsqrt.name, [0, 1], True)
-
+                if output_node.type == 'Sub': 
+                    output_node = self.get_son(source_node.name, [0, 0, 0, 0, 0], True)
+                    Mul = self.get_son(Rsqrt.name, [0, 0], True)
+                else: 
+                    Mul = self.get_son(Rsqrt.name, [0, 1], True)
 
             # beta  (bias)
             beta = self.get_parent(output_node.name, [1, 0, 0], True).get_attr('value')
