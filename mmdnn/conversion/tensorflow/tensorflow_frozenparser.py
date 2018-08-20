@@ -238,8 +238,12 @@ class TensorflowParser2(Parser):
 
             if len(Rsqrt.out_edges) == 2:
                 IR_node.attr['scale'].b = False
-                output_node = self.get_son(Rsqrt.name, [1, 0], True)
-                Mul = self.get_son(Rsqrt.name, [0], True)
+                output_node = self.get_son(Rsqrt.name, [0, 0], True)
+                if output_node.type == 'Sub': 
+                    output_node = self.get_son(Rsqrt.name, [1, 0], True)
+                    Mul = self.get_son(Rsqrt.name, [0], True)
+                else: 
+                    Mul = self.get_son(Rsqrt.name, [1], True)
             else:
                 IR_node.attr['scale'].b = True
                 son = self.get_son(Rsqrt.name, [0, 0], True)
@@ -248,9 +252,12 @@ class TensorflowParser2(Parser):
                 gamma_tensor = gamma.get_attr('value')
                 scale = tensor_util.MakeNdarray(gamma_tensor)
                 self.set_weight(source_node.name, 'scale', scale)
-                output_node = self.get_son(source_node.name, [0, 0, 0, 0, 0], True)
-                Mul = self.get_son(Rsqrt.name, [0, 0], True)
-
+                output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
+                if output_node.type == 'Sub': 
+                    output_node = self.get_son(source_node.name, [0, 0, 0, 0, 0], True)
+                    Mul = self.get_son(Rsqrt.name, [0, 0], True)
+                else: 
+                    Mul = self.get_son(Rsqrt.name, [0, 1], True)
 
             # beta  (bias)
             beta = self.get_parent(output_node.name, [1, 0, 0], True).get_attr('value')
@@ -443,8 +450,10 @@ class TensorflowParser2(Parser):
             return
 
         variable = self.tf_graph.get_node(add_node.in_edges[1]) #add_bias node
-        if variable.type == 'Identity':
-            variable = self.tf_graph.get_node(variable.in_edges[0])
+        if variable.type != 'Identity':
+            return
+        
+        variable = self.tf_graph.get_node(variable.in_edges[0])
 
         bias_value = variable.get_attr('value')
         bias = tensor_util.MakeNdarray(bias_value)
@@ -618,7 +627,7 @@ class TensorflowParser2(Parser):
         scopes = self._get_scopes(source_node.name)
         if len(scopes) > 2:
             if scopes[-2] == 'batchnorm':
-                if scopes[-3] == 'BatchNorm':
+                if scopes[-3] == 'BatchNorm' or scopes[-3] == 'batch_normalization':
                     self._convert_layers_batchnorm(source_node)
                 elif scopes[-3] == 'InstanceNorm':
                     self._convert_layers_instancenorm(source_node)
