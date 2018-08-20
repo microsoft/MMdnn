@@ -100,9 +100,19 @@ def shape_convolution(node):
 
 
 def shape_pool(node):
+    if node.parameters.global_pooling:
+        return shape_global_pooling(node)
     return get_strided_kernel_output_shape(node, math.ceil)
 
 
 def shape_inner_product(node):
     input_shape = node.get_only_parent()[0].output_shape
     return TensorShape(input_shape.batch_size, node.parameters.num_output, 1, 1)
+
+
+def shape_global_pooling(node):
+    input_shape = node.get_only_parent()[0].output_shape
+    params = node.kernel_parameters
+    has_c_o = hasattr(params, 'num_output')
+    c = params.num_output if has_c_o else input_shape.channels
+    return TensorShape(input_shape.batch_size, c, 1, 1)  # Output height and width is 1 when global_pooling

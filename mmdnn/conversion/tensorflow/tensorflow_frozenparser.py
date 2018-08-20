@@ -7,6 +7,7 @@ import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.utils import *
 from mmdnn.conversion.common.DataStructure.parser import Parser
+from distutils.version import LooseVersion
 
 class TensorflowParser2(Parser):
 
@@ -86,10 +87,10 @@ class TensorflowParser2(Parser):
         return self.tf_graph
 
     def __init__(self, frozen_file, inputshape, in_nodes, dest_nodes):
-        if tensorflow.__version__ < '1.8.0':
+        if LooseVersion(tensorflow.__version__) < LooseVersion('1.8.0'):
             raise ImportError(
                 'Your TensorFlow version %s is outdated. '
-                'MMdnn requires tensorflow>=1.8.0' % tf.__version__)
+                'MMdnn requires tensorflow>=1.8.0' % tensorflow.__version__)
 
         super(TensorflowParser2, self).__init__()
 

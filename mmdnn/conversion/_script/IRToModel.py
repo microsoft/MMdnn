@@ -15,7 +15,7 @@ def _convert(args):
         raise NotImplementedError("Destination [Tensorflow] is not implemented yet.")
 
     elif args.framework == 'cntk':
-        raise NotImplementedError("Destination [Tensorflow] is not implemented yet.")
+        raise NotImplementedError("Destination [CNTK] is not implemented yet.")
 
     elif args.framework == 'coreml':
         from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
