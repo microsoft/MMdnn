@@ -61,6 +61,7 @@ class TensorflowGraph(Graph):
             self.layer_name_map[layer.name] = layer.name
             for pred in layer.input:
                 if pred not in self.layer_map:
+
                     new_node = NodeDef()
                     new_node.name = pred
                     new_node.op = "NoOp"

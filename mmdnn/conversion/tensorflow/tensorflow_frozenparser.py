@@ -76,7 +76,8 @@ class TensorflowParser2(Parser):
         5 : graph_pb2.DT_INT16,
         6 : graph_pb2.DT_INT8,
         7 : graph_pb2.DT_STRING,
-        9 : graph_pb2.DT_INT64
+        9 : graph_pb2.DT_INT64,
+        10: graph_pb2.DT_BOOL
     }
 
 
@@ -126,15 +127,23 @@ class TensorflowParser2(Parser):
 
         output_shape_map = dict()
         input_shape_map = dict()
+        dtype = tensorflow.float32
 
         with tensorflow.Graph().as_default() as g:
             input_map = {}
             for i in range(len(inputshape)):
-                if in_type_list[in_nodes[i]] == 1:
+                if in_type_list[in_nodes[i]] == 1 or in_type_list[in_nodes[i]] == 0:
                     dtype = tensorflow.float32
+                    x = tensorflow.placeholder(dtype, shape = [None] + inputshape[i])
+
                 elif in_type_list[in_nodes[i]] == 3:
                     dtype = tensorflow.int32
-                x = tensorflow.placeholder(dtype, shape = [None] + inputshape[i])
+                    x = tensorflow.placeholder(dtype, shape = inputshape[i])
+
+                elif in_type_list[in_nodes[i]] == 10:
+                    dtype = tensorflow.bool
+                    x = tensorflow.placeholder(dtype)
+
                 input_map[in_nodes[i] + ':0'] = x
 
             tensorflow.import_graph_def(model, name='', input_map=input_map)
@@ -163,11 +172,10 @@ class TensorflowParser2(Parser):
         while node:
             if node.type == "Const":
                 return node
-            elif node.type in self.skip_type:
-                node =  self.get_parent(node.name, [0])
+            elif node.type == "NoOp":
+                return None
             else:
-                print(node.layer)
-                assert False
+                node =  self.get_parent(node.name, [0])
 
 
     def _convert_reduction_operators(self, source_node, new_op = None):
@@ -307,12 +315,6 @@ class TensorflowParser2(Parser):
         # assert False
 
 
-    def _get_node_weight(self, node):
-        tensor_content = self.check_const(node).get_attr('value')
-        W = tensor_util.MakeNdarray(tensor_content)
-        return W   
-
-
     @classmethod
     def _skip_node(cls, source_node):
         if source_node.covered:
@@ -338,8 +340,10 @@ class TensorflowParser2(Parser):
             if self._skip_node(current_node):
                 continue
 
+            # print(current_node.name)
             node_type = current_node.type
             # print(current_node.name)
+            # print(node_type)
 
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
@@ -376,6 +380,8 @@ class TensorflowParser2(Parser):
                 if source_node.type == 'Enter':
                     IR_node.attr["dtype"].type = TensorflowParser2.dtype_map[6]
                 else:
+                    # print(source_node.layer)
+                    # print(source_node.layer.attr['T'].type)
                     assert source_node.layer.attr['T'].type in TensorflowParser2.dtype_map, 'type [{}] is unknown.'.format(source_node.layer.attr['dtype'].type)
                     IR_node.attr["dtype"].type = TensorflowParser2.dtype_map[source_node.layer.attr['T'].type]
             else:
@@ -488,6 +494,11 @@ class TensorflowParser2(Parser):
 
     def rename_Relu6(self, source_node):
         self._convert_identity_operation(source_node, new_op = 'Relu6')
+
+
+    def rename_Merge(self, source_node):
+        # print(source_node.layer)
+        source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
 
 
     def rename_DepthwiseConv2dNative(self, source_node):
@@ -604,12 +615,21 @@ class TensorflowParser2(Parser):
 
     def rename_Mul(self, source_node):
         scopes = self._get_scopes(source_node.name)
-        if scopes[-2] == "batchnorm":
+
+        if scopes[-2] == "batchnorm" or scopes[-2].startswith("Assign"):
             return
         else:
-            IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='Mul')
-            input_node_weight = self.src_graph.get_parent(source_node.name, [1])
-            W = self._get_node_weight(input_node_weight)
+            input_node = self.check_const(self.src_graph.get_parent(source_node.name, [1]))
+            if input_node:
+                tensor_content = input_node.get_attr('value')
+                IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='Mul')
+            else:
+                input_node = self.check_const(self.src_graph.get_parent(source_node.name, [0]))
+                tensor_content = input_node.get_attr('value')
+                IR_node = self._convert_identity_operation(source_node, start_idx=1, end_idx=2, new_op='Mul')
+
+            W = tensor_util.MakeNdarray(tensor_content)
+
             self.set_weight(source_node.name, 'weights', W)
 
 
@@ -632,6 +652,9 @@ class TensorflowParser2(Parser):
 
 
     def rename_Sub(self, source_node):
+        scopes = self._get_scopes(source_node.name)
+        if scopes[-2].startswith('Assign') or scopes[-1].startswith('Assign'):
+            return
         IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = "Sub")
 
 
@@ -694,7 +717,10 @@ class TensorflowParser2(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Enter')
 
     def rename_Switch(self, source_node):
+        # skip the node
         source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
+
+
 
     def rename_Exp(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Exp')
@@ -726,7 +752,6 @@ class TensorflowParser2(Parser):
 
 
     def rename_Shape(self, source_node):
-        print(source_node.layer)
         IR_node = self._convert_identity_operation(source_node, new_op = 'Shape')
         input_node = self.src_graph.get_parent(source_node.name, [0])
         kwargs = {}
@@ -830,7 +855,8 @@ class TensorflowParser2(Parser):
 
         # weights
         input_node_weight = self.src_graph.get_parent(source_node.name, [1])
-        W = self._get_node_weight(input_node_weight)
+        tensor_content = self.check_const(input_node_weight).get_attr('value')
+        W = tensor_util.MakeNdarray(tensor_content)
 
         kwargs['kernel_shape'] = self.tensor_shape_to_list(input_node_weight.get_attr('_output_shapes'))[0]
 
@@ -916,6 +942,7 @@ class TensorflowParser2(Parser):
 
 
     def rename_Identity(self, source_node):
+        # skip the node
         source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
 
 
@@ -1050,17 +1077,26 @@ class TensorflowParser2(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
     def rename_FusedBatchNorm(self, source_node):
-        # print(source_node.layer)
-        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'BatchNorm')
-        IR_node.attr['epsilon'].f = source_node.get_attr('epsilon', 0)
+
         scalenode = self.check_const(self.get_parent(source_node.name, [1], True))
-        scale_value = scalenode.get_attr('value')
+        if scalenode:
+            scale_value = scalenode.get_attr('value')
+            IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'BatchNorm')
+
+        else:
+            # for slim.batch_norm to remove switch
+            return
         scale = tensor_util.MakeNdarray(scale_value)
         self.set_weight(source_node.name, 'scale', scale)
 
-
+        IR_node.attr['epsilon'].f = source_node.get_attr('epsilon', 0)
         biasnode = self.check_const(self.get_parent(source_node.name, [2], True))
-        bias_value = biasnode.get_attr('value')
+        if biasnode:
+            bias_value = biasnode.get_attr('value')
+        else:
+            innode = self.get_parent(source_node.name, [2], True)
+            name = innode.name.split(':')[0]
+            bias_value = self.check_const(self.src_graph.layer_map[name]).get_attr('value')
         bias = tensor_util.MakeNdarray(bias_value)
         self.set_weight(source_node.name, 'bias', bias)
         IR_node.attr['bias'].b = True
@@ -1075,7 +1111,6 @@ class TensorflowParser2(Parser):
         variance = tensor_util.MakeNdarray(variance_value)
         self.set_weight(source_node.name, 'var', variance)
 
-        # assert False
 
     def rename_SpaceToBatchND(self, source_node):
         # print(source_node.layer)
