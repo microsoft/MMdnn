@@ -9,6 +9,7 @@ from mmdnn.conversion.common.utils import *
 from mmdnn.conversion.common.DataStructure.parser import Parser
 from distutils.version import LooseVersion
 
+
 class TensorflowParser2(Parser):
 
     # skip_prefix = [
@@ -194,8 +195,8 @@ class TensorflowParser2(Parser):
     def _convert_layers_batchnorm(self, source_node):
         IR_node = self.IR_graph.node.add()
         TensorflowParser2._copy_and_reop(source_node, IR_node, 'BatchNorm')
-        is_transformed = False
 
+        is_transformed = False
         test = self.get_parent(source_node.name, [0])
 
         if test.type == 'Mul':
@@ -221,6 +222,8 @@ class TensorflowParser2(Parser):
 
             input_node = self.get_parent(source_node.name, [0])
             IR_node.input.append(input_node.real_name)
+            IR_node.attr["_output_shapes"].list.shape.pop()
+            IR_node.attr["_output_shapes"].MergeFromString(input_node.layer.attr['_output_shapes'].SerializeToString())
 
         else:
             # epsilon
@@ -275,9 +278,8 @@ class TensorflowParser2(Parser):
             assert output_node.type == 'Add'
             input_node = self.get_parent(output_node.name, [0, 0])
             IR_node.input.append(input_node.real_name)
-            # print(IR_node)
-            # assert False
-            # output node
+            IR_node.attr["_output_shapes"].list.shape.pop()
+            IR_node.attr["_output_shapes"].MergeFromString(input_node.layer.attr['_output_shapes'].SerializeToString())
             output_node.real_name = source_node.name
 
 
