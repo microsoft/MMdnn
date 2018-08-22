@@ -250,10 +250,10 @@ class TensorflowParser2(Parser):
             if len(Rsqrt.out_edges) == 2:
                 IR_node.attr['scale'].b = False
                 output_node = self.get_son(Rsqrt.name, [0, 0], True)
-                if output_node.type == 'Sub': 
+                if output_node.type == 'Sub':
                     output_node = self.get_son(Rsqrt.name, [1, 0], True)
                     Mul = self.get_son(Rsqrt.name, [0], True)
-                else: 
+                else:
                     Mul = self.get_son(Rsqrt.name, [1], True)
             else:
                 IR_node.attr['scale'].b = True
@@ -264,10 +264,10 @@ class TensorflowParser2(Parser):
                 scale = tensor_util.MakeNdarray(gamma_tensor)
                 self.set_weight(source_node.name, 'scale', scale)
                 output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
-                if output_node.type == 'Sub': 
+                if output_node.type == 'Sub':
                     output_node = self.get_son(source_node.name, [0, 0, 0, 0, 0], True)
                     Mul = self.get_son(Rsqrt.name, [0, 0], True)
-                else: 
+                else:
                     Mul = self.get_son(Rsqrt.name, [0, 1], True)
 
             # beta  (bias)
@@ -460,7 +460,7 @@ class TensorflowParser2(Parser):
         variable = self.tf_graph.get_node(add_node.in_edges[1]) #add_bias node
         if variable.type != 'Identity':
             return
-        
+
         variable = self.tf_graph.get_node(variable.in_edges[0])
 
         bias_value = variable.get_attr('value')
@@ -1163,14 +1163,3 @@ class TensorflowParser2(Parser):
     def rename_Sqrt(self, source_node):
         # print(source_node.layer)
         IR_node = self._convert_identity_operation(source_node, new_op = 'Sqrt')
-
-    def rename_Mean(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, 0, 1, new_op = 'ReduceMean')
-
-        # keep dims
-        IR_node.attr['keepdims'].b = source_node.layer.attr['keep_dims'].b
-
-        # axes
-        axes = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
-        axes = tensor_util.MakeNdarray(axes)
-        IR_node.attr['axes'].list.i.extend(axes)
