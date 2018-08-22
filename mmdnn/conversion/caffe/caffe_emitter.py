@@ -369,8 +369,8 @@ bias_term={}, ntop=1)".format(
 
         IR_node.real_name = IR_node.name + "_scale"
 
-    def emit_Scale(self, IR_node):
 
+    def emit_Scale(self, IR_node):
         self.add_body(1, "n.{:<15} = L.Scale(n.{}, bias_term={}, in_place=True, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
@@ -378,7 +378,26 @@ bias_term={}, ntop=1)".format(
         ))
 
         if self.weight_loaded:
-            self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
+            try:
+                self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
+            except:
+                self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name + "_second")
+
+
+    def emit_Constant(self, IR_node):
+        IR_node_after = self.IR_graph.get_son(IR_node.name, [0])
+        shape = IR_node_after.get_attr("_output_shapes")[0]
+        shape = shape_to_list(shape)
+        if IR_node_after.type == 'Mul':
+            return
+        else: #Sub
+            self.add_body(1, "n.{:<15} = L.DummyData(shape=[dict(dim=[1,{},{},{}])], data_filler=dict(type='constant', value={}), ntop=1)".format(
+                IR_node.variable_name,
+                shape[-1],
+                shape[1],
+                shape[2],
+                self.weights_dict[IR_node.name]['value'][0]
+            ))
 
 
     def emit_LRN(self, IR_node):
@@ -455,7 +474,7 @@ bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             in_place))
-        
+
     def emit_Tanh(self, IR_node):
         self.add_body(1, "n.{:<15} = L.TanH(n.{}, ntop=1)".format(
             IR_node.variable_name,
