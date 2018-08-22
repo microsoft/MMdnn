@@ -99,8 +99,8 @@ class Keras2Parser(Parser):
         # load model files into Keras graph
         if isinstance(model, _string_types):
             try:
-                from _keras.applications.mobilenet import relu6
-                from _keras.applications.mobilenet import DepthwiseConv2D
+                from keras.applications.mobilenet import relu6
+                from keras.applications.mobilenet import DepthwiseConv2D
                 model = _keras.models.load_model(
                     model,
                     custom_objects={
