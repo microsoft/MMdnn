@@ -1158,14 +1158,3 @@ class TensorflowParser2(Parser):
     def rename_Sqrt(self, source_node):
         # print(source_node.layer)
         IR_node = self._convert_identity_operation(source_node, new_op = 'Sqrt')
-
-    def rename_Mean(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, 0, 1, new_op = 'ReduceMean')
-
-        # keep dims
-        IR_node.attr['keepdims'].b = source_node.layer.attr['keep_dims'].b
-
-        # axes
-        axes = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
-        axes = tensor_util.MakeNdarray(axes)
-        IR_node.attr['axes'].list.i.extend(axes)

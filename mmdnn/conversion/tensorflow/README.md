@@ -7,10 +7,10 @@ We tested the [slim pre-trained models](https://github.com/tensorflow/models/tre
 |    Models    | Caffe | CoreML | CNTK | Keras | MXNet | PyTorch | ONNX |
 | :----------: | :---: | :----: | :--: | :---: | :---: | :-----: | :--: |
 |     Vgg19    |   √   |    √   |   √  |   √   |   √   |    √    |   √  |
-| Inception_v1 |   o   |    √   |   o  |   √   |   √   |    √    |   √  |
-| Inception_v3 |   x   |    √   |   √  |   o   |   √   |    √    |   √  |
-|   ResNet V1  |   x   |    √   |   o  |   √   |   √   |    √    |   √  |
-|   ResNet V2  |   x   |    √   |   √  |   √   |   √   |    √    |   √  |
+| Inception_v1 |   √   |    √   |   o  |   √   |   √   |    √    |   √  |
+| Inception_v3 |   √   |    √   |   √  |   o   |   √   |    √    |   √  |
+|   ResNet V1  |   √   |    √   |   o  |   √   |   √   |    √    |   √  |
+|   ResNet V2  |   √   |    √   |   √  |   √   |   √   |    √    |   √  |
 | MobileNet V1 |   x   |    √   |   o  |   √   |   √   |    √    |   √  |
 | MobileNet V2 |   x   |    √   |   o  |   √   |   √   |    √    |   √  |
 |   NasNet-A   |   x   |    x   |   x  |   x   |   √   |    √    |   √  |
