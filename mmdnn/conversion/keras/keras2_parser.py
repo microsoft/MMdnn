@@ -66,15 +66,17 @@ class Keras2Parser(Parser):
         # Load the model weights
 
         try:
+            from keras.applications.mobilenet import relu6
+            from keras.applications.mobilenet import DepthwiseConv2D
             loaded_model = model_from_json(loaded_model_json, custom_objects={
-            'relu6': _keras.applications.mobilenet.relu6,
-            'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D})
+                'relu6': _keras.applications.mobilenet.relu6,
+                'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D})
         except:
             from keras_applications import mobilenet_v2
             import keras.layers as layers
             loaded_model = model_from_json(loaded_model_json, custom_objects={
-            'relu6': mobilenet_v2.layers.ReLU(6, name='relu6'),
-            'DepthwiseConv2D': layers.DepthwiseConv2D})
+                'relu6': mobilenet_v2.layers.ReLU(6, name='relu6'),
+                'DepthwiseConv2D': layers.DepthwiseConv2D})
 
 
         if model_weight_path:

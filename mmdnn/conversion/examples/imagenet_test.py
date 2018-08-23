@@ -99,6 +99,7 @@ class TestKit(object):
             'resnet_v1_101' : lambda path : TestKit.ZeroCenter(path, 224),
             'resnet_v1_152' : lambda path : TestKit.ZeroCenter(path, 224),
             'resnet_v2_50'  : lambda path : TestKit.Standard(path, 299),
+            'resnet_v2_101' : lambda path : TestKit.Standard(path, 299),
             'resnet_v2_152' : lambda path : TestKit.Standard(path, 299),
             'resnet_v2_200' : lambda path : TestKit.Standard(path, 299),
             'resnet152'     : lambda path : TestKit.Standard(path, 299),
