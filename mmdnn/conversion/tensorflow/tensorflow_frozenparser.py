@@ -150,12 +150,6 @@ class TensorflowParser2(Parser):
 
             tensorflow.import_graph_def(model, name='', input_map=input_map)
 
-        # graph_options = tensorflow.GraphOptions(
-        #     optimizer_options=tensorflow.OptimizerOptions(
-        #         opt_level=tensorflow.OptimizerOptions.L0, do_function_inlining=False))
-
-        # config = tensorflow.ConfigProto(graph_options=graph_options)
-        # with tensorflow.Session(graph = g, config=config) as sess:
         with tensorflow.Session(graph = g) as sess:
 
             meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
@@ -210,7 +204,6 @@ class TensorflowParser2(Parser):
             input_mul_A = self.get_parent(source_node.name, [0, 1])
             tensor_content = input_mul_A.get_attr('value')
             A_content = tensor_util.MakeNdarray(tensor_content)
-            # print(A_content)
             self.set_weight(source_node.name, 'A', A_content)
 
             # b
@@ -250,10 +243,10 @@ class TensorflowParser2(Parser):
             if len(Rsqrt.out_edges) == 2:
                 IR_node.attr['scale'].b = False
                 output_node = self.get_son(Rsqrt.name, [0, 0], True)
-                if output_node.type == 'Sub': 
+                if output_node.type == 'Sub':
                     output_node = self.get_son(Rsqrt.name, [1, 0], True)
                     Mul = self.get_son(Rsqrt.name, [0], True)
-                else: 
+                else:
                     Mul = self.get_son(Rsqrt.name, [1], True)
             else:
                 IR_node.attr['scale'].b = True
@@ -264,10 +257,10 @@ class TensorflowParser2(Parser):
                 scale = tensor_util.MakeNdarray(gamma_tensor)
                 self.set_weight(source_node.name, 'scale', scale)
                 output_node = self.get_son(source_node.name, [0, 0, 0, 0], True)
-                if output_node.type == 'Sub': 
+                if output_node.type == 'Sub':
                     output_node = self.get_son(source_node.name, [0, 0, 0, 0, 0], True)
                     Mul = self.get_son(Rsqrt.name, [0, 0], True)
-                else: 
+                else:
                     Mul = self.get_son(Rsqrt.name, [0, 1], True)
 
             # beta  (bias)
@@ -460,7 +453,7 @@ class TensorflowParser2(Parser):
         variable = self.tf_graph.get_node(add_node.in_edges[1]) #add_bias node
         if variable.type != 'Identity':
             return
-        
+
         variable = self.tf_graph.get_node(variable.in_edges[0])
 
         bias_value = variable.get_attr('value')
@@ -628,21 +621,22 @@ class TensorflowParser2(Parser):
     def rename_Mul(self, source_node):
         scopes = self._get_scopes(source_node.name)
 
-        if scopes[-2] == "batchnorm" or scopes[-2].startswith("Assign"):
-            return
+        if len(scopes) >= 2:
+            if scopes[-2] == "batchnorm" or scopes[-2].startswith("Assign"):
+                return
+
+        input_node = self.check_const(self.src_graph.get_parent(source_node.name, [1]))
+        if input_node:
+            tensor_content = input_node.get_attr('value')
+            IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='Mul')
         else:
-            input_node = self.check_const(self.src_graph.get_parent(source_node.name, [1]))
-            if input_node:
-                tensor_content = input_node.get_attr('value')
-                IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='Mul')
-            else:
-                input_node = self.check_const(self.src_graph.get_parent(source_node.name, [0]))
-                tensor_content = input_node.get_attr('value')
-                IR_node = self._convert_identity_operation(source_node, start_idx=1, end_idx=2, new_op='Mul')
+            input_node = self.check_const(self.src_graph.get_parent(source_node.name, [0]))
+            tensor_content = input_node.get_attr('value')
+            IR_node = self._convert_identity_operation(source_node, start_idx=1, end_idx=2, new_op='Mul')
 
-            W = tensor_util.MakeNdarray(tensor_content)
+        W = tensor_util.MakeNdarray(tensor_content)
 
-            self.set_weight(source_node.name, 'weights', W)
+        self.set_weight(source_node.name, 'weights', W)
 
 
     def rename_Add(self, source_node):
@@ -665,8 +659,9 @@ class TensorflowParser2(Parser):
 
     def rename_Sub(self, source_node):
         scopes = self._get_scopes(source_node.name)
-        if scopes[-2].startswith('Assign') or scopes[-1].startswith('Assign'):
-            return
+        if len(scopes) > 2:
+            if scopes[-2].startswith('Assign') or scopes[-1].startswith('Assign'):
+                return
         IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = "Sub")
 
 
