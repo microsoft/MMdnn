@@ -868,17 +868,17 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow' : {
-                'vgg19'                 : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                'inception_v1'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-                'inception_v3'          : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                'resnet_v1_50'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-                'resnet_v1_152'         : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-                'resnet_v2_50'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-                'resnet_v2_152'         : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                'mobilenet_v1_1.0'      : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
-                'mobilenet_v2_1.0_224'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
-                'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
-                'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always crashed
+                'vgg19'                 : [TensorflowEmit],
+                # 'inception_v1'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+                # 'inception_v3'          : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                # 'resnet_v1_50'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+                # 'resnet_v1_152'         : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+                # 'resnet_v2_50'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+                # 'resnet_v2_152'         : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                # 'mobilenet_v1_1.0'      : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
+                # 'mobilenet_v2_1.0_224'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
+                # 'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
+                # 'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always crashed
             },
 
             'tensorflow_frozen' : {
@@ -903,8 +903,8 @@ class TestModels(CorrectnessTest):
             'paddle' : {
                 'resnet50': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash
                 'resnet101': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash
-                # 'vgg16': [TensorflowEmit],
-                # 'alexnet': [TensorflowEmit]
+                'vgg16': [TensorflowEmit],
+                'alexnet': [TensorflowEmit]
             },
 
             'pytorch' : {
@@ -979,59 +979,59 @@ class TestModels(CorrectnessTest):
 
 
 
-    def test_caffe(self):
-        try:
-            import caffe
-            self._test_function('caffe', self.CaffeParse)
-        except ImportError:
-            print('Please install caffe! Or caffe is not supported in your platform.', file=sys.stderr)
+    # def test_caffe(self):
+    #     try:
+    #         import caffe
+    #         self._test_function('caffe', self.CaffeParse)
+    #     except ImportError:
+    #         print('Please install caffe! Or caffe is not supported in your platform.', file=sys.stderr)
 
 
-    def test_cntk(self):
-        try:
-            import cntk
-            self._test_function('cntk', self.CntkParse)
-        except ImportError:
-            print('Please install cntk! Or cntk is not supported in your platform.', file=sys.stderr)
+    # def test_cntk(self):
+    #     try:
+    #         import cntk
+    #         self._test_function('cntk', self.CntkParse)
+    #     except ImportError:
+    #         print('Please install cntk! Or cntk is not supported in your platform.', file=sys.stderr)
 
 
-    def test_coreml(self):
-        from coremltools.models.utils import macos_version
-        if macos_version() < (10, 13):
-            print('Coreml is not supported in your platform.', file=sys.stderr)
-        else:
-            self._test_function('coreml', self.CoremlParse)
+    # def test_coreml(self):
+    #     from coremltools.models.utils import macos_version
+    #     if macos_version() < (10, 13):
+    #         print('Coreml is not supported in your platform.', file=sys.stderr)
+    #     else:
+    #         self._test_function('coreml', self.CoremlParse)
 
 
-    def test_keras(self):
-        self._test_function('keras', self.KerasParse)
+    # def test_keras(self):
+    #     self._test_function('keras', self.KerasParse)
 
 
-    def test_mxnet(self):
-        self._test_function('mxnet', self.MXNetParse)
+    # def test_mxnet(self):
+    #     self._test_function('mxnet', self.MXNetParse)
 
 
-    def test_darknet(self):
-        self._test_function('darknet', self.DarknetParse)
+    # def test_darknet(self):
+    #     self._test_function('darknet', self.DarknetParse)
 
 
-    def test_paddle(self):
-        # omit tensorflow lead to crash
-        import tensorflow as tf
-        try:
-            import paddle.v2 as paddle
-            self._test_function('paddle', self.PaddleParse)
-        except ImportError:
-            print('Please install Paddlepaddle! Or Paddlepaddle is not supported in your platform.', file=sys.stderr)
+    # def test_paddle(self):
+    #     # omit tensorflow lead to crash
+    #     import tensorflow as tf
+    #     try:
+    #         import paddle.v2 as paddle
+    #         self._test_function('paddle', self.PaddleParse)
+    #     except ImportError:
+    #         print('Please install Paddlepaddle! Or Paddlepaddle is not supported in your platform.', file=sys.stderr)
 
 
-    def test_pytorch(self):
-        self._test_function('pytorch', self.PytorchParse)
+    # def test_pytorch(self):
+    #     self._test_function('pytorch', self.PytorchParse)
 
 
     def test_tensorflow(self):
         self._test_function('tensorflow', self.TensorFlowParse)
 
 
-    def test_tensorflow_frozen(self):
-        self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
+    # def test_tensorflow_frozen(self):
+    #     self._test_function('tensorflow_frozen', self.TensorFlowFrozenParse)
