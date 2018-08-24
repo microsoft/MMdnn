@@ -146,10 +146,24 @@ if __name__=='__main__':
             self.save_weights(self.weights_dict, dstWeightPath)
 
 
-
     @staticmethod
     def _shapeToStr(shapes):
         return [dim.size if dim.size > 0 else 1 for dim in shapes.dim]
+
+
+    def _get_symmetric_padding(self, IR_node):
+        stride_h = IR_node.get_attr('strides')[1]
+        stride_w = IR_node.get_attr('strides')[2]
+
+        # check if have pad layer
+        IR_parent_node = self.IR_graph.get_parent(IR_node.name, [0])
+        if IR_parent_node.type == 'Pad':
+            pads = IR_parent_node.get_attr('pads')
+        else:
+            pads = IR_node.get_attr('pads')
+        pad_h = pads[1] + (0 if pads[1] == pads[5] else stride_h)
+        pad_w = pads[2] + (0 if pads[2] == pads[6] else stride_w)
+        return pad_h, pad_w
 
 
     def check_if_need_transpose(self, IR_node):
@@ -166,17 +180,8 @@ if __name__=='__main__':
 
 
     def emit_Conv(self, IR_node):
-        # check if have pad layer
-        pad_h = 0
-        pad_w = 0
-
-        IR_parent_node = self.IR_graph.get_parent(IR_node.name, [0])
-        if IR_parent_node.type == 'Pad':
-            pad_h = IR_parent_node.get_attr('pads')[1]
-            pad_w = IR_parent_node.get_attr('pads')[2]
-        else:
-            pad_h = IR_node.get_attr('pads')[1]
-            pad_w = IR_node.get_attr('pads')[2]
+        # implement asymmetric paddings by applying symmetric padding then cropping
+        pad_h, pad_w = self._get_symmetric_padding(IR_node)
 
         num_output = IR_node.get_attr('kernel_shape')[-1]
         if IR_node.type == "DepthwiseConv":
@@ -186,7 +191,7 @@ if __name__=='__main__':
             num_group = IR_node.get_attr("group", 1)
 
         self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_h={}, kernel_w={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
-bias_term={}, ntop=1)".format(
+            bias_term={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('kernel_shape')[0],
@@ -198,8 +203,6 @@ bias_term={}, ntop=1)".format(
             num_group,
             IR_node.get_attr('use_bias', False)))
 
-        self.check_if_need_crop(IR_node)
-
         dim = len(IR_node.get_attr('strides')) - 2
         if self.weight_loaded:
             if IR_node.type == "DepthwiseConv":
@@ -207,6 +210,7 @@ bias_term={}, ntop=1)".format(
             self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], [dim + 1, dim] + list(range(0, dim)))
             self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
+        self.check_if_need_crop(IR_node)
         # keys = []
         # for key in self.weights_dict[IR_node.name].keys():
         #     keys.append(key)
@@ -220,10 +224,7 @@ bias_term={}, ntop=1)".format(
             shape = shape_to_list(shape)
             h_i = shape[1]
             w_i = shape[2]
-            pad_h = IR_node.get_attr('pads')[1]
-            pad_w = IR_node.get_attr('pads')[2]
-
-
+            pad_h, pad_w = self._get_symmetric_padding(IR_node)
             stride_h = IR_node.get_attr('strides')[1]
             stride_w = IR_node.get_attr('strides')[2]
 
@@ -253,14 +254,21 @@ bias_term={}, ntop=1)".format(
             k_w = IR_node.get_attr('kernel_shape')[1]
 
         caffe_ho, caffe_wo = self.compute_output_shape(IR_node, k_h, k_w)
+
+        # if asymmetric padding, set offset to 1
+        pads = IR_node.get_attr('pads')
+        offset = [0 if pads[1] == pads[5] else 1,
+                  0 if pads[2] == pads[6] else 1]
         if caffe_ho > ir_ho or caffe_wo > ir_wo:
             crop_layer_variable_name = IR_node.variable_name + "_crop"
-            self.add_body(1, "n.{:<15} = L.Crop(n.{}, L.DummyData(shape=[dict(dim=[1, {}, {}, {}])], ntop=1), ntop=1)".format(
+            self.add_body(1, "n.{:<15} = L.Crop(n.{}, L.DummyData(shape=[dict(dim=[1, {}, {}, {}])], \
+                ntop=1), ntop=1, offset={})".format(
                 crop_layer_variable_name,
                 IR_node.variable_name,
                 shape[3],
                 ir_ho,
-                ir_wo
+                ir_wo,
+                offset
             ))
             # Change the layer name
             IR_node.real_name = IR_node.real_name + "_crop"
@@ -284,13 +292,14 @@ bias_term={}, ntop=1)".format(
                 pooling_type,
                 IR_node.get_attr('strides')[1]))
         else:
+            pad_h, pad_w = self._get_symmetric_padding(IR_node)
             self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, kernel_size={}, pad_h={}, pad_w={}, stride={}, ntop=1)".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
                 pooling_type,
                 IR_node.get_attr('kernel_shape')[1],
-                IR_node.get_attr('pads')[1],
-                IR_node.get_attr('pads')[2],
+                pad_h,
+                pad_w,
                 IR_node.get_attr('strides')[1]))
 
             # check if need crop output shape
