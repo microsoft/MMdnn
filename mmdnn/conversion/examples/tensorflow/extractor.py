@@ -98,6 +98,14 @@ class tensorflow_extractor(base_extractor):
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
             'num_classes' : 1001,
         },
+        'resnet_v2_101' : {
+            'url'         : 'http://download.tensorflow.org/models/resnet_v2_101_2017_04_14.tar.gz',
+            'filename'    : 'resnet_v2_101.ckpt',
+            'builder'     : lambda : resnet_v2.resnet_v2_101,
+            'arg_scope'   : resnet_v2.resnet_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 299, 299, 3]),
+            'num_classes' : 1001,
+        },
         'resnet_v2_152' : {
             'url'         : 'http://download.tensorflow.org/models/resnet_v2_152_2017_04_14.tar.gz',
             'filename'    : 'resnet_v2_152.ckpt',

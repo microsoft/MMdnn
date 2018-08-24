@@ -471,14 +471,12 @@ def KitModel(weight_file = None):
 
 
 
-    def emit_upsample(self, IR_node):
-        # print(IR_node.layer)
-        # assert False
+    def emit_UpSampling2D(self, IR_node):
         self.used_layers.add(IR_node.type)
         self.add_body(1, "{:<15} = Upsampling2D({}, stride = {}, name = '{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.get_attr('strides'),
+            IR_node.get_attr('scales')[0],
             IR_node.name))
 
 

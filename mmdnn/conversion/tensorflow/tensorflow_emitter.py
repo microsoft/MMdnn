@@ -301,11 +301,11 @@ def KitModel(weight_file = None):
 
 
     def emit_UpSampling2D(self, IR_node):
-        size = IR_node.get_attr('size')
-        size = tuple(size)
+        scales = IR_node.get_attr('scales')
+        scales = tuple(scales)
         self.add_body(1, "{:<15} = tf.keras.layers.UpSampling2D(size={})({})".format(
             IR_node.variable_name,
-            size,
+            scales,
             self.parent_variable_name(IR_node)))
 
 

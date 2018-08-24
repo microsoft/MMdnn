@@ -7,6 +7,7 @@ from __future__ import division
 
 import os
 import sys
+import math
 import numpy as np
 
 import caffe
@@ -145,11 +146,9 @@ if __name__=='__main__':
             self.save_weights(self.weights_dict, dstWeightPath)
 
 
-
     @staticmethod
     def _shapeToStr(shapes):
         return [dim.size if dim.size > 0 else 1 for dim in shapes.dim]
-
 
 
     def _get_symmetric_padding(self, IR_node):
@@ -165,6 +164,7 @@ if __name__=='__main__':
         pad_h = pads[1] + (0 if pads[1] == pads[5] else stride_h)
         pad_w = pads[2] + (0 if pads[2] == pads[6] else stride_w)
         return pad_h, pad_w
+
 
     def check_if_need_transpose(self, IR_node):
         parent = self.IR_graph.get_parent(IR_node.name, [0])
@@ -388,28 +388,21 @@ if __name__=='__main__':
             self.parent_variable_name(IR_node),
             IR_node.get_attr('use_bias', False)
         ))
-
         if self.weight_loaded:
-            try:
-                self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
-            except:
-                self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name + "_second")
+            self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
 
     def emit_Constant(self, IR_node):
         IR_node_after = self.IR_graph.get_son(IR_node.name, [0])
         shape = IR_node_after.get_attr("_output_shapes")[0]
         shape = shape_to_list(shape)
-        if IR_node_after.type == 'Mul':
-            return
-        else: #Sub
-            self.add_body(1, "n.{:<15} = L.DummyData(shape=[dict(dim=[1,{},{},{}])], data_filler=dict(type='constant', value={}), ntop=1)".format(
-                IR_node.variable_name,
-                shape[-1],
-                shape[1],
-                shape[2],
-                self.weights_dict[IR_node.name]['value'][0]
-            ))
+        self.add_body(1, "n.{:<15} = L.DummyData(shape=[dict(dim=[1,{},{},{}])], data_filler=dict(type='constant', value={}), ntop=1)".format(
+            IR_node.variable_name,
+            shape[-1],
+            shape[1],
+            shape[2],
+            self.weights_dict[IR_node.name]['value'][0]
+        ))
 
 
     def emit_LRN(self, IR_node):
@@ -459,8 +452,10 @@ if __name__=='__main__':
             axis
         ))
 
-    # def emit_Tanh(self, IR_node):
-    #     self._emit_activation(IR_node, 'ops.tanh')
+    def emit_Sigmoid(self, IR_node):
+        self.add_body(1, "n.{:<15} = L.Sigmoid(n.{}, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node)))
 
 
     def emit_Relu(self, IR_node):
@@ -568,8 +563,32 @@ if __name__=='__main__':
             input_layers))
 
     def emit_Mul(self, IR_node):
-        self.emit_Scale(IR_node)
+        if len(IR_node.in_edges) == 2:
+            input_layers = ', '.join(('n.' + self.IR_graph.get_node(edge).real_variable_name) for edge in IR_node.in_edges)
+            self.add_body(1, "n.{:<15} = L.Eltwise({}, operation=0, ntop=1)".format(
+            IR_node.variable_name,
+            input_layers))
+        elif len(IR_node.in_edges) == 1:
+            self.emit_Scale(IR_node)
+        else:
+            assert False
 
+    def emit_UpSampling2D(self, IR_node):
+        scales = IR_node.get_attr('scales')
+        scale = tuple(scales)[0]
+
+        shape = IR_node.get_attr('_output_shapes')[0]
+        shape = shape_to_list(shape)
+
+        self.add_body(1, "n.{:<15} = L.Deconvolution(n.{}, convolution_param=dict(kernel_size={}, stride={}, pad={}, num_output={}, group={}, bias_term={}), param=[dict(lr_mult=0)], ntop=1)".format(
+            IR_node.variable_name,
+            IR_node.in_edges[0],
+            2 * scale - scale % 2,
+            scale,
+            int(math.ceil((scale - 1) / 2)),
+            shape[-1],
+            shape[-1],
+            False))
 
     # def emit_Square(self, IR_node):
     #     input_layers = ', '.join(('n.' + self.IR_graph.get_node(edge).real_variable_name) for edge in IR_node.in_edges)
