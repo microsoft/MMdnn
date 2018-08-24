@@ -783,23 +783,23 @@ class TestModels(CorrectnessTest):
 
             'tensorflow' : {
                 'vgg19'                 : [OnnxEmit],
-                'inception_v1'          : [OnnxEmit],
-                'inception_v3'          : [OnnxEmit],
-                # 'resnet_v1_50'          : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # 'resnet_v1_152'         : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # 'resnet_v2_50'          : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # 'resnet_v2_152'         : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                'mobilenet_v1_1.0'      : [OnnxEmit],
-                'mobilenet_v2_1.0_224'  : [OnnxEmit],
-                # 'nasnet-a_large'        : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                'inception_resnet_v2'   : [OnnxEmit],
+                # 'inception_v1'          : [OnnxEmit],
+                # 'inception_v3'          : [OnnxEmit],
+                # # 'resnet_v1_50'          : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # # 'resnet_v1_152'         : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # # 'resnet_v2_50'          : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # # 'resnet_v2_152'         : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # 'mobilenet_v1_1.0'      : [OnnxEmit],
+                # 'mobilenet_v2_1.0_224'  : [OnnxEmit],
+                # # 'nasnet-a_large'        : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # 'inception_resnet_v2'   : [OnnxEmit],
             },
 
-            'tensorflow_frozen' : {
-                'inception_v1'      : [OnnxEmit],
-                'inception_v3'      : [OnnxEmit],
-                'mobilenet_v1_1.0'  : [OnnxEmit],
-            },
+            # 'tensorflow_frozen' : {
+            #     'inception_v1'      : [OnnxEmit],
+            #     'inception_v3'      : [OnnxEmit],
+            #     'mobilenet_v1_1.0'  : [OnnxEmit],
+            # },
 
             'coreml' : {
                 'inception_v3' : [OnnxEmit],
@@ -868,7 +868,7 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow' : {
-                'vgg19'                 : [TensorflowEmit],
+                'vgg19'                 : [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 # 'inception_v1'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
                 # 'inception_v3'          : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 # 'resnet_v1_50'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
@@ -882,9 +882,9 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow_frozen' : {
-                'inception_v1'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
-                'inception_v3'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
-                'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
+                # 'inception_v1'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+                # 'inception_v3'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+                # 'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
             },
 
             'coreml' : {
@@ -903,8 +903,8 @@ class TestModels(CorrectnessTest):
             'paddle' : {
                 'resnet50': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash
                 'resnet101': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash
-                'vgg16': [TensorflowEmit],
-                'alexnet': [TensorflowEmit]
+                # 'vgg16': [TensorflowEmit],
+                # 'alexnet': [TensorflowEmit]
             },
 
             'pytorch' : {

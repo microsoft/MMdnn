@@ -1,6 +1,10 @@
-sudo: false
+sudo: required
 
 dist: xenial
+
+cache:
+  directories:
+    - $HOME/.cache/pip
 
 before_install:
   - export PATH=$PATH
@@ -15,6 +19,11 @@ after_script: true
 
 script: bash test.sh
 
+notifications:
+  email:
+    on_success: never
+    on_failure: never
+
 matrix:
   include:
     - name: "MMdnn no-onnx test with py2/ubuntu 16.04"
@@ -25,7 +34,7 @@ matrix:
         - pip install -q -r requirements.txt
         - pip install -q http://download.pytorch.org/whl/cpu/torch-0.4.0-cp27-cp27mu-linux_x86_64.whl
         - pip install -q torchvision
-        - pip install -q paddlepaddle==0.11.0
+        # - pip install -q paddlepaddle==0.11.0
 
     - name: "MMdnn onnx test with py2/ubuntu 16.04"
       language: python
@@ -35,7 +44,7 @@ matrix:
         - pip install -q -r requirements.txt
         - pip install -q http://download.pytorch.org/whl/cpu/torch-0.4.0-cp27-cp27mu-linux_x86_64.whl
         - pip install -q torchvision
-        - pip install -q paddlepaddle==0.11.0
+        # - pip install -q paddlepaddle==0.11.0
         - pip install -q onnx==1.2.1
         - pip install -q onnx-tf==1.1.2
 

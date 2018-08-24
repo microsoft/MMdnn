@@ -51,7 +51,6 @@ from keras.models import Model
 from keras import layers
 import keras.backend as K
 import numpy as np
-import keras_applications
 
 
 def load_weights_from_file(weight_file):
@@ -547,6 +546,7 @@ def KitModel(weight_file = None):
             from keras.applications.mobilenet import relu6
             str_relu6 = 'keras.applications.mobilenet.relu6'
         except:
+            import keras_applications
             from keras_applications import mobilenet_v2
             mobilenet_v2.layers.ReLU
             str_relu6 = "keras_applications.mobilenet_v2.layers.ReLU(6, name='relu6')"
