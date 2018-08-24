@@ -564,7 +564,7 @@ class TestModels(CorrectnessTest):
         input_data = np.expand_dims(img, 0)
 
         model_converted.blobs[model_converted._layer_names[0]].data[...] = input_data
-        predict = model_converted.forward()[model_converted._layer_names[-1]][0]
+        predict = model_converted.forward()[model_converted._blob_names[-1]][0]
         converted_predict = np.squeeze(predict)
 
         del model_converted
