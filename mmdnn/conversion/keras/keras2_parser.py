@@ -552,10 +552,7 @@ class Keras2Parser(Parser):
         self.convert_inedge(source_node, IR_node)
 
         # size
-        IR_node.attr["size"].list.i.extend(source_node.keras_layer.size)
-
-
-
+        IR_node.attr["scales"].list.i.extend(source_node.keras_layer.size)
 
 
     def rename_Embedding(self, source_node):

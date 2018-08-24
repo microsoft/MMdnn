@@ -408,7 +408,7 @@ class DarknetGraph(Graph):
                 upsample_layer['type'] = 'upsample'
                 upsample_param = OrderedDict()
                 stride = block['stride']
-                upsample_param['strides'] = int(stride)
+                upsample_param['scales'] = [int(stride), int(stride)]
                 upsample_param['_output_shape'] = [input_shape[0]] + [q*int(stride) for q in input_shape[1:3]] + [input_shape[-1]]
                 upsample_layer['attr'] = upsample_param
                 self.layer_map[upsample_layer['name']] = DarknetGraphNode(upsample_layer)

@@ -294,10 +294,10 @@ class DarknetParser(Parser):
 
 
     def rename_upsample(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op='upsample')
-        stride = source_node.get_attr('strides')
+        IR_node = self._convert_identity_operation(source_node, new_op='UpSampling2D')
+        scales = source_node.get_attr('scales')
         kwargs = {}
-        kwargs['strides'] = stride
+        kwargs['scales'] = scales
 
         assign_IRnode_values(IR_node, kwargs)
 
