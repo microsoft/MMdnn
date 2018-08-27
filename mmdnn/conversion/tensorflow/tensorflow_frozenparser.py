@@ -448,11 +448,10 @@ class TensorflowParser2(Parser):
         if add_node.type != "Add" and add_node.type != "BiasAdd":
             return
 
-        variable = self.tf_graph.get_node(add_node.in_edges[1]) #add_bias node
-        if variable.type != 'Identity':
+        variable = self.check_const(self.tf_graph.get_node(add_node.in_edges[1])) #add_bias node
+        if variable.type != 'Const':
             return
 
-        variable = self.tf_graph.get_node(variable.in_edges[0])
 
         bias_value = variable.get_attr('value')
         bias = tensor_util.MakeNdarray(bias_value)
@@ -539,12 +538,14 @@ class TensorflowParser2(Parser):
         gamma_value = gamma.get_attr('value')
         gamma = tensor_util.MakeNdarray(gamma_value)
         self.set_weight(source_node.name, 'scale', gamma)
+        IR_node.attr['scale'].b = True
 
         # beta  (bias)
         beta = self.get_parent(source_node.name, [3])
         beta_value = beta.get_attr('value')
         beta = tensor_util.MakeNdarray(beta_value)
         self.set_weight(source_node.name, 'bias', beta)
+        IR_node.attr['use_bias'].b = True
 
         # moving mean (mean)
         mean = self.get_parent(source_node.name, [1])
@@ -912,7 +913,8 @@ class TensorflowParser2(Parser):
 
 
     def rename_BiasAdd(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, end_idx = 1, new_op = "Add")
+        # Skip BiasAdd
+        source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
 
 
     def rename_QuantizeV2(self, source_node):
@@ -1035,6 +1037,8 @@ class TensorflowParser2(Parser):
 
         scale = tensor_util.MakeNdarray(scale_value)
         self.set_weight(source_node.name, 'scale', scale)
+        IR_node.attr['scale'].b = True
+
 
         IR_node.attr['epsilon'].f = source_node.get_attr('epsilon', 0)
         biasnode = self.check_const(self.get_parent(source_node.name, [2], True))

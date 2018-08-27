@@ -513,7 +513,6 @@ def KitModel(weight_file = None):
         pass
 
 
-
     def emit_Shape(self, IR_node):
         pass
 
@@ -529,13 +528,6 @@ def KitModel(weight_file = None):
         pass
 
 
-
-
-
-
-
-
-
     def emit_SeparableConv(self, IR_node):
         assert len(IR_node.get_attr("strides")) == 4
         return self._emit_convolution(IR_node, "layers.SeparableConv2D")
@@ -543,19 +535,21 @@ def KitModel(weight_file = None):
 
     def emit_Relu6(self, IR_node):
         try:
+            # Keras == 2.1.6
             from keras.applications.mobilenet import relu6
             str_relu6 = 'keras.applications.mobilenet.relu6'
+            self.add_body(1, "{:<15} = layers.Activation({}, name = '{}')({})".format(
+                IR_node.variable_name,
+                str_relu6,
+                IR_node.name,
+                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name))
         except:
-            import keras_applications
-            from keras_applications import mobilenet_v2
-            mobilenet_v2.layers.ReLU
-            str_relu6 = "keras_applications.mobilenet_v2.layers.ReLU(6, name='relu6')"
-
-        self.add_body(1, "{:<15} = layers.Activation({}, name = '{}')({})".format(
-            IR_node.variable_name,
-            str_relu6,
-            IR_node.name,
-            self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name))
+            # Keras == 2.2.2
+            from keras.layers import ReLU
+            self.add_body(1, "{:<15} = layers.ReLU(6, name = '{}')({})".format(
+                IR_node.variable_name,
+                IR_node.name,
+                self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name))
 
 
     def emit_DepthwiseConv(self, IR_node):
@@ -589,7 +583,7 @@ def KitModel(weight_file = None):
             self.parent_variable_name(IR_node)
         ))
 
-    def emit_upsample(self, IR_node):
+    def emit_UpSampling2D(self, IR_node):
         self.add_body(1, "{:<15} = layers.UpSampling2D(name='{}', size= ({},{}), data_format = 'channels_last')({})".format(
             IR_node.variable_name,
             IR_node.name,

@@ -46,12 +46,10 @@ def _convert(args):
         parser = Keras2Parser(model)
 
     elif args.srcFramework == 'tensorflow' or args.srcFramework == 'tf':
-
-        if args.dstNodeName is None:
-            raise ValueError("Need to provide the output node of Tensorflow model.")
-
         assert args.network or args.weights
         if not args.network:
+            if args.dstNodeName is None:
+                raise ValueError("Need to provide the output node of Tensorflow model.")
             if args.inNodeName is None:
                 raise ValueError("Need to provide the input node of Tensorflow model.")
             if inputshape is None:
