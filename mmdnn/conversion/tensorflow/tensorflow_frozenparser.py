@@ -54,11 +54,11 @@ class TensorflowParser2(Parser):
         # "RequantizationRange",
         # "Requantize",
         "ExpandDims",
-        "Identity",
+        # "Identity",
         # "Mean",
         # "Cast"
         "Pack",
-        "CheckNumerics"，
+        "CheckNumerics",
         "Where"
     ])
 
@@ -160,6 +160,7 @@ class TensorflowParser2(Parser):
 
         self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
+
 
     @staticmethod
     def _get_scopes(layer_name):
@@ -723,6 +724,10 @@ class TensorflowParser2(Parser):
         source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
 
 
+    def rename_Identity(self, source_node):
+        source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
+
+
     def rename_Exp(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Exp')
 
@@ -975,7 +980,11 @@ class TensorflowParser2(Parser):
 
 
     def rename_Transpose(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op = 'Transpose')
+        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'Transpose')
+        input_node_perm = self.get_parent(source_node.name, [1])
+        tensor_content = input_node_perm.get_attr('value')
+        perm = tensor_util.MakeNdarray(tensor_content).tolist()
+        assign_IRnode_values(IR_node, {'perm' : perm})
 
 
     def rename_GreaterEqual(self, source_node):
@@ -1016,6 +1025,9 @@ class TensorflowParser2(Parser):
         if scalenode:
             scale_value = scalenode.get_attr('value')
             IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'BatchNorm')
+            # for attr.shape >= 2
+            for i in range(len(IR_node.attr["_output_shapes"].list.shape)-1):
+                IR_node.attr["_output_shapes"].list.shape.pop()
 
         else:
             # For models built by slim.batch_norm, remove duplicate BN (eg.facenet)
