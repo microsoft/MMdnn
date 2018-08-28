@@ -45,10 +45,8 @@ class DarknetParser(Parser):
 
         fp.close()
 
-        if yolo == "1":
-            self.start = 1  #yolov2
-        else:
-            self.start = 0   #yolov3 resnet
+        # yolo2 yolo3(608) start at 1, yolo2(416) start at 1, yolo3(416) start at 0
+        self.start = 1
 
         model = parse_cfg(model_config)
         self.dk_graph = DarknetGraph(model)

@@ -172,8 +172,8 @@ class TestKit(object):
 
 
         'darknet' : {
-             'yolov3'        : lambda path : TestKit.Identity(path, 416),
-             'yolov2'        : lambda path : TestKit.Identity(path, 416),
+            'yolov3'        : lambda path : TestKit.Identity(path, 608),
+            'yolov2'        : lambda path : TestKit.Identity(path, 608),
         },
 
 

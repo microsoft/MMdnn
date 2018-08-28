@@ -59,7 +59,7 @@ class TestKeras(TestKit):
             [self.boxes, self.scores, self.classes],
             feed_dict={
                 self.model.input: self.data/255.,
-                self.input_image_shape: [416, 416],
+                self.input_image_shape: [608, 608],
                 K.learning_phase(): 0
             })
         # print(out_boxes, out_scores, out_classes)
