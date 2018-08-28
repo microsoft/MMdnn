@@ -5,90 +5,11 @@ import os
 TEST_ONNX = os.environ.get('TEST_ONNX')
 import sys
 import imp
-import unittest
 import numpy as np
 
 from mmdnn.conversion.examples.imagenet_test import TestKit
-
-
-def _compute_SNR(x,y):
-    noise = x - y
-    noise_var = np.sum(noise ** 2) / len(noise) + 1e-7
-    signal_energy = np.sum(y ** 2) / len(y)
-    max_signal_energy = np.amax(y ** 2)
-    SNR = 10 * np.log10(signal_energy / noise_var)
-    PSNR = 10 * np.log10(max_signal_energy / noise_var)
-    return SNR, PSNR
-
-
-def _compute_max_relative_error(x, y):
-    from six.moves import xrange
-    rerror = 0
-    index = 0
-    for i in xrange(len(x)):
-        den = max(1.0, np.abs(x[i]), np.abs(y[i]))
-        if np.abs(x[i]/den - y[i] / den) > rerror:
-            rerror = np.abs(x[i] / den - y[i] / den)
-            index = i
-    return rerror, index
-
-
-def _compute_L1_error(x, y):
-    return np.linalg.norm(x - y, ord=1)
-
-
-def ensure_dir(f):
-    d = os.path.dirname(f)
-    if not os.path.exists(d):
-        os.makedirs(d)
-
-def checkfrozen(f):
-    if f == 'tensorflow_frozen':
-        return 'tensorflow'
-    else:
-        return f
-
-
-class CorrectnessTest(unittest.TestCase):
-
-    err_thresh = 0.15
-    snr_thresh = 12
-    psnr_thresh = 30
-
-    @classmethod
-    def setUpClass(cls):
-        """ Set up the unit test by loading common utilities.
-        """
-        pass
-
-
-    def _compare_outputs(self, original_framework, target_framework, network_name, original_predict, converted_predict, need_assert=True):
-        # Function self.assertEquals has deprecated, change to assertEqual
-        if (converted_predict is None or original_predict is None) and not need_assert:
-            return
-
-        # self.assertEqual(original_predict.shape, converted_predict.shape)
-        original_predict = original_predict.flatten()
-        converted_predict = converted_predict.flatten()
-        len1 = original_predict.shape[0]
-        len2 = converted_predict.shape[0]
-        length = min(len1, len2)
-        original_predict = np.sort(original_predict)[::-1]
-        converted_predict = np.sort(converted_predict)[::-1]
-        original_predict = original_predict[0:length]
-        converted_predict = converted_predict[0:length]
-        error, ind = _compute_max_relative_error(converted_predict, original_predict)
-        L1_error = _compute_L1_error(converted_predict, original_predict)
-        SNR, PSNR = _compute_SNR(converted_predict, original_predict)
-        print("error:", error)
-        print("L1 error:", L1_error)
-        print("SNR:", SNR)
-        print("PSNR:", PSNR)
-
-        if need_assert:
-            self.assertGreater(SNR, self.snr_thresh, "Error in converting {} from {} to {}".format(network_name, original_framework, target_framework))
-            self.assertGreater(PSNR, self.psnr_thresh, "Error in converting {} from {} to {}".format(network_name, original_framework, target_framework))
-            self.assertLess(error, self.err_thresh, "Error in converting {} from {} to {}".format(network_name, original_framework, target_framework))
+import utils
+from utils import *
 
 
 class TestModels(CorrectnessTest):
@@ -96,6 +17,11 @@ class TestModels(CorrectnessTest):
     image_path = "mmdnn/conversion/examples/data/seagull.jpg"
     cachedir = "tests/cache/"
     tmpdir = "tests/tmp/"
+
+
+    def __init__(self, test_table=None, methodName='test_nothing'):
+        super(TestModels, self).__init__(methodName)
+
 
     @staticmethod
     def TensorFlowParse(architecture_name, image_path):
@@ -539,43 +465,48 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def CaffeEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
-        import caffe
-        from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
+        try:
+            import caffe
+            from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
 
-        # IR to code
-        converted_file = original_framework + '_caffe_' + architecture_name + "_converted"
-        converted_file = converted_file.replace('.', '_')
-        emitter = CaffeEmitter((architecture_path, weight_path))
-        emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
-        del emitter
-        del CaffeEmitter
+            # IR to code
+            converted_file = original_framework + '_caffe_' + architecture_name + "_converted"
+            converted_file = converted_file.replace('.', '_')
+            emitter = CaffeEmitter((architecture_path, weight_path))
+            emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
+            del emitter
+            del CaffeEmitter
 
-        # import converted model
-        imported = imp.load_source('CaffeModel', converted_file + '.py')
+            # import converted model
+            imported = imp.load_source('CaffeModel', converted_file + '.py')
 
-        imported.make_net(converted_file + '.prototxt')
-        imported.gen_weight(converted_file + '.npy', converted_file + '.caffemodel', converted_file + '.prototxt')
-        model_converted = caffe.Net(converted_file + '.prototxt', converted_file + '.caffemodel', caffe.TEST)
+            imported.make_net(converted_file + '.prototxt')
+            imported.gen_weight(converted_file + '.npy', converted_file + '.caffemodel', converted_file + '.prototxt')
+            model_converted = caffe.Net(converted_file + '.prototxt', converted_file + '.caffemodel', caffe.TEST)
 
-        original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        img = np.transpose(img, [2, 0, 1])
-        input_data = np.expand_dims(img, 0)
+            original_framework = checkfrozen(original_framework)
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(image_path)
+            img = np.transpose(img, [2, 0, 1])
+            input_data = np.expand_dims(img, 0)
 
-        model_converted.blobs[model_converted._layer_names[0]].data[...] = input_data
-        predict = model_converted.forward()[model_converted._blob_names[-1]][0]
-        converted_predict = np.squeeze(predict)
+            model_converted.blobs[model_converted._layer_names[0]].data[...] = input_data
+            predict = model_converted.forward()[model_converted._layer_names[-1]][0]
+            converted_predict = np.squeeze(predict)
 
-        del model_converted
-        del sys.modules['CaffeModel']
-        del caffe
-        os.remove(converted_file + '.py')
-        os.remove(converted_file + '.npy')
-        os.remove(converted_file + '.prototxt')
-        os.remove(converted_file + '.caffemodel')
+            del model_converted
+            del sys.modules['CaffeModel']
+            del caffe
+            os.remove(converted_file + '.py')
+            os.remove(converted_file + '.npy')
+            os.remove(converted_file + '.prototxt')
+            os.remove(converted_file + '.caffemodel')
 
-        return converted_predict
+            return converted_predict
+
+        except ImportError:
+            print ("Cannot import Caffe. Caffe Emit is not tested.")
+            return None
 
 
     @staticmethod
@@ -704,9 +635,6 @@ class TestModels(CorrectnessTest):
         except ImportError:
             print('Please install Onnx! Or Onnx is not supported in your platform.', file=sys.stderr)
 
-        except:
-            raise ValueError
-
         finally:
             del prepare
             del model_converted
@@ -783,23 +711,23 @@ class TestModels(CorrectnessTest):
 
             'tensorflow' : {
                 'vgg19'                 : [OnnxEmit],
-                # 'inception_v1'          : [OnnxEmit],
-                # 'inception_v3'          : [OnnxEmit],
-                # # 'resnet_v1_50'          : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # # 'resnet_v1_152'         : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # # 'resnet_v2_50'          : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # # 'resnet_v2_152'         : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # 'mobilenet_v1_1.0'      : [OnnxEmit],
-                # 'mobilenet_v2_1.0_224'  : [OnnxEmit],
-                # # 'nasnet-a_large'        : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # 'inception_resnet_v2'   : [OnnxEmit],
+                'inception_v1'          : [OnnxEmit],
+                'inception_v3'          : [OnnxEmit],
+                # 'resnet_v1_50'          : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # 'resnet_v1_152'         : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # 'resnet_v2_50'          : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # 'resnet_v2_152'         : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                'mobilenet_v1_1.0'      : [OnnxEmit],
+                'mobilenet_v2_1.0_224'  : [OnnxEmit],
+                # 'nasnet-a_large'        : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                'inception_resnet_v2'   : [OnnxEmit],
             },
 
-            # 'tensorflow_frozen' : {
-            #     'inception_v1'      : [OnnxEmit],
-            #     'inception_v3'      : [OnnxEmit],
-            #     'mobilenet_v1_1.0'  : [OnnxEmit],
-            # },
+            'tensorflow_frozen' : {
+                'inception_v1'      : [OnnxEmit],
+                'inception_v3'      : [OnnxEmit],
+                'mobilenet_v1_1.0'  : [OnnxEmit],
+            },
 
             'coreml' : {
                 'inception_v3' : [OnnxEmit],
@@ -813,12 +741,12 @@ class TestModels(CorrectnessTest):
             },
 
             'paddle'  : {
-                'resnet50'     : [CaffeEmit], #crash due to gflags_reporting.cc
-                'vgg16'        : [TensorflowEmit],      # First 1000 exactly the same, the last one is different
-
+                'resnet50'     : [OnnxEmit],
+                'vgg16'        : [OnnxEmit],      # First 1000 exactly the same, the last one is different
             },
 
             'pytorch' : {
+                # TODO: coredump
             },
 
 
@@ -868,23 +796,23 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow' : {
-                'vgg19'                 : [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                # 'inception_v1'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-                # 'inception_v3'          : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                # 'resnet_v1_50'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-                # 'resnet_v1_152'         : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-                # 'resnet_v2_50'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-                # 'resnet_v2_152'         : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                # 'mobilenet_v1_1.0'      : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
-                # 'mobilenet_v2_1.0_224'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
-                # 'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
-                # 'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always crashed
+                'vgg19'                 : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'inception_v1'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+                'inception_v3'          : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'resnet_v1_50'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+                'resnet_v1_152'         : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+                'resnet_v2_50'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+                'resnet_v2_152'         : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'mobilenet_v1_1.0'      : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
+                'mobilenet_v2_1.0_224'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
+                'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
+                'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always crashed
             },
 
             'tensorflow_frozen' : {
-                # 'inception_v1'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
-                # 'inception_v3'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
-                # 'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
+                'inception_v1'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+                'inception_v3'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+                'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
             },
 
             'coreml' : {
@@ -901,7 +829,7 @@ class TestModels(CorrectnessTest):
             },
 
             'paddle' : {
-                'resnet50': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash
+                'resnet50': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash, due to gflags_reporting.cc
                 'resnet101': [CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # CaffeEmit crash
                 # 'vgg16': [TensorflowEmit],
                 # 'alexnet': [TensorflowEmit]
@@ -929,7 +857,7 @@ class TestModels(CorrectnessTest):
             if macos_version() < (10, 13):
                 return False
 
-        if target_framework == 'Onnx':
+        if target_framework == 'Onnx' or target_framework == 'Caffe':
             if converted_prediction is None:
                 return False
 
@@ -978,6 +906,8 @@ class TestModels(CorrectnessTest):
         print("Testing {} model all passed.".format(original_framework), file=sys.stderr)
 
 
+    def test_nothing(self):
+        pass
 
     # def test_caffe(self):
     #     try:
@@ -1029,8 +959,8 @@ class TestModels(CorrectnessTest):
     #     self._test_function('pytorch', self.PytorchParse)
 
 
-    def test_tensorflow(self):
-        self._test_function('tensorflow', self.TensorFlowParse)
+    # def test_tensorflow(self):
+    #     self._test_function('tensorflow', self.TensorFlowParse)
 
 
     # def test_tensorflow_frozen(self):
