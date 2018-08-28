@@ -414,7 +414,7 @@ class KitModel(nn.Module):
         self.add_body(2, "{:<15} = {}".format(
             IR_node.variable_name,
             ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
-        
+
     def emit_MatMul(self, IR_node):
         self.add_body(2, "{:<15} = torch.matmul({})".format(
             IR_node.variable_name,
@@ -455,11 +455,17 @@ class KitModel(nn.Module):
         self.used_layers.add(IR_node.type)
         dim = len(IR_node.layer.attr['_output_shapes'].list.shape[0].dim) - 2
 
+        output_shape = IR_node.layer.attr['_output_shapes'].list.shape[0]
+        if IR_node.get_attr('data_format', "NHWC") == "NCHW":
+            num_features = output_shape.dim[1].size
+        else:
+            num_features = output_shape.dim[-1].size
+
         self.add_init(2, "self.{} = self.__batch_normalization({}, '{}', num_features={}, eps={}, momentum={})".format(
              IR_node.variable_name,
              dim,
              IR_node.name,
-             IR_node.layer.attr['_output_shapes'].list.shape[0].dim[-1].size,
+             num_features,
              IR_node.layer.attr['epsilon'].f,
              IR_node.layer.attr['momentum'].f,
         ))
@@ -469,6 +475,7 @@ class KitModel(nn.Module):
             IR_node.variable_name,
             self.parent_variable_name(IR_node)
         ))
+
 
     def emit_Scale(self, IR_node):
         self.used_layers.add(IR_node.type)
@@ -578,11 +585,13 @@ class KitModel(nn.Module):
             self.parent_variable_name(IR_node)
             ))
 
+
     def emit_Pack(self, IR_node):
         self.add_body(2, "{:<15} = {}".format(
             IR_node.variable_name,
             '[' +  ','.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges) + ']',
             ))
+
 
     def emit_Slice(self, IR_node):
         starts = IR_node.get_attr('starts')
@@ -604,8 +613,18 @@ class KitModel(nn.Module):
             extra_str
         ))
 
+
     def emit_Split(self, IR_node):
         print(IR_node.layer)
+        assert False
+
+
+    def emit_Transpose(self, IR_node):
+        self.add_body(2, "{:<15} = {}.permute({})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('perm')
+        ))
 
 
     def _layer_Conv(self):

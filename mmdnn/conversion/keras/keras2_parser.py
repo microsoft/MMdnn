@@ -72,10 +72,9 @@ class Keras2Parser(Parser):
                 'relu6': _keras.applications.mobilenet.relu6,
                 'DepthwiseConv2D': _keras.applications.mobilenet.DepthwiseConv2D})
         except:
-            from keras_applications import mobilenet_v2
             import keras.layers as layers
             loaded_model = model_from_json(loaded_model_json, custom_objects={
-                'relu6': mobilenet_v2.layers.ReLU(6, name='relu6'),
+                'relu6': layers.ReLU(6, name='relu6'),
                 'DepthwiseConv2D': layers.DepthwiseConv2D})
 
 
@@ -101,6 +100,7 @@ class Keras2Parser(Parser):
         # load model files into Keras graph
         if isinstance(model, _string_types):
             try:
+                # Keras 2.1.6
                 from keras.applications.mobilenet import relu6
                 from keras.applications.mobilenet import DepthwiseConv2D
                 model = _keras.models.load_model(
@@ -111,12 +111,12 @@ class Keras2Parser(Parser):
                     }
                 )
             except:
-                from keras_applications import mobilenet_v2
+                # Keras. 2.2.2
                 import keras.layers as layers
                 model = _keras.models.load_model(
                     model,
                     custom_objects={
-                        'relu6': mobilenet_v2.layers.ReLU(6, name='relu6'),
+                        'relu6': layers.ReLU(6, name='relu6'),
                         'DepthwiseConv2D': layers.DepthwiseConv2D
                     }
                 )
@@ -754,6 +754,18 @@ class Keras2Parser(Parser):
         Keras2Parser._copy_and_reop(source_node, IR_node, 'LeakyRelu')
         self.convert_inedge(source_node, IR_node)
         assign_IRnode_values(IR_node, {'alpha' : source_node.layer.alpha.tolist()})
+
+
+    def rename_ReLU(self, source_node):
+        IR_node = self.IR_graph.node.add()
+        max_value = source_node.layer.max_value
+        if max_value == 6.0:
+            Keras2Parser._copy_and_reop(source_node, IR_node, 'Relu6')
+        else:
+            Keras2Parser._copy_and_reop(source_node, IR_node, 'Relu')
+
+        assign_IRnode_values(IR_node, {'max_value' : max_value})
+        self.convert_inedge(source_node, IR_node)
 
 
     def rename_space_to_depth_x2(self, source_node):

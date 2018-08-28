@@ -54,11 +54,11 @@ class TensorflowParser2(Parser):
         # "RequantizationRange",
         # "Requantize",
         "ExpandDims",
-        "Identity",
+        # "Identity",
         # "Mean",
         # "Cast"
         "Pack",
-        "CheckNumerics"，
+        "CheckNumerics",
         "Where"
     ])
 
@@ -160,6 +160,7 @@ class TensorflowParser2(Parser):
 
         self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
+
 
     @staticmethod
     def _get_scopes(layer_name):
@@ -447,11 +448,10 @@ class TensorflowParser2(Parser):
         if add_node.type != "Add" and add_node.type != "BiasAdd":
             return
 
-        variable = self.tf_graph.get_node(add_node.in_edges[1]) #add_bias node
-        if variable.type != 'Identity':
+        variable = self.check_const(self.tf_graph.get_node(add_node.in_edges[1])) #add_bias node
+        if variable.type != 'Const':
             return
 
-        variable = self.tf_graph.get_node(variable.in_edges[0])
 
         bias_value = variable.get_attr('value')
         bias = tensor_util.MakeNdarray(bias_value)
@@ -538,12 +538,14 @@ class TensorflowParser2(Parser):
         gamma_value = gamma.get_attr('value')
         gamma = tensor_util.MakeNdarray(gamma_value)
         self.set_weight(source_node.name, 'scale', gamma)
+        IR_node.attr['scale'].b = True
 
         # beta  (bias)
         beta = self.get_parent(source_node.name, [3])
         beta_value = beta.get_attr('value')
         beta = tensor_util.MakeNdarray(beta_value)
         self.set_weight(source_node.name, 'bias', beta)
+        IR_node.attr['use_bias'].b = True
 
         # moving mean (mean)
         mean = self.get_parent(source_node.name, [1])
@@ -720,6 +722,10 @@ class TensorflowParser2(Parser):
 
     def rename_Switch(self, source_node):
         # Skip the node as merge
+        source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
+
+
+    def rename_Identity(self, source_node):
         source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
 
 
@@ -907,7 +913,8 @@ class TensorflowParser2(Parser):
 
 
     def rename_BiasAdd(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, end_idx = 1, new_op = "Add")
+        # Skip BiasAdd
+        source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
 
 
     def rename_QuantizeV2(self, source_node):
@@ -975,7 +982,11 @@ class TensorflowParser2(Parser):
 
 
     def rename_Transpose(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op = 'Transpose')
+        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'Transpose')
+        input_node_perm = self.get_parent(source_node.name, [1])
+        tensor_content = input_node_perm.get_attr('value')
+        perm = tensor_util.MakeNdarray(tensor_content).tolist()
+        assign_IRnode_values(IR_node, {'perm' : perm})
 
 
     def rename_GreaterEqual(self, source_node):
@@ -1016,6 +1027,9 @@ class TensorflowParser2(Parser):
         if scalenode:
             scale_value = scalenode.get_attr('value')
             IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'BatchNorm')
+            # for attr.shape >= 2
+            for i in range(len(IR_node.attr["_output_shapes"].list.shape)-1):
+                IR_node.attr["_output_shapes"].list.shape.pop()
 
         else:
             # For models built by slim.batch_norm, remove duplicate BN (eg.facenet)
@@ -1023,6 +1037,8 @@ class TensorflowParser2(Parser):
 
         scale = tensor_util.MakeNdarray(scale_value)
         self.set_weight(source_node.name, 'scale', scale)
+        IR_node.attr['scale'].b = True
+
 
         IR_node.attr['epsilon'].f = source_node.get_attr('epsilon', 0)
         biasnode = self.check_const(self.get_parent(source_node.name, [2], True))
