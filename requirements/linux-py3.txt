@@ -7,4 +7,8 @@ tensorflow==1.10.0
 keras==2.1.6
 coremltools==0.8
 mxnet==1.1.0.post0
-cntk==2.5
+cntk==2.5.1
+http://download.pytorch.org/whl/cpu/torch-0.4.0-cp36-cp36m-linux_x86_64.whl
+torchvision
+onnx==1.2.1
+onnx-tf==1.1.2

@@ -1,13 +1,51 @@
 sudo: required
-
 dist: xenial
+
+os:
+  - linux
+  - osx
+
+language: python
+python:
+  - "2.7"
+  - "3.6"
+
+env:
+  - TEST_PARSER=tensorflow TEST_ONNX=true
+  - TEST_PARSER=tensorflow TEST_ONNX=false
+  - TEST_PARSER=keras TEST_ONNX=true
+  - TEST_PARSER=keras TEST_ONNX=false
+  - TEST_PARSER=cntk TEST_ONNX=true
+  - TEST_PARSER=cntk TEST_ONNX=false
+  - TEST_PARSER=caffe TEST_ONNX=true
+  - TEST_PARSER=caffe TEST_ONNX=false
+  - TEST_PARSER=mxnet TEST_ONNX=true
+  - TEST_PARSER=mxnet TEST_ONNX=false
+  - TEST_PARSER=pytorch TEST_ONNX=true
+  - TEST_PARSER=pytorch TEST_ONNX=false
+  - TEST_PARSER=paddle TEST_ONNX=true
+  - TEST_PARSER=paddle TEST_ONNX=false
+  - TEST_PARSER=coreml TEST_ONNX=true
+  - TEST_PARSER=coreml TEST_ONNX=false
+  - TEST_PARSER=darknet TEST_ONNX=true
+  - TEST_PARSER=darknet TEST_ONNX=false
+  - TEST_PARSER=tensorflow_frozen TEST_ONNX=true
+  - TEST_PARSER=tensorflow_frozen TEST_ONNX=false
 
 cache:
   directories:
     - $HOME/.cache/pip
+    - $TRAVIS_BUILD_DIR/tests/cache
+
+addons:
+  apt:
+    update: true
 
 before_install:
-  - export PATH=$PATH
+  - sudo apt-get install -y openmpi-bin
+
+install:
+  - pip install -q -r $(python requirements/select_requirements.py)
 
 before_script: true
 
@@ -17,53 +55,14 @@ after_success: true
 
 after_script: true
 
-script: bash test.sh
+script: bash test.sh $TEST_PARSER
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - os: osx
 
 notifications:
   email:
     on_success: never
     on_failure: never
-
-matrix:
-  include:
-    - name: "MMdnn no-onnx test with py2/ubuntu 16.04"
-      language: python
-      python: "2.7"
-      env: TEST_ONNX=false
-      install:
-        - pip install -q -r requirements.txt
-        - pip install -q http://download.pytorch.org/whl/cpu/torch-0.4.0-cp27-cp27mu-linux_x86_64.whl
-        - pip install -q torchvision
-        # - pip install -q paddlepaddle==0.11.0
-
-    - name: "MMdnn onnx test with py2/ubuntu 16.04"
-      language: python
-      python: "2.7"
-      env: TEST_ONNX=true
-      install:
-        - pip install -q -r requirements.txt
-        - pip install -q http://download.pytorch.org/whl/cpu/torch-0.4.0-cp27-cp27mu-linux_x86_64.whl
-        - pip install -q torchvision
-        # - pip install -q paddlepaddle==0.11.0
-        - pip install -q onnx==1.2.1
-        - pip install -q onnx-tf==1.1.2
-
-    - name: "MMdnn no-onnx test with py3/ubuntu 16.04"
-      language: python
-      python: "3.6"
-      env: TEST_ONNX=false
-      install:
-        - pip install -q -r requirements.txt
-        - pip install -q http://download.pytorch.org/whl/cpu/torch-0.4.0-cp36-cp36m-linux_x86_64.whl
-        - pip install -q torchvision
-
-    - name: "MMdnn onnx test with py3/ubuntu 16.04"
-      language: python
-      python: "3.6"
-      env: TEST_ONNX=true
-      install:
-        - pip install -q -r requirements.txt
-        - pip install -q http://download.pytorch.org/whl/cpu/torch-0.4.0-cp36-cp36m-linux_x86_64.whl
-        - pip install -q torchvision
-        - pip install -q onnx==1.2.1
-        - pip install -q onnx-tf==1.1.2
