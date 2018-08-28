@@ -584,11 +584,10 @@ def KitModel(weight_file = None):
         ))
 
     def emit_UpSampling2D(self, IR_node):
-        self.add_body(1, "{:<15} = layers.UpSampling2D(name='{}', size= ({},{}), data_format = 'channels_last')({})".format(
+        self.add_body(1, "{:<15} = layers.UpSampling2D(name='{}', size= ({}), data_format = 'channels_last')({})".format(
             IR_node.variable_name,
             IR_node.name,
-            IR_node.get_attr('strides'),
-            IR_node.get_attr('strides'),
+            IR_node.get_attr('scales'),
             self.parent_variable_name(IR_node)
         ))
 
