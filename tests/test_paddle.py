@@ -11,7 +11,7 @@ def test_paddle():
     try:
         tester = TestModels()
         tester._test_function('paddle', tester.PaddleParse)
-    except ImportError:
-        print('Please install Paddlepaddle! Or Paddlepaddle is not supported in your platform.', file=sys.stderr)
+    except ImportError as error:
+        print('Please install Paddlepaddle! Or Paddlepaddle is not supported in your platform.\nError:[{}]'.format(error), file=sys.stderr)
 
 

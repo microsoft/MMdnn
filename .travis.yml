@@ -8,7 +8,7 @@ os:
 language: python
 python:
   - "2.7"
-  - "3.6"
+  - "3.5"
 
 env:
   - TEST_PARSER=tensorflow TEST_ONNX=true
@@ -61,6 +61,15 @@ matrix:
   fast_finish: true
   allow_failures:
     - os: osx
+  exclude:
+    - python: "3.5"
+      env: TEST_PARSER=paddle TEST_ONNX=true
+    - python: "3.5"
+      env: TEST_PARSER=paddle TEST_ONNX=false
+    - os: linux
+      env: TEST_PARSER=coreml TEST_ONNX=true
+    - os: linux
+      env: TEST_PARSER=coreml TEST_ONNX=false
 
 notifications:
   email:

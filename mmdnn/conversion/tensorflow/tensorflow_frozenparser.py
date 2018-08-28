@@ -58,7 +58,7 @@ class TensorflowParser2(Parser):
         # "Mean",
         # "Cast"
         "Pack",
-        "CheckNumerics"，
+        "CheckNumerics",
         "Where"
     ])
 
