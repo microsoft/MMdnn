@@ -554,7 +554,7 @@ def KitModel(weight_file = None):
 
     def emit_DepthwiseConv(self, IR_node):
         try:
-            keras.applications.mobilenet.DepthwiseConv2D
+            from keras.applications.mobilenet import DepthwiseConv2D
             self._emit_convolution(IR_node, 'keras.applications.mobilenet.DepthwiseConv2D')
         except:
             self._emit_convolution(IR_node, 'layers.DepthwiseConv2D')
