@@ -45,8 +45,11 @@ class DarknetParser(Parser):
 
         fp.close()
 
-        # yolo2 yolo3(608) start at 1, yolo2(416) start at 1, yolo3(416) start at 0
-        self.start = 1
+        # yolo3(608) start at 1, yolo2(608) start at 0. yolo2(416) start at 1, yolo3(416) start at 0
+        if yolo == "1":
+            self.start = 1  #yolov3
+        else:
+            self.start = 0   #yolov2
 
         model = parse_cfg(model_config)
         self.dk_graph = DarknetGraph(model)

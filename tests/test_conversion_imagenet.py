@@ -271,7 +271,12 @@ class TestModels(CorrectnessTest):
         # original to IR
         IR_file = TestModels.tmpdir + 'darknet_' + architecture_name + "_converted"
 
-        parser = DarknetParser(architecture_file[0], architecture_file[1], architecture_name)
+        if architecture_name == "yolov3":
+            start = "1"
+        else:
+            start = "0"
+
+        parser = DarknetParser(architecture_file[0], architecture_file[1], start)
         parser.run(IR_file)
         del parser
         del DarknetParser
