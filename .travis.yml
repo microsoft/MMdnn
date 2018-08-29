@@ -48,7 +48,7 @@ install:
   - pip install -q -r $(python requirements/select_requirements.py)
 
 before_script:
-  - sudo find / -name libcaffe.so.*
+  - export LD_LIBRARY_PATH=/home/travis/virtualenv/python3.5.6/lib/python3.5/site-packages/caffe/_caffe.so:/home/travis/virtualenv/python3.5.6/lib/python3.5/site-packages/caffe/libcaffe.so.1.0.0:${LD_LIBRARY_PATH}
 
 after_failure: true
 
