@@ -47,7 +47,8 @@ before_install:
 install:
   - pip install -q -r $(python requirements/select_requirements.py)
 
-before_script: true
+before_script:
+  - sudo find / -name libcaffe.so.*
 
 after_failure: true
 
