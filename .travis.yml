@@ -43,6 +43,10 @@ addons:
 
 before_install:
   - sudo apt-get install -y openmpi-bin
+  - sudo apt-get install libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
+  - sudo apt-get install --no-install-recommends libboost-all-dev
+  - sudo apt-get install libatlas-base-dev
+  - sudo apt-get install libgflags-dev libgoogle-glog-dev
 
 install:
   - pip install -q -r $(python requirements/select_requirements.py)
