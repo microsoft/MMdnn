@@ -55,7 +55,7 @@ IR weights are saved as [darknet_yolov3.npy].
 You can use following bash command to convert the IR architecture file [*darknet_yolov3.pb*] and weights file [*darknet_yolov3.npy*] to Keras Python code file[*keras_yolov3_converted.py*]
 
 ```bash
-$ mmtocode -f darknet -n darknet_yolov3.pb -w darknet_yolov3.npy -d keras_yolov3_converted.py
+$ mmtocode -f keras -n darknet_yolov3.pb -w darknet_yolov3.npy -d keras_yolov3_converted.py
 
 Parse file [darknet_yolov3.pb] with binary format successfully.
 Target network code snippet is saved as [keras_yolov3_converted.py].
