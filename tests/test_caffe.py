@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import os
+import six
 from test_conversion_imagenet import TestModels
 
 def get_test_table():
@@ -22,6 +23,20 @@ def get_test_table():
                 'xception'      : [TestModels.OnnxEmit],
             }
         }
+    elif six.PY2: return { 'caffe' :
+            {
+                'alexnet'       : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit], # TODO: TestModels.KerasEmit('Tensor' object has no attribute '_keras_history')
+                'inception_v1'  : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
+                'inception_v4'  : [TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit], # TODO TestModels.MXNetEmit(Small error), TestModels.CaffeEmit(Crash for shape)
+                'resnet152'     : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
+                'squeezenet'    : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
+                #'vgg19'         : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
+                #'voc-fcn8s'     : [TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.TensorflowEmit],
+                #'voc-fcn16s'    : [TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.TensorflowEmit],
+                'voc-fcn32s'    : [TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.TensorflowEmit],
+                'xception'      : [TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit], #  TODO: Caffe(Crash) TestModels.KerasEmit(too slow)
+            }
+        }
     else:
         return { 'caffe' :
             {
@@ -33,7 +48,7 @@ def get_test_table():
                 #'vgg19'         : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
                 #'voc-fcn8s'     : [TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.TensorflowEmit],
                 #'voc-fcn16s'    : [TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.TensorflowEmit],
-                'voc-fcn32s'    : [TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.TensorflowEmit],
+                # 'voc-fcn32s'    : [TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.TensorflowEmit],
                 'xception'      : [TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit], #  TODO: Caffe(Crash) TestModels.KerasEmit(too slow)
             }
         }
