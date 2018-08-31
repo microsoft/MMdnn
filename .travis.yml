@@ -53,7 +53,7 @@ install:
 
 before_script:
   - sudo find / -name "_caffe.so"
-  - export LD_LIBRARY_PATH=/home/travis/virtualenv/python3.5.6/lib/python3.5/site-packages/caffe/libs:/home/travis/virtualenv/python2.7.4/lib/python2.7/site-packages/caffe/libs:${LD_LIBRARY_PATH}
+  - export LD_LIBRARY_PATH=/home/travis/virtualenv/python3.5.6/lib/python3.5/site-packages/caffe/libs:/home/travis/virtualenv/python2.7.14/lib/python2.7/site-packages/caffe/libs:${LD_LIBRARY_PATH}
 
 after_failure: true
 
