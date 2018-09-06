@@ -21,7 +21,6 @@ class TensorflowParser(Parser):
         "train_op",
         "save",
         "gradients",
-        "init",
         "global_step",
         "distort_image",
         "Adagrad",
@@ -347,6 +346,8 @@ class TensorflowParser(Parser):
             return
 
         variable = self.tf_graph.get_node(add_node.in_edges[1])
+        if variable.type != "Identity":
+            return
         variable = self.tf_graph.get_node(variable.in_edges[0])
 
         assert variable.layer.attr['shape'].shape.dim[0].size == IR_node.attr['kernel_shape'].list.i[-1]
@@ -408,7 +409,6 @@ class TensorflowParser(Parser):
             self.set_weight(source_node.name, 'weights', self.ckpt_data[W.name])
 
         assign_IRnode_values(IR_node, kwargs)
-
         # output[0] : B
         self._get_bias(source_node, IR_node)
 
@@ -458,12 +458,10 @@ class TensorflowParser(Parser):
 
 
     def rename_Abs(self, source_node):
-        # print(source_node.layer)
         IR_node = self._convert_identity_operation(source_node, in_edge_count = 1, new_op = 'Abs')
 
 
     def rename_Square(self, source_node):
-        # print(source_node.layer)
         IR_node = self._convert_identity_operation(source_node, in_edge_count = 1, new_op = 'Square')
 
 
