@@ -35,7 +35,6 @@ env:
 cache:
   directories:
     - $HOME/.cache/pip
-    - $TRAVIS_BUILD_DIR/tests/cache
 
 addons:
   apt:
@@ -50,8 +49,9 @@ before_install:
 
 install:
   - pip install -q -r $(python requirements/select_requirements.py)
+  - pip install wget
 
-before_script:  
+before_script:
   - export LD_LIBRARY_PATH=/home/travis/virtualenv/python3.5.6/lib/python3.5/site-packages/caffe/libs:/home/travis/virtualenv/python2.7.14/lib/python2.7/site-packages/caffe/libs:${LD_LIBRARY_PATH}
 
 after_failure: true
