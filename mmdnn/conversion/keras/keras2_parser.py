@@ -361,7 +361,7 @@ class Keras2Parser(Parser):
         # For concat axis
         if hasattr(source_node.layer, 'axis'):
             axis = source_node.layer.axis
-            if axis == "-1":
+            if int(axis) == -1:
                 axis = 3 if self.data_format == "channels_last" else 2
             IR_node.attr['axis'].i = axis
 
