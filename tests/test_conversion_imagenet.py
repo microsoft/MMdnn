@@ -668,6 +668,8 @@ class TestModels(CorrectnessTest):
         'tensorflow_Cntk_resnet_v2_152',            # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
         'tensorflow_Cntk_mobilenet_v1_1.0',         # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
         'tensorflow_Cntk_mobilenet_v2_1.0_224',     # Cntk Padding is SAME_LOWER, but Tensorflow Padding is SAME_UPPER, in first convolution layer.
+        'tensorflow_Caffe_mobilenet_v1_1.0',        # Caffe No Relu6
+        'tensorflow_Caffe_mobilenet_v2_1.0_224',    # Caffe No Relu6
         'tensorflow_frozen_MXNet_inception_v1',     # different after AvgPool. AVG POOL padding difference between these two framework. MXNet AVGPooling Padding is SAME_LOWER, Tensorflow AVGPooling Padding is SAME_UPPER
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
         'darknet_Keras_yolov2',                     # accumulation of small difference
