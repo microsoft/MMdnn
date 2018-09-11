@@ -35,7 +35,6 @@ env:
 cache:
   directories:
     - $HOME/.cache/pip
-    - $TRAVIS_BUILD_DIR/tests/cache
 
 addons:
   apt:
@@ -43,11 +42,17 @@ addons:
 
 before_install:
   - sudo apt-get install -y openmpi-bin
+  - sudo apt-get install -y libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
+  - sudo apt-get install -y --no-install-recommends libboost-all-dev
+  - sudo apt-get install -y libatlas-base-dev
+  - sudo apt-get install -y libgflags-dev libgoogle-glog-dev
 
 install:
   - pip install -q -r $(python requirements/select_requirements.py)
+  - pip install wget
 
-before_script: true
+before_script:
+  - export LD_LIBRARY_PATH=/home/travis/virtualenv/python3.5.6/lib/python3.5/site-packages/caffe/libs:/home/travis/virtualenv/python2.7.14/lib/python2.7/site-packages/caffe/libs:${LD_LIBRARY_PATH}
 
 after_failure: true
 
@@ -59,8 +64,12 @@ script: bash test.sh $TEST_PARSER
 
 matrix:
   fast_finish: true
+
   allow_failures:
     - os: osx
+    - env: TEST_PARSER=paddle TEST_ONNX=true
+    - env: TEST_PARSER=paddle TEST_ONNX=false
+
   exclude:
     - python: "3.5"
       env: TEST_PARSER=paddle TEST_ONNX=true

@@ -112,3 +112,41 @@ Ubuntu 16.04 with
     1. Remove unnecessary transpose during building the network.
 
 - Currently no RNN-related operations support
+
+
+## FAQ
+
+### Retrain the converted CNTK model
+
+If you want to retrain the converted model, you can change all layers from "Channel Last" to "Channel First" in the converted code file and then change the code in **def batch_normalization(input, name, epsilon, **kwargs):**
+
+```python
+from
+
+def batch_normalization(input, name, epsilon, **kwargs):
+    mean = cntk.Parameter(init = __weights_dict[name]['mean'],
+        name = name + "_mean")
+    var = cntk.Parameter(init = __weights_dict[name]['var'],
+        name = name + "_var")
+    layer = (input - mean) / cntk.sqrt(var + epsilon)
+
+    ......
+
+to
+
+def batch_normalization(input, name, epsilon, **kwargs):
+    layer = cntk.layers.BatchNormalization( map_rank = 1, name=name )(input)
+    mean = cntk.Parameter(init = __weights_dict[name]['mean'],
+        name = name + "_mean")
+    layer.aggregate_mean = mean
+    var = cntk.Parameter(init = __weights_dict[name]['var'],
+        name = name + "_var")
+    layer.aggregate_variance = var
+    layer.aggregate_count    = 4096.0
+
+    ......
+
+```
+Thanks to [this issue](https://github.com/Microsoft/MMdnn/issues/396)
+
+

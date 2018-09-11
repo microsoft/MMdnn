@@ -187,7 +187,15 @@ class NodeMapper(object):
         #TODO: Axis
         assert node.parameters.axis == 1
         #TODO: Unbiased
-        kwargs = {'use_bias' : node.parameters.bias_term, 'units' : node.parameters.num_output}
+        shape = TensorShape()
+        dim = shape.dim.add()
+        dim.size = -1
+        dim = shape.dim.add()
+        dim.size = 1
+        for i in node.output_shape[1:]:
+            dim.size *= i
+        kwargs = {'use_bias' : node.parameters.bias_term, 'units' : node.parameters.num_output,
+                '_output_shapes': [shape]}
 
         # check if need the Flatten layer
         parent, _ = node.get_only_parent()

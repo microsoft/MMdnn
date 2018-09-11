@@ -924,3 +924,8 @@ class MXNetParser(Parser):
 
     def rename__copy(self, source_node):
         source_node.real_name = self.get_parent(source_node.name, [0]).real_name
+
+
+    def rename_BlockGrad(self, source_node):
+        return
+
