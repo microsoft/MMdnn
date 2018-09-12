@@ -1108,3 +1108,6 @@ class TensorflowParser2(Parser):
         kwargs['shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
 
         assign_IRnode_values(IR_node, kwargs)
+    
+    def rename_Log(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Log')
