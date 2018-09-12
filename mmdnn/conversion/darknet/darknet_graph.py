@@ -67,6 +67,31 @@ class DarknetGraph(Graph):
     def conv_output_height(height, padding, kernel_size, stride):
         return (height + 2*padding - kernel_size)/stride + 1
 
+
+    def activation(self, block, pre_node_name, input_shape, id):
+        if block['activation'] != 'linear':
+            relu_layer = OrderedDict()
+            relu_layer['input'] = [pre_node_name]
+            if 'name' in block.keys():
+                relu_layer['name'] = '%s-act' % block['name']
+            else:
+                relu_layer['name'] = 'layer%d-act' % id
+            relu_layer['type'] = 'ReLU'
+            relu_param = OrderedDict()
+            if block['activation'] == 'leaky':
+                relu_layer['type'] = 'leakyReLU'
+                relu_param['negative_slope'] = '0.1'
+            relu_param['_output_shape'] = input_shape
+            relu_layer['attr'] = relu_param
+            self.layer_map[relu_layer['name']] = DarknetGraphNode(relu_layer)
+            self.layer_num_map[i] = relu_layer['name']
+            self.original_list[relu_layer['name']] = DarknetGraphNode(relu_layer)
+            pre_node_name = relu_layer['name']
+        else:
+            self.layer_num_map[i] = bn_layer['name']
+
+        return pre_node_name
+
     def build(self):
 
         for i, block in enumerate(self.model):
@@ -155,28 +180,7 @@ class DarknetGraph(Graph):
 
                     pre_node_name = bn_layer['name']
 
-
-                if block['activation'] != 'linear':
-                    relu_layer = OrderedDict()
-                    relu_layer['input'] = [pre_node_name]
-                    if 'name' in block.keys():
-                        relu_layer['name'] = '%s-act' % block['name']
-                    else:
-                        relu_layer['name'] = 'layer%d-act' % i
-                    relu_layer['type'] = 'ReLU'
-                    relu_param = OrderedDict()
-                    if block['activation'] == 'leaky':
-                        relu_layer['type'] = 'leakyReLU'
-                        relu_param['negative_slope'] = '0.1'
-                    relu_param['_output_shape'] = input_shape
-                    relu_layer['attr'] = relu_param
-                    self.layer_map[relu_layer['name']] = DarknetGraphNode(relu_layer)
-                    self.layer_num_map[i] = relu_layer['name']
-                    self.original_list[relu_layer['name']] = DarknetGraphNode(relu_layer)
-                    pre_node_name = relu_layer['name']
-
-                else:
-                    self.layer_num_map[i] = bn_layer['name']
+                pre_node_name = self.activation(block, pre_node_name, input_shape, i)
 
 
             elif block['type'] == 'maxpool':
@@ -297,24 +301,7 @@ class DarknetGraph(Graph):
                 self.layer_num_map[i] = shortcut_layer['name']
                 pre_node_name = shortcut_layer['name']
 
-                if block['activation'] != 'linear':
-                    relu_layer = OrderedDict()
-                    relu_layer['input'] = [pre_node_name]
-                    if 'name' in block.keys():
-                        relu_layer['name'] = '%s-act' % block['name']
-                    else:
-                        relu_layer['name'] = 'layer%d-act' % i
-                    relu_layer['type'] = 'ReLU'
-                    relu_param = OrderedDict()
-                    relu_param['_output_shape'] = input_shape
-                    if block['activation'] == 'leaky':
-
-                        relu_param['negative_slope'] = '0.1'
-
-                    relu_layer['attr'] = relu_param
-                    self.layer_map[relu_layer['name']] = DarknetGraphNode(relu_layer)
-                    self.original_list[relu_layer['name']] = DarknetGraphNode(relu_layer)
-                    pre_node_name = relu_layer['name']
+                pre_node_name = self.activation(block, pre_node_name, input_shape, i)
 
             elif block['type'] == 'connected':
                 fc_layer = OrderedDict()
@@ -334,23 +321,7 @@ class DarknetGraph(Graph):
                 self.layer_num_map[i] = fc_layer['name']
                 pre_node_name = fc_layer['name']
 
-                if block['activation'] != 'linear':
-                    relu_layer = OrderedDict()
-                    relu_layer['input'] = [pre_node_name]
-                    if 'name' in block.keys():
-                        relu_layer['name'] = '%s-act' % block['name']
-                    else:
-                        relu_layer['name'] = 'layer%d-act' % i
-                    relu_layer['type'] = 'ReLU'
-                    relu_param = OrderedDict()
-                    if block['activation'] == 'leaky':
-
-                        relu_param['negative_slope'] = '0.1'
-                    relu_param['_output_shape'] = fc_param['_output_shape']
-                    relu_layer['attr'] = relu_param
-                    self.layer_map[relu_layer['name']] = DarknetGraphNode(relu_layer)
-                    self.original_list[relu_layer['name']] = DarknetGraphNode(relu_layer)
-                    pre_node_name = relu_layer['name']
+                pre_node_name = self.activation(block, pre_node_name, input_shape, i)
 
             elif block['type'] == 'softmax':
                 sm_layer = OrderedDict()

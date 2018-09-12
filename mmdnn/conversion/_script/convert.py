@@ -29,7 +29,7 @@ def _get_parser():
     parser.add_argument(
         '--dstFramework', '-df',
         type=_text_type,
-        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch', 'onnx'],
+        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch', 'onnx', 'darknet'],
         required=True,
         help='Format of model at srcModelPath (default is to auto-detect).')
     parser.add_argument(

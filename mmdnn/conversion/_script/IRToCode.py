@@ -55,6 +55,13 @@ def _convert(args):
             raise NotImplementedError("ONNX emitter needs IR weight file")
         else:
             emitter = OnnxEmitter(args.IRModelPath, args.IRWeightPath)
+    elif args.dstFramework == 'darknet':
+        from mmdnn.conversion.darknet.darknet_emitter import DarknetEmitter
+        if args.IRWeightPath is None:
+            emitter = DarknetEmitter(args.IRModelPath)
+        else:
+            assert args.dstWeightPath
+            emitter = DarknetEmitter((args.IRModelPath, args.IRWeightPath))
     else:
         assert False
 
@@ -79,7 +86,7 @@ def _get_parser():
     parser.add_argument(
         '--dstFramework', '-f',
         type=_text_type,
-        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch', 'onnx'],
+        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch', 'onnx', 'darknet'],
         required=True,
         help='Format of model at srcModelPath (default is to auto-detect).')
 
