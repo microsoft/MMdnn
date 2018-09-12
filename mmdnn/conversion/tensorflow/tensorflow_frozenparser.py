@@ -658,7 +658,7 @@ class TensorflowParser2(Parser):
         if len(scopes) > 2:
             if scopes[-2].startswith('Assign') or scopes[-1].startswith('Assign'):
                 return
-        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = "Sub")
+        IR_node = self._convert_identity_operation(source_node, end_idx=2, new_op = "Sub")
 
 
     def rename_Sum(self, source_node):
