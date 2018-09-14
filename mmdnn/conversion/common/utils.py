@@ -175,7 +175,7 @@ def _multi_thread_download(url, file_name, file_size, thread_count):
     return file_name
 
 
-def download_file(url, directory='./', local_fname=None, force_write=False, auto_unzip=False):
+def download_file(url, directory='./', local_fname=None, force_write=False, auto_unzip=False, compre_type=''):
     """Download the data from source url, unless it's already here.
 
     Args:
@@ -193,6 +193,11 @@ def download_file(url, directory='./', local_fname=None, force_write=False, auto
     if not local_fname:
         k = url.rfind('/')
         local_fname = url[k + 1:]
+        import re
+        if local_fname != re.sub(r'[/:*?<>|]','',local_fname):   # name is complex and translate it into simple one with the compression type
+            local_fname = 'temp_'
+            local_fname += compre_type
+            
 
     local_fname = os.path.join(directory, local_fname)
 

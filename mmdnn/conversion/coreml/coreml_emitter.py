@@ -160,6 +160,12 @@ class CoreMLEmitter(Emitter):
 
         return pads
 
+    def emit_Mul(self, IR_node):
+        """
+        Skiped
+        """
+        pass
+
     def _emit_merge(self, IR_node, func):
         """
         Convert concat layer to coreml.

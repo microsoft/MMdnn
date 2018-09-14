@@ -35,3 +35,9 @@ def test_mxnet():
     test_table = get_test_table()
     tester = TestModels(test_table)
     tester._test_function('mxnet', tester.MXNetParse)
+
+# def main():
+#     test_mxnet()
+
+# if __name__ == '__main__':
+#     main()

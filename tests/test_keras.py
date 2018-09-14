@@ -40,3 +40,9 @@ def test_keras():
     test_table = get_test_table()
     tester = TestModels(test_table)
     tester._test_function('keras', tester.KerasParse)
+
+# def main():
+#     test_keras()
+
+# if __name__ == '__main__':
+#     main()

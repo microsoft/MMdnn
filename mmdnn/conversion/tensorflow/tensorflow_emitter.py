@@ -318,9 +318,20 @@ def KitModel(weight_file = None):
 
 
     def emit_Mul(self, IR_node):
-        self.add_body(1, "{:<15} = {}".format(
+        
+        if IR_node.name in self.weights_dict and 'weights' in self.weights_dict[IR_node.name]:
+            weight_str = "* tf.Variable(__weights_dict['{}'].get('weights',1.0))".format(IR_node.name)
+        else:
+            weight_str = ""
+        
+        # self.add_body(1, "{:<15} = {}".format(
+        #     IR_node.variable_name,
+        #     ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
+
+        self.add_body(1,"{:<15} = {}{}".format(
             IR_node.variable_name,
-            ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
+            ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges),
+            weight_str))
 
     def emit_Const(self, IR_node):
         if 'dtype' in IR_node.layer.attr:

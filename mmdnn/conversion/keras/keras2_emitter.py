@@ -37,6 +37,7 @@ class Keras2Emitter(Emitter):
         else:
             network_path = model[0]
             weight_path = model[1]
+            self._load_weights(weight_path)
 
         self.IR_graph = IRGraph(network_path)
         self.IR_graph.build()
@@ -51,6 +52,7 @@ from keras.models import Model
 from keras import layers
 import keras.backend as K
 import numpy as np
+import keras.layers.core as core
 
 
 def load_weights_from_file(weight_file):
@@ -244,6 +246,18 @@ def KitModel(weight_file = None):
 
     def emit_UNKNOWN(self, IR_node):
         print (IR_node.name)
+
+    ##add mul op, just implement layer * constant
+    def emit_Mul(self, IR_node):
+        if IR_node.name in self.weights_dict and 'weights' in self.weights_dict[IR_node.name]:
+            self.used_layers.add('KerasMul')
+            weight_factor =  "weights_dict['{}'].get('weights',1.0)".format(IR_node.name)
+            self.add_body(1, "{:<15} = mul_constant(weight_factor={}, layer_name= {})".format(
+                IR_node.variable_name,
+                weight_factor,
+                ''.join(self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)))
+        else:
+            raise NotImplementedError()
 
 
     def emit_Add(self, IR_node):
@@ -643,6 +657,14 @@ def KitModel(weight_file = None):
             IR_node.get_attr("noobject_scale"),
             IR_node.get_attr("coord_scale"),
             ]
+
+    def _layer_KerasMul(self):
+        self.add_body(0, '''
+def mul_constant(weight_factor, layer_name):
+    weight = core.Lambda(lambda x: x*weight_factor)
+    weight(layer_name)
+    return weight.output
+''')
 
     def _layer_Yolo(self):
         self.add_body(0, '''
