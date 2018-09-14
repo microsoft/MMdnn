@@ -22,8 +22,8 @@ def get_test_table():
         }}
 
 def test_tensorflow_frozen():
-    test_table = get_test_table()
-    tester = TestModels(test_table)
+    # test_table = get_test_table()
+    tester = TestModels()
     tester._test_function('tensorflow_frozen', tester.TensorFlowFrozenParse)
 
 def main():
