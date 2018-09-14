@@ -165,15 +165,15 @@ class tensorflow_extractor(base_extractor):
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 331, 331, 3]),
             'num_classes' : 1001,
         },
-        'facenet' : {
-            'url'         : 'https://drive.google.com/facenet_frozen',
-            'filename'    : 'facenet.pb',
-            'tensor_out'  : 'embeddings:0',
-            'tensor_in'   : 'input:0',
-            'phase_train' : 'phase_train:0',
-            'input_shape' : [160, 160, 3],
-            'num_classes' : 0,
-        },
+        # 'facenet' : {
+        #     'url'         : 'https://drive.google.com/facenet_frozen',
+        #     'filename'    : 'facenet.pb',
+        #     'tensor_out'  : 'embeddings:0',
+        #     'tensor_in'   : 'input:0',
+        #     'phase_train' : 'phase_train:0',
+        #     'input_shape' : [160, 160, 3],
+        #     'num_classes' : 0,
+        # },
         # Note that the link will expire after one day and it is better to upload the model to a stable server.
         'facenet_frozen' : {
             'url'         : 'https://doc-0k-7k-docs.googleusercontent.com/docs/securesc/ha0ro937gcuc7l7deffksulhg5h7mbp1/bilqocet7fepe2lnqpoacs1gkhrv2kq8/1536890400000/18056234690049221457/*/1R77HmFADxe87GmoLwzfgMu_HY0IhcyBz?e=download',
