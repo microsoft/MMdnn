@@ -194,7 +194,7 @@ def download_file(url, directory='./', local_fname=None, force_write=False, auto
         k = url.rfind('/')
         local_fname = url[k + 1:]
         import re
-        if local_fname != re.sub(r'[/:*?<>|]','',local_fname):   # name is complex and translate it into simple one with the compression type
+        if local_fname != re.sub(r'[/:*?<>|]','',local_fname):   # The name is complex and change it to a simple one with the compression type
             local_fname = 'temp_'
             local_fname += compre_type
             

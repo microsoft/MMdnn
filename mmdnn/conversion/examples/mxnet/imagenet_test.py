@@ -39,7 +39,7 @@ class TestMXNet(TestKit):
     def inference(self, image_path):
         self.preprocess(image_path)
 
-        self.print_intermediate_result('pooling0', False)
+        # self.print_intermediate_result('pooling0', False)
 
         self.print_result()
 

@@ -18,7 +18,7 @@ def get_test_table():
                 'inception_v1'      : [TestModels.TensorflowEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.CoreMLEmit], # TODO: CntkEmit
                 'inception_v3'      : [TestModels.TensorflowEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.CoreMLEmit], # TODO: CntkEmit
                 'mobilenet_v1_1.0'  : [TestModels.TensorflowEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.CoreMLEmit],
-                'facenet'           : [TestModels.TensorflowEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.CoreMLEmit]
+                'facenet'           : [TestModels.TensorflowEmit, TestModels.KerasEmit, TestModels.MXNetEmit]  # TODO: TestModels.CoreMLEmit
         }}
 
 def test_tensorflow_frozen():

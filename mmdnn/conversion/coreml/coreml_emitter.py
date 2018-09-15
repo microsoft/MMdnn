@@ -164,6 +164,7 @@ class CoreMLEmitter(Emitter):
         """
         Not implement yet
         """
+        pass
         # if IR_node.name in self.weights_dict and 'weights' in self.weights_dict[IR_node.name]:
         #     pass
         

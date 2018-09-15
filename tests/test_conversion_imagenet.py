@@ -736,6 +736,7 @@ class TestModels(CorrectnessTest):
                 'inception_v1'      : [OnnxEmit],
                 'inception_v3'      : [OnnxEmit],
                 'mobilenet_v1_1.0'  : [OnnxEmit],
+                'facenet'           : [OnnxEmit],
             },
 
             'coreml' : {
