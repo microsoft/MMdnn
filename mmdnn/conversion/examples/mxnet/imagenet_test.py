@@ -39,11 +39,11 @@ class TestMXNet(TestKit):
     def inference(self, image_path):
         self.preprocess(image_path)
 
-        self.print_intermediate_result('InceptionResnetV1/Repeat/block35_1/Conv2d_1x1/Conv2D', False)
+        self.print_intermediate_result('pooling0', False)
 
-        # self.print_result()
+        self.print_result()
 
-        # self.test_truth()
+        self.test_truth()
 
 
     def print_intermediate_result(self, layer_name, if_transpose = False):

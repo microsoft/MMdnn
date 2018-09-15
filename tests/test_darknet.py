@@ -11,9 +11,3 @@ def test_darknet():
         tester._test_function('darknet', tester.DarknetParse)
     except ImportError:
         print('Please install Darknet! Or Darknet is not supported in your platform.', file=sys.stderr)
-
-def main():
-    test_darknet()
-
-if __name__ == '__main__':
-    main()

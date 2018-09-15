@@ -546,7 +546,7 @@ class TestModels(CorrectnessTest):
 
         coreml_pre = funcstr.split('(')[0].split('.')[-1]
 
-        if len(funcstr.split(',')) == 3 or 2:
+        if len(funcstr.split(',')) == 3:
             BGRTranspose = bool(0)
             size = int(funcstr.split('path,')[1].split(')')[0])
             prep_list = prep_for_coreml(coreml_pre, BGRTranspose)
@@ -736,7 +736,6 @@ class TestModels(CorrectnessTest):
                 'inception_v1'      : [OnnxEmit],
                 'inception_v3'      : [OnnxEmit],
                 'mobilenet_v1_1.0'  : [OnnxEmit],
-                'facenet'           : [OnnxEmit]
             },
 
             'coreml' : {
@@ -820,10 +819,10 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow_frozen' : {
-                # 'inception_v1'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
-                # 'inception_v3'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
-                # 'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit],
-                'facenet'             : [CoreMLEmit, TensorflowEmit, KerasEmit, MXNetEmit] 
+                'inception_v1'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+                'inception_v3'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
+                'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit],
+                'facenet'           : [TensorflowEmit, KerasEmit, MXNetEmit] # TODO: CoreMLEmit 
             },
 
             'coreml' : {

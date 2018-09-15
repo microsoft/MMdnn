@@ -176,7 +176,7 @@ class tensorflow_extractor(base_extractor):
         },
         # Note that the link will expire after one day and it is better to upload the model to a stable server.
         'facenet_frozen' : {
-            'url'         : 'https://doc-0k-7k-docs.googleusercontent.com/docs/securesc/ha0ro937gcuc7l7deffksulhg5h7mbp1/bilqocet7fepe2lnqpoacs1gkhrv2kq8/1536890400000/18056234690049221457/*/1R77HmFADxe87GmoLwzfgMu_HY0IhcyBz?e=download',
+            'url'         : 'https://doc-0k-7k-docs.googleusercontent.com/docs/securesc/ha0ro937gcuc7l7deffksulhg5h7mbp1/kps9l33qc03jcmag27r86plagtqrsj7d/1536933600000/18056234690049221457/*/1R77HmFADxe87GmoLwzfgMu_HY0IhcyBz?e=download',
             'filename'    : '20180408-102900/20180408-102900.pb',
             'compre_type' : '.zip',
             'tensor_out'  : ['InceptionResnetV1/Logits/AvgPool_1a_8x8/AvgPool:0'],

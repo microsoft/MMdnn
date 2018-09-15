@@ -764,9 +764,6 @@ class TensorflowParser2(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Shape')
         input_node = self.src_graph.get_parent(source_node.name, [0])
         kwargs = {}
-        # print(input_node.layer)
-        # print(input_node.get_attr('_output_shapes'))
-        # print(self.tensor_shape_to_list(input_node.get_attr('_output_shapes')))
         kwargs['shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
 
         assign_IRnode_values(IR_node, kwargs)

@@ -31,9 +31,3 @@ def test_tensorflow():
     test_table = get_test_table()
     tester = TestModels(test_table)
     tester._test_function('tensorflow', tester.TensorFlowParse)
-
-def main():
-    test_tensorflow()
-
-if __name__ == '__main__':
-    main()
