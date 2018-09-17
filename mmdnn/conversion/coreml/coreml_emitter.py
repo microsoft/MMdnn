@@ -173,7 +173,7 @@ class CoreMLEmitter(Emitter):
 
     def _emit_merge(self, IR_node, func):
         """
-        Cosnvert concat layer to coreml.
+        Convert concat layer to coreml.
         """
         # Get input and output names
         input_names = [self.IR_graph.get_node(inp).real_name for inp in IR_node.in_edges]
