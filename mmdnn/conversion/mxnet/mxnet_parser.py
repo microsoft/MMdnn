@@ -381,6 +381,18 @@ class MXNetParser(Parser):
     Here start with Neural Network Symbol
     """
 
+    def rename_Pad(self, source_node):
+        IR_node = self._convert_identity_operation(source_node)
+        kwargs = dict()
+        pad = MXNetParser.str2intList(source_node.get_attr("pad_width"))
+        pad += [pad.pop(2), pad.pop(3)]
+        kwargs['pads'] = pad
+        kwargs['pads'] = convert_tf_pad_to_onnx(kwargs['pads'])
+        kwargs['mode'] = 'CONSTANT'
+        assign_IRnode_values(IR_node, kwargs)
+        IR_node.attr["constant_values"].f = 0.
+
+
     def rename_FullyConnected(self, source_node):
         IR_node = self._convert_identity_operation(source_node)
 
