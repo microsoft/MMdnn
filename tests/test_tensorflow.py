@@ -22,8 +22,9 @@ def get_test_table():
         'resnet_v2_152'        : [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
         'mobilenet_v1_1.0'     : [TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
         'mobilenet_v2_1.0_224' : [TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
-        # 'nasnet-a_large'       : [MXNetEmit, PytorchEmit, TensorflowEmit],
-        # 'inception_resnet_v2'  : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+        # 'nasnet-a_large'       : [TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
+        # 'inception_resnet_v2'  : [TestModels.CaffeEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
+        'facenet'               : [TestModels.CaffeEmit, TestModels.MXNetEmit, TestModels.TensorflowEmit, TestModels.KerasEmit,TestModels.PytorchEmit,TestModels.CaffeEmit], # TODO: CoreMLEmit 
     }}
 
 
@@ -31,3 +32,9 @@ def test_tensorflow():
     test_table = get_test_table()
     tester = TestModels(test_table)
     tester._test_function('tensorflow', tester.TensorFlowParse)
+
+def main():
+    test_tensorflow()
+
+if __name__ == '__main__':
+    main()
