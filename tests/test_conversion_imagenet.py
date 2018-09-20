@@ -818,14 +818,14 @@ class TestModels(CorrectnessTest):
                 'mobilenet_v2_1.0_224'  : [CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CaffeEmit(Crash)
                 'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
                 'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always 
-                'facenet'               : [MXNetEmit, TensorflowEmit, KerasEmit,PytorchEmit,CaffeEmit], # TODO: CoreMLEmit 
+                'facenet'               : [MXNetEmit, TensorflowEmit, KerasEmit, PytorchEmit, CaffeEmit], # TODO: CoreMLEmit 
             },
 
             'tensorflow_frozen' : {
                 'inception_v1'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
                 'inception_v3'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
                 'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit],
-                'facenet'             : [MXNetEmit, TensorflowEmit, KerasEmit] # TODO: CoreMLEmit 
+                'facenet'           : [MXNetEmit, TensorflowEmit, KerasEmit] # TODO: CoreMLEmit 
             },
 
             'coreml' : {

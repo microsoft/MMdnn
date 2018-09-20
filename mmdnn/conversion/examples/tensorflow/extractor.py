@@ -167,20 +167,18 @@ class tensorflow_extractor(base_extractor):
             'num_classes' : 1001,
         },
         'facenet' : {
-            'url'         : 'https://doc-0k-7k-docs.googleusercontent.com/docs/securesc/ha0ro937gcuc7l7deffksulhg5h7mbp1/72f6jtkrqv7m6temi8aq7pjj4s74839n/1537408800000/18056234690049221457/*/1R77HmFADxe87GmoLwzfgMu_HY0IhcyBz?e=download',
-            'filename'    : '20180408-102900/',
+            'url'         : 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/facenet/20180408-102900.zip',
+            'filename'    : '20180408-102900/model-20180408-102900.ckpt-90',
             'builder'     : lambda : inception_resnet_v1.inception_resnet_v1,
             'arg_scope'   : inception_resnet_v1.inception_resnet_v1_arg_scope,
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 160, 160, 3]),
             'feed_dict'   : lambda img: {'input:0':img,'phase_train:0':False},
             'num_classes' : 0,
-            'compre_type' : '.zip',
         },
         # Note that the link will expire after one day and it is better to upload the model to a stable server.
         'facenet_frozen' : {
-            'url'         : 'https://doc-0k-7k-docs.googleusercontent.com/docs/securesc/ha0ro937gcuc7l7deffksulhg5h7mbp1/72f6jtkrqv7m6temi8aq7pjj4s74839n/1537408800000/18056234690049221457/*/1R77HmFADxe87GmoLwzfgMu_HY0IhcyBz?e=download',
+            'url'         : 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/facenet/20180408-102900.zip',
             'filename'    : '20180408-102900/20180408-102900.pb',
-            'compre_type' : '.zip',
             'tensor_out'  : ['InceptionResnetV1/Logits/AvgPool_1a_8x8/AvgPool:0'],
             'tensor_in'   : ['input:0','phase_train:0'],
             'input_shape' : [[160, 160, 3],1], # input_shape of the elem in tensor_in
@@ -189,34 +187,6 @@ class tensorflow_extractor(base_extractor):
         }
     }
 
-    @classmethod
-    def handle_modeldir(cls, architecture, path):
-        dir_path = path+cls.architecture_map[architecture]['filename']
-        with slim.arg_scope(cls.architecture_map[architecture]['arg_scope']()):
-            data_input = cls.architecture_map[architecture]['input']()
-            logits, endpoints = cls.architecture_map[architecture]['builder']()(
-                data_input,
-                num_classes=cls.architecture_map[architecture]['num_classes'],
-                is_training=False)
-
-            if logits.op.type == 'Squeeze':
-                labels = tf.identity(logits, name='MMdnn_Output')
-            else:
-                labels = tf.squeeze(logits, name='MMdnn_Output')
-            meta_file, ckpt_file = cls.get_model_filenames(dir_path)
-
-        init = tf.global_variables_initializer()
-        with tf.Session() as sess:
-            sess.run(init)
-            saver = tf.train.Saver()
-
-            saver = tf.train.import_meta_graph(os.path.join(dir_path, meta_file), input_map=None)
-            saver.restore(sess, dir_path + ckpt_file)
-            save_path = saver.save(sess, path + "imagenet_{}.ckpt".format(architecture))
-            print("Model saved in file: %s" % save_path)
-
-        import tensorflow.contrib.keras as keras
-        keras.backend.clear_session()
 
     @classmethod
     def handle_checkpoint(cls, architecture, path):
@@ -259,43 +229,20 @@ class tensorflow_extractor(base_extractor):
 
 
     @classmethod
-    def get_model_filenames(cls, model_dir):
-        import re
-        files = os.listdir(model_dir)
-        meta_files = [s for s in files if s.endswith('.meta')]
-        if len(meta_files)==0:
-            raise ValueError('No meta file found in the model directory (%s)' % model_dir)
-        elif len(meta_files)>1:
-            raise ValueError('There should not be more than one meta file in the model directory (%s)' % model_dir)
-        meta_file = meta_files[0]
-        ckpt = tf.train.get_checkpoint_state(model_dir)
-        if ckpt and ckpt.model_checkpoint_path:
-            ckpt_file = os.path.basename(ckpt.model_checkpoint_path)
-            return meta_file, ckpt_file
-        ckpt_files = [s for s in files if '.ckpt' in s]
-        strs = ckpt_files[0].split('.')
-        idx = [strs.index(s, 0, len(strs)) for s in strs if 'ckpt' in s][0]
-        ckpt_file = '.'.join('%s' % strs[i] for i in range(idx+1))
-        return meta_file, ckpt_file
-
-
-    @classmethod
     def download(cls, architecture, path="./"):
         if cls.sanity_check(architecture):
-            architecture_file = download_file(cls.architecture_map[architecture]['url'], directory=path, auto_unzip=True, compre_type=cls.architecture_map[architecture].get('compre_type',''))
+            architecture_file = download_file(cls.architecture_map[architecture]['url'], directory=path, auto_unzip=True)
             if not architecture_file:
                 return None
 
             tf.reset_default_graph()
 
-            if cls.architecture_map[architecture]['filename'].endswith('ckpt'):
+            if 'ckpt' in cls.architecture_map[architecture]['filename']:
                 cls.handle_checkpoint(architecture, path)
 
             elif cls.architecture_map[architecture]['filename'].endswith('pb'):
                 cls.handle_frozen_graph(architecture, path)
             
-            elif not os.path.isfile(cls.architecture_map[architecture]['filename']):
-                cls.handle_modeldir(architecture, path)
             else:
                 raise ValueError("Unknown file name [{}].".format(cls.architecture_map[architecture]['filename']))
 
@@ -334,37 +281,6 @@ class tensorflow_extractor(base_extractor):
                 with tf.Session(graph = g) as sess:
                     tf_out = sess.run(tf_output_name[0], feed_dict=feed_dict(img)) # temporarily think the num of out nodes is one
                 predict = np.squeeze(tf_out)
-                return predict
-
-            elif not os.path.isfile(cls.architecture_map[architecture]['filename']):
-                with slim.arg_scope(cls.architecture_map[architecture]['arg_scope']()):
-                    # tf.reset_default_graph()
-
-                    data_input = cls.architecture_map[architecture]['input']()
-                    logits, endpoints = cls.architecture_map[architecture]['builder']()(
-                        data_input,
-                        num_classes=cls.architecture_map[architecture]['num_classes'],
-                        is_training=False)
-                    labels = tf.squeeze(logits)
-
-                init = tf.global_variables_initializer()
-                
-                model_dir = os.path.join(path, cls.architecture_map[architecture]['filename'])
-                meta_file, ckpt_file = cls.get_model_filenames(model_dir)
-        
-                with tf.Session() as sess:
-                    sess.run(init)
-                    saver = tf.train.Saver()
-                    saver = tf.train.import_meta_graph(os.path.join(model_dir, meta_file), input_map=None)
-                    saver.restore(sess, model_dir + ckpt_file)
-                    
-                    feed_dict = cls.architecture_map[architecture_]['feed_dict']
-                    predict = sess.run(logits, feed_dict = feed_dict(img))
-
-                import tensorflow.contrib.keras as keras
-                keras.backend.clear_session()
-
-                predict = np.squeeze(predict)
                 return predict
 
             else:
