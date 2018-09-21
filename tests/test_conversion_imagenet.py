@@ -327,7 +327,7 @@ class TestModels(CorrectnessTest):
         # import converted model
         model_converted = imp.load_source('TFModel', converted_file + '.py').KitModel(weight_path)
 
-        input_tf,model_tf = model_converted
+        input_tf, model_tf = model_converted
 
         original_framework = checkfrozen(original_framework)
         func = TestKit.preprocess_func[original_framework][architecture_name]
