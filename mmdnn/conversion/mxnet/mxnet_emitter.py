@@ -925,10 +925,21 @@ def predict(model, labels, url):
 
     def emit_Mul(self, IR_node):
 
+        # code = "{:<15} = mx.sym.broadcast_mul({}, {})".format(
+        #         IR_node.variable_name,
+        #         self.parent_variable_name(IR_node),
+        #         self.parent_variable_name(IR_node, [1]))
+        
+        if IR_node.name in self.weights and 'weights' in self.weights[IR_node.name]:
+            second_node = "mx.sym.Variable('{}', shape=(1,))".format(IR_node.name+'_weight')
+            self.output_weights[IR_node.name + '_weight'] = [self.weights[IR_node.name]['weights']]
+        else:
+            second_node = self.parent_variable_name(IR_node, [1])
+
         code = "{:<15} = mx.sym.broadcast_mul({}, {})".format(
-                IR_node.variable_name,
-                self.parent_variable_name(IR_node),
-                self.parent_variable_name(IR_node, [1]))
+        IR_node.variable_name,
+        self.parent_variable_name(IR_node),
+        second_node)
 
         return code
 

@@ -10,6 +10,7 @@ from six import text_type as _text_type
 from PIL import Image
 
 
+
 class TestKit(object):
 
     truth = {
@@ -110,6 +111,7 @@ class TestKit(object):
             'mobilenet_v2_1.0_224'  : lambda path : TestKit.Standard(path, 224),
             'nasnet-a_large'     : lambda path : TestKit.Standard(path, 331),
             'inception_resnet_v2' : lambda path : TestKit.Standard(path, 299),
+            'facenet'           : lambda path: TestKit.Standard(path, 160)
         },
 
         'keras' : {
@@ -330,7 +332,6 @@ class TestKit(object):
         else:
             self.result = predict
             print (self.result)
-
 
     @staticmethod
     def print_intermediate_result(intermediate_output, if_transpose=False):

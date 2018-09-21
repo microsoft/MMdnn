@@ -160,6 +160,17 @@ class CoreMLEmitter(Emitter):
 
         return pads
 
+    def emit_Mul(self, IR_node):
+        """
+        Not implement yet
+        """
+        pass
+        # if IR_node.name in self.weights_dict and 'weights' in self.weights_dict[IR_node.name]:
+        #     pass
+        
+        # self._emit_merge(IR_node,'DOT')
+        
+
     def _emit_merge(self, IR_node, func):
         """
         Convert concat layer to coreml.
@@ -804,7 +815,6 @@ class CoreMLEmitter(Emitter):
         """
         Convert a Batch Normalization layer.
         """
-
         # Get input and output names
         input_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
 

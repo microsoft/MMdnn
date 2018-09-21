@@ -61,7 +61,7 @@ class TestModels(CorrectnessTest):
         # original to IR
         IR_file = TestModels.tmpdir + 'tensorflow_frozen_' + architecture_name + "_converted"
         parser = TensorflowParser2(
-            TestModels.cachedir + para[0], [para[1]], [para[2].split(':')[0]], [para[3].split(':')[0]])
+            TestModels.cachedir + para[0], para[1], para[2], para[3])
         parser.run(IR_file)
         del parser
         del TensorflowParser2
@@ -318,8 +318,7 @@ class TestModels(CorrectnessTest):
         # IR to code
         converted_file = original_framework + '_tensorflow_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
-        print(architecture_path)
-        print(weight_path)
+
         emitter = TensorflowEmitter((architecture_path, weight_path))
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
@@ -567,6 +566,8 @@ class TestModels(CorrectnessTest):
                         )
 
         emitter = CoreMLEmitter(architecture_path, weight_path)
+        
+        
         model, input_name, output_name = emitter.gen_model(
                 input_names=None,
                 output_names=None,
@@ -720,6 +721,7 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow' : {
+                'facenet'               : [OnnxEmit],
                 'vgg19'                 : [OnnxEmit],
                 'inception_v1'          : [OnnxEmit],
                 'inception_v3'          : [OnnxEmit],
@@ -737,6 +739,7 @@ class TestModels(CorrectnessTest):
                 'inception_v1'      : [OnnxEmit],
                 'inception_v3'      : [OnnxEmit],
                 'mobilenet_v1_1.0'  : [OnnxEmit],
+                'facenet'           : [OnnxEmit],
             },
 
             'coreml' : {
@@ -780,6 +783,8 @@ class TestModels(CorrectnessTest):
                 'mobilenet'    : [CoreMLEmit, KerasEmit, TensorflowEmit], # TODO: MXNetEmit
                 # 'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
                 'yolo2'        : [KerasEmit],
+                # 'facenet'      : [TensorflowEmit, CoreMLEmit,MXNetEmit,KerasEmit]  # TODO: 
+                
             },
 
             'mxnet' : {
@@ -814,13 +819,15 @@ class TestModels(CorrectnessTest):
                 'mobilenet_v1_1.0'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'mobilenet_v2_1.0_224'  : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
-                'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always crashed
+                'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always 
+                'facenet'               : [MXNetEmit, TensorflowEmit, KerasEmit, PytorchEmit, CaffeEmit], # TODO: CoreMLEmit 
             },
 
             'tensorflow_frozen' : {
                 'inception_v1'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
                 'inception_v3'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
-                'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit]
+                'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit],
+                'facenet'           : [MXNetEmit, TensorflowEmit, KerasEmit] # TODO: CoreMLEmit 
             },
 
             'coreml' : {
@@ -894,6 +901,7 @@ class TestModels(CorrectnessTest):
                     IR_file + ".pb",
                     IR_file + ".npy",
                     self.image_path)
+
                 self._compare_outputs(
                     original_framework,
                     target_framework,

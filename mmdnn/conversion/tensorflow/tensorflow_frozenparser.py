@@ -149,7 +149,7 @@ class TensorflowParser2(Parser):
                     x = tensorflow.placeholder(dtype)
 
                 input_map[in_nodes[i] + ':0'] = x
-
+           
             tensorflow.import_graph_def(model, name='', input_map=input_map)
 
         with tensorflow.Session(graph = g) as sess:
@@ -340,6 +340,7 @@ class TensorflowParser2(Parser):
 
 
     def gen_IR(self):
+
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
 
@@ -347,12 +348,13 @@ class TensorflowParser2(Parser):
                 continue
 
             node_type = current_node.type
-
+            
             if hasattr(self, "rename_" + node_type):
+ 
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
             else:
-
+                
                 self.rename_UNKNOWN(current_node)
 
 

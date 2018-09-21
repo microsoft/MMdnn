@@ -24,3 +24,10 @@ def test_pytorch():
     test_table = get_test_table()
     tester = TestModels(test_table)
     tester._test_function('pytorch', tester.PytorchParse)
+
+
+# def main():
+#     test_pytorch()
+
+# if __name__ == '__main__':
+#     main()

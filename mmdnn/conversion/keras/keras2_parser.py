@@ -141,6 +141,7 @@ class Keras2Parser(Parser):
         for layer in self.keras_graph.topological_sort:
             current_node = self.keras_graph.get_node(layer)
             node_type = current_node.type
+  
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)

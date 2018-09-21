@@ -475,6 +475,21 @@ def KitModel(weight_file = None):
 
     def emit_Mul(self, IR_node):
         inputs = ', '.join("'" + self.IR_graph.get_node(i).real_variable_name + "'" for i in IR_node.in_edges)
+        
+        if IR_node.name in self.weights_dict and 'weights' in self.weights_dict[IR_node.name]:
+            self.add_body(1,"{:15} = np.array([__weights_dict['{}']['weights']])".format(
+                IR_node.variable_name+'_weight_array',
+                IR_node.name
+            ))
+            self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
+                    IR_node.variable_name + '_weight',
+                    IR_node.variable_name + '_weight',
+                    IR_node.variable_name + '_weight_array',
+                    IR_node.variable_name + '_weight_array',
+                    IR_node.variable_name + '_weight_array'))
+            inputs += ', '+''.join("'"+IR_node.variable_name +"_weight'")
+            self.nodes.append(IR_node.variable_name+'_weight')
+        
         self.add_body(1, "{:15} = helper.make_node('Mul', inputs=[{}], outputs=['{}'], broadcast=1)".format(
             IR_node.variable_name,
             inputs,

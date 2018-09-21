@@ -16,6 +16,7 @@ from mmdnn.conversion.examples.tensorflow.models import inception_resnet_v2
 from mmdnn.conversion.examples.tensorflow.models import mobilenet_v1
 from mmdnn.conversion.examples.tensorflow.models import nasnet
 from mmdnn.conversion.examples.tensorflow.models.mobilenet import mobilenet_v2
+from mmdnn.conversion.examples.tensorflow.models import inception_resnet_v1
 slim = tf.contrib.slim
 
 from mmdnn.conversion.examples.imagenet_test import TestKit
@@ -53,9 +54,10 @@ class tensorflow_extractor(base_extractor):
         'inception_v1_frozen' : {
             'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/inception_v1_2016_08_28_frozen.pb.tar.gz',
             'filename'    : 'inception_v1_2016_08_28_frozen.pb',
-            'tensor_out'  : 'InceptionV1/Logits/Predictions/Reshape_1:0',
-            'tensor_in'   : 'input:0',
-            'input_shape' : [224, 224, 3],
+            'tensor_out'  : ['InceptionV1/Logits/Predictions/Reshape_1:0'],
+            'tensor_in'   : ['input:0'],
+            'input_shape' : [[224, 224, 3]],  # input_shape of the elem in tensor_in
+            'feed_dict'   :lambda img: {'input:0':img},
             'num_classes' : 1001,
         },
         'inception_v3' : {
@@ -69,9 +71,10 @@ class tensorflow_extractor(base_extractor):
         'inception_v3_frozen' : {
             'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/inception_v3_2016_08_28_frozen.pb.tar.gz',
             'filename'    : 'inception_v3_2016_08_28_frozen.pb',
-            'tensor_out'  : 'InceptionV3/Predictions/Softmax:0',
-            'tensor_in'   : 'input:0',
-            'input_shape' : [299, 299, 3],
+            'tensor_out'  : ['InceptionV3/Predictions/Softmax:0'],
+            'tensor_in'   : ['input:0'],
+            'input_shape' : [[299, 299, 3]], # input_shape of the elem in tensor_in
+            'feed_dict'   :lambda img: {'input:0':img},
             'num_classes' : 1001,
         },
         'resnet_v1_50' : {
@@ -133,9 +136,10 @@ class tensorflow_extractor(base_extractor):
         'mobilenet_v1_1.0_frozen' : {
             'url'         : 'https://storage.googleapis.com/download.tensorflow.org/models/mobilenet_v1_1.0_224_frozen.tgz',
             'filename'    : 'mobilenet_v1_1.0_224/frozen_graph.pb',
-            'tensor_out'  : 'MobilenetV1/Predictions/Softmax:0',
-            'tensor_in'   : 'input:0',
-            'input_shape' : [224, 224, 3],
+            'tensor_out'  : ['MobilenetV1/Predictions/Softmax:0'],
+            'tensor_in'   : ['input:0'],
+            'input_shape' : [[224, 224, 3]], # input_shape of the elem in tensor_in
+            'feed_dict'   :lambda img: {'input:0':img},
             'num_classes' : 1001,
         },
         'mobilenet_v2_1.0_224':{
@@ -162,6 +166,25 @@ class tensorflow_extractor(base_extractor):
             'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 331, 331, 3]),
             'num_classes' : 1001,
         },
+        'facenet' : {
+            'url'         : 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/facenet/20180408-102900.zip',
+            'filename'    : '20180408-102900/model-20180408-102900.ckpt-90',
+            'builder'     : lambda : inception_resnet_v1.inception_resnet_v1,
+            'arg_scope'   : inception_resnet_v1.inception_resnet_v1_arg_scope,
+            'input'       : lambda : tf.placeholder(name='input', dtype=tf.float32, shape=[None, 160, 160, 3]),
+            'feed_dict'   : lambda img: {'input:0':img,'phase_train:0':False},
+            'num_classes' : 0,
+        },
+        # Note that the link will expire after one day and it is better to upload the model to a stable server.
+        'facenet_frozen' : {
+            'url'         : 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/facenet/20180408-102900.zip',
+            'filename'    : '20180408-102900/20180408-102900.pb',
+            'tensor_out'  : ['InceptionResnetV1/Logits/AvgPool_1a_8x8/AvgPool:0'],
+            'tensor_in'   : ['input:0','phase_train:0'],
+            'input_shape' : [[160, 160, 3],1], # input_shape of the elem in tensor_in
+            'feed_dict'   : lambda img: {'input:0':img,'phase_train:0':False},
+            'num_classes' : 0,
+        }
     }
 
 
@@ -200,7 +223,9 @@ class tensorflow_extractor(base_extractor):
     @classmethod
     def get_frozen_para(cls, architecture):
         frozenname = architecture + '_frozen'
-        return cls.architecture_map[frozenname]['filename'], cls.architecture_map[frozenname]['input_shape'], cls.architecture_map[frozenname]['tensor_in'], cls.architecture_map[frozenname]['tensor_out']
+        tensor_in =  list(map(lambda x:x.split(':')[0], cls.architecture_map[frozenname]['tensor_in']))
+        tensor_out = list(map(lambda x:x.split(':')[0], cls.architecture_map[frozenname]['tensor_out']))
+        return cls.architecture_map[frozenname]['filename'], cls.architecture_map[frozenname]['input_shape'], tensor_in, tensor_out
 
 
     @classmethod
@@ -212,12 +237,12 @@ class tensorflow_extractor(base_extractor):
 
             tf.reset_default_graph()
 
-            if cls.architecture_map[architecture]['filename'].endswith('ckpt'):
+            if 'ckpt' in cls.architecture_map[architecture]['filename']:
                 cls.handle_checkpoint(architecture, path)
 
             elif cls.architecture_map[architecture]['filename'].endswith('pb'):
                 cls.handle_frozen_graph(architecture, path)
-
+            
             else:
                 raise ValueError("Unknown file name [{}].".format(cls.architecture_map[architecture]['filename']))
 
@@ -249,11 +274,12 @@ class tensorflow_extractor(base_extractor):
                 original_gdef.ParseFromString(serialized)
                 tf_output_name =  cls.architecture_map[architecture_]['tensor_out']
                 tf_input_name =  cls.architecture_map[architecture_]['tensor_in']
+                feed_dict = cls.architecture_map[architecture_]['feed_dict']
 
                 with tf.Graph().as_default() as g:
                     tf.import_graph_def(original_gdef, name='')
                 with tf.Session(graph = g) as sess:
-                    tf_out = sess.run(tf_output_name, feed_dict={tf_input_name: img})
+                    tf_out = sess.run(tf_output_name[0], feed_dict=feed_dict(img)) # temporarily think the num of out nodes is one
                 predict = np.squeeze(tf_out)
                 return predict
 
