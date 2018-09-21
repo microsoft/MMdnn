@@ -660,7 +660,7 @@ class TensorflowParser2(Parser):
         if len(scopes) > 2:
             if scopes[-2].startswith('Assign') or scopes[-1].startswith('Assign'):
                 return
-        IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = "Sub")
+        IR_node = self._convert_identity_operation(source_node, end_idx=2, new_op = "Sub")
 
 
     def rename_Sum(self, source_node):
@@ -1100,3 +1100,16 @@ class TensorflowParser2(Parser):
 
     def rename_Sqrt(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Sqrt')
+
+
+    def rename_Tanh(self, source_node):
+        IR_node = self._convert_identity_operation(source_node)
+
+        kwargs = {}
+        input_node = self.src_graph.get_parent(source_node.name, [0])
+        kwargs['shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
+
+        assign_IRnode_values(IR_node, kwargs)
+    
+    def rename_Log(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Log')

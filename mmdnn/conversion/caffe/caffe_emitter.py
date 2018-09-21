@@ -162,14 +162,19 @@ if __name__=='__main__':
         else:
             pads = IR_node.get_attr('pads')
 
-        if pads[1]:
+        # Pad_h < kernel_h (vgg19 caffe2caffe)
+        if IR_node.type == "Pool":
+            if pads[1]:
+                pad_h = pads[1] + (0 if pads[1] == pads[5] else stride_h)
+            else:
+                pad_h = 0
+            if pads[2]:
+                pad_w = pads[2] + (0 if pads[2] == pads[6] else stride_w)
+            else:
+                pad_w = 0
+        else:
             pad_h = pads[1] + (0 if pads[1] == pads[5] else stride_h)
-        else:
-            pad_h = 0
-        if pads[2]:
             pad_w = pads[2] + (0 if pads[2] == pads[6] else stride_w)
-        else:
-            pad_w = 0
 
         return pad_h, pad_w
 

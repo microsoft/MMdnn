@@ -22,8 +22,8 @@ def get_test_table():
         'resnet_v2_152'        : [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
         'mobilenet_v1_1.0'     : [TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
         'mobilenet_v2_1.0_224' : [TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
-        # 'nasnet-a_large'       : [TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
-        # 'inception_resnet_v2'  : [TestModels.CaffeEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
+        #'nasnet-a_large'       : [TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
+        #'inception_resnet_v2'  : [TestModels.CaffeEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
     }}
 
 

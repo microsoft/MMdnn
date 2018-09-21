@@ -55,9 +55,6 @@ class TensorflowGraph(Graph):
     def build(self):
         for i, layer in enumerate(self.model.node):
             self.layer_map[layer.name] = TensorflowGraphNode(layer)
-
-        for i, layer in enumerate(self.model.node):
-            self.layer_map[layer.name] = TensorflowGraphNode(layer)
             self.layer_name_map[layer.name] = layer.name
             for pred in layer.input:
                 if pred not in self.layer_map:

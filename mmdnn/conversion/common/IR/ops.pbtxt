@@ -498,11 +498,10 @@ op {
 op {
   name: "Pad"
   attr {
-    name: "paddings"
+    name: "pads"
     type: "list(int)"
     description: "integer tensor with shape N * 2."
   }
-
   attr {
     name: "mode"
     type: "string"
@@ -538,7 +537,7 @@ op {
     description: "Sequence of N ints >= 1. Specifies the filter upsampling/input downsampling rate."
   }
   attr {
-    name: "window_shape"
+    name: "kernel_shape"
     description: "Shape `[1, depth, height, wide, 1]`."
     type: "list(int)"
   }
@@ -559,15 +558,21 @@ op {
     }
   }
   attr {
-    name: "padding"
+    name: "audo_pad"
     type: "string"
     description: "The type of padding algorithm to use."
     allowed_values {
       list {
-        s: "SAME"
+        s: "SAME_UPPER"
+        s: "SAME_LOWER"
         s: "VALID"
       }
     }
+  }
+  attr {
+    name: "pads"
+    type: "list(int)"
+    description: "1-D tensor of length N*2. [x1_begin, x2_begin...x1_end, x2_end,...]"
   }
   attr {
     name: "data_format"
