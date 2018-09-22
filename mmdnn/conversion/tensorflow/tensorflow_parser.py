@@ -489,12 +489,11 @@ class TensorflowParser(Parser):
 
 
     def rename_Sub(self, source_node):
-        print(source_node.layer)
         self._convert_identity_operation(source_node)
 
 
     def rename_Reshape(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, in_edge_count = 2)
+        IR_node = self._convert_identity_operation(source_node, in_edge_count = 1)
         kwargs = {'shape' : self.tensor_shape_to_list(source_node.get_attr('_output_shapes'))[0]}
         assign_IRnode_values(IR_node, kwargs)
 
