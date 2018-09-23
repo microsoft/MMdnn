@@ -242,7 +242,7 @@ class TensorflowParser(Parser):
                     in_node_shape = node.attr['_output_shapes'].list.shape[0]
                     in_node_shape_str = self._shapeToStr(in_node_shape)
                     in_nodes[in_node_name] = in_node_shape_str
-        print(dest_nodes)
+
         transformed_graph_def = TransformGraph(model, in_nodes.keys(),
                                             dest_nodes, transforms)
 
@@ -420,6 +420,8 @@ class TensorflowParser(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
         # shape
         TensorflowParser._copy_shape(source_node, IR_node)
+        IR_node.attr['shape'].shape.dim[0].size = -1
+        IR_node.attr['_output_shapes'].list.shape[0].dim[0].size = -1
 
 
     def rename_Conv2D(self, source_node):
