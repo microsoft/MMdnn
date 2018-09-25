@@ -199,6 +199,7 @@ if __name__=='__main__':
         num_output = IR_node.get_attr('kernel_shape')[-1]
         if IR_node.type == "DepthwiseConv":
             num_group = IR_node.get_attr("kernel_shape")[-2]
+            num_output = IR_node.get_attr('kernel_shape')[-2]
         else:
             num_group = IR_node.get_attr("group", 1)
 
