@@ -41,7 +41,7 @@ In MMdnn, we focus on helping user handle their work better.
   - We provide some guidelines to help you deploy your models to other hardware platform.
     - [Android](https://github.com/Microsoft/MMdnn/wiki/Deploy-your-TensorFlow-Lite-Model-in-Android)
     - [Serving](https://github.com/Microsoft/MMdnn/wiki/Tensorflow-Serving-Via-Docker)
-  - We provide a guide to help you accelerate inference with tensorRT.
+  - We provide a guide to help you accelerate inference with TensorRT.
     - [TensorRT](https://github.com/Microsoft/MMdnn/wiki/Using-TensorRT-to-Accelerate-Inference)
   
 This project is designed and developed by [Microsoft Research (MSR)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/). We also encourage researchers and students leverage this project to analysis DNN models and we welcome any new ideas to extend this project.
