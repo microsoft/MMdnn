@@ -224,7 +224,7 @@ Details are in [ops.txt](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/co
 
 ### Frameworks
 
-We are working on other frameworks conversion and visualization, such as PyTorch, CoreML and so on. And more RNN related operators are investigating. Any contributions and suggestions are welcome! Details in [Contribution Guideline](https://github.com/Microsoft/MMdnn/wiki/Contribution-Guideline)
+We are working on other frameworks conversion and visualization, such as PyTorch, CoreML and so on. And more RNN related operators are investigating. Any contributions and suggestions are welcome! Details in [Contribution Guideline](https://github.com/Microsoft/MMdnn/wiki/Contribution-Guideline).
 
 ### License
 
