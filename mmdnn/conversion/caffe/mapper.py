@@ -278,9 +278,10 @@ class NodeMapper(object):
 
     @classmethod
     def map_flatten(cls, node):
-        return Node.create('Flatten')
+        return cls._add_flatten_layer(node)
 
     @classmethod
     def map_split(cls, node):
-        return Node.create('Split')
+        # skip the split node
+        return
 
