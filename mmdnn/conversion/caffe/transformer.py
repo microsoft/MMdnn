@@ -407,7 +407,7 @@ class CaffeTransformer(object):
             for next in next_node:
                 next.parents[0] = tuple([input_of_next, next.parents[0][1]])
 
-        else mapped_node:
+        else:
             mapped_node.name = node.name
             mapped_node.input.extend(['%s' % (self.layer_name_map[input.name]) for input, idx in node.parents])
             mapped_node.output.extend(node.output)
