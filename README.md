@@ -55,7 +55,7 @@ You can get stable version of MMdnn by
 ```bash
 pip install mmdnn
 ```
-
+And make sure to have [Python](https://www.python.org/) installed
 or you can try the newest version by
 
 ```bash
