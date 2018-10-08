@@ -37,7 +37,7 @@ def shape_not_implemented(node):
 def shape_deconvolution(node):
     input_shape = node.get_only_parent()[0].output_shape
     params = node.kernel_parameters
-    dilation = node.parameters.dilation[0]
+    dilation = 1 if len(node.parameters.dilation) == 0 else node.parameters.dilation[0]
 
     ko_h, ko_w = get_kernel_extents(params, dilation)
     o_h = int(params.s_h) * (input_shape.height - 1) + ko_h - 2 * int(params.p_h)
@@ -116,3 +116,14 @@ def shape_global_pooling(node):
     has_c_o = hasattr(params, 'num_output')
     c = params.num_output if has_c_o else input_shape.channels
     return TensorShape(input_shape.batch_size, c, 1, 1)  # Output height and width is 1 when global_pooling
+
+
+def shape_split(node):
+    input_shape = node.get_only_parent()[0].output_shape
+    return TensorShape(input_shape.batch_size, input_shape.channels, input_shape.height, input_shape.width)
+
+
+def shape_flatten(node):
+    input_shape = node.get_only_parent()[0].output_shape
+    return TensorShape(input_shape.batch_size, input_shape.channels * input_shape.height * input_shape.width, 1, 1)
+

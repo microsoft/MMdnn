@@ -41,6 +41,7 @@ In MMdnn, we focus on helping users handle their work better.
   - We provide some guidelines to help you deploy your models to other hardware platform.
     - [Android](https://github.com/Microsoft/MMdnn/wiki/Deploy-your-TensorFlow-Lite-Model-in-Android)
     - [Serving](https://github.com/Microsoft/MMdnn/wiki/Tensorflow-Serving-Via-Docker)
+    
   - We provide a guide to help you accelerate inference with TensorRT.
     - [TensorRT](https://github.com/Microsoft/MMdnn/wiki/Using-TensorRT-to-Accelerate-Inference)
   
@@ -55,7 +56,7 @@ You can get stable version of MMdnn by
 ```bash
 pip install mmdnn
 ```
-
+And make sure to have [Python](https://www.python.org/) installed
 or you can try the newest version by
 
 ```bash
@@ -223,7 +224,7 @@ Details are in [ops.txt](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/co
 
 ### Frameworks
 
-We are working on other frameworks conversion and visualization, such as PyTorch, CoreML and so on. We're investigating more RNN related operators. Any contributions and suggestions are welcome! Details in [Contribution Guideline](https://github.com/Microsoft/MMdnn/wiki/Contribution-Guideline)
+We are working on other frameworks conversion and visualization, such as PyTorch, CoreML and so on. We're investigating more RNN related operators. Any contributions and suggestions are welcome! Details in [Contribution Guideline](https://github.com/Microsoft/MMdnn/wiki/Contribution-Guideline).
 
 ### License
 

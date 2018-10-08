@@ -2,7 +2,7 @@
 
 ## Setup the Repository
 
-1. Update the **apt** packeage index:
+1. Update the **apt** package index:
     ```bash
     $ sudo apt-get update
     ```
@@ -38,4 +38,4 @@
 
 ## More Information of Docker installation
 
-If you are using other OS version, or want to learn more about docker installation, please view [docker docs](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1).
+If you are using other OS version, or want to learn more about Docker installation, please view [docker docs](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1).
