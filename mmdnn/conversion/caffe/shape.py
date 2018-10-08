@@ -37,7 +37,7 @@ def shape_not_implemented(node):
 def shape_deconvolution(node):
     input_shape = node.get_only_parent()[0].output_shape
     params = node.kernel_parameters
-    dilation = node.parameters.dilation[0]
+    dilation = 1 if len(node.parameters.dilation) == 0 else node.parameters.dilation[0]
 
     ko_h, ko_w = get_kernel_extents(params, dilation)
     o_h = int(params.s_h) * (input_shape.height - 1) + ko_h - 2 * int(params.p_h)
