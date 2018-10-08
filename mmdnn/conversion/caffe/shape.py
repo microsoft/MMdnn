@@ -116,3 +116,14 @@ def shape_global_pooling(node):
     has_c_o = hasattr(params, 'num_output')
     c = params.num_output if has_c_o else input_shape.channels
     return TensorShape(input_shape.batch_size, c, 1, 1)  # Output height and width is 1 when global_pooling
+
+
+def shape_split(node):
+    input_shape = node.get_only_parent()[0].output_shape
+    return TensorShape(input_shape.batch_size, input_shape.channels, input_shape.height, input_shape.width)
+
+
+def shape_flatten(node):
+    input_shape = node.get_only_parent()[0].output_shape
+    return TensorShape(input_shape.batch_size, input_shape.channels * input_shape.height * input_shape.width, 1, 1)
+
