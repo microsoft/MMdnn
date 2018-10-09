@@ -498,7 +498,7 @@ class TestModels(CorrectnessTest):
             input_data = np.expand_dims(img, 0)
 
             model_converted.blobs[model_converted._layer_names[0]].data[...] = input_data
-            predict = model_converted.forward()[model_converted._layer_names[-1]][0]
+            predict = model_converted.forward()[model_converted._layer_names[-1]]
             converted_predict = np.squeeze(predict)
 
             del model_converted
@@ -566,8 +566,8 @@ class TestModels(CorrectnessTest):
                         )
 
         emitter = CoreMLEmitter(architecture_path, weight_path)
-        
-        
+
+
         model, input_name, output_name = emitter.gen_model(
                 input_names=None,
                 output_names=None,
@@ -783,8 +783,8 @@ class TestModels(CorrectnessTest):
                 'mobilenet'    : [CoreMLEmit, KerasEmit, TensorflowEmit], # TODO: MXNetEmit
                 # 'nasnet'       : [TensorflowEmit, KerasEmit, CoreMLEmit],
                 'yolo2'        : [KerasEmit],
-                # 'facenet'      : [TensorflowEmit, CoreMLEmit,MXNetEmit,KerasEmit]  # TODO: 
-                
+                # 'facenet'      : [TensorflowEmit, CoreMLEmit,MXNetEmit,KerasEmit]  # TODO:
+
             },
 
             'mxnet' : {
@@ -819,15 +819,15 @@ class TestModels(CorrectnessTest):
                 'mobilenet_v1_1.0'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'mobilenet_v2_1.0_224'  : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
-                'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always 
-                'facenet'               : [MXNetEmit, TensorflowEmit, KerasEmit, PytorchEmit, CaffeEmit], # TODO: CoreMLEmit 
+                'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always
+                'facenet'               : [MXNetEmit, TensorflowEmit, KerasEmit, PytorchEmit, CaffeEmit], # TODO: CoreMLEmit
             },
 
             'tensorflow_frozen' : {
                 'inception_v1'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
                 'inception_v3'      : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit], # TODO: CntkEmit
                 'mobilenet_v1_1.0'  : [TensorflowEmit, KerasEmit, MXNetEmit, CoreMLEmit],
-                'facenet'           : [MXNetEmit, TensorflowEmit, KerasEmit] # TODO: CoreMLEmit 
+                'facenet'           : [MXNetEmit, TensorflowEmit, KerasEmit] # TODO: CoreMLEmit
             },
 
             'coreml' : {
