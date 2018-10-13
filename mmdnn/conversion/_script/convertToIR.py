@@ -1,6 +1,7 @@
 import sys as _sys
 import google.protobuf.text_format as text_format
 from six import text_type as _text_type
+import argparse
 
 
 def _convert(args):
@@ -180,15 +181,18 @@ def _get_parser():
     parser.add_argument(
         '--darknetStart',
         type=_text_type,
-        choices=["0", "1"],
+        choices=["0", "1"], 
         help='[Darknet] Parse the darkent model weight file from the start.')
 
     return parser
 
 
 def _main():
-    parser = _get_parser()
-    args = parser.parse_args()
+    # parser = _get_parser()
+    # args = parser.parse_args()
+    # print(args)
+    # args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName=['transpose'], dstPath='reddit', inNodeName=['Placeholder'], inputShape=['40,40'], network=None, srcFramework='tensorflow', weights='D:\\reddit.pb')
+    args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName=['rnnlm_1/transpose'], dstPath='reditt', inNodeName=None, inputShape=None, network='C:\\Users\\v-yucli\\Documents\\GitHub\\chatbot-rnn\\models\\new_save\\model.ckpt-5.meta', srcFramework='tensorflow', weights='C:\\Users\\v-yucli\\Documents\\GitHub\\chatbot-rnn\\models\\new_save\\model.ckpt-5')
     ret = _convert(args)
     _sys.exit(int(ret)) # cast to int or else the exit code is always 1
 

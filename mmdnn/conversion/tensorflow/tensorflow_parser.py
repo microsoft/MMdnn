@@ -41,7 +41,8 @@ class TensorflowParser(Parser):
         "Const",
         "Assign",
         "RandomUniform",
-        "FIFOQueueV2"
+        "FIFOQueueV2",
+        "Range"
     ])
 
     dtype_map = {
@@ -256,6 +257,14 @@ class TensorflowParser(Parser):
                 ret.append(this_one)
             return ret
 
+    def check_const(self, node):
+        while node:
+            if node.type == "Const":
+                return node
+            elif node.type == "NoOp":
+                return None
+            else:
+                node =  self.get_parent(node.name, [0])
 
     def _convert_padding(self, source_node, IR_node, kernel_size):
         # TODO: Fused conv and pool with padding is different from defused operators
@@ -304,6 +313,10 @@ class TensorflowParser(Parser):
                 continue
 
             node_type = current_node.type
+            # print(type(current_node.layer.attr))
+            # print(current_node.layer)
+            # print([k for k in current_node.layer.attr])
+
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
@@ -546,6 +559,7 @@ class TensorflowParser(Parser):
 
     def rename_Identity(self, source_node):
         source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
+        # self._convert_identity_operation(source_node, new_op = 'Identity')
 
 
     def rename_Squeeze(self, source_node):
@@ -684,11 +698,47 @@ class TensorflowParser(Parser):
         }
         assign_IRnode_values(IR_node, kwargs)
 
+    def rename_Gather(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Gather')
+
+        W = self.src_graph.get_parent(source_node.name, [0])
+        W = self.src_graph.get_parent(W.name, [0])
+
+        self.set_weight(source_node.name, "weights", self.ckpt_data[W.name])
+        
+        input_node_range = self.src_graph.get_parent(source_node.name, [1])
+
+        kwargs = {}
+        kwargs['shape'] = self.tensor_shape_to_list(input_node_range.get_attr('_output_shapes'))[0]
+        kwargs['axis'] = 0  #default
+        assign_IRnode_values(IR_node, kwargs)
+    
+    def rename_GatherV2(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Gather')
+
+        W = self.src_graph.get_parent(source_node.name, [0])
+        W = self.src_graph.get_parent(W.name, [0])
+
+        self.set_weight(source_node.name, "weights", self.ckpt_data[W.name])
+        
+        input_node_range = self.src_graph.get_parent(source_node.name, [1])
+        print(self.src_graph.get_parent(source_node.name, [0]).real_variable_name)
+
+        input_node_axis = self.src_graph.get_parent(source_node.name, [2])
+
+        kwargs = {}
+        kwargs['shape'] = self.tensor_shape_to_list(input_node_range.get_attr('_output_shapes'))[0]
+        kwargs['axis'] = source_node.layer.attr['axis'].i
+        assign_IRnode_values(IR_node, kwargs)
+
     def rename_Transpose(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, in_edge_count=1)
-        perm = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
-        perm = tensor_util.MakeNdarray(perm).tolist()
-        assign_IRnode_values(IR_node, {'perm' : perm})
+        IR_node = self._convert_identity_operation(source_node)
+        # print(source_node.layer.attr['Tperm'])
+        # perm = self.check_const(self.get_parent(source_node.name, [1], True)).get_attr('value')
+        # concat_name = self.get_parent(source_node.name, [1], True).name
+        
+        # perm = tensor_util.MakeNdarray(perm).tolist()
+        # assign_IRnode_values(IR_node, {'perm' : perm})
 
 
     def rename_Sigmoid(self, source_node):
@@ -811,3 +861,6 @@ class TensorflowParser(Parser):
             'size' : source_node.get_attr('depth_radius') + 1
         }
         assign_IRnode_values(IR_node, kwargs)
+
+    def rename_Enter(self, source_node):
+        pass

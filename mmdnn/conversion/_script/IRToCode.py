@@ -1,7 +1,7 @@
 import sys as _sys
 import google.protobuf.text_format as text_format
 from six import text_type as _text_type
-
+import argparse
 
 
 def _convert(args):
@@ -112,8 +112,10 @@ def _get_parser():
 
 
 def _main():
-    parser=_get_parser()
-    args = parser.parse_args()
+    # parser=_get_parser()
+    # args = parser.parse_args()
+    # print(args)
+    args = argparse.Namespace(IRModelPath='reditt.pb', IRWeightPath='reditt.npy', dstFramework='tensorflow', dstModelPath='tf_reddit.py', dstWeightPath='tf_reddit.npy', phase='test')
     ret = _convert(args)
     _sys.exit(int(ret)) # cast to int or else the exit code is always 1
 

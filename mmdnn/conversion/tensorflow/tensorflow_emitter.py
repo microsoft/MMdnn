@@ -354,6 +354,9 @@ def KitModel(weight_file = None):
                 IR_node.layer.attr['value'].f,
                 dtype_str))
 
+    def emit_Identity(self, IR_node):
+        pass
+
 
 
     def emit_Reshape(self, IR_node):

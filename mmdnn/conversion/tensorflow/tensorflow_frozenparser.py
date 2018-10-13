@@ -985,11 +985,11 @@ class TensorflowParser2(Parser):
 
     def rename_Transpose(self, source_node):
         IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'Transpose')
-        input_node_perm = self.get_parent(source_node.name, [1])
+        input_node_perm = self.check_const(self.get_parent(source_node.name, [1], True))
+        # input_node_perm = self.get_parent(source_node.name, [1])
         tensor_content = input_node_perm.get_attr('value')
         perm = tensor_util.MakeNdarray(tensor_content).tolist()
         assign_IRnode_values(IR_node, {'perm' : perm})
-
 
     def rename_GreaterEqual(self, source_node):
         IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'GreaterEqual')

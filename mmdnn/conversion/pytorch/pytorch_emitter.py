@@ -619,12 +619,40 @@ class KitModel(nn.Module):
         assert False
 
 
+    def emit_Gather(self, IR_node):
+        shape = np.array(IR_node.get_attr('shape'))
+        self.add_body(2, "{:<15} = ")
+
+
+
     def emit_Transpose(self, IR_node):
         self.add_body(2, "{:<15} = {}.permute({})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('perm')
         ))
+
+
+    def _layer_Sim_tfGather(self):
+        self.add_body(0, """
+    @staticmethod
+    def __sim_tf_gather(params, indices, axis=0):
+        indices = np.array(indices)
+        output_shape = list(indices.shape)+list(torch.Tensor(params).shape)[1:]
+        output_tensor = torch.Tensor(size = output_shape)
+
+        from itertools import product 
+        row_indices = []
+        for s in list(indices.shape)[:len(list(indices.shape))-1]:
+            row_indices.append(tuple(range(s)))
+        row_indices = list(product(*tuple(row_indices)))
+
+        for row_index in row_indices:
+            index = torch.LongTensor(indices[row_index])
+            output_tensor[tuple(row_index)] = torch.index_select(params, axis, index)
+            
+        return output_tensor
+        """)
 
 
     def _layer_Conv(self):
