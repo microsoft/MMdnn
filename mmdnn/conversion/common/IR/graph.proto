@@ -39,7 +39,7 @@ message NodeDef {
     // Each input is "node:src_output" with "node" being a string name and
     // "src_output" indicating which output tensor to use from "node".
     // Regular inputs may optionally be followed by control inputs that
-    // have the format "^node".
+    // have the format "node".
     repeated string input = 3;
 
     // Operation-specific graph-construction-time configuration.
@@ -99,7 +99,7 @@ message TensorShape {
     };
 
     // Dimensions of the tensor, such as {"input", 30}, {"output", 40}
-    // for a 30 x 40 2D tensor. If an entry has size -1, this
+    // for a 30 x 40 2D tensor. If an entry has size-1, this
     // corresponds to a dimension of unknown size. The names are
     // optional.
     //
