@@ -440,15 +440,6 @@ def KitModel(weight_file = None):
 
 
     def emit_Embedding(self, IR_node):
-        # raise NotImplementedError()
-        # ret = "{:<15} = Embedding(input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
-        #         IR_node.name,
-        #         IR_node.IR_layer.attr['input_dim'].i,
-        #         IR_node.IR_layer.attr['output_dim'].i,
-        #         IR_node.IR_layer.attr['mask_zero'].b,
-        #         IR_node.in_edges[0])
-
-        # return ret
         variable_str = "tf.constant_initializer(__weights_dict['{}']['weights'])".format(IR_node.name)
         self.add_body(1, "{:<15} = tf.nn.embeding_lookup(params = {}, ids = {})".format(
             IR_node.variable_name,

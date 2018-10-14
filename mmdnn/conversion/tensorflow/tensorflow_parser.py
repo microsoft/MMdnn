@@ -730,7 +730,23 @@ class TensorflowParser(Parser):
             'mask_zero' : False
         }
         kwargs['shape'] = list(self.ckpt_data[W.name].shape)
-        # self.tensor_shape_to_list(input_node_range.get_attr('_output_shapes'))[0]
+        kwargs['axis'] = source_node.layer.attr['axis'].i
+        assign_IRnode_values(IR_node, kwargs)
+    
+    def rename_Embedding(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Embedding')
+
+        W = self.src_graph.get_parent(source_node.name, [0])
+        W = self.src_graph.get_parent(W.name, [0])
+
+        self.set_weight(source_node.name, "weights", self.ckpt_data[W.name])
+
+        kwargs = {
+            'input_dim' : self.ckpt_data[W.name].shape[0],
+            'output_dim' : self.ckpt_data[W.name].shape[1],
+            'mask_zero' : False
+        }
+        kwargs['shape'] = list(self.ckpt_data[W.name].shape)
         kwargs['axis'] = source_node.layer.attr['axis'].i
         assign_IRnode_values(IR_node, kwargs)
 
