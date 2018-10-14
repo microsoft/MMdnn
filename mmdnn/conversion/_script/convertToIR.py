@@ -191,8 +191,9 @@ def _main():
     # parser = _get_parser()
     # args = parser.parse_args()
     # print(args)
+    args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName='gru_1', dstPath='keras_TF_RNN', inNodeName='embedding_1_input', inputShape=None, network='C:\\Users\\15501\\Documents\\GitHub\\DeepLearningFrameworks\\notebooks\\keras_TF_RNN_model.json', srcFramework='keras', weights='C:\\Users\\15501\\Documents\\GitHub\\DeepLearningFrameworks\\notebooks\\keras_TF_RNN_weights.h5')
     # args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName=['transpose'], dstPath='reddit', inNodeName=['Placeholder'], inputShape=['40,40'], network=None, srcFramework='tensorflow', weights='D:\\reddit.pb')
-    args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName=['rnnlm_1/transpose'], dstPath='reditt', inNodeName=None, inputShape=None, network='C:\\Users\\v-yucli\\Documents\\GitHub\\chatbot-rnn\\models\\new_save\\model.ckpt-5.meta', srcFramework='tensorflow', weights='C:\\Users\\v-yucli\\Documents\\GitHub\\chatbot-rnn\\models\\new_save\\model.ckpt-5')
+    # args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName=['rnnlm_1/transpose'], dstPath='reditt', inNodeName=None, inputShape=None, network='C:\\Users\\15501\\Documents\\GitHub\\chatbot-rnn\\models\\new_save\\model.ckpt-20.meta', srcFramework='tensorflow', weights='C:\\Users\\15501\\Documents\\GitHub\\chatbot-rnn\\models\\new_save\\model.ckpt-20')
     ret = _convert(args)
     _sys.exit(int(ret)) # cast to int or else the exit code is always 1
 
