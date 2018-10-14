@@ -70,7 +70,7 @@ IR network structure is saved as [converted.pb].
 IR weights are saved as [converted.npy].
 ```
 
-Then you got the **intermediate representation** files *converted.json* for visualization, *converted.proto* and *converted.npy* for next steps.
+Then you got the **intermediate representation** files *converted.json* for visualization, *converted.pb* and *converted.npy* for next steps.
 
 #### Convert the IR files to CNTK models
 

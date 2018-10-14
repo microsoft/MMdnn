@@ -360,8 +360,9 @@ class CaffeTransformer(object):
             mapped_node = self.map_node(node)
             if isinstance(mapped_node, list):
                 ret.extend([n for n in mapped_node])
-            else:
+            elif mapped_node:
                 ret.append(mapped_node)
+
 
         name = get_upper_case(get_lower_case(self.graph.name))
         return Graph(name, ret)
@@ -379,7 +380,8 @@ class CaffeTransformer(object):
         map_func = self.get_handler(node.kind, 'map')
 
         mapped_node = map_func(node)
-        assert mapped_node is not None
+        # assert mapped_node is not None
+
         if isinstance(mapped_node, list):
             ret = []
             for idx, cur_node in enumerate(mapped_node):
@@ -398,10 +400,16 @@ class CaffeTransformer(object):
                 ret.append(cur_node)
             return ret
 
+        # skip when mapped_node is None
+        elif not mapped_node:
+            input_of_next = node.get_only_parent()[0]
+            next_node = node.children
+            for next in next_node:
+                next.parents[0] = tuple([input_of_next, next.parents[0][1]])
+
         else:
             mapped_node.name = node.name
-            # Kit
-            # mapped_node.input.extend(['%s:%s' % (input.name, idx) for input, idx in node.parents])
             mapped_node.input.extend(['%s' % (self.layer_name_map[input.name]) for input, idx in node.parents])
             mapped_node.output.extend(node.output)
             return mapped_node
+
