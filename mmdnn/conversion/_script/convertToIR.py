@@ -3,6 +3,44 @@ import google.protobuf.text_format as text_format
 from six import text_type as _text_type
 import argparse
 
+'''
+The definition of pytorch loaded model JUST FOR TEST
+'''
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
+
+MAXFEATURES = 30000
+EMBEDSIZE = 125
+NUMHIDDEN = 100
+BATCHSIZE = 64
+class SymbolModule(nn.Module):
+    def __init__(self, 
+                 maxf=MAXFEATURES, edim=EMBEDSIZE, nhid=NUMHIDDEN):
+        
+        super(SymbolModule, self).__init__()
+        self.embedding = nn.Embedding(num_embeddings=maxf,
+                                      embedding_dim=edim)
+        # If batch-first then input and output 
+        # provided as (batch, seq, features)
+        # Cudnn used by default if possible
+        self.gru = nn.GRU(input_size=edim, 
+                          hidden_size=nhid, 
+                          num_layers=1,
+                          batch_first=True,
+                          bidirectional=False)   
+        self.l_out = nn.Linear(in_features=nhid*1,
+                               out_features=2)
+
+    def forward(self, x, nhid=NUMHIDDEN, batchs=BATCHSIZE):
+        x = self.embedding(x)
+        h0 = Variable(torch.zeros(1, batchs, nhid))
+        x, h = self.gru(x, h0)  # outputs, states
+        # just get the last output state
+        x = x[:,-1,:].squeeze()
+        x = self.l_out(x)
+        return x
+
 
 def _convert(args):
     if args.inputShape != None:
@@ -191,9 +229,11 @@ def _main():
     # parser = _get_parser()
     # args = parser.parse_args()
     # print(args)
-    args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName='gru_1', dstPath='keras_TF_RNN', inNodeName='embedding_1_input', inputShape=None, network='C:\\Users\\15501\\Documents\\GitHub\\DeepLearningFrameworks\\notebooks\\keras_TF_RNN_model.json', srcFramework='keras', weights='C:\\Users\\15501\\Documents\\GitHub\\DeepLearningFrameworks\\notebooks\\keras_TF_RNN_weights.h5')
+    # args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName='gru_1', dstPath='keras_TF_RNN', inNodeName='embedding_1_input', inputShape=None, network='C:\\Users\\15501\\Documents\\GitHub\\DeepLearningFrameworks\\notebooks\\keras_TF_RNN_model.json', srcFramework='keras', weights='C:\\Users\\15501\\Documents\\GitHub\\DeepLearningFrameworks\\notebooks\\keras_TF_RNN_weights.h5')
     # args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName=['transpose'], dstPath='reddit', inNodeName=['Placeholder'], inputShape=['40,40'], network=None, srcFramework='tensorflow', weights='D:\\reddit.pb')
-    # args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName=['rnnlm_1/transpose'], dstPath='reditt', inNodeName=None, inputShape=None, network='C:\\Users\\15501\\Documents\\GitHub\\chatbot-rnn\\models\\new_save\\model.ckpt-20.meta', srcFramework='tensorflow', weights='C:\\Users\\15501\\Documents\\GitHub\\chatbot-rnn\\models\\new_save\\model.ckpt-20')
+    # args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName=['rnnlm_1/transpose'], dstPath='reditt', inNodeName='Placeholder:0', inputShape=None, network='C:\\Users\\v-yucli\\Documents\\GitHub\\chatbot-rnn\\models\\new_save\\model.ckpt-5.meta', srcFramework='tensorflow', weights='C:\\Users\\v-yucli\\Documents\\GitHub\\chatbot-rnn\\models\\new_save\\model.ckpt-5')
+    #pytorch rnn
+    args = argparse.Namespace(caffePhase='TRAIN', darknetStart=None, dstNodeName=None, dstPath='pytorch_RNN', inNodeName=None, inputShape=['64,150'], network='C:\\Users\\v-yucli\\Documents\\pytorch_RNN.pth', srcFramework='pytorch', weights=None)
     ret = _convert(args)
     _sys.exit(int(ret)) # cast to int or else the exit code is always 1
 
