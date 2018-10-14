@@ -247,7 +247,7 @@ class TensorflowParser(Parser):
         transformed_graph_def = TransformGraph(model, in_nodes.keys(),
                                             dest_nodes, transforms)
 
-        dtype = tensorflow.float32
+        dtype = tensorflow.int32 # float32
         with tensorflow.Graph().as_default() as g:
             input_map = {}
             for in_node in in_nodes:
