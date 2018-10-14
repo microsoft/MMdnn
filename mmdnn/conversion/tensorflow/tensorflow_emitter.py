@@ -440,8 +440,8 @@ def KitModel(weight_file = None):
 
 
     def emit_Embedding(self, IR_node):
-        variable_str = "tf.constant_initializer(__weights_dict['{}']['weights'])".format(IR_node.name)
-        self.add_body(1, "{:<15} = tf.nn.embeding_lookup(params = {}, ids = {})".format(
+        variable_str = "tf.convert_to_tensor(__weights_dict['{}']['weights'])".format(IR_node.name)
+        self.add_body(1, "{:<15} = tf.nn.embedding_lookup(params = {}, ids = {})".format(
             IR_node.variable_name,
             variable_str,
             self.parent_variable_name(IR_node)
