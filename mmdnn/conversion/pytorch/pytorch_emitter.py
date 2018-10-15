@@ -375,7 +375,6 @@ class KitModel(nn.Module):
 
 
     def emit_RNNs(self, IR_node, func):
-        return
         raise NotImplementedError()
         # for Keras
         if "dropout" in IR_node.IR_layer.attr:
@@ -625,19 +624,20 @@ class KitModel(nn.Module):
 
 
     def emit_Gather(self, IR_node):
-        self.used_layers.add("Embedding")
-        shape = tuple(IR_node.get_attr('shape'))
-        self.add_init(2, "self.{} = self.__embedding('{}', num_embeddings={}, embedding_dim={})".format(
-            IR_node.variable_name,
-            IR_node.name,
-            shape[0],   #2-D
-            shape[1]
-            ))
-        self.add_body(2, "{:<15} = self.{}({})".format(
-            IR_node.variable_name,
-            IR_node.variable_name,
-            "torch.LongTensor(np.array({}))".format(self.parent_variable_name(IR_node))
-        ))
+        pass
+        # self.used_layers.add("Embedding")
+        # shape = tuple(IR_node.get_attr('shape'))
+        # self.add_init(2, "self.{} = self.__embedding('{}', num_embeddings={}, embedding_dim={})".format(
+        #     IR_node.variable_name,
+        #     IR_node.name,
+        #     shape[0],   #2-D
+        #     shape[1]
+        #     ))
+        # self.add_body(2, "{:<15} = self.{}({})".format(
+        #     IR_node.variable_name,
+        #     IR_node.variable_name,
+        #     "torch.LongTensor(np.array({}))".format(self.parent_variable_name(IR_node))
+        # ))
         
 
 
@@ -658,26 +658,26 @@ class KitModel(nn.Module):
         return layer
         """)
 
-    def _layer_Sim_tfGather(self):
-        self.add_body(0, """
-    @staticmethod
-    def __sim_tf_gather(params, indices, axis=0):
-        indices = np.array(indices)
-        output_shape = list(indices.shape)+list(torch.Tensor(params).shape)[1:]
-        output_tensor = torch.Tensor(size = output_shape)
+    # def _layer_Sim_tfGather(self):
+    #     self.add_body(0, """
+    # @staticmethod
+    # def __sim_tf_gather(params, indices, axis=0):
+    #     indices = np.array(indices)
+    #     output_shape = list(indices.shape)+list(torch.Tensor(params).shape)[1:]
+    #     output_tensor = torch.Tensor(size = output_shape)
 
-        from itertools import product 
-        row_indices = []
-        for s in list(indices.shape)[:len(list(indices.shape))-1]:
-            row_indices.append(tuple(range(s)))
-        row_indices = list(product(*tuple(row_indices)))
+    #     from itertools import product 
+    #     row_indices = []
+    #     for s in list(indices.shape)[:len(list(indices.shape))-1]:
+    #         row_indices.append(tuple(range(s)))
+    #     row_indices = list(product(*tuple(row_indices)))
 
-        for row_index in row_indices:
-            index = torch.LongTensor(indices[row_index])
-            output_tensor[tuple(row_index)] = torch.index_select(params, axis, index)
+    #     for row_index in row_indices:
+    #         index = torch.LongTensor(indices[row_index])
+    #         output_tensor[tuple(row_index)] = torch.index_select(params, axis, index)
             
-        return output_tensor
-        """)
+    #     return output_tensor
+    #     """)
 
 
     def _layer_Conv(self):

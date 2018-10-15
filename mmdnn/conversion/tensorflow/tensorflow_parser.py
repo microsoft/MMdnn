@@ -42,8 +42,7 @@ class TensorflowParser(Parser):
         "Const",
         "Assign",
         "RandomUniform",
-        "FIFOQueueV2",
-        "Range"
+        "FIFOQueueV2"
     ])
 
     dtype_map = {
@@ -294,15 +293,6 @@ class TensorflowParser(Parser):
                 ret.append(this_one)
             return ret
 
-    def check_const(self, node):
-        while node:
-            if node.type == "Const":
-                return node
-            elif node.type == "NoOp":
-                return None
-            else:
-                node =  self.get_parent(node.name, [0])
-
     def _convert_padding(self, source_node, IR_node, kernel_size):
         # TODO: Fused conv and pool with padding is different from defused operators
         input_node = self.get_parent(source_node.name, [0])
@@ -350,9 +340,6 @@ class TensorflowParser(Parser):
                 continue
 
             node_type = current_node.type
-            # print(type(current_node.layer.attr))
-            # print(current_node.layer)
-            # print([k for k in current_node.layer.attr])
 
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
@@ -602,7 +589,6 @@ class TensorflowParser(Parser):
 
     def rename_Identity(self, source_node):
         source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
-        # self._convert_identity_operation(source_node, new_op = 'Identity')
 
 
     def rename_Squeeze(self, source_node):
@@ -771,7 +757,6 @@ class TensorflowParser(Parser):
     def rename_Transpose(self, source_node):
         IR_node = self._convert_identity_operation(source_node)
 
-        # print(source_node.layer.attr['Tperm'])
         # perm = self.get_parent(source_node.name, [1], True).get_attr('value')
         # concat_name = self.get_parent(source_node.name, [1], True).name
         
@@ -920,6 +905,3 @@ class TensorflowParser(Parser):
             'size' : source_node.get_attr('depth_radius') + 1
         }
         assign_IRnode_values(IR_node, kwargs)
-
-    def rename_Enter(self, source_node):
-        pass

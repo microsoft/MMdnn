@@ -330,9 +330,13 @@ class TestModels(CorrectnessTest):
         input_tf, model_tf = model_converted
 
         original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        input_data = np.expand_dims(img, 0)
+        
+        if(architecture_name!='rnn_embedding'):
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(image_path)
+            input_data = np.expand_dims(img, 0)
+        else:
+            input_data = sentence = np.ones([1,150], int)
 
         with tf.Session() as sess:
             init = tf.global_variables_initializer()
@@ -367,12 +371,19 @@ class TestModels(CorrectnessTest):
         model_converted.eval()
 
         original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        img = np.transpose(img, (2, 0, 1))
-        img = np.expand_dims(img, 0).copy()
-        input_data = torch.from_numpy(img)
-        input_data = torch.autograd.Variable(input_data, requires_grad = False)
+
+        if architecture_name != 'rnn_embedding':
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(image_path)
+            img = np.transpose(img, (2, 0, 1))
+            img = np.expand_dims(img, 0).copy()
+
+            input_data = torch.from_numpy(img)
+            input_data = torch.autograd.Variable(input_data, requires_grad = False)
+        else:
+            sentence = np.ones([1,150], int)
+            input_data = torch.from_numpy(sentence)
+            input_data = torch.autograd.Variable(input_data, requires_grad = False)
 
         predict = model_converted(input_data)
         predict = predict.data.numpy()
@@ -408,6 +419,8 @@ class TestModels(CorrectnessTest):
 
         img = func(image_path)
         input_data = np.expand_dims(img, 0)
+
+        # input_data = sentence = np.ones([1,150], int)
 
         predict = model_converted.predict(input_data)
 
@@ -810,16 +823,17 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow' : {
-                # 'vgg19'                 : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                # 'inception_v1'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-                # 'inception_v3'          : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                # 'resnet_v1_152'         : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
-                # 'resnet_v2_152'         : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                # 'mobilenet_v1_1.0'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                # 'mobilenet_v2_1.0_224'  : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
-                # 'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
-                # 'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always 
+                'vgg19'                 : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'inception_v1'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+                'inception_v3'          : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'resnet_v1_152'         : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
+                'resnet_v2_152'         : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'mobilenet_v1_1.0'      : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'mobilenet_v2_1.0_224'  : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
+                'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always 
                 'facenet'               : [KerasEmit, PytorchEmit, MXNetEmit, TensorflowEmit, CaffeEmit], # TODO: CoreMLEmit 
+                'rnn_embedding'         : [TensorflowEmit, PytorchEmit] #KerasEmit
             },
 
             'tensorflow_frozen' : {

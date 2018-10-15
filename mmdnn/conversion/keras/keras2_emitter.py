@@ -263,18 +263,17 @@ def KitModel(weight_file = None):
     def emit_Add(self, IR_node):
         self._emit_merge(IR_node, "add")
 
-    def emit_Gather(self, IR_node):
-        # actually it is embedding
-        shape = IR_node.get_attr('shape')
-        self.add_body(1, "{:<15} = layers.Embedding(input_dim={}, output_dim={})({})".format(
-            IR_node.variable_name,
-            shape[0],
-            shape[1],
-            self.parent_variable_name(IR_node)
-        ))
+    # def emit_Gather(self, IR_node):
+    #     shape = IR_node.get_attr('shape')
+    #     self.add_body(1, "{:<15} = layers.Embedding(input_dim={}, output_dim={})({})".format(
+    #         IR_node.variable_name,
+    #         shape[0],
+    #         shape[1],
+    #         self.parent_variable_name(IR_node)
+    #     ))
     
-    def emit_Transpose(self, IR_node):
-        pass
+    # def emit_Transpose(self, IR_node):
+    #     pass
     
 
 
