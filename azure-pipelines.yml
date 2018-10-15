@@ -3,14 +3,24 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-pool:
-  vmImage: 'Ubuntu 16.04'
+jobs:
+  - job: 'Test'
+    pool:
+      vmImage: 'Ubuntu 16.04'
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+  strategy:
+    matrix:
+      Python27:
+        python.version: '2.7'
+      Python35:
+        python.version: '3.5'
+    maxParallel: 2
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+  steps:
+    - script: echo Hello, world!
+      displayName: 'Run a one-line script'
+
+    - script:
+        echo Add other tasks to build, test, and deploy your project.
+        echo See https://aka.ms/yaml
+      displayName: 'Run a multi-line script'
