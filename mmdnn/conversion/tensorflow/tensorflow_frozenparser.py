@@ -773,23 +773,29 @@ class TensorflowParser2(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Squeeze')
 
 
-    def rename_GatherV2(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op = 'Embedding')
+    def rename_Gather(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op='Embedding')
 
         W = self.src_graph.get_parent(source_node.name, [0])
         W = self.src_graph.get_parent(W.name, [0])
 
         self.set_weight(source_node.name, "weights", self.ckpt_data[W.name])
 
-        input_node_range = self.src_graph.get_parent(source_node.name, [1])
-        input_node_axis = self.src_graph.get_parent(source_node.name, [2])
-
         kwargs = {
             'input_dim' : self.ckpt_data[W.name].shape[0],
             'output_dim' : self.ckpt_data[W.name].shape[1],
             'mask_zero' : False
         }
-        kwargs['shape'] = list(self.ckpt_data[W.name].shape)
+        kwargs['axis'] = 0  # add default
+        assign_IRnode_values(IR_node, kwargs)
+
+        return IR_node
+    
+    def rename_GatherV2(self, source_node):
+        
+        IR_node = self.rename_Gather(source_node)
+
+        kwargs = {}
         kwargs['axis'] = source_node.layer.attr['axis'].i
         assign_IRnode_values(IR_node, kwargs)
 
