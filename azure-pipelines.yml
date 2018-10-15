@@ -1,24 +1,38 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+jobs:
+  - job: Windows
+    pool:
+      vmImage: 'vs2017-win2016'
 
-pool:
-  vmImage: 'Ubuntu 16.04'
+    steps:
+    - script: |
+        echo success in Windows!
+      displayName: Run Tests
 
-strategy:
-  matrix:
-    Python27:
-      python.version: '2.7'
-    Python35:
-      python.version: '3.5'
-  maxParallel: 2
 
-steps:
-  - script: echo Hello, world!
-    displayName: 'Run a one-line script'
+  - job: Linux
 
-  - script: |
-      echo Add other tasks to build, test, and deploy your project.
-      echo See https://aka.ms/yaml
-    displayName: 'Run a multi-line script'
+    pool:
+      vmImage: 'ubuntu-16.04'
+
+    steps:
+      - script: |
+          sudo apt-get install -y openmpi-bin
+          sudo apt-get install -y libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
+          sudo apt-get install -y --no-install-recommends libboost-all-dev
+          sudo apt-get install -y libatlas-base-dev
+          sudo apt-get install -y libgflags-dev libgoogle-glog-dev
+        displayName: Apt install dependencies
+      - script: |
+          echo success in linux!
+        displayName: Run Tests
+
+
+  - job: MacOS
+
+    pool:
+      vmImage: 'macOS-10.13'
+
+    steps:
+      - script: |
+          echo success in linux!
+        displayName: Run Tests
