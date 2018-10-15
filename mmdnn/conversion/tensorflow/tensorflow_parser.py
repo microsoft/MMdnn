@@ -43,7 +43,6 @@ class TensorflowParser(Parser):
         "Assign",
         "RandomUniform",
         "FIFOQueueV2",
-        "Range"
     ])
 
     dtype_map = {
