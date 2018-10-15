@@ -588,7 +588,7 @@ class TensorflowParser(Parser):
 
 
     def rename_Identity(self, source_node):
-        self._convert_identity_operation(source_node, new_op = 'Identity')
+        source_node.real_name = self._convert_identity_operation(source_node, new_op = 'Identity')
 
 
     def rename_Squeeze(self, source_node):
