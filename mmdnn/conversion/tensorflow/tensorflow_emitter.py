@@ -354,7 +354,22 @@ def KitModel(weight_file = None):
                 IR_node.layer.attr['value'].f,
                 dtype_str))
 
+    def emit_Transpose(self, IR_node):
+        self.add_body(1, "{:<15} = tf.transpose(a = {}, perm = {})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node, [0]),
+            self.parent_variable_name(IR_node, [1])
+        ))
 
+    def emit_Gather(self, IR_node):
+        pass
+        # variable_str = "tf.constant_initializer(__weights_dict['{}']['weights'])".format(IR_node.name)
+        # self.add_body(1, "{:<15} = tf.gather(params = {}, indices = {}, axis = {})".format(
+        #     IR_node.variable_name,
+        #     variable_str,
+        #     self.parent_variable_name(IR_node),
+        #     IR_node.get_attr('axis')
+        #     ))
 
     def emit_Reshape(self, IR_node):
         self.add_body(1, "{:<15} = tf.reshape({}, [{}], '{}')".format(
@@ -423,18 +438,13 @@ def KitModel(weight_file = None):
 
 
     def emit_Embedding(self, IR_node):
-        raise NotImplementedError()
-        ret = "{:<15} = Embedding(input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
-                IR_node.name,
-                IR_node.IR_layer.attr['input_dim'].i,
-                IR_node.IR_layer.attr['output_dim'].i,
-                IR_node.IR_layer.attr['mask_zero'].b,
-                IR_node.in_edges[0])
+        variable_str = "tf.convert_to_tensor(__weights_dict['{}']['weights'])".format(IR_node.name)
+        self.add_body(1, "{:<15} = tf.nn.embedding_lookup(params = {}, ids = {})".format(
+            IR_node.variable_name,
+            variable_str,
+            self.parent_variable_name(IR_node)
+        ))
 
-        return ret
-
-
-        assert False
 
 
     def emit_LSTM(self, IR_node):
