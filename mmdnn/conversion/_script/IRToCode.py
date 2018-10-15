@@ -3,6 +3,7 @@ import google.protobuf.text_format as text_format
 from six import text_type as _text_type
 
 
+
 def _convert(args):
     if args.dstFramework == 'caffe':
         from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter

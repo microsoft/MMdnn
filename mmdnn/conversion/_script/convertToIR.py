@@ -180,7 +180,7 @@ def _get_parser():
     parser.add_argument(
         '--darknetStart',
         type=_text_type,
-        choices=["0", "1"], 
+        choices=["0", "1"],
         help='[Darknet] Parse the darkent model weight file from the start.')
 
     return parser
