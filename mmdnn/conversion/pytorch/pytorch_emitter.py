@@ -375,7 +375,6 @@ class KitModel(nn.Module):
 
 
     def emit_RNNs(self, IR_node, func):
-        return
         raise NotImplementedError()
         # for Keras
         if "dropout" in IR_node.IR_layer.attr:
