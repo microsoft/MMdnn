@@ -906,6 +906,3 @@ class TensorflowParser(Parser):
             'size' : source_node.get_attr('depth_radius') + 1
         }
         assign_IRnode_values(IR_node, kwargs)
-
-    def rename_Enter(self, source_node):
-        pass
