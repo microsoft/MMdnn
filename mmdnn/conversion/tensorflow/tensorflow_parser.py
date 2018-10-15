@@ -588,7 +588,7 @@ class TensorflowParser(Parser):
 
 
     def rename_Identity(self, source_node):
-        source_node.real_name = self._convert_identity_operation(source_node, new_op = 'Identity')
+        source_node.real_name =  self.src_graph.get_node(source_node.in_edges[0]).real_name
 
 
     def rename_Squeeze(self, source_node):
@@ -757,7 +757,6 @@ class TensorflowParser(Parser):
     def rename_Transpose(self, source_node):
         IR_node = self._convert_identity_operation(source_node)
 
-        # print(source_node.layer.attr['Tperm'])
         # perm = self.get_parent(source_node.name, [1], True).get_attr('value')
         # concat_name = self.get_parent(source_node.name, [1], True).name
         
