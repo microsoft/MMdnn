@@ -26,8 +26,8 @@ def test_pytorch():
     tester._test_function('pytorch', tester.PytorchParse)
 
 
-# def main():
-#     test_pytorch()
+def main():
+    test_pytorch()
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    main()

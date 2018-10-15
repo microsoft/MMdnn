@@ -246,7 +246,7 @@ class TensorflowParser(Parser):
         transformed_graph_def = TransformGraph(model, in_nodes.keys(),
                                             dest_nodes, transforms)
 
-        dtype = tensorflow.float32
+        dtype = tensorflow.int32 # float32
         with tensorflow.Graph().as_default() as g:
             input_map = {}
             for in_node in in_nodes:
@@ -292,7 +292,6 @@ class TensorflowParser(Parser):
                 this_one = [dim.size for dim in shape.dim]
                 ret.append(this_one)
             return ret
-
 
     def _convert_padding(self, source_node, IR_node, kernel_size):
         # TODO: Fused conv and pool with padding is different from defused operators
@@ -341,6 +340,7 @@ class TensorflowParser(Parser):
                 continue
 
             node_type = current_node.type
+
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
@@ -727,11 +727,41 @@ class TensorflowParser(Parser):
         }
         assign_IRnode_values(IR_node, kwargs)
 
+    def rename_Gather(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op='Embedding')
+
+        W = self.src_graph.get_parent(source_node.name, [0])
+        W = self.src_graph.get_parent(W.name, [0])
+
+        self.set_weight(source_node.name, "weights", self.ckpt_data[W.name])
+
+        kwargs = {
+            'input_dim' : self.ckpt_data[W.name].shape[0],
+            'output_dim' : self.ckpt_data[W.name].shape[1],
+            'mask_zero' : False
+        }
+        kwargs['axis'] = 0  # add default
+        assign_IRnode_values(IR_node, kwargs)
+
+        return IR_node
+    
+    def rename_GatherV2(self, source_node):
+        
+        IR_node = self.rename_Gather(source_node)
+
+        kwargs = {}
+        kwargs['axis'] = source_node.layer.attr['axis'].i
+        assign_IRnode_values(IR_node, kwargs)
+
+
     def rename_Transpose(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, in_edge_count=1)
-        perm = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
-        perm = tensor_util.MakeNdarray(perm).tolist()
-        assign_IRnode_values(IR_node, {'perm' : perm})
+        IR_node = self._convert_identity_operation(source_node)
+
+        # perm = self.get_parent(source_node.name, [1], True).get_attr('value')
+        # concat_name = self.get_parent(source_node.name, [1], True).name
+        
+        # perm = tensor_util.MakeNdarray(perm).tolist()
+        # assign_IRnode_values(IR_node, {'perm' : perm})
 
 
     def rename_Sigmoid(self, source_node):
