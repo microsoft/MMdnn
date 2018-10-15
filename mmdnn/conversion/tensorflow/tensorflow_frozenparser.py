@@ -773,12 +773,24 @@ class TensorflowParser2(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Squeeze')
 
 
-    def rename_Gather(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op = 'Gather')
+    def rename_GatherV2(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op = 'Embedding')
+
+        W = self.src_graph.get_parent(source_node.name, [0])
+        W = self.src_graph.get_parent(W.name, [0])
+
+        self.set_weight(source_node.name, "weights", self.ckpt_data[W.name])
 
         input_node_range = self.src_graph.get_parent(source_node.name, [1])
-        kwargs = {}
-        kwargs['shape'] = self.tensor_shape_to_list(input_node_range.get_attr('_output_shapes'))[0]
+        input_node_axis = self.src_graph.get_parent(source_node.name, [2])
+
+        kwargs = {
+            'input_dim' : self.ckpt_data[W.name].shape[0],
+            'output_dim' : self.ckpt_data[W.name].shape[1],
+            'mask_zero' : False
+        }
+        kwargs['shape'] = list(self.ckpt_data[W.name].shape)
+        kwargs['axis'] = source_node.layer.attr['axis'].i
         assign_IRnode_values(IR_node, kwargs)
 
 
@@ -985,8 +997,9 @@ class TensorflowParser2(Parser):
 
     def rename_Transpose(self, source_node):
         IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'Transpose')
-        input_node_perm = self.check_const(self.get_parent(source_node.name, [1], True))
-        # input_node_perm = self.get_parent(source_node.name, [1])
+        
+        input_node_perm = self.get_parent(source_node.name, [1])
+        # input_node_perm = self.check_const(self.get_parent(source_node.name, [1], True))
         tensor_content = input_node_perm.get_attr('value')
         perm = tensor_util.MakeNdarray(tensor_content).tolist()
         assign_IRnode_values(IR_node, {'perm' : perm})
