@@ -35,8 +35,7 @@ jobs:
 
       - script: |
           python -m pip install --upgrade pip setuptools wheel
-          echo kit success here!!!!!!!!!!!!!
-          python -m pip install -q -r $(python requirements/select_requirements.py)
+          python -m pip install -q -r $(python requirements/select_requirements.py) --user
         displayName: Pip install dependencies
 
       - script: |
