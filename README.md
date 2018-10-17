@@ -5,23 +5,7 @@
 
 A comprehensive, cross-framework solution to convert, visualize and diagnose deep neural network models. The "MM" in MMdnn stands for model management and "dnn" is an acronym for deep neural network.
 
-Typically, people use deep neural networks with following steps:
-
-```
---------------                                               --------------
-| Find model | --------------------------------------------> | Deployment |
---------------      |                                        --------------
-                    |                                            ^    ^
-                    |        --------------                      |    |
-                    -------> | Conversion | ----------------------    |
-                             --------------                           |
-                                   |                                  |
-                                   |           -----------            |
-                                   ----------> | Retrain | ------------
-                                               -----------
-```
-
-In MMdnn, we focus on helping users handle their work better.
+Major features
 
 - **Find model**
 
@@ -45,7 +29,14 @@ In MMdnn, we focus on helping users handle their work better.
   - We provide a guide to help you accelerate inference with TensorRT.
     - [TensorRT](https://github.com/Microsoft/MMdnn/wiki/Using-TensorRT-to-Accelerate-Inference)
   
-This project is designed and developed by [Microsoft Research (MSR)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/). We also encourage researchers and students leverage this project to analyse DNN models. We welcome any new ideas to extend this project.
+
+## Related Projects
+Targeting at openness and advancing state-of-art technology, [Microsoft Research (MSR)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/) had also released few other open source projects.
+
+* [OpenPAI](https://github.com/Microsoft/pai) : an open source platform that provides complete AI model training and resource management capabilities, it is easy to extend and supports on-premise, cloud and hybrid environments in various scale.
+* [NNI](https://github.com/Microsoft/nni) : An open source AutoML toolkit for neural architecture search and hyper-parameter tuning.
+
+We encourage researchers and students leverage these projects to accelerate the AI development and research.
 
 ## Installation
 
