@@ -1,4 +1,3 @@
-wget
 six==1.10.0
 numpy==1.14.5
 protobuf==3.6.1

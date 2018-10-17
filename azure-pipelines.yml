@@ -35,6 +35,7 @@ jobs:
 
       - script: |
           python -m pip install --upgrade pip setuptools wheel
+          python -m pip install wget pytest --user
           python -m pip install -q -r $(python requirements/select_requirements.py) --user
         displayName: Pip install dependencies
 
