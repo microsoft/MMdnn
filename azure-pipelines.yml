@@ -24,13 +24,13 @@ jobs:
 
     steps:
       - script: |
-          @echo Kit in apt install
+          echo Kit in apt install
           sudo apt-get install -y openmpi-bin
           sudo apt-get install -y libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
           sudo apt-get install -y --no-install-recommends libboost-all-dev
           sudo apt-get install -y libatlas-base-dev
           sudo apt-get install -y libgflags-dev libgoogle-glog-dev
-          @echo Kit out apt install
+          echo Kit out apt install
         displayName: Apt install dependencies
 
       - script: |
