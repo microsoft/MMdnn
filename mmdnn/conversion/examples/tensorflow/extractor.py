@@ -210,7 +210,7 @@ class tensorflow_extractor(base_extractor):
                 labels = tf.identity(logits, name='MMdnn_Output')
             else:
                 labels = tf.squeeze(logits, name='MMdnn_Output')
-
+        
 
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
@@ -276,7 +276,7 @@ class tensorflow_extractor(base_extractor):
                 img = np.expand_dims(img, axis=0)
                 input_data = img
             else:
-                input_data = sentence = np.ones([1,150], int)
+                input_data = np.load('mmdnn/conversion/examples/data/one_imdb.npy')
 
             if is_frozen:
                 tf_model_path = cls.architecture_map[architecture_]['filename']

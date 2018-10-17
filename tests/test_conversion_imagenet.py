@@ -300,9 +300,15 @@ class TestModels(CorrectnessTest):
 
         model_converted = imp.load_source('CntkModel', converted_file + '.py').KitModel(weight_path)
 
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        predict = model_converted.eval({model_converted.arguments[0]:[img]})
+        if(architecture_name!='rnn_embedding'):
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(image_path)
+            input_data = img
+        else:
+            input_data = np.load('mmdnn/conversion/examples/data/one_imdb.npy')
+
+
+        predict = model_converted.eval({model_converted.arguments[0]:[input_data]})
         converted_predict = np.squeeze(predict)
         del model_converted
         del sys.modules['CntkModel']
@@ -330,9 +336,13 @@ class TestModels(CorrectnessTest):
         input_tf, model_tf = model_converted
 
         original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        input_data = np.expand_dims(img, 0)
+
+        if(architecture_name!='rnn_embedding'):
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(image_path)
+            input_data = np.expand_dims(img, 0)
+        else:
+            input_data = np.load('mmdnn/conversion/examples/data/one_imdb.npy')
 
         with tf.Session() as sess:
             init = tf.global_variables_initializer()
@@ -367,12 +377,17 @@ class TestModels(CorrectnessTest):
         model_converted.eval()
 
         original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        img = np.transpose(img, (2, 0, 1))
-        img = np.expand_dims(img, 0).copy()
-        input_data = torch.from_numpy(img)
-        input_data = torch.autograd.Variable(input_data, requires_grad = False)
+        if architecture_name != 'rnn_embedding':
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(image_path)
+            img = np.transpose(img, (2, 0, 1))
+            img = np.expand_dims(img, 0).copy()
+            input_data = torch.from_numpy(img)
+            input_data = torch.autograd.Variable(input_data, requires_grad = False)
+        else:
+            sentence = np.load('mmdnn/conversion/examples/data/one_imdb.npy')
+            input_data = torch.from_numpy(sentence)
+            input_data = torch.autograd.Variable(input_data, requires_grad = False)
 
         predict = model_converted(input_data)
         predict = predict.data.numpy()
@@ -404,10 +419,12 @@ class TestModels(CorrectnessTest):
         model_converted = imp.load_source('KerasModel', converted_file + '.py').KitModel(weight_path)
 
         original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-
-        img = func(image_path)
-        input_data = np.expand_dims(img, 0)
+        if(architecture_name!='rnn_embedding'):
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(image_path)
+            input_data = np.expand_dims(img, 0)
+        else:
+            input_data = np.load('mmdnn/conversion/examples/data/one_imdb.npy')
 
         predict = model_converted.predict(input_data)
 
@@ -451,10 +468,13 @@ class TestModels(CorrectnessTest):
         model_converted = imported.deploy_weight(model_converted, output_weights_file)
 
         original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        img = np.transpose(img, (2, 0, 1))
-        input_data = np.expand_dims(img, 0)
+        if(architecture_name!='rnn_embedding'):
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(image_path)
+            img = np.transpose(img, (2, 0, 1))
+            input_data = np.expand_dims(img, 0)
+        else:
+            input_data = np.load('mmdnn/conversion/examples/data/one_imdb.npy')
 
         model_converted.forward(Batch([mxnet.nd.array(input_data)]))
         predict = model_converted.get_outputs()[0].asnumpy()
@@ -821,6 +841,7 @@ class TestModels(CorrectnessTest):
                 'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
                 'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always
                 'facenet'               : [MXNetEmit, TensorflowEmit, KerasEmit, PytorchEmit, CaffeEmit], # TODO: CoreMLEmit
+                'rnn_embedding'           : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit] # TODO CntkEmit
             },
 
             'tensorflow_frozen' : {
