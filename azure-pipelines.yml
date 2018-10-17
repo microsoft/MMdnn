@@ -12,6 +12,7 @@ jobs:
   - job: Linux
 
     pool:
+      name: MMdnn
       vmImage: 'ubuntu-16.04'
 
     strategy:
