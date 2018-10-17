@@ -11,6 +11,9 @@ jobs:
 
   - job: Linux
 
+    pool:
+      name: MMdnn
+
     strategy:
       maxParallel: 1
       matrix:
