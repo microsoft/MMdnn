@@ -1,0 +1,54 @@
+jobs:
+  - job: Windows
+    pool:
+      vmImage: 'vs2017-win2016'
+
+    steps:
+    - script: |
+        echo success in Windows!
+      displayName: Run Tests
+
+
+  - job: Linux
+
+    pool:
+      name: MMdnn
+
+    strategy:
+      maxParallel: 1
+      matrix:
+        Python27:
+          python.version: '2.7'
+        Python35:
+          python.version: '3.5'
+
+    steps:
+      - script: |
+          sudo apt-get install -y openmpi-bin
+          sudo apt-get install -y libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
+          sudo apt-get install -y --no-install-recommends libboost-all-dev
+          sudo apt-get install -y libatlas-base-dev
+          sudo apt-get install -y libgflags-dev libgoogle-glog-dev
+        displayName: Apt install dependencies
+
+      - script: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install wget pytest --user
+          python -m pip install -q -r $(python requirements/select_requirements.py) --user
+        displayName: Pip install dependencies
+
+      - script: |
+          # TEST_ONNX=false python -m pytest -v -s tests/
+          TEST_ONNX=true python -m pytest -v -s tests/
+        displayName: Run Tests
+
+
+  - job: MacOS
+
+    pool:
+      vmImage: 'macOS-10.13'
+
+    steps:
+      - script: |
+          echo success in linux!
+        displayName: Run Tests
