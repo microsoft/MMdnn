@@ -15,13 +15,11 @@ jobs:
       vmImage: 'ubuntu-16.04'
 
     strategy:
-      maxParallel: 8
+      maxParallel: 1
       matrix:
         Python27:
-          PYTHON_VERSION: '2.7'
           python.version: '2.7'
         Python35:
-          PYTHON_VERSION: '3.5'
           python.version: '3.5'
 
     steps:
@@ -40,7 +38,7 @@ jobs:
         displayName: Pip install dependencies
 
       - script: |
-          TEST_ONNX=false python -m pytest -v -s tests/
+          # TEST_ONNX=false python -m pytest -v -s tests/
           TEST_ONNX=true python -m pytest -v -s tests/
         displayName: Run Tests
 
