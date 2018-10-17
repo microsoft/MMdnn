@@ -24,24 +24,23 @@ jobs:
 
     steps:
       - script: |
-          echo Kit in apt install
           sudo apt-get install -y openmpi-bin
           sudo apt-get install -y libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
           sudo apt-get install -y --no-install-recommends libboost-all-dev
           sudo apt-get install -y libatlas-base-dev
           sudo apt-get install -y libgflags-dev libgoogle-glog-dev
-          echo Kit out apt install
         displayName: Apt install dependencies
 
       - script: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install wget pytest --user
+          python -m pip install wget pytest pytest-xdist --user
           python -m pip install -q -r $(python requirements/select_requirements.py) --user
         displayName: Pip install dependencies
 
       - script: |
-          # TEST_ONNX=false python -m pytest -v -s tests/
-          TEST_ONNX=true python -m pytest -v -s tests/
+          python --version
+          TEST_ONNX=false python -m pytest -n 6 -v -s tests/ tests/ &&
+          TEST_ONNX=true  python -m pytest -n 6 -v -s tests/ tests/
         displayName: Run Tests
 
 
