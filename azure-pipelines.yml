@@ -11,6 +11,8 @@ jobs:
 
   - job: Linux
 
+    timeoutInMinutes: 0
+
     pool:
       name: MMdnn
 
