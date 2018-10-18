@@ -175,7 +175,6 @@ class tensorflow_extractor(base_extractor):
             'feed_dict'   : lambda img: {'input:0':img,'phase_train:0':False},
             'num_classes' : 0,
         },
-        # Note that the link will expire after one day and it is better to upload the model to a stable server.
         'facenet_frozen' : {
             'url'         : 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/facenet/20180408-102900.zip',
             'filename'    : '20180408-102900/20180408-102900.pb',
@@ -186,7 +185,7 @@ class tensorflow_extractor(base_extractor):
             'num_classes' : 0,
         },
         'rnn_embedding' :             {
-            'url'         :'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/tf_rnn/tf_rnn.zip',
+            'url'         :'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/tf_rnn/tf_rnn.zip',   #This testing model only trained for one round.
             'filename'    :'tf_rnn/tf_rnn_model.ckpt',
             'builder'     :lambda: TF_RNN.create_symbol,
             'arg_scope'   :TF_RNN.dummy_arg_scope,
@@ -262,7 +261,7 @@ class tensorflow_extractor(base_extractor):
 
 
     @classmethod
-    def inference(cls, architecture, files, path, image_path, is_frozen=False):
+    def inference(cls, architecture, files, path, test_input_path, is_frozen=False):
         if is_frozen:
             architecture_ = architecture + "_frozen"
         else:
@@ -270,13 +269,13 @@ class tensorflow_extractor(base_extractor):
 
         if cls.download(architecture_, path):
             import numpy as np
-            if architecture_ != 'rnn_embedding':
+            if 'rnn' not in architecture_:
                 func = TestKit.preprocess_func['tensorflow'][architecture]
-                img = func(image_path)
+                img = func(test_input_path)
                 img = np.expand_dims(img, axis=0)
                 input_data = img
             else:
-                input_data = np.load('mmdnn/conversion/examples/data/one_imdb.npy')
+                input_data = np.load(test_input_path)
 
             if is_frozen:
                 tf_model_path = cls.architecture_map[architecture_]['filename']

@@ -246,14 +246,9 @@ class TensorflowParser(Parser):
         transformed_graph_def = TransformGraph(model, in_nodes.keys(),
                                             dest_nodes, transforms)
 
-        dtype = tensorflow.int32 # float32
         with tensorflow.Graph().as_default() as g:
-            input_map = {}
-            for in_node in in_nodes:
-                x = tensorflow.placeholder(dtype, shape = in_nodes[in_node])
-                input_map[in_node] = x
 
-            tensorflow.import_graph_def(transformed_graph_def, name='', input_map=input_map)
+            tensorflow.import_graph_def(transformed_graph_def, name='', input_map=None)
 
         with tensorflow.Session(graph = g) as sess:
 
@@ -784,7 +779,7 @@ class TensorflowParser(Parser):
 
             value = scale1.get_attr('value')
 
-
+    
             assert len(value.float_val) == 1
             value = value.float_val[0]
 
@@ -835,6 +830,18 @@ class TensorflowParser(Parser):
 
         else:
             self._convert_identity_operation(source_node)
+
+
+    '''
+    tf.unpack seems has been deprecated with replaced tf.unstack
+    '''
+    def rename_Unpack(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op='Unstack')
+        kwargs = {
+            'axis' : source_node.get_attr('axis'),
+            'num'  : source_node.get_attr('num')
+        }
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_Split(self, source_node):
