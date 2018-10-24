@@ -446,8 +446,7 @@ class KitModel(nn.Module):
 
 
     def emit_Concat(self, IR_node):
-        # axis = self._convert_axis(IR_node, IR_node.get_attr('axis'))
-        axis = IR_node.get_attr('axis')
+        axis = self._convert_axis(IR_node, IR_node.get_attr('axis'))
         self.add_body(2, "{:<15} = torch.cat(({}), {})".format(
             IR_node.variable_name,
             ', '.join(self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges),
