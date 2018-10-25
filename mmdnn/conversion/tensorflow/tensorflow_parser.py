@@ -230,6 +230,7 @@ class TensorflowParser(Parser):
         else:
             self.tf_graph = TensorflowGraph(model)
 
+
         # Graph Transform
         transforms = ["fold_constants(ignore_errors=true)"]
 
@@ -238,14 +239,13 @@ class TensorflowParser(Parser):
             in_nodes = {}
             for node in model.node:
                 if node.op == 'Placeholder':
-                    in_node_name = str(node.name) + ':0'
+                    in_node_name = str(node.name)
                     in_node_shape = node.attr['_output_shapes'].list.shape[0]
                     in_node_shape_str = self._shapeToStr(in_node_shape)
                     in_nodes[in_node_name] = in_node_shape_str
 
         transformed_graph_def = TransformGraph(model, in_nodes.keys(),
                                             dest_nodes, transforms)
-
         in_type_list = {}
         for n in transformed_graph_def.node:
             if n.name in in_nodes:
@@ -273,8 +273,7 @@ class TensorflowParser(Parser):
 
             meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
             model = meta_graph_def.graph_def
-
-
+        
         self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
 
