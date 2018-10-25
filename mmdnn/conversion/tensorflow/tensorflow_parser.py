@@ -246,9 +246,28 @@ class TensorflowParser(Parser):
         transformed_graph_def = TransformGraph(model, in_nodes.keys(),
                                             dest_nodes, transforms)
 
+        in_type_list = {}
+        for n in transformed_graph_def.node:
+            if n.name in in_nodes:
+                in_type_list[n.name] = n.attr['dtype'].type
+        
+        dtype = tensorflow.float32
         with tensorflow.Graph().as_default() as g:
+            input_map = {}
+            for in_node in in_nodes:
+                if in_type_list[in_node] == 1 or in_type_list[in_node] == 0:
+                    dtype = tensorflow.float32
 
-            tensorflow.import_graph_def(transformed_graph_def, name='', input_map=None)
+                elif in_type_list[in_node] == 3:
+                    dtype = tensorflow.int32
+
+                elif in_type_list[in_node] == 10:
+                    dtype = tensorflow.bool
+                
+                x = tensorflow.placeholder(dtype, shape = in_nodes[in_node])
+                input_map[in_node] = x
+
+            tensorflow.import_graph_def(transformed_graph_def, name='', input_map=input_map)
 
         with tensorflow.Session(graph = g) as sess:
 
