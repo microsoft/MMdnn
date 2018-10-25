@@ -2,11 +2,11 @@
 
 ## Setup the Repository
 
-1. Update the **apt** package index:
+1. Update the **apt** package index :
     ```bash
     $ sudo apt-get update
     ```
-2. Install packages:
+2. Install packages :
     ```bash
     $ sudo apt-get install \
         apt-transport-https \
@@ -14,7 +14,7 @@
         curl \
         software-properties-common
     ```
-3. Add Docker's official GPG key:
+3. Add Docker's official GPG key :
     ```bash
     $ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
     ```
