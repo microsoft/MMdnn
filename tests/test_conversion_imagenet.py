@@ -17,7 +17,8 @@ class TestModels(CorrectnessTest):
     image_path = "mmdnn/conversion/examples/data/seagull.jpg"
     cachedir = "tests/cache/"
     tmpdir = "tests/tmp/"
-
+    sentence_path = "mmdnn/conversion/examples/data/one_imdb.npy"
+    vocab_size = 30000
 
     def __init__(self, test_table=None, methodName='test_nothing'):
         super(TestModels, self).__init__(methodName)
@@ -27,12 +28,12 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def TensorFlowParse(architecture_name, image_path):
+    def TensorFlowParse(architecture_name, test_input_path):
         from mmdnn.conversion.examples.tensorflow.extractor import tensorflow_extractor
         from mmdnn.conversion.tensorflow.tensorflow_parser import TensorflowParser
 
         # get original model prediction result
-        original_predict = tensorflow_extractor.inference(architecture_name, None, TestModels.cachedir, image_path)
+        original_predict = tensorflow_extractor.inference(architecture_name, None, TestModels.cachedir, test_input_path(architecture_name))
         del tensorflow_extractor
 
         # original to IR
@@ -49,12 +50,12 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def TensorFlowFrozenParse(architecture_name, image_path):
+    def TensorFlowFrozenParse(architecture_name, test_input_path):
         from mmdnn.conversion.examples.tensorflow.extractor import tensorflow_extractor
         from mmdnn.conversion.tensorflow.tensorflow_frozenparser import TensorflowParser2
 
         # get original model prediction result
-        original_predict = tensorflow_extractor.inference(architecture_name, None, TestModels.cachedir, image_path, is_frozen = True)
+        original_predict = tensorflow_extractor.inference(architecture_name, None, TestModels.cachedir, test_input_path(architecture_name), is_frozen = True)
         para = tensorflow_extractor.get_frozen_para(architecture_name)
         del tensorflow_extractor
 
@@ -70,7 +71,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def KerasParse(architecture_name, image_path):
+    def KerasParse(architecture_name, test_input_path):
         from mmdnn.conversion.examples.keras.extractor import keras_extractor
         from mmdnn.conversion.keras.keras2_parser import Keras2Parser
 
@@ -78,7 +79,7 @@ class TestModels(CorrectnessTest):
         model_filename = keras_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = keras_extractor.inference(architecture_name, model_filename, TestModels.cachedir, image_path)
+        original_predict = keras_extractor.inference(architecture_name, model_filename, TestModels.cachedir, test_input_path(architecture_name))
         # print(original_predict)
         del keras_extractor
 
@@ -92,7 +93,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def MXNetParse(architecture_name, image_path):
+    def MXNetParse(architecture_name, test_input_path):
         from mmdnn.conversion.examples.mxnet.extractor import mxnet_extractor
         from mmdnn.conversion.mxnet.mxnet_parser import MXNetParser
 
@@ -100,7 +101,7 @@ class TestModels(CorrectnessTest):
         architecture_file, weight_file = mxnet_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = mxnet_extractor.inference(architecture_name, None, TestModels.cachedir, image_path)
+        original_predict = mxnet_extractor.inference(architecture_name, None, TestModels.cachedir, test_input_path(architecture_name))
         del mxnet_extractor
 
         # original to IR
@@ -120,14 +121,14 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def CaffeParse(architecture_name, image_path):
+    def CaffeParse(architecture_name, test_input_path):
         from mmdnn.conversion.examples.caffe.extractor import caffe_extractor
 
         # download model
         architecture_file, weight_file = caffe_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = caffe_extractor.inference(architecture_name, (architecture_file, weight_file), TestModels.cachedir, image_path)
+        original_predict = caffe_extractor.inference(architecture_name, (architecture_file, weight_file), TestModels.cachedir, test_input_path(architecture_name))
         del caffe_extractor
 
         # original to IR
@@ -159,14 +160,14 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def CntkParse(architecture_name, image_path):
+    def CntkParse(architecture_name, test_input_path):
         from mmdnn.conversion.examples.cntk.extractor import cntk_extractor
         from mmdnn.conversion.cntk.cntk_parser import CntkParser
         # download model
         architecture_file = cntk_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = cntk_extractor.inference(architecture_name, architecture_file, image_path)
+        original_predict = cntk_extractor.inference(architecture_name, architecture_file, test_input_path(architecture_name))
         del cntk_extractor
 
         # original to IR
@@ -179,7 +180,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def CoremlParse(architecture_name, image_path):
+    def CoremlParse(architecture_name, test_input_path):
         from mmdnn.conversion.examples.coreml.extractor import coreml_extractor
         from mmdnn.conversion.coreml.coreml_parser import CoremlParser
 
@@ -187,7 +188,7 @@ class TestModels(CorrectnessTest):
         architecture_file = coreml_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = coreml_extractor.inference(architecture_name, architecture_file, image_path)
+        original_predict = coreml_extractor.inference(architecture_name, architecture_file, test_input_path(architecture_name))
         del coreml_extractor
 
          # original to IR
@@ -199,7 +200,7 @@ class TestModels(CorrectnessTest):
         return original_predict
 
     @staticmethod
-    def PaddleParse(architecture_name, image_path):
+    def PaddleParse(architecture_name, test_input_path):
         from mmdnn.conversion.examples.paddle.extractor import paddle_extractor
         from mmdnn.conversion.paddle.paddle_parser import PaddleParser
 
@@ -207,7 +208,7 @@ class TestModels(CorrectnessTest):
         model_filename = paddle_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = paddle_extractor.inference(architecture_name, model_filename, TestModels.cachedir, image_path)
+        original_predict = paddle_extractor.inference(architecture_name, model_filename, TestModels.cachedir, test_input_path(architecture_name))
         del paddle_extractor
 
         # original to IR
@@ -220,7 +221,7 @@ class TestModels(CorrectnessTest):
         return original_predict
 
     @staticmethod
-    def PytorchParse(architecture_name, image_path):
+    def PytorchParse(architecture_name, test_input_path):
         from mmdnn.conversion.examples.pytorch.extractor import pytorch_extractor
         from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser
 
@@ -229,7 +230,7 @@ class TestModels(CorrectnessTest):
 
 
         # get original model prediction result
-        original_predict = pytorch_extractor.inference(architecture_name, architecture_file, image_path)
+        original_predict = pytorch_extractor.inference(architecture_name, architecture_file, test_input_path(architecture_name))
         del pytorch_extractor
 
         # get shape
@@ -260,7 +261,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def DarknetParse(architecture_name, image_path):
+    def DarknetParse(architecture_name, test_input_path):
         ensure_dir("./data/")
         from mmdnn.conversion.examples.darknet.extractor import darknet_extractor
         from mmdnn.conversion.darknet.darknet_parser import DarknetParser
@@ -268,7 +269,7 @@ class TestModels(CorrectnessTest):
         architecture_file = darknet_extractor.download(architecture_name, TestModels.cachedir)
 
         # get original model prediction result
-        original_predict = darknet_extractor.inference(architecture_name, architecture_file, TestModels.cachedir, image_path)
+        original_predict = darknet_extractor.inference(architecture_name, architecture_file, TestModels.cachedir, test_input_path(architecture_name))
         del darknet_extractor
 
         # original to IR
@@ -287,7 +288,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def CntkEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+    def CntkEmit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
         from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
 
         # IR to code
@@ -300,9 +301,17 @@ class TestModels(CorrectnessTest):
 
         model_converted = imp.load_source('CntkModel', converted_file + '.py').KitModel(weight_path)
 
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        predict = model_converted.eval({model_converted.arguments[0]:[img]})
+        if 'rnn' not in architecture_name:
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(test_input_path(architecture_name))
+            input_data = img
+        else:
+            sentence = np.load(test_input_path(architecture_name))
+            from keras.utils import to_categorical
+            input_data = to_categorical(sentence, 30000)[0]
+
+
+        predict = model_converted.eval({model_converted.arguments[0]:[input_data]})
         converted_predict = np.squeeze(predict)
         del model_converted
         del sys.modules['CntkModel']
@@ -312,7 +321,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def TensorflowEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+    def TensorflowEmit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
         import tensorflow as tf
         from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
         # IR to code
@@ -330,9 +339,13 @@ class TestModels(CorrectnessTest):
         input_tf, model_tf = model_converted
 
         original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        input_data = np.expand_dims(img, 0)
+
+        if 'rnn' not in architecture_name:
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(test_input_path(architecture_name))
+            input_data = np.expand_dims(img, 0)
+        else:
+            input_data = np.load(test_input_path(architecture_name))
 
         with tf.Session() as sess:
             init = tf.global_variables_initializer()
@@ -349,7 +362,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def PytorchEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+    def PytorchEmit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
         from mmdnn.conversion.pytorch.pytorch_emitter import PytorchEmitter
 
         # IR to code
@@ -367,12 +380,17 @@ class TestModels(CorrectnessTest):
         model_converted.eval()
 
         original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        img = np.transpose(img, (2, 0, 1))
-        img = np.expand_dims(img, 0).copy()
-        input_data = torch.from_numpy(img)
-        input_data = torch.autograd.Variable(input_data, requires_grad = False)
+        if 'rnn' not in architecture_name:
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(test_input_path(architecture_name))
+            img = np.transpose(img, (2, 0, 1))
+            img = np.expand_dims(img, 0).copy()
+            input_data = torch.from_numpy(img)
+            input_data = torch.autograd.Variable(input_data, requires_grad = False)
+        else:
+            sentence = np.load(test_input_path(architecture_name))
+            input_data = torch.from_numpy(sentence)
+            input_data = torch.autograd.Variable(input_data, requires_grad = False)
 
         predict = model_converted(input_data)
         predict = predict.data.numpy()
@@ -388,7 +406,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def KerasEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+    def KerasEmit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
         from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
 
         # IR to code
@@ -404,10 +422,12 @@ class TestModels(CorrectnessTest):
         model_converted = imp.load_source('KerasModel', converted_file + '.py').KitModel(weight_path)
 
         original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-
-        img = func(image_path)
-        input_data = np.expand_dims(img, 0)
+        if 'rnn' not in architecture_name:
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(test_input_path(architecture_name))
+            input_data = np.expand_dims(img, 0)
+        else:
+            input_data = np.load(test_input_path(architecture_name))
 
         predict = model_converted.predict(input_data)
 
@@ -428,7 +448,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def MXNetEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+    def MXNetEmit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
         from mmdnn.conversion.mxnet.mxnet_emitter import MXNetEmitter
         from collections import namedtuple
         Batch = namedtuple('Batch', ['data'])
@@ -451,10 +471,13 @@ class TestModels(CorrectnessTest):
         model_converted = imported.deploy_weight(model_converted, output_weights_file)
 
         original_framework = checkfrozen(original_framework)
-        func = TestKit.preprocess_func[original_framework][architecture_name]
-        img = func(image_path)
-        img = np.transpose(img, (2, 0, 1))
-        input_data = np.expand_dims(img, 0)
+        if 'rnn' not in architecture_name:
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(test_input_path(architecture_name))
+            img = np.transpose(img, (2, 0, 1))
+            input_data = np.expand_dims(img, 0)
+        else:
+            input_data = np.load(test_input_path(architecture_name))
 
         model_converted.forward(Batch([mxnet.nd.array(input_data)]))
         predict = model_converted.get_outputs()[0].asnumpy()
@@ -471,7 +494,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def CaffeEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+    def CaffeEmit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
         try:
             import caffe
             from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
@@ -493,7 +516,7 @@ class TestModels(CorrectnessTest):
 
             original_framework = checkfrozen(original_framework)
             func = TestKit.preprocess_func[original_framework][architecture_name]
-            img = func(image_path)
+            img = func(test_input_path(architecture_name))
             img = np.transpose(img, [2, 0, 1])
             input_data = np.expand_dims(img, 0)
 
@@ -517,7 +540,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def CoreMLEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+    def CoreMLEmit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
         from mmdnn.conversion.coreml.coreml_emitter import CoreMLEmitter
         from coremltools.models import MLModel
         import coremltools
@@ -571,7 +594,7 @@ class TestModels(CorrectnessTest):
         model, input_name, output_name = emitter.gen_model(
                 input_names=None,
                 output_names=None,
-                image_input_names=image_path,
+                image_input_names=test_input_path(architecture_name),
                 is_bgr=BGRTranspose,
                 red_bias=prep_list[1],
                 green_bias=prep_list[2],
@@ -600,7 +623,7 @@ class TestModels(CorrectnessTest):
         else:
 
             from PIL import Image as pil_image
-            img = pil_image.open(image_path)
+            img = pil_image.open(test_input_path)
             img = img.resize((size, size))
 
             # inference
@@ -614,7 +637,7 @@ class TestModels(CorrectnessTest):
 
 
     @staticmethod
-    def OnnxEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+    def OnnxEmit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
         try:
             from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
 
@@ -634,7 +657,7 @@ class TestModels(CorrectnessTest):
 
             original_framework = checkfrozen(original_framework)
             func = TestKit.preprocess_func[original_framework][architecture_name]
-            img = func(image_path)
+            img = func(test_input_path(architecture_name))
             input_data = np.expand_dims(img, 0)
 
             predict = tf_rep.run(input_data)[0]
@@ -821,6 +844,7 @@ class TestModels(CorrectnessTest):
                 'nasnet-a_large'        : [MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: KerasEmit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
                 'inception_resnet_v2'   : [CaffeEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], #  CoremlEmit worked once, then always
                 'facenet'               : [MXNetEmit, TensorflowEmit, KerasEmit, PytorchEmit, CaffeEmit], # TODO: CoreMLEmit
+                'rnn_embedding'         : [TensorflowEmit, KerasEmit, PytorchEmit, MXNetEmit, CntkEmit] 
             },
 
             'tensorflow_frozen' : {
@@ -887,7 +911,8 @@ class TestModels(CorrectnessTest):
             print("Test {} from {} start.".format(network_name, original_framework), file=sys.stderr)
 
             # get original model prediction result
-            original_predict = parser(network_name, self.image_path)
+            original_predict = parser(network_name, lambda architecture_name : self.sentence_path 
+            if 'rnn' in architecture_name.lower() else self.image_path)
 
             IR_file = TestModels.tmpdir + original_framework + '_' + network_name + "_converted"
             for emit in self.test_table[original_framework][network_name]:
@@ -900,7 +925,8 @@ class TestModels(CorrectnessTest):
                     network_name,
                     IR_file + ".pb",
                     IR_file + ".npy",
-                    self.image_path)
+                    lambda architecture_name : self.sentence_path 
+                    if 'rnn' in architecture_name.lower() else self.image_path)
 
                 self._compare_outputs(
                     original_framework,

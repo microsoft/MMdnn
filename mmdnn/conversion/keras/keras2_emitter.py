@@ -84,6 +84,8 @@ def set_layer_weights(model, weights_dict):
                 current_layer_parameters = [cur_dict['depthwise_filter'], cur_dict['pointwise_filter']]
                 if 'bias' in cur_dict:
                     current_layer_parameters.append(cur_dict['bias'])
+            elif layer.__class__.__name__ == "Embedding":
+                current_layer_parameters.append(cur_dict['weights'])
             else:
                 # rot weights
                 current_layer_parameters = [cur_dict['weights']]
@@ -263,6 +265,11 @@ def KitModel(weight_file = None):
     def emit_Add(self, IR_node):
         self._emit_merge(IR_node, "add")
 
+    
+    # def emit_Transpose(self, IR_node):
+    #     pass
+    
+
 
     def emit_DataInput(self, IR_node):
         shape_str = IRGraph.shapeToStr(IR_node.IR_layer.attr["shape"].shape)
@@ -413,8 +420,9 @@ def KitModel(weight_file = None):
 
 
     def emit_Embedding(self, IR_node):
-        self.add_body(1, "{:<15} = layers.Embedding(input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
+        self.add_body(1, "{:<15} = layers.Embedding(name = '{}', input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
             IR_node.variable_name,
+            IR_node.name,
             IR_node.get_attr('input_dim'),
             IR_node.get_attr('output_dim'),
             IR_node.get_attr('mask_zero'),

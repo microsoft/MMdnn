@@ -360,15 +360,18 @@ class KitModel(nn.Module):
 
 
     def emit_Embedding(self, IR_node):
-        raise NotImplementedError()
-        ret = "{:<15} = Embedding(input_dim = {}, output_dim = {}, mask_zero = {})({})".format(
-                IR_node.name,
-                IR_node.IR_layer.attr['input_dim'].i,
-                IR_node.IR_layer.attr['output_dim'].i,
-                IR_node.IR_layer.attr['mask_zero'].b,
-                IR_node.in_edges[0])
-
-        return ret
+        self.used_layers.add("Embedding")
+        self.add_init(2, "self.{} = self.__embedding('{}', num_embeddings={}, embedding_dim={})".format(
+            IR_node.variable_name,
+            IR_node.name,
+            IR_node.get_attr('input_dim'),   #2-D
+            IR_node.get_attr('output_dim')
+            ))
+        self.add_body(2, "{:<15} = self.{}({})".format(
+            IR_node.variable_name,
+            IR_node.variable_name,
+            "torch.LongTensor(np.array({}))".format(self.parent_variable_name(IR_node))
+        ))
 
 
     def emit_RNNs(self, IR_node, func):
@@ -619,12 +622,61 @@ class KitModel(nn.Module):
         assert False
 
 
+    def emit_Gather(self, IR_node):
+        pass
+        # self.used_layers.add("Embedding")
+        # shape = tuple(IR_node.get_attr('shape'))
+        # self.add_init(2, "self.{} = self.__embedding('{}', num_embeddings={}, embedding_dim={})".format(
+        #     IR_node.variable_name,
+        #     IR_node.name,
+        #     shape[0],   #2-D
+        #     shape[1]
+        #     ))
+        # self.add_body(2, "{:<15} = self.{}({})".format(
+        #     IR_node.variable_name,
+        #     IR_node.variable_name,
+        #     "torch.LongTensor(np.array({}))".format(self.parent_variable_name(IR_node))
+        # ))
+        
+
+
+
     def emit_Transpose(self, IR_node):
         self.add_body(2, "{:<15} = {}.permute({})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.get_attr('perm')
+            self.parent_variable_name(IR_node, [1])
         ))
+
+    def _layer_Embedding(self):
+        self.add_body(0,"""
+    @staticmethod
+    def __embedding(name, **kwargs):
+        layer = nn.Embedding(**kwargs) #shape
+        layer.state_dict()['weight'].copy_(torch.from_numpy(__weights_dict[name]['weights']))
+        return layer
+        """)
+
+    # def _layer_Sim_tfGather(self):
+    #     self.add_body(0, """
+    # @staticmethod
+    # def __sim_tf_gather(params, indices, axis=0):
+    #     indices = np.array(indices)
+    #     output_shape = list(indices.shape)+list(torch.Tensor(params).shape)[1:]
+    #     output_tensor = torch.Tensor(size = output_shape)
+
+    #     from itertools import product 
+    #     row_indices = []
+    #     for s in list(indices.shape)[:len(list(indices.shape))-1]:
+    #         row_indices.append(tuple(range(s)))
+    #     row_indices = list(product(*tuple(row_indices)))
+
+    #     for row_index in row_indices:
+    #         index = torch.LongTensor(indices[row_index])
+    #         output_tensor[tuple(row_index)] = torch.index_select(params, axis, index)
+            
+    #     return output_tensor
+    #     """)
 
 
     def _layer_Conv(self):
