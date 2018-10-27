@@ -12,7 +12,7 @@ def AveragePool(shape, auto_pad = None, kernelShape = None, pads = None, strides
     dim = len(kernelShape)
 
     if pads is None:
-        pads = [0 for _ in range(dim * 2)]
+        pads = [1 for _ in range(dim * 2)]
     if strides is None:
         strides = [1 for _ in range(dim)]
  
