@@ -16,6 +16,7 @@ setup(
 
     description='Deep learning model converter, visualization and editor.',
     long_description=long_description,
+    long_description_content_type='text/markdown',
 
     # The project's main homepage.
     url='https://github.com/Microsoft/MMdnn',
@@ -76,8 +77,8 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
-        'numpy >= 1.11.0',
-        'protobuf >= 3.1.0',
+        'numpy >= 1.15.0',
+        'protobuf >= 3.6.0',
         'six >= 1.10.0',
         'pillow >= 3.1.0',
     ],

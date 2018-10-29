@@ -762,7 +762,12 @@ def predict(model, labels, url):
         output_dim = IR_node.IR_layer.attr["output_dim"].i
         dtype = MXNetEmitter.dtype_map.get(IR_node.layer.attr["dtype"].type, "float32")
 
-        code = "{:<15} = mx.sym.Embedding(data = {}, input_dim = {}, output_dim = {}, dtype = {}, name = '{}')".format(
+        weight_dict = self.weights[IR_node.name]
+
+        if self.weight_loaded:
+            self.output_weights[IR_node.name + "_weight"] = weight_dict['weights']
+
+        code = "{:<15} = mx.sym.Embedding(data = {}, input_dim = {}, output_dim = {}, dtype = '{}', name = '{}')".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
                 input_dim,

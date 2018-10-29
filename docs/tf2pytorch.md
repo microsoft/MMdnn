@@ -35,11 +35,11 @@ $ mmvismeta imagenet_resnet_v2_152.ckpt.meta ./log/
 TensorBoard 1.5.1 at http://kit-station:6006 (Press CTRL+C to quit)
 ```
 
-The you can open URL above to find the output node of your model,
+Then you can open URL above to find the output node of your model,
 
 ![TensorBoard](https://github.com/Microsoft/MMdnn/blob/master/docs/tensorboard.png)
 
-like the squeeze node named *MMdnn_Output* we setup in our tensorflow model extractor. Detail information is in [TensorFlow README](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md)
+like the squeeze node named *MMdnn_Output* we set up in our tensorflow model extractor. Detail information is in [TensorFlow README](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/tensorflow/README.md)
 
 ## Convert TensorFlow Model to PyTorch
 

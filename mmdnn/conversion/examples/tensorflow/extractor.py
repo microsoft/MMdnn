@@ -17,8 +17,8 @@ from mmdnn.conversion.examples.tensorflow.models import mobilenet_v1
 from mmdnn.conversion.examples.tensorflow.models import nasnet
 from mmdnn.conversion.examples.tensorflow.models.mobilenet import mobilenet_v2
 from mmdnn.conversion.examples.tensorflow.models import inception_resnet_v1
+from mmdnn.conversion.examples.tensorflow.models import TF_RNN
 slim = tf.contrib.slim
-
 from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.examples.extractor import base_extractor
 from mmdnn.conversion.common.utils import download_file
@@ -175,7 +175,6 @@ class tensorflow_extractor(base_extractor):
             'feed_dict'   : lambda img: {'input:0':img,'phase_train:0':False},
             'num_classes' : 0,
         },
-        # Note that the link will expire after one day and it is better to upload the model to a stable server.
         'facenet_frozen' : {
             'url'         : 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/facenet/20180408-102900.zip',
             'filename'    : '20180408-102900/20180408-102900.pb',
@@ -184,6 +183,15 @@ class tensorflow_extractor(base_extractor):
             'input_shape' : [[160, 160, 3],1], # input_shape of the elem in tensor_in
             'feed_dict'   : lambda img: {'input:0':img,'phase_train:0':False},
             'num_classes' : 0,
+        },
+        'rnn_embedding' :             {
+            'url'         :'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/tf_rnn/tf_rnn.zip',   #This testing model only trained for one round.
+            'filename'    :'tf_rnn/tf_rnn_model.ckpt',
+            'builder'     :lambda: TF_RNN.create_symbol,
+            'arg_scope'   :TF_RNN.dummy_arg_scope,
+            'input'       :lambda: tf.placeholder(name='input', dtype=tf.int32, shape=[None, 150]),
+            'feed_dict'   :lambda x:{'input:0': x},
+            'num_classes' : 0
         }
     }
 
@@ -201,7 +209,7 @@ class tensorflow_extractor(base_extractor):
                 labels = tf.identity(logits, name='MMdnn_Output')
             else:
                 labels = tf.squeeze(logits, name='MMdnn_Output')
-
+        
 
         init = tf.global_variables_initializer()
         with tf.Session() as sess:
@@ -253,7 +261,7 @@ class tensorflow_extractor(base_extractor):
 
 
     @classmethod
-    def inference(cls, architecture, files, path, image_path, is_frozen=False):
+    def inference(cls, architecture, files, path, test_input_path, is_frozen=False):
         if is_frozen:
             architecture_ = architecture + "_frozen"
         else:
@@ -261,9 +269,13 @@ class tensorflow_extractor(base_extractor):
 
         if cls.download(architecture_, path):
             import numpy as np
-            func = TestKit.preprocess_func['tensorflow'][architecture]
-            img = func(image_path)
-            img = np.expand_dims(img, axis=0)
+            if 'rnn' not in architecture_:
+                func = TestKit.preprocess_func['tensorflow'][architecture]
+                img = func(test_input_path)
+                img = np.expand_dims(img, axis=0)
+                input_data = img
+            else:
+                input_data = np.load(test_input_path)
 
             if is_frozen:
                 tf_model_path = cls.architecture_map[architecture_]['filename']
@@ -279,7 +291,7 @@ class tensorflow_extractor(base_extractor):
                 with tf.Graph().as_default() as g:
                     tf.import_graph_def(original_gdef, name='')
                 with tf.Session(graph = g) as sess:
-                    tf_out = sess.run(tf_output_name[0], feed_dict=feed_dict(img)) # temporarily think the num of out nodes is one
+                    tf_out = sess.run(tf_output_name[0], feed_dict=feed_dict(input_data)) # temporarily think the num of out nodes is one
                 predict = np.squeeze(tf_out)
                 return predict
 
@@ -297,7 +309,7 @@ class tensorflow_extractor(base_extractor):
                     sess.run(init)
                     saver = tf.train.Saver()
                     saver.restore(sess, path + cls.architecture_map[architecture]['filename'])
-                    predict = sess.run(logits, feed_dict = {data_input : img})
+                    predict = sess.run(logits, feed_dict = {data_input : input_data})
 
                 import tensorflow.contrib.keras as keras
                 keras.backend.clear_session()

@@ -230,6 +230,7 @@ class TensorflowParser(Parser):
         else:
             self.tf_graph = TensorflowGraph(model)
 
+
         # Graph Transform
         transforms = ["fold_constants(ignore_errors=true)"]
 
@@ -238,18 +239,31 @@ class TensorflowParser(Parser):
             in_nodes = {}
             for node in model.node:
                 if node.op == 'Placeholder':
-                    in_node_name = str(node.name) + ':0'
+                    in_node_name = str(node.name)
                     in_node_shape = node.attr['_output_shapes'].list.shape[0]
                     in_node_shape_str = self._shapeToStr(in_node_shape)
                     in_nodes[in_node_name] = in_node_shape_str
 
         transformed_graph_def = TransformGraph(model, in_nodes.keys(),
                                             dest_nodes, transforms)
-
+        in_type_list = {}
+        for n in transformed_graph_def.node:
+            if n.name in in_nodes:
+                in_type_list[n.name] = n.attr['dtype'].type
+        
         dtype = tensorflow.float32
         with tensorflow.Graph().as_default() as g:
             input_map = {}
             for in_node in in_nodes:
+                if in_type_list[in_node] == 1 or in_type_list[in_node] == 0:
+                    dtype = tensorflow.float32
+
+                elif in_type_list[in_node] == 3:
+                    dtype = tensorflow.int32
+
+                elif in_type_list[in_node] == 10:
+                    dtype = tensorflow.bool
+                
                 x = tensorflow.placeholder(dtype, shape = in_nodes[in_node])
                 input_map[in_node] = x
 
@@ -259,8 +273,7 @@ class TensorflowParser(Parser):
 
             meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
             model = meta_graph_def.graph_def
-
-
+        
         self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
 
@@ -292,7 +305,6 @@ class TensorflowParser(Parser):
                 this_one = [dim.size for dim in shape.dim]
                 ret.append(this_one)
             return ret
-
 
     def _convert_padding(self, source_node, IR_node, kernel_size):
         # TODO: Fused conv and pool with padding is different from defused operators
@@ -341,6 +353,7 @@ class TensorflowParser(Parser):
                 continue
 
             node_type = current_node.type
+
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
@@ -727,11 +740,41 @@ class TensorflowParser(Parser):
         }
         assign_IRnode_values(IR_node, kwargs)
 
+    def rename_Gather(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op='Embedding')
+
+        W = self.src_graph.get_parent(source_node.name, [0])
+        W = self.src_graph.get_parent(W.name, [0])
+
+        self.set_weight(source_node.name, "weights", self.ckpt_data[W.name])
+
+        kwargs = {
+            'input_dim' : self.ckpt_data[W.name].shape[0],
+            'output_dim' : self.ckpt_data[W.name].shape[1],
+            'mask_zero' : False
+        }
+        kwargs['axis'] = 0  # add default
+        assign_IRnode_values(IR_node, kwargs)
+
+        return IR_node
+    
+    def rename_GatherV2(self, source_node):
+        
+        IR_node = self.rename_Gather(source_node)
+
+        kwargs = {}
+        kwargs['axis'] = source_node.layer.attr['axis'].i
+        assign_IRnode_values(IR_node, kwargs)
+
+
     def rename_Transpose(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, in_edge_count=1)
-        perm = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
-        perm = tensor_util.MakeNdarray(perm).tolist()
-        assign_IRnode_values(IR_node, {'perm' : perm})
+        IR_node = self._convert_identity_operation(source_node)
+
+        # perm = self.get_parent(source_node.name, [1], True).get_attr('value')
+        # concat_name = self.get_parent(source_node.name, [1], True).name
+        
+        # perm = tensor_util.MakeNdarray(perm).tolist()
+        # assign_IRnode_values(IR_node, {'perm' : perm})
 
 
     def rename_Sigmoid(self, source_node):
@@ -754,7 +797,7 @@ class TensorflowParser(Parser):
 
             value = scale1.get_attr('value')
 
-
+    
             assert len(value.float_val) == 1
             value = value.float_val[0]
 
@@ -805,6 +848,18 @@ class TensorflowParser(Parser):
 
         else:
             self._convert_identity_operation(source_node)
+
+
+    '''
+    tf.unpack seems has been deprecated with replaced tf.unstack
+    '''
+    def rename_Unpack(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op='Unstack')
+        kwargs = {
+            'axis' : source_node.get_attr('axis'),
+            'num'  : source_node.get_attr('num')
+        }
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_Split(self, source_node):

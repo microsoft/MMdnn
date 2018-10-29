@@ -10,7 +10,13 @@ from mmdnn.conversion.common.IR.graph_pb2 import TensorShape
 
 
 def get_handler_name(node_kind):
-    return node_kind.lower() if len(node_kind) <= 4 else get_lower_case(node_kind)
+    if node_kind is None:
+        return node_kind
+    else:
+        if len(node_kind) <= 4:
+            return node_kind.lower()
+        else:
+            return get_lower_case(node_kind)
 
 
 class NodeMapper(object):

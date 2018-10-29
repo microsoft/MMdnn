@@ -1,27 +1,12 @@
 # ![MMdnn](https://ndqzpq.dm2304.livefilestore.com/y4mF9ON1vKrSy0ew9dM3Fw6KAvLzQza2nL9JiMSIfgfKLbqJPvuxwOC2VIur_Ycz4TvVpkibMkvKXrX-N9QOkyh0AaUW4qhWDak8cyM0UoLLxc57apyhfDaxflLlZrGqiJgzn1ztsxiaZMzglaIMhoo8kjPuZ5-vY7yoWXqJuhC1BDHOwgNPwIgzpxV1H4k1oQzmewThpAJ_w_fUHzianZtMw?width=35&height=35&cropmode=none) MMdnn
 
+[![PyPi Version](https://img.shields.io/pypi/v/mmdnn.svg)](https://pypi.org/project/mmdnn/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Linux](https://travis-ci.org/Microsoft/MMdnn.svg?branch=master)](https://travis-ci.org/Microsoft/MMdnn)
 
-A comprehensive, cross-framework solution to convert, visualize and diagnose deep neural network models. The "MM" in MMdnn stands for model management and "dnn" is an acronym for deep neural network.
+A comprehensive, cross-framework solution to convert, visualize and diagnose deep neural network models. The "MM" in MMdnn stands for model management and "dnn" is an acronym for the deep neural network.
 
-Typically, people use deep neural networks with following steps:
-
-```
---------------                                               --------------
-| Find model | --------------------------------------------> | Deployment |
---------------      |                                        --------------
-                    |                                            ^    ^
-                    |        --------------                      |    |
-                    -------> | Conversion | ----------------------    |
-                             --------------                           |
-                                   |                                  |
-                                   |           -----------            |
-                                   ----------> | Retrain | ------------
-                                               -----------
-```
-
-In MMdnn, we focus on helping users handle their work better.
+Major features
 
 - **Find model**
 
@@ -30,28 +15,35 @@ In MMdnn, we focus on helping users handle their work better.
 
 - <a href="#conversion">**Conversion**</a>
 
-  - We implement an universal convertor to convert DNN models between frameworks, which means you can train on one framework and deploy on another.
+  - We implement a universal converter to convert DNN models between frameworks, which means you can train on one framework and deploy on another.
 
 - **Retrain**
 
-  - In convertor, we can generate some training/inference code snippet to simplify the retrain/evaluate work.
+  - In the converter, we can generate some training/inference code snippet to simplify the retrain/evaluate work.
 
 - **Deployment**
 
-  - We provide some guidelines to help you deploy your models to other hardware platform.
+  - We provide some guidelines to help you deploy your models to another hardware platform.
     - [Android](https://github.com/Microsoft/MMdnn/wiki/Deploy-your-TensorFlow-Lite-Model-in-Android)
     - [Serving](https://github.com/Microsoft/MMdnn/wiki/Tensorflow-Serving-Via-Docker)
     
   - We provide a guide to help you accelerate inference with TensorRT.
     - [TensorRT](https://github.com/Microsoft/MMdnn/wiki/Using-TensorRT-to-Accelerate-Inference)
   
-This project is designed and developed by [Microsoft Research (MSR)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/). We also encourage researchers and students leverage this project to analyse DNN models. We welcome any new ideas to extend this project.
+
+## Related Projects
+Targeting at openness and advancing state-of-art technology, [Microsoft Research (MSR)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/) had also released few other open source projects.
+
+* [OpenPAI](https://github.com/Microsoft/pai): an open source platform that provides complete AI model training and resource management capabilities, it is easy to extend and supports on-premise, cloud and hybrid environments in various scale.
+* [NNI](https://github.com/Microsoft/nni): An open source AutoML toolkit for neural architecture search and hyper-parameter tuning.
+
+We encourage researchers and students to leverage these projects to accelerate the AI development and research.
 
 ## Installation
 
 ### Install manually
 
-You can get stable version of MMdnn by
+You can get a stable version of MMdnn by
 
 ```bash
 pip install mmdnn
@@ -76,7 +68,7 @@ MMdnn provides a docker image, which packages MMdnn, deep learning frameworks we
     docker pull mmdnn/mmdnn:cpu.small
     ```
 
-1. Run image in interactive mode
+1. Run image in an interactive mode
 
     ```bash
     docker run -it mmdnn/mmdnn:cpu.small
@@ -166,7 +158,7 @@ Use the [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-m
 $ mmdownload -f keras -n inception_v3
 ```
 
-2. Convert the pre-trained model files into intermediate representation
+2. Convert the pre-trained model files into an intermediate representation
 
 ```bash
 $ mmtoir -f keras -w imagenet_inception_v3.h5 -o keras_inception_v3
@@ -228,7 +220,7 @@ We are working on other frameworks conversion and visualization, such as PyTorch
 
 ### License
 
-Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
+Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.microsoft.com.
 
 When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
