@@ -698,6 +698,8 @@ class TestModels(CorrectnessTest):
         'tensorflow_MXNet_inception_v3',            # different after "InceptionV3/InceptionV3/Mixed_5b/Branch_3/AvgPool_0a_3x3/AvgPool". AVG POOL padding difference between these two framework.
         'darknet_Keras_yolov2',                     # accumulation of small difference
         'darknet_Keras_yolov3',                     # accumulation of small difference
+        'paddle_Pytorch_resnet101',
+        'paddle_MXNet_resnet101'
     }
 
     if TEST_ONNX and TEST_ONNX.lower() == 'true':
@@ -778,7 +780,7 @@ class TestModels(CorrectnessTest):
 
             'paddle'  : {
                 'resnet50'     : [OnnxEmit],
-                'vgg16'        : [OnnxEmit],      # First 1000 exactly the same, the last one is different
+                # 'vgg16'        : [OnnxEmit],      # First 1000 exactly the same, the last one is different
             },
 
             'pytorch' : {
