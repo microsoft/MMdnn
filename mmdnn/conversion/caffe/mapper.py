@@ -168,6 +168,7 @@ class NodeMapper(object):
             kwargs['pooling_type'] = 'MAX'
         elif node.parameters.pool == 1:
             kwargs['pooling_type'] = 'AVG'
+            kwargs['count_include_pad'] = 1
         else:
             # Stochastic pooling, for instance.
             raise ConversionError('Unsupported pooling type.')

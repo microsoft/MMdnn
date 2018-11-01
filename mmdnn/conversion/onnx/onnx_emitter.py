@@ -360,19 +360,21 @@ def KitModel(weight_file = None):
                     op_name = 'AveragePool'
                 elif pooling_type == 'MAX':
                     op_name = 'MaxPool'
+                count_include_pad = IR_node.get_attr('count_include_pad', 0)
                 kernel_shape = list(IR_node.get_attr('kernel_shape')[1:-1])
                 pads = IR_node.get_attr('pads')
                 pad_length = len(pads)
                 pads = pads[1:pad_length // 2 - 1] + pads[pad_length // 2 + 1:pad_length - 1]
                 strides = list(IR_node.get_attr('strides')[1:-1])
-                self.add_body(1, "{:15} = helper.make_node('{}', inputs=['{}'],outputs=['{}'], kernel_shape={}, pads={}, strides={})".format(
+                self.add_body(1, "{:15} = helper.make_node('{}', inputs=['{}'],outputs=['{}'], kernel_shape={}, pads={}, strides={}{})".format(
                                   IR_node.variable_name,
                                   op_name,
                                   self.parent_variable_name(IR_node),
                                   IR_node.variable_name,
                                   kernel_shape,
                                   pads,
-                                  strides))
+                                  strides,
+                                  "" if count_include_pad == 0 else ", count_include_pad=1"))
                 self.nodes.append(IR_node.variable_name)
             else:
                 print("OnnxEmitter has not supported Pool type [%s]." % (pooling_type))
