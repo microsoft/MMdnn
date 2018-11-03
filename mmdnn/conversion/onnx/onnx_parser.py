@@ -44,8 +44,6 @@ class ONNXParser(Parser):
         self.onnx_graph.build()
         self.weight_loaded = True
 
-    def rename_Conv(self, source_node):
-
     def rename_UNKNOWN(self, source_node):
         if source_node.type in self.skip_type:
             return
