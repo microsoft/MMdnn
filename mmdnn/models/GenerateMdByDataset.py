@@ -4,7 +4,7 @@ import argparse
 
 markdown_code = str()
 
-framework_list = ['caffe', 'cntk', 'coreml', 'darknet', 'mxnet', 'pytorch', 'tensorflow']  # Haven't add 'keras' yet
+framework_list = ['caffe', 'cntk', 'coreml', 'darknet', 'mxnet', 'pytorch', 'tensorflow']  # Haven't added 'keras' yet
 frame_model_map = {
      'caffe': {'architecture':'prototxt', 'weights':'caffemodel'},
      'cntk': {'architecture':'model'},

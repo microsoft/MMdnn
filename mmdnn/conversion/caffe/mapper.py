@@ -260,7 +260,9 @@ class NodeMapper(object):
         operations = {0: 'Mul', 1: 'Add', 2: 'Max'}
         op_code = node.parameters.operation
         try:
-            return Node.create(operations[op_code])
+            kwargs = {}
+            cls._convert_output_shape(kwargs, node)
+            return Node.create(operations[op_code], **kwargs)
         except KeyError:
             raise ConversionError('Unknown elementwise operation: {}'.format(op_code))
 
