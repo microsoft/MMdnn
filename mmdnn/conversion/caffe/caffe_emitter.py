@@ -206,7 +206,7 @@ if __name__=='__main__':
         self.add_body(1, "n.{:<15} = L.Convolution(n.{}, kernel_h={}, kernel_w={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
             bias_term={}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             IR_node.get_attr('kernel_shape')[0],
             IR_node.get_attr('kernel_shape')[1],
             IR_node.get_attr('strides')[1],
@@ -228,6 +228,40 @@ if __name__=='__main__':
         # for key in self.weights_dict[IR_node.name].keys():
         #     keys.append(key)
         # print("=======Layer: {}, keys: {}".format(IR_node.name, keys))
+
+    def emit_ConvTranspose(self, IR_node):
+        # implement asymmetric paddings by applying symmetric padding then cropping
+        pad_h, pad_w = self._get_symmetric_padding(IR_node)
+
+        num_output = IR_node.get_attr('kernel_shape')[-1]
+        if IR_node.type == "DepthwiseConv":
+            num_group = IR_node.get_attr("kernel_shape")[-2]
+            num_output = IR_node.get_attr('kernel_shape')[-2]
+        else:
+            num_group = IR_node.get_attr("group", 1)
+
+        self.add_body(1, "n.{:<15} = L.Deconvolution(n.{}, convolution_param=dict(kernel_h={}, kernel_w={}, stride={}, num_output={}, pad_h={}, pad_w={}, group={}, \
+            bias_term={}), ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_idx_name(IR_node),
+            IR_node.get_attr('kernel_shape')[0],
+            IR_node.get_attr('kernel_shape')[1],
+            IR_node.get_attr('strides')[1],
+            num_output,
+            pad_h,
+            pad_w,
+            num_group,
+            IR_node.get_attr('use_bias', False)))
+
+        # dim = len(IR_node.get_attr('strides')) - 2
+        # if self.weight_loaded:
+        #     if IR_node.type == "DepthwiseConv":
+        #         self.weights_dict[IR_node.name]['weights'] = np.swapaxes(self.weights_dict[IR_node.name]['weights'], -1, -2)
+        #     self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], [dim + 1, dim] + list(range(0, dim)))
+        #     self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
+
+        # self.check_if_need_crop(IR_node)
+
 
     def compute_output_shape(self, IR_node, kernel_h, kernel_w):
         parent_node = self.IR_graph.get_parent(IR_node.name, [0])
@@ -301,14 +335,14 @@ if __name__=='__main__':
         if IR_node.layer.attr['global_pooling'].b:
             self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, stride={}, global_pooling=True, ntop=1)".format(
                 IR_node.variable_name,
-                self.parent_variable_name(IR_node),
+                self.parent_variable_idx_name(IR_node),
                 pooling_type,
                 IR_node.get_attr('strides')[1]))
         else:
             pad_h, pad_w = self._get_symmetric_padding(IR_node)
             self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, kernel_size={}, pad_h={}, pad_w={}, stride={}, ntop=1)".format(
                 IR_node.variable_name,
-                self.parent_variable_name(IR_node),
+                self.parent_variable_idx_name(IR_node),
                 pooling_type,
                 IR_node.get_attr('kernel_shape')[1],
                 pad_h,
@@ -323,7 +357,7 @@ if __name__=='__main__':
         shape = shape_to_list(shape)
         self.add_body(1, "n.{:<15} = L.ResizeBilinear(n.{}, height={}, width={}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             shape[1],
             shape[2]))
 
@@ -343,7 +377,7 @@ if __name__=='__main__':
         in_place = True
         self.add_body(1, "n.{:<15} = L.Dropout(n.{}, dropout_ratio={} , in_place={}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             1 - IR_node.get_attr('keep_prob'),
             in_place))
 
@@ -351,7 +385,7 @@ if __name__=='__main__':
     def emit_FullyConnected(self, IR_node):
         self.add_body(1, "n.{:<15} = L.InnerProduct(n.{}, num_output={}, bias_term={}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             IR_node.layer.attr["units"].i,
             IR_node.get_attr('use_bias', False)))
         if self.weight_loaded:
@@ -364,7 +398,7 @@ if __name__=='__main__':
 
         self.add_body(1, "n.{:<15} = L.BatchNorm(n.{}, eps={}, use_global_stats={}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             IR_node.get_attr('epsilon'),
             self.phase == 'test'
         ))
@@ -398,7 +432,7 @@ if __name__=='__main__':
     def emit_Scale(self, IR_node):
         self.add_body(1, "n.{:<15} = L.Scale(n.{}, bias_term={}, in_place=True, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             IR_node.get_attr('use_bias', False)
         ))
         if self.weight_loaded:
@@ -421,7 +455,7 @@ if __name__=='__main__':
     def emit_LRN(self, IR_node):
         self.add_body(1, "n.{:<15} = L.LRN(n.{}, local_size={}, alpha={}, beta={}, k={})".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             IR_node.get_attr('size') * 2 - 1,
             IR_node.get_attr('alpha'),
             IR_node.get_attr('beta'),
@@ -448,7 +482,7 @@ if __name__=='__main__':
             dim_str = " reshape_param={'shape': { " + dim_str + '} }'
             self.add_body(1, "n.{:<15} = L.Reshape(n.{}, {})".format(
                 IR_node.variable_name,
-                self.parent_variable_name(IR_node),
+                self.parent_variable_idx_name(IR_node),
                 dim_str
                 ))
         else:
@@ -468,21 +502,21 @@ if __name__=='__main__':
     def emit_Sigmoid(self, IR_node):
         self.add_body(1, "n.{:<15} = L.Sigmoid(n.{}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node)))
+            self.parent_variable_idx_name(IR_node)))
 
 
     def emit_Relu(self, IR_node):
         in_place = True
         self.add_body(1, "n.{:<15} = L.ReLU(n.{}, in_place={}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             in_place))
 
     def emit_LeakyRelu(self, IR_node):
         in_place = True
         self.add_body(1, "n.{:<15} = L.ReLU(n.{}, in_place={}, negative_slope={}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             in_place,
             IR_node.IR_layer.attr['alpha'].f))
 
@@ -492,18 +526,18 @@ if __name__=='__main__':
         in_place = True
         self.add_body(1, "n.{:<15} = L.PReLU(n.{}, in_place={}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             in_place))
 
     def emit_Tanh(self, IR_node):
         self.add_body(1, "n.{:<15} = L.TanH(n.{}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node)))
+            self.parent_variable_idx_name(IR_node)))
 
     def emit_Softmax(self, IR_node):
         self.add_body(1, "n.{:<15} = L.Softmax(n.{}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node)))
+            self.parent_variable_idx_name(IR_node)))
 
 
     def emit_Pad(self, IR_node):
@@ -518,7 +552,7 @@ if __name__=='__main__':
 
         self.add_body(1, "n.{:<15} = L.Reduction(n.{}, operation={} , axis={} ,ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             op,
             len(axes)))
 
@@ -555,11 +589,34 @@ if __name__=='__main__':
         # currently for the flatten layer
         self.add_body(1, "n.{:<15} = L.Flatten(n.{})".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node),
+            self.parent_variable_idx_name(IR_node),
             ))
-
+    
+    # Caffe only support one dim slice by appointing axis.
     def emit_Slice(self, IR_node):
-        pass
+
+        start = IR_node.get_attr('starts')
+        end = IR_node.get_attr('ends')
+
+        # Compute slice dim
+        start_n_end_len = len(start)
+        slice_dim = -1
+        for i in range(start_n_end_len):
+            if start[i] < 0 or end[i] < 0:
+                raise ValueError("Caffe does not support minus stride!")
+            if start[i] + end[i] != start_n_end_len:
+                if slice_dim != -1:
+                    raise ValueError("Caffe does not support multi-dim slice!")
+                slice_dim = i
+                start_point = start[i]
+                end_point = end[i]
+
+        self.add_body(1, "_, n.{:<15}, _ = L.Slice(n.{},  ntop=3, slice_param=dict(slice_dim={}, slice_point={}))".format(
+            IR_node.variable_name,
+            self.parent_variable_idx_name(IR_node),
+            slice_dim,
+            [start_point, end_point]
+        ))
 
     def emit_Pack(self, IR_node):
         pass
@@ -567,7 +624,7 @@ if __name__=='__main__':
     def emit_Abs(self, IR_node):
         self.add_body(1, "n.{:<15} = L.AbsVal(n.{}, ntop=1)".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node)))
+            self.parent_variable_idx_name(IR_node)))
 
     def emit_Sub(self, IR_node):
         input_layers = ', '.join(('n.' + self.IR_graph.get_node(edge).real_variable_name) for edge in IR_node.in_edges)

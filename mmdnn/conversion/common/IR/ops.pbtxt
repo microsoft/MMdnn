@@ -298,6 +298,17 @@ op {
 
 
 op {
+  name: "Fill"
+  attr {
+    name: "value"
+    type: "float"
+  }
+  summary: "Fill Layer."
+  description: "Fill a given shape tensor by given value."
+}
+
+
+op {
   name: "FullyConnected"
   attr {
     name: "units"
@@ -730,6 +741,34 @@ op {
   summary: "Removes dimensions of size 1 from the shape of a tensor."
   description: "Given a tensor `input`, this operation returns a tensor of the same type with all dimensions of size 1 removed."
 }
+
+
+op {
+  name: "Unsqueeze"
+  attr {
+    name: "axes"
+    type: "list(int)"
+  }
+  summary: "Add dimensions of size 1 to the shape of a tensor."
+  description: "Given a tensor `input`, this operation returns a tensor of the same type with all dimensions of size 1 added."
+}
+
+
+op {
+  name: "Unstack"
+  attr {
+    name: "axis"
+    type: int
+  }
+  attr {
+    name: "num"
+    type: "int"
+    default_value: None
+  }
+  summary: "Unstack a tensor by given axis."
+  description: "Unstack a tensor by given axis; num is the pointed axis' shape and it can be infered if it is None."
+}
+
 
 
 op {

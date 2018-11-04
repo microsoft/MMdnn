@@ -41,6 +41,56 @@ class Emitter(object):
         return self.IR_graph.get_parent(IR_node.name, path).real_variable_name
 
 
+    '''input_ids is a list of parent node's input index for current node and it's subscript, like
+        [input_idx_1, subscript_1, input_idx_2, subscript_2]
+    '''
+    def _parent_output_idx(self, IR_node, parent_name_or_idx=None):
+        if parent_name_or_idx is None:
+            parent_idx = 0
+        else:
+            if isinstance(parent_name_or_idx, int):
+                parent_idx = parent_name_or_idx
+            elif isinstance(parent_name_or_idx, _string_types):
+                parent_idx = IR_node.in_edges.index(parent_name_or_idx)
+            else:
+                raise ValueError("parent_name_or_idx should be int index or string name!")
+
+        input_ids = IR_node.get_attr('input_ids')
+
+        if input_ids is None:
+            output_idx = -1
+        elif parent_idx in input_ids[::2]:
+            output_idx = input_ids[2 * input_ids[::2].index(parent_idx) + 1]
+        else:
+            output_idx = -1 #num of parent node's output is one.
+
+        return output_idx
+
+
+    def parent_variable_idx_name(self, IR_node, parent_name_or_ids=None):
+        
+        if parent_name_or_ids is None:
+            parent_ids = [0]
+        else:
+            if isinstance(parent_name_or_ids, list):
+                parent_ids = parent_name_or_ids
+            elif isinstance(parent_name_or_ids, _string_types):
+                parent_ids = [IR_node.in_edges.index(parent_name_or_ids)]
+            else:
+                raise ValueError("It should be list indies or string name!")
+        
+        parent_variable_name = self.parent_variable_name(IR_node, parent_ids)
+
+        '''if len(parent_ids) is 1, parent_IR_node is IR_node'''
+        parent_IR_node = self.IR_graph.get_parent(IR_node.name, parent_ids[:-1])
+        parent_output_idx = self._parent_output_idx(parent_IR_node, parent_ids[-1])
+        
+        if parent_output_idx == -1:
+            return parent_variable_name
+        else:
+            return parent_variable_name+'[{}]'.format(parent_output_idx)
+
+
     def _build(self):
         self.IR_graph.build()
     
