@@ -42,7 +42,6 @@ class TensorflowParser(Parser):
         "Assign",
         "RandomUniform",
         "FIFOQueueV2",
-        "NoOp"
     ])
 
     dtype_map = {
@@ -217,7 +216,7 @@ class TensorflowParser(Parser):
             self.tf_graph = TensorflowGraph(model)
             for node in self.tf_graph.model.node:
                 if node.name in in_nodes:
-                    node.attr['shape'].shape.MergeFromString(tensor_input.as_proto().SerializeToString())    # Right
+                    node.attr['shape'].shape.MergeFromString(tensor_input.as_proto().SerializeToString())
                     node.attr['_output_shapes'].list.shape.pop()  #unknown_rank pop
                     node.attr['_output_shapes'].list.shape.extend([tensor_input.as_proto()])
 
@@ -277,7 +276,7 @@ class TensorflowParser(Parser):
         self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
 
-        self.node_more_than_one_tensor = self._get_node_more_than_one_tensor(self.src_graph.topological_sort)
+        self.nodes_more_than_one_tensor = self._get_nodes_more_than_one_tensor(self.src_graph.topological_sort)
 
     @classmethod
     def _skip_node(cls, source_node):
@@ -362,14 +361,14 @@ class TensorflowParser(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
 
-    def _get_node_more_than_one_tensor(self, topological_sort):
-        node_more_than_one_tensor = set()
+    def _get_nodes_more_than_one_tensor(self, topological_sort):
+        nodes_more_than_one_tensor = set()
         for layer in topological_sort:
             current_node = self.src_graph.get_node(layer)
             if current_node.type == 'NoOp' and len(current_node.name.split(':'))==2:
-                node_more_than_one_tensor.add(current_node.name.split(':')[0])
+                nodes_more_than_one_tensor.add(current_node.name.split(':')[0])
 
-        return node_more_than_one_tensor
+        return nodes_more_than_one_tensor
 
     def gen_IR(self):
 
@@ -462,13 +461,11 @@ class TensorflowParser(Parser):
         id_cnt = 0
         for idx in range(start_idx, start_idx+in_edge_count):
             in_node = self.src_graph.get_node(source_node.in_edges[idx])
-            if in_node.name in self.node_more_than_one_tensor:
+            if in_node.name in self.nodes_more_than_one_tensor:
                 if in_node.type == 'NoOp':
                     input_ids.extend([id_cnt, int(in_node.name.split(':')[1])])
                 else:
                     input_ids.extend([id_cnt, 0])
-            # elif in_node.type != 'NoOp' and in_node.name in self.node_more_than_one_tensor:
-            #     input_ids.extend([id_cnt, 0])
             id_cnt += 1
 
         if input_ids:

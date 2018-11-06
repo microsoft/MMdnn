@@ -353,11 +353,6 @@ class KitModel(nn.Module):
 
 
     def emit_Sigmoid(self, IR_node):
-        # code = "{:<15} = Activation(name = '{}', activation = 'sigmoid')({})".format(
-        #         IR_node.variable_name,
-        #         IR_node.name,
-        #         self.IR_graph.get_parent(IR_node.name, [0]).real_variable_name)
-        # return code
         self.add_body(2, "{:<15} = F.sigmoid({})".format(
             IR_node.variable_name,
             self.parent_variable_idx_name(IR_node)
