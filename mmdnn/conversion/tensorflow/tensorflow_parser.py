@@ -440,12 +440,6 @@ class TensorflowParser(Parser):
 
     @staticmethod
     def _copy_shape(source_node, IR_node):
-        # assert '_output_shapes' in source_node.layer.attr
-        # if source_node.layer.attr['_output_shapes'].list.shape:
-            # IR_node.attr['shape'].shape.MergeFromString(source_node.layer.attr['_output_shapes'].list.shape[0].SerializeToString())
-        #     return 
-        # else:
-        #     assert False
 
         assert 'shape' in source_node.layer.attr
         if source_node.layer.attr['shape'].list.shape:
