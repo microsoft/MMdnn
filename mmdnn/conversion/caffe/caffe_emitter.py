@@ -253,14 +253,14 @@ if __name__=='__main__':
             num_group,
             IR_node.get_attr('use_bias', False)))
 
-        # dim = len(IR_node.get_attr('strides')) - 2
-        # if self.weight_loaded:
-        #     if IR_node.type == "DepthwiseConv":
-        #         self.weights_dict[IR_node.name]['weights'] = np.swapaxes(self.weights_dict[IR_node.name]['weights'], -1, -2)
-        #     self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], [dim + 1, dim] + list(range(0, dim)))
-        #     self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
+        dim = len(IR_node.get_attr('strides')) - 2
+        if self.weight_loaded:
+            if IR_node.type == "DepthwiseConv":
+                self.weights_dict[IR_node.name]['weights'] = np.swapaxes(self.weights_dict[IR_node.name]['weights'], -1, -2)
+            self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], [dim + 1, dim] + list(range(0, dim)))
+            self.weights_dict[IR_node.variable_name] = self.weights_dict.pop(IR_node.name)
 
-        # self.check_if_need_crop(IR_node)
+        self.check_if_need_crop(IR_node)
 
 
     def compute_output_shape(self, IR_node, kernel_h, kernel_w):

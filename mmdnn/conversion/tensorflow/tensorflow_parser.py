@@ -890,21 +890,13 @@ class TensorflowParser(Parser):
 
             value = scale1.get_attr('value')
             
-
-            from tensorflow.core.framework import tensor_pb2
-            if isinstance(value, tensor_pb2.TensorProto):
-                value = tensor_util.MakeNdarray(value)
-                IR_node.attr['scale'].b = True
-                if self.weight_loaded:
-                    self.set_weight(source_node.name, 'scale', value)
-            else:
-                assert len(value.float_val) == 1
-                value = value.float_val[0]
+            assert len(value.float_val) == 1
+            value = value.float_val[0]
 
 
-                IR_node.attr['scale'].b = True
-                if self.weight_loaded:
-                    self.set_weight(source_node.name, 'scale', np.array([value]* shape, dtype=np.float32))
+            IR_node.attr['scale'].b = True
+            if self.weight_loaded:
+                self.set_weight(source_node.name, 'scale', np.array([value]* shape, dtype=np.float32))
 
             # bias
             IR_node.attr['use_bias'].b = True
@@ -921,22 +913,12 @@ class TensorflowParser(Parser):
             IR_node.attr['epsilon'].f = source_node.get_attr('epsilon', 0)
 
             value = scale2.get_attr('value')
-
-
-            from tensorflow.core.framework import tensor_pb2
-            if isinstance(value, tensor_pb2.TensorProto):
-                value = tensor_util.MakeNdarray(value)
-                IR_node.attr['scale'].b = True
-                if self.weight_loaded:
-                    self.set_weight(source_node.name, 'scale', value)
-            else:
-                assert len(value.float_val) == 1
-                value = value.float_val[0]
-        
-        
-                IR_node.attr['scale'].b = True
-                if self.weight_loaded:
-                    self.set_weight(source_node.name, 'scale', np.array([value]* shape, dtype=np.float32))
+            
+            assert len(value.float_val) == 1
+            value = value.float_val[0]
+            IR_node.attr['scale'].b = True
+            if self.weight_loaded:
+                self.set_weight(source_node.name, 'scale', np.array([value]* shape, dtype=np.float32))
 
             # bias
             IR_node.attr['use_bias'].b = True

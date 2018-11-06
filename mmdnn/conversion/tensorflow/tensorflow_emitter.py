@@ -602,8 +602,6 @@ def KitModel(weight_file = None):
             extra_str += ", begin_mask={}".format(IR_node.get_attr('begin_mask'))
         if IR_node.get_attr('end_mask'):
             extra_str += ", end_mask={}".format(IR_node.get_attr('end_mask'))
-        if IR_node.get_attr('shrink_axis_mask'):
-            extra_str += ", shrink_axis_mask={}".format(IR_node.get_attr('shrink_axis_mask'))
         self.add_body(1, "{:<15} = tf.strided_slice({}, {}, {} {}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_idx_name(IR_node),
