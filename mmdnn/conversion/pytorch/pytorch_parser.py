@@ -27,6 +27,8 @@ class PytorchParser(Parser):
     'onnx::Concat': 'Concat',
     'onnx::Relu': 'Relu',
     'onnx::Tanh': 'Tanh',
+    'onnx::Sigmoid': 'Sigmoid',
+    'onnx::Mul': 'Mul'
 
 
     # TODO
@@ -307,6 +309,12 @@ class PytorchParser(Parser):
 
     def rename_Tanh(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op="Tanh")
+
+    def rename_Sigmoid(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op="Sigmoid")
+
+    def rename_Mul(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op="Mul")
 
     def rename_Maxpool(self, source_node):
         attr = source_node.attrs
