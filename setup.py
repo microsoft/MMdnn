@@ -22,8 +22,8 @@ setup(
     url='https://github.com/Microsoft/MMdnn',
 
     # Author details
-    author = 'Cheng CHEN, System Research Group, Microsoft Research Asia',
-    author_email='cncng@microsoft.com',
+    author = 'System Research Group, Microsoft Research Asia',
+    author_email='mmdnn_feedback@microsoft.com',
 
     # Choose your license
     license='MIT',
