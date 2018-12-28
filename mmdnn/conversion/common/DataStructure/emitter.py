@@ -1,7 +1,7 @@
 #----------------------------------------------------------------------------------------------
 #  Copyright (c) Microsoft Corporation. All rights reserved.
 #  Licensed under the MIT License. See License.txt in the project root for license information.
-#----------------------------------------------------------------------------------------------          
+#----------------------------------------------------------------------------------------------
 from six import string_types as _string_types
 
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
@@ -9,8 +9,8 @@ from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 
 
 class Emitter(object):
-    
-    def __init__(self):        
+
+    def __init__(self):
         self.body_code = str()
         self.weights_dict = dict()
         self.used_layers = set()
@@ -43,8 +43,8 @@ class Emitter(object):
 
     def _build(self):
         self.IR_graph.build()
-    
-    
+
+
     def gen_code(self, phase):
         raise NotImplementedError("do not use base emitter class.")
 
@@ -62,7 +62,7 @@ class Emitter(object):
         with open(filename, 'wb') as of:
             np.save(of, weights)
         print("Target weights are saved as [{}].".format(filename))
-        
+
 
 
     @staticmethod

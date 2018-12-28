@@ -19,7 +19,7 @@ def save_weight(name, node, level):
             if arr.ndim >= 1:
                 current_layer[p] = arr
                 print ("    " * level + "{}.{} shape {} {}".format(name, p, current_layer[p].shape, current_layer[p].dtype))
-    
+
     for p in recursive:
         if hasattr(node, p):
             func = getattr(node, p)
@@ -33,7 +33,7 @@ for idx, data in enumerate(model.modules):
     if data != None:
         print ("Find layer #{} : {}".format(idx, data._typename))
         if hasattr(data, 'search_flag'):
-            print ("    name = {}".format(data.search_flag))    
+            print ("    name = {}".format(data.search_flag))
         if data.modules != None:
             print ("    submodule = {}#".format(len(data.modules)))
             for idx_j, sub in enumerate(data.modules):
