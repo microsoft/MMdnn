@@ -52,7 +52,7 @@ install:
   - pip install wget
 
 before_script:
-  - export LD_LIBRARY_PATH=/home/travis/virtualenv/python3.5.6/lib/python3.5/site-packages/caffe/libs:/home/travis/virtualenv/python2.7.14/lib/python2.7/site-packages/caffe/libs:${LD_LIBRARY_PATH}
+  - export LD_LIBRARY_PATH=$(python -c "import os; print(os.path.dirname(os.__file__) + '/site-packages/caffe/libs')"):${LD_LIBRARY_PATH}
 
 after_failure: true
 
