@@ -421,6 +421,10 @@ def KitModel(weight_file = None):
         self._emit_activation(IR_node, 'tanh')
 
 
+    def emit_Elu(self, IR_node):
+        self._emit_activation(IR_node, 'elu')
+
+
     def emit_Relu(self, IR_node):
         self._emit_activation(IR_node, 'relu')
 
