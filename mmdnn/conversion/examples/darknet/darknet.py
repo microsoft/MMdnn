@@ -42,8 +42,6 @@ class METADATA(Structure):
     _fields_ = [("classes", c_int),
                 ("names", POINTER(c_char_p))]
 
-
-
 lib = CDLL("./mmdnn/conversion/examples/darknet/libdarknet.so", RTLD_GLOBAL)
 lib.network_width.argtypes = [c_void_p]
 lib.network_width.restype = c_int
@@ -77,6 +75,7 @@ free_ptrs.argtypes = [POINTER(c_void_p), c_int]
 
 network_predict = lib.network_predict
 network_predict.argtypes = [c_void_p, POINTER(c_float)]
+network_predict.restype = POINTER(c_float)
 
 reset_rnn = lib.reset_rnn
 reset_rnn.argtypes = [c_void_p]
@@ -84,6 +83,9 @@ reset_rnn.argtypes = [c_void_p]
 load_net = lib.load_network
 load_net.argtypes = [c_char_p, c_char_p, c_int]
 load_net.restype = c_void_p
+
+free_network = lib.free_network
+free_network.argtypes = [c_void_p]
 
 do_nms_obj = lib.do_nms_obj
 do_nms_obj.argtypes = [POINTER(DETECTION), c_int, c_int, c_float]
@@ -112,6 +114,10 @@ rgbgr_image.argtypes = [IMAGE]
 predict_image = lib.network_predict_image
 predict_image.argtypes = [c_void_p, IMAGE]
 predict_image.restype = POINTER(c_float)
+
+network_outputs = lib.network_outputs
+network_outputs.argtypes = [c_void_p]
+network_outputs.restype = c_int
 
 def classify(net, meta, im):
     out = predict_image(net, im)

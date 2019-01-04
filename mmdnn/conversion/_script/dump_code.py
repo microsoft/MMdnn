@@ -20,6 +20,8 @@ def dump_code(framework, network_filepath, weight_filepath, dump_filepath, dump_
         from mmdnn.conversion.mxnet.saver import save_model
     elif framework == 'pytorch':
         from mmdnn.conversion.pytorch.saver import save_model
+    elif framework == 'darknet':
+        from mmdnn.conversion.darknet.saver import save_model
     elif framework == 'tensorflow':
         from mmdnn.conversion.tensorflow.saver import save_model
         save_model(MainModel, network_filepath, weight_filepath, dump_filepath, dump_tag)
@@ -40,7 +42,7 @@ def _get_parser():
     parser = argparse.ArgumentParser(description='Dump the model code into target model.')
 
     parser.add_argument(
-        '-f', '--framework', type=_text_type, choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'pytorch', 'onnx'],
+        '-f', '--framework', type=_text_type, choices=["caffe", "cntk", "mxnet", "keras", "tensorflow", 'pytorch', 'onnx', 'darknet'],
         required=True,
         help='Format of model at srcModelPath (default is to auto-detect).'
     )

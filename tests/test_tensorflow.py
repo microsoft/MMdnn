@@ -15,7 +15,7 @@ def get_test_table():
 
     return { 'tensorflow' :
     {
-        'vgg19'                : [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit],
+        'vgg19'                : [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.DarknetEmit],
         'inception_v1'         : [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
         'inception_v3'         : [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.CntkEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
         'resnet_v1_152'        : [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],

@@ -6,6 +6,7 @@ TEST_ONNX = os.environ.get('TEST_ONNX')
 import sys
 import imp
 import numpy as np
+import ctypes
 
 from mmdnn.conversion.examples.imagenet_test import TestKit
 import utils
@@ -319,6 +320,48 @@ class TestModels(CorrectnessTest):
 
         return converted_predict
 
+    @staticmethod
+    def DarknetEmit(original_framework, architecture_name, architecture_path, weight_path, image_path):
+        try:
+            from mmdnn.conversion.examples.darknet import darknet as cdarknet
+            from mmdnn.conversion.darknet.darknet_emitter import DarknetEmitter
+
+            # IR to code
+            converted_file = original_framework + '_darknet_' + architecture_name + "_converted"
+            converted_file = converted_file.replace('.', '_')
+            emitter = DarknetEmitter((architecture_path, weight_path))
+            emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
+            del emitter
+            del DarknetEmitter
+
+            # import converted model
+            imported = imp.load_source('DarknetModel', converted_file + '.py')
+
+            imported.make_net(converted_file + '.cfg')
+            imported.gen_weight(converted_file + '.npy', converted_file + '.weights')
+
+            original_framework = checkfrozen(original_framework)
+            func = TestKit.preprocess_func[original_framework][architecture_name]
+            img = func(image_path)
+            img = np.ascontiguousarray(img, dtype=np.float32)
+
+            model_converted = cdarknet.load_net((converted_file + '.cfg').encode(), (converted_file + '.weights').encode(), 0)
+            outputs = cdarknet.network_outputs(model_converted)
+            output = cdarknet.network_predict(model_converted, img.ctypes.data_as(ctypes.POINTER(ctypes.c_float)))
+            predict = np.ctypeslib.as_array(output, shape=(outputs,))
+            converted_predict = np.squeeze(predict)
+
+            cdarknet.free_network(model_converted)
+            del sys.modules['DarknetModel']
+            os.remove(converted_file + '.py')
+            os.remove(converted_file + '.npy')
+            os.remove(converted_file + '.cfg')
+            os.remove(converted_file + '.weights')
+
+            return converted_predict
+        except ImportError:
+            print("Cannot import Darknet. Darknet Emit is not tested.")
+            return None
 
     @staticmethod
     def TensorflowEmit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
@@ -798,7 +841,7 @@ class TestModels(CorrectnessTest):
             },
 
             'keras' : {
-                'vgg19'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'vgg19'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit, DarknetEmit],
                 'inception_v3' : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'resnet50'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'densenet'     : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
@@ -811,7 +854,7 @@ class TestModels(CorrectnessTest):
             },
 
             'mxnet' : {
-                'vgg19'                        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'vgg19'                        : [DarknetEmit, CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'imagenet1k-inception-bn'      : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'imagenet1k-resnet-18'         : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'imagenet1k-resnet-152'        : [CaffeEmit, CntkEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
@@ -834,7 +877,7 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow' : {
-                'vgg19'                 : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'vgg19'                 : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit, DarknetEmit],
                 'inception_v1'          : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
                 'inception_v3'          : [CaffeEmit, CoreMLEmit, CntkEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'resnet_v1_152'         : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit], # TODO: CntkEmit
@@ -878,7 +921,7 @@ class TestModels(CorrectnessTest):
                 'alexnet'     : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'densenet201' : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'inception_v3': [CaffeEmit, CoreMLEmit, KerasEmit, PytorchEmit, TensorflowEmit],  # Mxnet broken https://github.com/apache/incubator-mxnet/issues/10194
-                'vgg19'       : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
+                'vgg19'       : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit, DarknetEmit],
                 'vgg19_bn'    : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
                 'resnet152'   : [CaffeEmit, CoreMLEmit, KerasEmit, MXNetEmit, PytorchEmit, TensorflowEmit],
             }
