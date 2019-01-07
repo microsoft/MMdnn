@@ -389,7 +389,6 @@ matrix:
     - env: TEST_SOURCE_FRAMEWORK=paddle TEST_TARGET_FRAMEWORK=onnx TEST_MODEL=resnet50
     - env: TEST_SOURCE_FRAMEWORK=paddle TEST_TARGET_FRAMEWORK=onnx TEST_MODEL=vgg16
 
-  exclude:
 
 notifications:
   email:
