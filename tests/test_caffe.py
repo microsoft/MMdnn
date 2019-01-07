@@ -14,13 +14,13 @@ def get_test_table():
     if ONNX and ONNX.lower() == 'true':
         return { 'caffe' :
             {
-                'alexnet'       : [TestModels.OnnxEmit],
-                'inception_v1'  : [TestModels.OnnxEmit],
-                'inception_v4'  : [TestModels.OnnxEmit],
-                'resnet152'     : [TestModels.OnnxEmit],
-                'squeezenet'    : [TestModels.OnnxEmit],
-                # 'vgg19'         : [TestModels.OnnxEmit],
-                'xception'      : [TestModels.OnnxEmit],
+                'alexnet'       : [TestModels.onnx_emit],
+                'inception_v1'  : [TestModels.onnx_emit],
+                'inception_v4'  : [TestModels.onnx_emit],
+                'resnet152'     : [TestModels.onnx_emit],
+                'squeezenet'    : [TestModels.onnx_emit],
+                # 'vgg19'         : [TestModels.onnx_emit],
+                'xception'      : [TestModels.onnx_emit],
             }
         }
     elif six.PY2: return { 'caffe' :

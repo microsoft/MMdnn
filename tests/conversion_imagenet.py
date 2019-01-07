@@ -703,82 +703,82 @@ class TestModels(CorrectnessTest):
     if TEST_ONNX and TEST_ONNX.lower() == 'true':
         test_table = {
             'cntk' : {
-                'inception_v3'  : [OnnxEmit],
-                'resnet18'      : [OnnxEmit],
-                'resnet152'     : [OnnxEmit],
+                'inception_v3'  : [onnx_emit],
+                'resnet18'      : [onnx_emit],
+                'resnet152'     : [onnx_emit],
             },
 
             'keras' : {
-                'vgg16'        : [OnnxEmit],
-                'vgg19'        : [OnnxEmit],
-                'inception_v3' : [OnnxEmit],
-                'resnet50'     : [OnnxEmit],
-                'densenet'     : [OnnxEmit],
-                # 'xception'     : [OnnxEmit],
-                'mobilenet'    : [OnnxEmit],
-                # 'nasnet'       : [OnnxEmit],
-                'yolo2'        : [OnnxEmit],
+                'vgg16'        : [onnx_emit],
+                'vgg19'        : [onnx_emit],
+                'inception_v3' : [onnx_emit],
+                'resnet50'     : [onnx_emit],
+                'densenet'     : [onnx_emit],
+                # 'xception'     : [onnx_emit],
+                'mobilenet'    : [onnx_emit],
+                # 'nasnet'       : [onnx_emit],
+                'yolo2'        : [onnx_emit],
             },
 
             'mxnet' : {
-                'vgg19'                        : [OnnxEmit],
-                'imagenet1k-inception-bn'      : [OnnxEmit],
-                'imagenet1k-resnet-18'         : [OnnxEmit],
-                'imagenet1k-resnet-152'        : [OnnxEmit],
-                'squeezenet_v1.1'              : [OnnxEmit],
-                'imagenet1k-resnext-101-64x4d' : [OnnxEmit],
-                'imagenet1k-resnext-50'        : [OnnxEmit],
+                'vgg19'                        : [onnx_emit],
+                'imagenet1k-inception-bn'      : [onnx_emit],
+                'imagenet1k-resnet-18'         : [onnx_emit],
+                'imagenet1k-resnet-152'        : [onnx_emit],
+                'squeezenet_v1.1'              : [onnx_emit],
+                'imagenet1k-resnext-101-64x4d' : [onnx_emit],
+                'imagenet1k-resnext-50'        : [onnx_emit],
             },
 
             'caffe' : {
-                'alexnet'       : [OnnxEmit],
-                'inception_v1'  : [OnnxEmit],
-                'inception_v4'  : [OnnxEmit],
-                'resnet152'     : [OnnxEmit],
-                'squeezenet'    : [OnnxEmit],
-                'vgg19'         : [OnnxEmit],
-                # 'voc-fcn8s'     : [OnnxEmit], # TODO: ConvTranspose, Crop
-                # 'voc-fcn16s'    : [OnnxEmit], # TODO: ConvTranspose, Crop
-                # 'voc-fcn32s'    : [OnnxEmit], # TODO: ConvTranspose, Crop
-                'xception'      : [OnnxEmit],
+                'alexnet'       : [onnx_emit],
+                'inception_v1'  : [onnx_emit],
+                'inception_v4'  : [onnx_emit],
+                'resnet152'     : [onnx_emit],
+                'squeezenet'    : [onnx_emit],
+                'vgg19'         : [onnx_emit],
+                # 'voc-fcn8s'     : [onnx_emit], # TODO: ConvTranspose, Crop
+                # 'voc-fcn16s'    : [onnx_emit], # TODO: ConvTranspose, Crop
+                # 'voc-fcn32s'    : [onnx_emit], # TODO: ConvTranspose, Crop
+                'xception'      : [onnx_emit],
             },
 
             'tensorflow' : {
-                'facenet'               : [OnnxEmit],
-                'vgg19'                 : [OnnxEmit],
-                'inception_v1'          : [OnnxEmit],
-                'inception_v3'          : [OnnxEmit],
-                # 'resnet_v1_50'          : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # 'resnet_v1_152'         : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # 'resnet_v2_50'          : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # 'resnet_v2_152'         : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                'mobilenet_v1_1.0'      : [OnnxEmit],
-                'mobilenet_v2_1.0_224'  : [OnnxEmit],
-                # 'nasnet-a_large'        : [OnnxEmit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                'inception_resnet_v2'   : [OnnxEmit],
+                'facenet'               : [onnx_emit],
+                'vgg19'                 : [onnx_emit],
+                'inception_v1'          : [onnx_emit],
+                'inception_v3'          : [onnx_emit],
+                # 'resnet_v1_50'          : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # 'resnet_v1_152'         : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # 'resnet_v2_50'          : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # 'resnet_v2_152'         : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                'mobilenet_v1_1.0'      : [onnx_emit],
+                'mobilenet_v2_1.0_224'  : [onnx_emit],
+                # 'nasnet-a_large'        : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                'inception_resnet_v2'   : [onnx_emit],
             },
 
             'tensorflow_frozen' : {
-                'inception_v1'      : [OnnxEmit],
-                'inception_v3'      : [OnnxEmit],
-                'mobilenet_v1_1.0'  : [OnnxEmit],
-                'facenet'           : [OnnxEmit],
+                'inception_v1'      : [onnx_emit],
+                'inception_v3'      : [onnx_emit],
+                'mobilenet_v1_1.0'  : [onnx_emit],
+                'facenet'           : [onnx_emit],
             },
 
             'coreml' : {
-                'inception_v3' : [OnnxEmit],
-                'mobilenet'    : [OnnxEmit],
-                'resnet50'     : [OnnxEmit],
-                'tinyyolo'     : [OnnxEmit],
-                'vgg16'        : [OnnxEmit],
+                'inception_v3' : [onnx_emit],
+                'mobilenet'    : [onnx_emit],
+                'resnet50'     : [onnx_emit],
+                'tinyyolo'     : [onnx_emit],
+                'vgg16'        : [onnx_emit],
             },
 
             'darknet' : {
             },
 
             'paddle'  : {
-                'resnet50'     : [OnnxEmit],
-                'vgg16'        : [OnnxEmit],      # First 1000 exactly the same, the last one is different
+                'resnet50'     : [onnx_emit],
+                'vgg16'        : [onnx_emit],      # First 1000 exactly the same, the last one is different
             },
 
             'pytorch' : {

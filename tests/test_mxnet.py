@@ -15,11 +15,11 @@ def get_test_table():
     ONNX = os.environ.get('TEST_ONNX')
     if ONNX and ONNX.lower() == 'true':
         return { 'mxnet' : {
-            'imagenet1k-inception-bn'      : [TestModels.OnnxEmit],
-            'imagenet1k-resnet-18'         : [TestModels.OnnxEmit],
-            'imagenet1k-resnet-152'        : [TestModels.OnnxEmit],
-            'squeezenet_v1.1'              : [TestModels.OnnxEmit],
-            'imagenet1k-resnext-50'        : [TestModels.OnnxEmit],
+            'imagenet1k-inception-bn'      : [TestModels.onnx_emit],
+            'imagenet1k-resnet-18'         : [TestModels.onnx_emit],
+            'imagenet1k-resnet-152'        : [TestModels.onnx_emit],
+            'squeezenet_v1.1'              : [TestModels.onnx_emit],
+            'imagenet1k-resnext-50'        : [TestModels.onnx_emit],
         }}
     else:
         return { 'mxnet' : {
