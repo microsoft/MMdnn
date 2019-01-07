@@ -29,7 +29,7 @@ PING_LOOP_PID=$!
 # My build is using maven, but you could build anything with this, E.g.
 python tests/gen_test.py -o tests/
 test_file=tests/test_$1_$2_$3.py
-if [ -f $test_file]; then
+if [ -f $test_file ]; then
     python -m pytest -s -q $test_file >> $BUILD_OUTPUT 2>&1
 else
     echo "File $test_file does not exist."
