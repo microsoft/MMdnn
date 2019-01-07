@@ -126,6 +126,7 @@ class TestKit(object):
             'nasnet'               : lambda path : TestKit.Standard(path, 331),
             'yolo2-tiny'           : lambda path : TestKit.Identity(path, 416),
             'yolo2'                : lambda path : TestKit.Identity(path, 416),
+            'elutestnet'           : lambda path : TestKit.Identity(path, 1),
         },
 
         'mxnet' : {

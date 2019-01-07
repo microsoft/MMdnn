@@ -837,6 +837,7 @@ class TestModels(CorrectnessTest):
                 # 'nasnet'       : [tensorflow_emit, keras_emit, coreml_emit],
                 'yolo2'        : [keras_emit],
                 # 'facenet'      : [tensorflow_emit, coreml_emit,mxnet_emit,keras_emit]  # TODO:
+                'elutestnet'   : [caffe_emit, keras_emit, tensorflow_emit],
 
             },
 
@@ -940,7 +941,7 @@ class TestModels(CorrectnessTest):
             print("Test {} from {} start.".format(network_name, original_framework), file=sys.stderr)
 
             # get original model prediction result
-            original_predict = parser(network_name, lambda architecture_name : self.sentence_path 
+            original_predict = parser(network_name, lambda architecture_name : self.sentence_path
             if 'rnn' in architecture_name.lower() else self.image_path)
 
             IR_file = TestModels.tmpdir + original_framework + '_' + network_name + "_converted"
@@ -959,7 +960,7 @@ class TestModels(CorrectnessTest):
                     network_name,
                     IR_file + ".pb",
                     IR_file + ".npy",
-                    lambda architecture_name : self.sentence_path 
+                    lambda architecture_name : self.sentence_path
                     if 'rnn' in architecture_name.lower() else self.image_path)
 
                 self._compare_outputs(
