@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import os
-from test_conversion_imagenet import TestModels
+from conversion_imagenet import TestModels
 
 def get_test_table():
     TRAVIS_CI = os.environ.get('TRAVIS')
@@ -23,7 +23,7 @@ def get_test_table():
 def test_pytorch():
     test_table = get_test_table()
     tester = TestModels(test_table)
-    tester._test_function('pytorch', tester.PytorchParse)
+    tester._test_function('pytorch', tester.pytorch_parse)
 
 
 # def main():

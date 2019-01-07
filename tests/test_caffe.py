@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import os
 import six
-from test_conversion_imagenet import TestModels
+from conversion_imagenet import TestModels
 
 def get_test_table():
     TRAVIS_CI = os.environ.get('TRAVIS')
@@ -53,4 +53,4 @@ def get_test_table():
 def test_caffe():
     test_table = get_test_table()
     tester = TestModels(test_table)
-    tester._test_function('caffe', tester.CaffeParse)
+    tester._test_function('caffe', tester.caffe_parse)

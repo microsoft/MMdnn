@@ -3,7 +3,7 @@ from __future__ import print_function
 
 import os
 import six
-from test_conversion_imagenet import TestModels
+from conversion_imagenet import TestModels
 
 def get_test_table():
     if six.PY3:
@@ -39,4 +39,4 @@ def get_test_table():
 def test_keras():
     test_table = get_test_table()
     tester = TestModels(test_table)
-    tester._test_function('keras', tester.KerasParse)
+    tester._test_function('keras', tester.keras_parse)
