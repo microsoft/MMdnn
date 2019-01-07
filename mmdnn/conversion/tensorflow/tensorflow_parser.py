@@ -855,6 +855,7 @@ class TensorflowParser(Parser):
 
         if scale1.type == 'Const' or scale2.type == 'Const':
             self._add_constant_node(source_node)
+            self._convert_identity_operation(source_node)
 
         elif scale2.type == 'Identity':
             scale2 = self.get_parent(scale2.name, [0], True)

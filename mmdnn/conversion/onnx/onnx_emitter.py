@@ -454,9 +454,15 @@ def KitModel(weight_file = None):
         self.nodes.append(IR_node.variable_name)
 
     def emit_Constant(self, IR_node):
-        self.add_body(1, "{:15} = __weights_dict['{}']['value']".format(
-            IR_node.variable_name + '_value_array',
-            IR_node.name))
+        if IR_node.get_attr('value'):
+            value = 'np.array({}, dtype=np.float32)'.format(IR_node.get_attr('value'))
+            self.add_body(1, "{:15} = {}".format(
+                IR_node.variable_name + '_value_array',
+                value))
+        else:
+            self.add_body(1, "{:15} = __weights_dict['{}']['value']".format(
+                IR_node.variable_name + '_value_array',
+                IR_node.name))
         self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float)))".format(
                           IR_node.variable_name,
                           IR_node.variable_name,
