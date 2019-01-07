@@ -107,7 +107,7 @@ def KitModel(weight_file = None):
             return "tf.constant(__weights_dict['{}']['weights'], name='{}')".format(
                 IR_node.name,
                 IR_node.name)
-        return super().parent_variable_name(IR_node, path=path)
+        return super(TensorflowEmitter, self).parent_variable_name(IR_node, path=path)
 
 
     @staticmethod

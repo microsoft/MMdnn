@@ -57,7 +57,7 @@ class PytorchEmitter(Emitter):
             self.weights_dict[IR_node.name][weight_type] = self.weights_dict[IR_node.name][weight_type]
             return "torch.from_numpy(__weights_dict['{}']['{}'])".format(IR_node.name, weight_type)
 
-        return super().parent_variable_name(IR_node, path=path)
+        return super(PytorchEmitter, self).parent_variable_name(IR_node, path=path)
 
 
     @property

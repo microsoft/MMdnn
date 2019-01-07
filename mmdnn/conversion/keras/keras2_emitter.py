@@ -201,7 +201,7 @@ def KitModel(weight_file = None):
         if parent_node.type == 'Constant':
             return self._emit_Constant(parent_node)
 
-        return super().parent_variable_name(IR_node, path=path)
+        return super(Keras2Emitter, self).parent_variable_name(IR_node, path=path)
 
 
     def _emit_convolution(self, IR_node, conv_type):

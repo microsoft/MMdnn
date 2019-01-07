@@ -323,7 +323,7 @@ def predict(model, labels, url):
     def parent_variable_name(self, IR_node, path=[0]):
 
         if self.IR_graph.get_parent(IR_node.name, path):
-            return super().parent_variable_name(IR_node, path=path)
+            return super(MXNetEmitter, self).parent_variable_name(IR_node, path=path)
 
         if IR_node.name in self.weights and 'weights' in self.weights[IR_node.name]:
             self.output_weights[IR_node.name + '_weight'] = [self.weights[IR_node.name]['weights']]
