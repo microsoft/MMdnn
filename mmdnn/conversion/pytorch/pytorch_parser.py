@@ -399,10 +399,10 @@ class PytorchParser(Parser):
     def rename_Concat(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Concat')
 
-        # axis
         if source_node.attrs['axis'] == 1:
             IR_node.attr['axis'].i = len(self.shape_dict[source_node.name]) - 1
-
+        else:
+            IR_node.attr['axis'].i = source_node.attrs['axis']
 
     def rename_Add(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Add')

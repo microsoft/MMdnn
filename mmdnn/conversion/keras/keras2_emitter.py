@@ -195,6 +195,15 @@ def KitModel(weight_file = None):
             # return input_node, 'same'
 
 
+    def parent_variable_name(self, IR_node, path=[0]):
+        parent_node = self.IR_graph.get_parent(IR_node.name, path)
+
+        if parent_node.type == 'Constant':
+            return self._emit_Constant(parent_node)
+
+        return super().parent_variable_name(IR_node, path=path)
+
+
     def _emit_convolution(self, IR_node, conv_type):
         self.used_layers.add('Conv')
         # assert IR_node.get_attr('group', 1) == 1
@@ -249,17 +258,22 @@ def KitModel(weight_file = None):
     def emit_UNKNOWN(self, IR_node):
         print (IR_node.name)
 
-    ##add mul op, just implement layer * constant
+
     def emit_Mul(self, IR_node):
-        if IR_node.name in self.weights_dict and 'weights' in self.weights_dict[IR_node.name]:
+        scale1 = self.IR_graph.get_node(IR_node.in_edges[0])
+        scale2 = self.IR_graph.get_node(IR_node.in_edges[1])
+
+        if (not scale1.type=='Constant' and scale2.type=='Constant') or (scale1.type=='Constant' and not scale2.type=='Constant'):
             self.used_layers.add('KerasMul')
-            weight_factor =  "weights_dict['{}'].get('weights',1.0)".format(IR_node.name)
             self.add_body(1, "{:<15} = mul_constant(weight_factor={}, layer_name= {})".format(
                 IR_node.variable_name,
-                weight_factor,
-                ''.join(self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name)))
+                self.parent_variable_name(IR_node, [0]) if scale1.type=='Constant' else self.parent_variable_name(IR_node, [1]),
+                self.parent_variable_name(IR_node, [0]) if not scale1.type=='Constant' else self.parent_variable_name(IR_node, [1])))
         else:
-            raise NotImplementedError()
+            self.add_body(1, "{:<15} = {} * {}".format(
+                IR_node.variable_name,
+                scale1.real_variable_name,
+                scale2.real_variable_name))
 
 
     def emit_Add(self, IR_node):
@@ -531,9 +545,13 @@ def KitModel(weight_file = None):
             IR_node.name,
             self.parent_variable_name(IR_node)))
 
-    def emit_Const(self, IR_node):
+    #_emit_Constant realize to emit Constant by merging with other ops.
+    def emit_Constant(self, IR_node):
         pass
 
+    def _emit_Constant(self, IR_node):
+
+        return "{}".format(IR_node.get_attr('value') if IR_node.get_attr('value') else "weights_dict['{}']['value']".format(IR_node.name))
 
     def emit_Shape(self, IR_node):
         pass

@@ -320,6 +320,16 @@ def predict(model, labels, url):
         return code
 
 
+    def parent_variable_name(self, IR_node, path=[0]):
+
+        if self.IR_graph.get_parent(IR_node.name, path):
+            return super().parent_variable_name(IR_node, path=path)
+
+        if IR_node.name in self.weights and 'weights' in self.weights[IR_node.name]:
+            self.output_weights[IR_node.name + '_weight'] = [self.weights[IR_node.name]['weights']]
+            return "mx.sym.Variable('{}', shape=(1,))".format(IR_node.name+'_weight')
+
+
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.name)
 
@@ -930,21 +940,10 @@ def predict(model, labels, url):
 
     def emit_Mul(self, IR_node):
 
-        # code = "{:<15} = mx.sym.broadcast_mul({}, {})".format(
-        #         IR_node.variable_name,
-        #         self.parent_variable_name(IR_node),
-        #         self.parent_variable_name(IR_node, [1]))
-        
-        if IR_node.name in self.weights and 'weights' in self.weights[IR_node.name]:
-            second_node = "mx.sym.Variable('{}', shape=(1,))".format(IR_node.name+'_weight')
-            self.output_weights[IR_node.name + '_weight'] = [self.weights[IR_node.name]['weights']]
-        else:
-            second_node = self.parent_variable_name(IR_node, [1])
-
         code = "{:<15} = mx.sym.broadcast_mul({}, {})".format(
-        IR_node.variable_name,
-        self.parent_variable_name(IR_node),
-        second_node)
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                self.parent_variable_name(IR_node, [1]))
 
         return code
 
@@ -975,9 +974,17 @@ def predict(model, labels, url):
         return code
 
     def emit_Constant(self, IR_node):
-        raise NotImplementedError()
-        code = "{:<15} = mx.sym.identity(name='{}')".format(IR_node.variable_name, IR_node.name)
-        self.output_weights[IR_node.name + '_data'] = self.weights[IR_node.name]['value']
+        # save the constant into weight dict
+        value = IR_node.get_attr('value')
+        if not isinstance(value, list):
+            shape = (1, )
+            self.output_weights[IR_node.name + '_weight'] = [value] # mxnet's bug, it does not surpport scalar weight. 
+        else:
+            shape = np.array(value).shape
+            self.output_weights[IR_node.name + '_weight'] = value
+
+        code = "{:<15} = mx.sym.Variable('{}', shape={})".format(IR_node.variable_name, IR_node.name+'_weight', shape)
+
         return code
 
     def emit_Sub(self, IR_node):

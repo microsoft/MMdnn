@@ -78,14 +78,16 @@ def KitModel(weight_file = None):
 
             if hasattr(self, "emit_" + node_type):
                 func = getattr(self, "emit_" + node_type)
-                func(current_node)
+                line = func(current_node)
+                if line != None:
+                    self.add_body(1, line)
             else:
                 print("TensorflowEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
 
 
         self.add_body(1, "return {}, {}".format(
-            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']),
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const' and not self.IR_graph.get_node(name).get_attr('feed_weights')]),
             ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack' and  self.IR_graph.get_node(name).type !='Shape'])))
 
 
@@ -98,6 +100,16 @@ def KitModel(weight_file = None):
         return self.body_code
 
 
+    def parent_variable_name(self, IR_node, path=[0]):
+        # if self.IR_graph.get_parent(IR_node.name, path):
+        #     return super().parent_variable_name(IR_node, path=path)
+        if not IR_node.in_edges and IR_node.name in self.weights_dict.keys():
+            return "tf.constant(__weights_dict['{}']['weights'], name='{}')".format(
+                IR_node.name,
+                IR_node.name)
+        return super().parent_variable_name(IR_node, path=path)
+
+
     @staticmethod
     def _shapeToStr(shapes):
         ret = [dim.size if dim.size != -1 else 'None' for dim in shapes.dim]
@@ -108,14 +120,15 @@ def KitModel(weight_file = None):
         self.used_layers.add(IR_node.type)
         strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides')[1:-1])
         input_node, padding = self._defuse_padding(IR_node)
-        self.add_body(1, "{:<15} = convolution({}, group={}, strides=[{}], padding='{}', name='{}')".format(
+        data_format = IR_node.get_attr('data_format')
+        code = "{:<15} = convolution({}, group={}, strides=[{}], padding='{}', name='{}')".format(
             IR_node.variable_name,
             input_node,
             IR_node.get_attr('group', 1),
             strides_str,
             padding,
-            IR_node.name))
-
+            IR_node.name)
+        return code
 
     def _defuse_padding(self, IR_node, extra_str=""):
         auto_pad = IR_node.get_attr('auto_pad')
@@ -148,11 +161,17 @@ def KitModel(weight_file = None):
 
 
     def emit_Constant(self, IR_node):
-        self.add_body(1, "{:<15} = tf.constant(__weights_dict['{}']['value'], name='{}')".format(
+        if 'dtype' in IR_node.layer.attr:
+            dtype_str = "{}".format(self.dtype_map[IR_node.layer.attr['dtype'].type])
+        else:
+            dtype_str = "tf.float32"
+        code = "{:<15} = tf.constant({}, dtype={}, name='{}')".format(
             IR_node.variable_name,
-            IR_node.name,
-            IR_node.name
-        ))
+            "__weights_dict['{}']['value']".format(IR_node.name) if not IR_node.get_attr('value') else IR_node.get_attr('value'),
+            dtype_str,
+            IR_node.name)
+
+        return code
 
 
     def emit_Pool(self, IR_node):
@@ -170,15 +189,14 @@ def KitModel(weight_file = None):
         dim_str = '3d' if arrlen == 5 else ""
 
         if IR_node.layer.attr['global_pooling'].b:
-            self.add_body(1, "{:<15} = tf.nn.{}{}({}, [1] + {}.get_shape().as_list()[1:-1] + [1], strides = [1] * {}, padding = 'VALID', name = '{}')".format(
+            code = "{:<15} = tf.nn.{}{}({}, [1] + {}.get_shape().as_list()[1:-1] + [1], strides = [1] * {}, padding = 'VALID', name = '{}')".format(
                 IR_node.variable_name,
                 op,
                 dim_str,
                 self.parent_variable_name(IR_node),
                 self.parent_variable_name(IR_node),
                 arrlen,
-                IR_node.name))
-
+                IR_node.name)
         else:
             dim = len(IR_node.get_attr("strides")) - 2
             dilations = IR_node.get_attr('dilations')
@@ -187,7 +205,6 @@ def KitModel(weight_file = None):
                     assert e == 1
 
             pool_size = IR_node.get_attr('kernel_shape')[1:-1]
-
             strides = IR_node.get_attr('strides')[1:-1]
             padding = IR_node.get_attr('pads')[1:dim]
 
@@ -195,8 +212,7 @@ def KitModel(weight_file = None):
                 kernel_shape_str = ', '.join('%s' % i for i in IR_node.get_attr('kernel_shape'))
                 strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides'))
 
-
-                self.add_body(1, "{:<15} = tf.nn.{}{}({}, [{}], [{}], padding='{}', name='{}')".format(
+                code = "{:<15} = tf.nn.{}{}({}, [{}], [{}], padding='{}', name='{}')".format(
                     IR_node.variable_name,
                     op,
                     dim_str,
@@ -204,16 +220,12 @@ def KitModel(weight_file = None):
                     kernel_shape_str,
                     strides_str,
                     'SAME',
-                    IR_node.name))
-
+                    IR_node.name)
             else:
-
                 kernel_shape_str = ', '.join('%s' % i for i in IR_node.get_attr('kernel_shape'))
                 strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides'))
-
                 input_node, padding = self._defuse_padding(IR_node, padding_const)
-
-                self.add_body(1, "{:<15} = tf.nn.{}{}({}, [{}], [{}], padding='{}', name='{}')".format(
+                code = "{:<15} = tf.nn.{}{}({}, [{}], [{}], padding='{}', name='{}')".format(
                     IR_node.variable_name,
                     op,
                     dim_str,
@@ -221,18 +233,20 @@ def KitModel(weight_file = None):
                     kernel_shape_str,
                     strides_str,
                     padding,
-                    IR_node.name))
+                    IR_node.name)
 
+        return code
 
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.name)
 
 
     def emit_Add(self, IR_node):
-        self.add_body(1, "{:<15} = {}".format(
+        code = "{:<15} = {}".format(
             IR_node.variable_name,
-            ' + '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
-
+            ' + '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges))
+        
+        return code
 
     def emit_DataInput(self, IR_node):
         assert not IR_node.in_edges
@@ -246,9 +260,7 @@ def KitModel(weight_file = None):
         code = "{:<15} = tf.placeholder({} shape = ({}), name = '{}')".format(
             IR_node.variable_name, dtype_str, shape_str, IR_node.name
         )
-
-        self.add_body(1, code)
-
+        return code
 
     def emit_Dropout(self, IR_node):
         parent = self.IR_graph.get_parent(IR_node.name, [0])
@@ -288,6 +300,7 @@ def KitModel(weight_file = None):
                 bias_str,
                 IR_node.layer.attr['use_bias'].b)
             self.add_body(1, code)
+            # return code
 
         else:
             code = "{:<15} = tf.layers.dense({}, {}, {}{}use_bias = {})".format(
@@ -298,127 +311,148 @@ def KitModel(weight_file = None):
                 bias_str,
                 IR_node.layer.attr['use_bias'].b)
             self.add_body(1, code)
+            # return code
 
 
     def emit_UpSampling2D(self, IR_node):
         scales = IR_node.get_attr('scales')
         scales = tuple(scales)
-        self.add_body(1, "{:<15} = tf.keras.layers.UpSampling2D(size={})({})".format(
+
+        code = "{:<15} = tf.keras.layers.UpSampling2D(size={})({})".format(
             IR_node.variable_name,
             scales,
-            self.parent_variable_name(IR_node)))
-
-
+            self.parent_variable_name(IR_node))
+        return code
 
     def emit_Flatten(self, IR_node):
         #self._emit_unary_operation(IR_node, "contrib.layers.flatten")
-        self.add_body(1, "{:<15} = tf.contrib.layers.flatten({})".format(
+        code = "{:<15} = tf.contrib.layers.flatten({})".format(
             IR_node.variable_name,
-            self.parent_variable_name(IR_node)))
+            self.parent_variable_name(IR_node))
+        return code
 
 
     def emit_Mul(self, IR_node):
-        
-        if IR_node.name in self.weights_dict and 'weights' in self.weights_dict[IR_node.name]:
-            weight_str = "* tf.Variable(__weights_dict['{}'].get('weights',1.0))".format(IR_node.name)
-        else:
-            weight_str = ""
-        
-        # self.add_body(1, "{:<15} = {}".format(
-        #     IR_node.variable_name,
-        #     ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
 
-        self.add_body(1,"{:<15} = {}{}".format(
+        code = "{:<15} = {}".format(
             IR_node.variable_name,
-            ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges),
-            weight_str))
+            ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges))
+
+        return code
+
 
     def emit_Const(self, IR_node):
         if 'dtype' in IR_node.layer.attr:
             dtype_str = "dtype={}".format(self.dtype_map[IR_node.layer.attr['dtype'].type])
             if 'int' in dtype_str:
-                self.add_body(1, "{:<15} = tf.constant({}, {}, shape=(1,))".format(
+                code = "{:<15} = tf.constant({}, {}, shape=(1,))".format(
                     IR_node.variable_name,
                     IR_node.layer.attr['value'].i,
-                    dtype_str))
+                    dtype_str)
             else:
-                self.add_body(1, "{:<15} = tf.constant({}, {}, shape=(1,))".format(
+                code = "{:<15} = tf.constant({}, {}, shape=(1,))".format(
                     IR_node.variable_name,
                     IR_node.layer.attr['value'].f,
-                    dtype_str))
-
+                    dtype_str)
         else:
             dtype_str = "dtype=tf.float32"
-            self.add_body(1, "{:<15} = tf.constant({}, {}, shape=(1,))".format(
+            code ="{:<15} = tf.constant({}, {}, shape=(1,))".format(
                 IR_node.variable_name,
                 IR_node.layer.attr['value'].f,
-                dtype_str))
+                dtype_str)
+
+        return code
 
     def emit_Transpose(self, IR_node):
-        self.add_body(1, "{:<15} = tf.transpose(a = {}, perm = {})".format(
+        code ="{:<15} = tf.transpose(a = {}, perm = {})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node, [0]),
-            self.parent_variable_name(IR_node, [1])
-        ))
+            self.parent_variable_name(IR_node, [1]))
+        
+        return code
 
     def emit_Gather(self, IR_node):
-        pass
-        # variable_str = "tf.constant_initializer(__weights_dict['{}']['weights'])".format(IR_node.name)
-        # self.add_body(1, "{:<15} = tf.gather(params = {}, indices = {}, axis = {})".format(
-        #     IR_node.variable_name,
-        #     variable_str,
-        #     self.parent_variable_name(IR_node),
-        #     IR_node.get_attr('axis')
-        #     ))
+        variable_str = "tf.convert_to_tensor(__weights_dict['{}']['weights'])".format(IR_node.name)
+
+        code = "{:<15} = tf.gather(params = {}, indices = {}, axis = {})".format(
+            IR_node.variable_name,
+            variable_str,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('axis')
+            )
+        
+        return code
+
+    def emit_Unstack(self, IR_node):
+        code = "{:<15} = tf.unstack(value={}, num={}, axis={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('num'),
+            IR_node.get_attr('axis')
+        )
+        return code
 
     def emit_Reshape(self, IR_node):
-        self.add_body(1, "{:<15} = tf.reshape({}, [{}], '{}')".format(
+        code = "{:<15} = tf.reshape({}, [{}], '{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             ', '.join('%s' % i for i in IR_node.get_attr('shape')),
-            IR_node.name))
+            IR_node.name)
+        
+        return code
 
 
     def emit_Sub(self, IR_node):
-        self.add_body(1, "{:<15} = {}".format(
+        code = "{:<15} = {}".format(
             IR_node.variable_name,
-            ' - '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges)))
+            ' - '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges))
+        
+        return code
 
+    def emit_Div(self, IR_node):
+        code = "{:<15} = tf.div({}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            self.parent_variable_name(IR_node, [1]),
+            IR_node.name
+        )
+        return code
 
     def _emit_unary_operation(self, IR_node, op_name):
-        self.add_body(1, "{:<15} = tf.{}({}, name = '{}')".format(
+        code = "{:<15} = tf.{}({}, name = '{}')".format(
             IR_node.variable_name,
             op_name,
             self.parent_variable_name(IR_node),
-            IR_node.name))
-
+            IR_node.name)
+        return code
 
     def emit_Tanh(self, IR_node):
-        self._emit_unary_operation(IR_node, 'tanh')
-
+        code = self._emit_unary_operation(IR_node, 'tanh')
+        return code
 
     def emit_Elu(self, IR_node):
-        self._emit_unary_operation(IR_node, 'nn.elu')
+        return self._emit_unary_operation(IR_node, 'nn.elu')
 
 
     def emit_Relu(self, IR_node):
-        self._emit_unary_operation(IR_node, 'nn.relu')
+        return self._emit_unary_operation(IR_node, 'nn.relu')
 
 
     def emit_Relu6(self, IR_node):
-        self._emit_unary_operation(IR_node, 'nn.relu6')
+        return self._emit_unary_operation(IR_node, 'nn.relu6')
 
 
     def emit_CRelu(self, IR_node):
-        self._emit_unary_operation(IR_node, 'nn.crelu')
+        return self._emit_unary_operation(IR_node, 'nn.crelu')
 
 
     def emit_PRelu(self, IR_node):
         self.used_layers.add(IR_node.type)
-        self.add_body(1, "{:<15} = prelu({}, name='{}')".format(
+        code = "{:<15} = prelu({}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.name))
+            IR_node.name)
+        return code
 
     def emit_LeakyRelu(self, IR_node):
         self.add_body(1, "{:<15} = tf.nn.leaky_relu({}, alpha={}, name='{}')".format(
@@ -430,22 +464,20 @@ def KitModel(weight_file = None):
 
 
     def emit_Softmax(self, IR_node):
-        self._emit_unary_operation(IR_node, 'nn.softmax')
+        return self._emit_unary_operation(IR_node, 'nn.softmax')
 
 
     def emit_Sigmoid(self, IR_node):
-        self._emit_unary_operation(IR_node, 'sigmoid')
-
+        code = self._emit_unary_operation(IR_node, 'sigmoid')
+        return code
 
     def emit_Embedding(self, IR_node):
         variable_str = "tf.convert_to_tensor(__weights_dict['{}']['weights'])".format(IR_node.name)
-        self.add_body(1, "{:<15} = tf.nn.embedding_lookup(params = {}, ids = {})".format(
+        code = "{:<15} = tf.nn.embedding_lookup(params = {}, ids = {})".format(
             IR_node.variable_name,
             variable_str,
-            self.parent_variable_name(IR_node)
-        ))
-
-
+            self.parent_variable_name(IR_node))
+        return code
 
     def emit_LSTM(self, IR_node):
         return self.emit_RNNs(IR_node, "LSTM")
@@ -456,29 +488,31 @@ def KitModel(weight_file = None):
 
 
     def emit_Concat(self, IR_node):
-        self.add_body(1, "{:<15} = tf.concat([{}], {}, name = '{}')".format(
+        
+        code = "{:<15} = tf.concat([{}], {}, name = '{}')".format(
             IR_node.variable_name,
             ', '.join(self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges),
             IR_node.layer.attr['axis'].i,
-            IR_node.name))
+            IR_node.name)
 
+        return code
 
     def emit_BatchNorm(self, IR_node):
         self.used_layers.add(IR_node.type)
-        self.add_body(1, "{:<15} = batch_normalization({}, variance_epsilon={}, name='{}')".format(
+        code = "{:<15} = batch_normalization({}, variance_epsilon={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('epsilon'),
-            IR_node.name))
-
+            IR_node.name)
+        return code
 
     def emit_Scale(self, IR_node):
         self.used_layers.add(IR_node.type)
-        self.add_body(1, "{:<15} = scale({}, name='{}')".format(
+        code = "{:<15} = scale({}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.name))
-
+            IR_node.name)
+        return code
 
     def emit_Pad(self, IR_node):
         padding = IR_node.get_attr('pads')
@@ -492,66 +526,67 @@ def KitModel(weight_file = None):
             mode = 'SYMMETRIC'
         else:
             raise NotImplementedError("Not support padding mode {}.".format(mode))
-
-        self.add_body(1, "{:<15} = tf.pad({}, {}, '{}', name='{}')".format(
+        code = "{:<15} = tf.pad({}, {}, '{}', name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             padding,
             mode,
-            IR_node.variable_name))
-
+            IR_node.variable_name)
+        return code
 
     def emit_Squeeze(self, IR_node):
-        self.add_body(1, "{:<15} = tf.squeeze({}, [{}], name = '{}')".format(
+        code = "{:<15} = tf.squeeze({}, [{}], name = '{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             ', '.join('%s' % axis for axis in IR_node.layer.attr['axes'].list.i),
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def emit_ReduceMean(self, IR_node):
-        self.add_body(1, "{:<15} = tf.reduce_mean({}, [{}], {}, name = '{}')".format(
+        code = "{:<15} = tf.reduce_mean({}, [{}], {}, name = '{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             ','.join('%s' % i for i in IR_node.get_attr('axes')),
             IR_node.get_attr('keepdims'),
-            IR_node.name))
-
+            IR_node.name)
+        return code
 
     def emit_LRN(self, IR_node):
-        self.add_body(1, "{:<15} = tf.nn.lrn({}, depth_radius={}, bias={}, alpha={}, beta={}, name='{}')".format(
+        code = "{:<15} = tf.nn.lrn({}, depth_radius={}, bias={}, alpha={}, beta={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('size') - 1,
             IR_node.get_attr('bias', 1),
             IR_node.get_attr('alpha') / (IR_node.get_attr('size') * 2 - 1),
             IR_node.get_attr('beta'),
-            IR_node.name))
-
+            IR_node.name)
+        return code
 
     def emit_SeparableConv(self, IR_node):
         self.used_layers.add(IR_node.type)
         strides_str = ', '.join('%s' % i for i in IR_node.get_attr('strides'))
         input_node, padding = self._defuse_padding(IR_node)
-        self.add_body(1, "{:<15} = separable_convolution({}, strides = [{}], padding = '{}', name = '{}')".format(
+        code = "{:<15} = separable_convolution({}, strides = [{}], padding = '{}', name = '{}')".format(
             IR_node.variable_name,
             input_node,
             strides_str,
             padding,
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def emit_DepthwiseConv(self, IR_node):
         self.used_layers.add(IR_node.type)
         strides_str = ', '.join('%s' % i for i in IR_node.layer.attr['strides'].list.i)
         input_node, padding = self._defuse_padding(IR_node)
-        self.add_body(1, "{:<15} = depthwise_convolution({}, strides = [{}], padding = '{}', name = '{}')".format(
+        code = "{:<15} = depthwise_convolution({}, strides = [{}], padding = '{}', name = '{}')".format(
             IR_node.variable_name,
             input_node,
             strides_str,
             padding,
-            IR_node.name))
-
+            IR_node.name)
+        return code
 
     def emit_Crop(self, IR_node):
         border = IR_node.get_attr('border')
@@ -560,26 +595,28 @@ def KitModel(weight_file = None):
         output_shape = IR_node.get_attr('_output_shapes')[0]
         output_shape = shape_to_list(output_shape)
 
-        self.add_body(1, "{:<15} = tf.image.crop_to_bounding_box({}, offset_height={}, offset_width={}, target_height={}, target_width={})".format(
+        code = "{:<15} = tf.image.crop_to_bounding_box({}, offset_height={}, offset_width={}, target_height={}, target_width={})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             border[0],
             border[1],
             output_shape[1],
-            output_shape[2]))
+            output_shape[2])
+        
+        return code
 
     def emit_ConvTranspose(self, IR_node):
         self.used_layers.add(IR_node.type)
         output_shape = [1] + shape_to_list(IR_node.get_attr('_output_shapes')[0])[1:]
         input_node, padding = self._defuse_padding(IR_node)
-        self.add_body(1, "{:<15} = convolution_transpose({}, output_shape={}, strides={}, padding='{}', name='{}')".format(
+        code = "{:<15} = convolution_transpose({}, output_shape={}, strides={}, padding='{}', name='{}')".format(
             IR_node.variable_name,
             input_node,
             output_shape,
             IR_node.get_attr('strides'),
             padding,
-            IR_node.name))
-
+            IR_node.name)
+        return code
 
     def emit_Slice(self, IR_node):
         extra_str = ""
@@ -589,36 +626,43 @@ def KitModel(weight_file = None):
             extra_str += ", begin_mask={}".format(IR_node.get_attr('begin_mask'))
         if IR_node.get_attr('end_mask'):
             extra_str += ", end_mask={}".format(IR_node.get_attr('end_mask'))
-        self.add_body(1, "{:<15} = tf.strided_slice({}, {}, {} {}, name='{}')".format(
+        if IR_node.get_attr('shrink_axis_mask'):
+            extra_str += ", shrink_axis_mask={}".format(IR_node.get_attr('shrink_axis_mask'))
+        
+        code = "{:<15} = tf.strided_slice({}, {}, {} {}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('starts'),
             IR_node.get_attr('ends'),
             extra_str,
-            IR_node.name))
+            IR_node.name)
+        
+        return code
+
 
     def emit_Shape(self, IR_node):
-        self.add_body(1, "{:<15} = tf.shape({}, name='{}')".format(
+        code = "{:<15} = tf.shape({}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.name))
+            IR_node.name)
+        return code
 
     def emit_Pack(self, IR_node):
-        self.add_body(1, "{:<15} = tf.stack({}, axis={}, name='{}')".format(
+        code = "{:<15} = tf.stack({}, axis={}, name='{}')".format(
             IR_node.variable_name,
             '[' +  ','.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges) + ']',
             IR_node.get_attr('axis'),
-            IR_node.name))
-
-
+            IR_node.name)
+        return code
 
     def emit_Split(self, IR_node):
-        self.add_body(1, "{:<15} = tf.split({}, {}, {}, name='{}')".format(
+        code = "{:<15} = tf.split({}, {}, {}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('split'),
             IR_node.get_attr('axis'),
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def _layer_Conv(self):
