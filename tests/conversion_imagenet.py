@@ -11,6 +11,23 @@ from mmdnn.conversion.examples.imagenet_test import TestKit
 import utils
 from utils import *
 
+def check_env(source_framework, target_framework, model_name):
+    if ((source_framework == 'paddle') or (target_framework == 'paddle')):
+        if (sys.version_info > (2, 7)):
+            print('PaddlePaddle does not support Python {0}'.format(sys.version))
+            return False
+
+    if ((source_framework == 'coreml') or (target_framework == 'coreml')):
+        try:
+            from coremltools.models.utils import macos_version
+            if macos_version() < (10, 13):
+                print('CoreML is not supported on your platform.')
+                return False
+        except:
+            return False
+
+    return True
+
 
 class TestModels(CorrectnessTest):
 
