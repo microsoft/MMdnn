@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import sys
-from test_conversion_imagenet import TestModels
+from conversion_imagenet import TestModels
 
 def test_coreml():
     from coremltools.models.utils import macos_version
