@@ -88,6 +88,7 @@ class TestKit(object):
             'voc-fcn8s'     : lambda path : TestKit.ZeroCenter(path, 500, True),
             'voc-fcn16s'    : lambda path : TestKit.ZeroCenter(path, 500, True),
             'voc-fcn32s'    : lambda path : TestKit.ZeroCenter(path, 500, True),
+            'elutestnet'    : lambda path : TestKit.Identity(path, 1, True),
         },
 
         'tensorflow' : {

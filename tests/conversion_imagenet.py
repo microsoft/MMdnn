@@ -862,6 +862,7 @@ class TestModels(CorrectnessTest):
                 'voc-fcn16s'    : [cntk_emit, coreml_emit, tensorflow_emit],
                 'voc-fcn32s'    : [cntk_emit, coreml_emit, tensorflow_emit],
                 'xception'      : [coreml_emit, cntk_emit, mxnet_emit, pytorch_emit, tensorflow_emit], #  TODO: Caffe(Crash) keras_emit(too slow)
+                'elutestnet'    : [caffe_emit, keras_emit, tensorflow_emit],
             },
 
             'tensorflow' : {

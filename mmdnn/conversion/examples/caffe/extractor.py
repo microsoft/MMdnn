@@ -4,6 +4,7 @@
 #----------------------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+import os
 from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.examples.extractor import base_extractor
 from mmdnn.conversion.common.utils import download_file
@@ -43,6 +44,8 @@ class caffe_extractor(base_extractor):
                            'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn16s-heavy-pascal.caffemodel'},
         'voc-fcn32s'    : {'prototxt' : MMDNN_BASE_URL + "caffe/voc-fcn32s_deploy.prototxt",
                            'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn32s-heavy-pascal.caffemodel'},
+        'elutestnet'    : {'prototxt-content': """layer { name: "data" type: "Input" top: "data" input_param { shape { dim: 1 dim: 3 dim: 1 dim: 1 } } }
+                            layer { name: "output" type: "ELU" bottom: "data" top: "output" }"""}
     }
 
 
@@ -50,14 +53,24 @@ class caffe_extractor(base_extractor):
     def download(cls, architecture, path="./"):
         if cls.sanity_check(architecture):
             prototxt_name = architecture + "-deploy.prototxt"
-            architecture_file = download_file(cls.architecture_map[architecture]['prototxt'], directory=path, local_fname=prototxt_name)
+            if 'prototxt' in cls.architecture_map[architecture]:
+                architecture_file = download_file(cls.architecture_map[architecture]['prototxt'], directory=path, local_fname=prototxt_name)
+            elif 'prototxt-content' in cls.architecture_map[architecture]:
+                if not os.path.isdir(path):
+                    os.mkdir(path)
+                architecture_file = os.path.join(path, prototxt_name)
+                with open(architecture_file, 'w+') as f:
+                    f.write(cls.architecture_map[architecture]['prototxt-content'])
             if not architecture_file:
                 return None
 
-            weight_name = architecture + ".caffemodel"
-            weight_file = download_file(cls.architecture_map[architecture]['caffemodel'], directory=path, local_fname=weight_name)
-            if not weight_file:
-                return None
+            if 'caffemodel' in cls.architecture_map[architecture]:
+                weight_name = architecture + ".caffemodel"
+                weight_file = download_file(cls.architecture_map[architecture]['caffemodel'], directory=path, local_fname=weight_name)
+                if not weight_file:
+                    return None
+            else:
+                weight_file = None
 
             print("Caffe Model {} saved as [{}] and [{}].".format(architecture, architecture_file, weight_file))
             return (architecture_file, weight_file)
@@ -71,7 +84,10 @@ class caffe_extractor(base_extractor):
         if cls.sanity_check(architecture_name):
             import caffe
             import numpy as np
-            net = caffe.Net(architecture[0], architecture[1], caffe.TEST)
+            if architecture[1] is not None:
+                net = caffe.Net(architecture[0], architecture[1], caffe.TEST)
+            else:
+                net = caffe.Net(architecture[0], caffe.TEST)
             func = TestKit.preprocess_func['caffe'][architecture_name]
             img = func(image_path)
             img = np.transpose(img, (2, 0, 1))
