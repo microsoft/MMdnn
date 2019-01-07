@@ -891,12 +891,12 @@ class TestModels(CorrectnessTest):
         if test_name in cls.exception_tabel:
             return False
 
-        if target_framework == 'CoreML':
+        if target_framework == 'coreml':
             from coremltools.models.utils import macos_version
             if macos_version() < (10, 13):
                 return False
 
-        if target_framework == 'Onnx' or target_framework == 'Caffe':
+        if target_framework == 'onnx' or target_framework == 'caffe':
             if converted_prediction is None:
                 return False
 
