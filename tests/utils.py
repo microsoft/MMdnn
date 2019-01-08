@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-__all__ = ['ensure_dir', 'checkfrozen', 'is_coreml_supported', 'CorrectnessTest']
+__all__ = ['ensure_dir', 'checkfrozen', 'CorrectnessTest']
 
 import os
 import unittest
@@ -43,18 +43,6 @@ def checkfrozen(f):
         return 'tensorflow'
     else:
         return f
-
-
-def is_coreml_supported():
-    import sys
-    if sys.platform == 'darwin':
-        import platform
-        ver_str = platform.mac_ver()[0]
-        if (tuple([int(v) for v in ver_str.split('.')]) >= (10, 13)):
-            return True
-
-    print('CoreML is not supported on your platform.', file=sys.stderr)
-    return False
 
 
 class CorrectnessTest(unittest.TestCase):

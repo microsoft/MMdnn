@@ -12,6 +12,38 @@ import utils
 from utils import *
 
 
+def is_paddle_supported():
+    if (sys.version_info > (2, 7)):
+        print('PaddlePaddle does not support Python {0}'.format(sys.version), file=sys.stderr)
+        return False
+
+    return True
+
+
+def is_coreml_supported():
+    import sys
+    if sys.platform == 'darwin':
+        import platform
+        ver_str = platform.mac_ver()[0]
+        if (tuple([int(v) for v in ver_str.split('.')]) >= (10, 13)):
+            return True
+
+    print('CoreML is not supported on your platform.', file=sys.stderr)
+    return False
+
+
+def check_env(source_framework, target_framework, model_name):
+    if ((source_framework == 'paddle') or (target_framework == 'paddle')):
+        if not is_paddle_supported():
+            return False
+
+    if ((source_framework == 'coreml') or (target_framework == 'coreml')):
+        if not is_coreml_supported():
+            return False
+
+    return True
+
+
 class TestModels(CorrectnessTest):
 
     image_path = "mmdnn/conversion/examples/data/seagull.jpg"

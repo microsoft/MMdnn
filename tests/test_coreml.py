@@ -4,7 +4,7 @@ from __future__ import print_function
 import os
 import sys
 from conversion_imagenet import TestModels
-from utils import is_coreml_supported
+from conversion_imagenet import is_coreml_supported
 
 def test_coreml():
     if is_coreml_supported():
