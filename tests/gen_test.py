@@ -256,12 +256,11 @@ def get_test_table():
     }}}}
 
 
- 
 
 def test_{1}_{2}_{3}():
-    if not check_env('{1}', '{2}', '{3}'):
+    if not check_env('{1}', '{2}', '{0}'):
         return
-    
+
     test_table = get_test_table()
     tester = TestModels(test_table)
     tester._test_function('{1}', tester.{1}_parse)
@@ -302,7 +301,7 @@ before_install:
   - sudo apt-get install -y libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
   - sudo apt-get install -y libatlas-base-dev
   - sudo apt-get install -y libgflags-dev libgoogle-glog-dev
-  - sudo apt-get install -y --no-install-recommends libboost-all-dev
+  - if [ "$TEST_SOURCE_FRAMEWORK" = "caffe" ] || [ "$TEST_TARGET_FRAMEWORK" = "caffe" ]; then sudo apt-get install -y --no-install-recommends libboost-all-dev; fi
 
 install:
   - pip install -q -r $(python requirements/select_requirements.py)
@@ -317,7 +316,7 @@ after_success: true
 
 after_script: true
 
-script: bash test.sh $TEST_SOURCE_FRAMEWORK $TEST_MODEL
+script: bash test.sh $TEST_SOURCE_FRAMEWORK $TEST_TARGET_FRAMEWORK $TEST_MODEL
 
 matrix:
   fast_finish: true
@@ -337,12 +336,13 @@ notifications:
 def gen_test(output_dir, model):
     model_name = model['name']
     normalized_model_name = model_name.replace('.', '_')
+    normalized_model_name2 = normalized_model_name.replace('-', '_')
     length = len(model['targets'])
     for i in range(length):
         test_file = os.path.join(output_dir, 'test_{0}_{1}_{2}.py'
                     .format(model['source'], model['targets'][i], normalized_model_name))
         with open(test_file, "w+") as f:
-            code = code_template_str.format(model_name, model['source'], model['targets'][i], normalized_model_name)
+            code = code_template_str.format(model_name, model['source'], model['targets'][i], normalized_model_name2)
             f.write(code)
 
 
@@ -364,7 +364,7 @@ def gen_travis(output_dir):
         model_name = model['name']
         normalized_model_name = model_name.replace('.', '_')
         source_framework = model['source']
-        if True:
+        if False:
             env_str += '  - TEST_SOURCE_FRAMEWORK={0} TEST_MODEL={1}\n'.format(source_framework, normalized_model_name)
         else:
             length2 = len(model['targets'])
@@ -375,7 +375,7 @@ def gen_travis(output_dir):
     with open(travis_file, "w+") as f:
         code = travis_template_str.format(env_str)
         f.write(code)
-   
+
     return
 
 
@@ -395,7 +395,7 @@ def main():
     FLAGS, unparsed = parser.parse_known_args()
     if (not prepare_env(FLAGS)):
         return
-    
+
     output_dir = FLAGS.output_dir
     gen_travis(output_dir)
     gen_tests(output_dir)
