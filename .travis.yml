@@ -1,6 +1,3 @@
-
-if: type = pull_request
-
 sudo: required
 dist: xenial
 
