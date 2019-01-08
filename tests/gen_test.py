@@ -302,7 +302,7 @@ before_install:
   - sudo apt-get install -y libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
   - sudo apt-get install -y libatlas-base-dev
   - sudo apt-get install -y libgflags-dev libgoogle-glog-dev
-  - if [ "$TEST_SOURCE_FRAMEWORK" = "caffe" ] || [ "$TEST_TARGET_FRAMEWORK" = "caffe" ]; then sudo apt-get install -y --no-install-recommends libboost-all-dev; fi
+  - sudo apt-get install -y --no-install-recommends libboost-all-dev
 
 install:
   - pip install -q -r $(python requirements/select_requirements.py)
@@ -317,16 +317,14 @@ after_success: true
 
 after_script: true
 
-script: bash test.sh $TEST_SOURCE_FRAMEWORK $TEST_TARGET_FRAMEWORK $TEST_MODEL
+script: bash test.sh $TEST_SOURCE_FRAMEWORK $TEST_MODEL
 
 matrix:
   fast_finish: true
 
   allow_failures:
-    - env: TEST_SOURCE_FRAMEWORK=paddle TEST_TARGET_FRAMEWORK=onnx TEST_MODEL=resnet50
-    - env: TEST_SOURCE_FRAMEWORK=paddle TEST_TARGET_FRAMEWORK=onnx TEST_MODEL=vgg16
-
-  exclude:
+    - env: TEST_SOURCE_FRAMEWORK=paddle TEST_MODEL=resnet50
+    - env: TEST_SOURCE_FRAMEWORK=paddle TEST_MODEL=vgg16
 
 notifications:
   email:
@@ -366,10 +364,13 @@ def gen_travis(output_dir):
         model_name = model['name']
         normalized_model_name = model_name.replace('.', '_')
         source_framework = model['source']
-        length2 = len(model['targets'])
-        for j in range(length2):
-            target_framework = model['targets'][j]
-            env_str += '  - TEST_SOURCE_FRAMEWORK={0} TEST_TARGET_FRAMEWORK={1} TEST_MODEL={2}\n'.format(source_framework, target_framework, normalized_model_name)
+        if True:
+            env_str += '  - TEST_SOURCE_FRAMEWORK={0} TEST_MODEL={1}\n'.format(source_framework, normalized_model_name)
+        else:
+            length2 = len(model['targets'])
+            for j in range(length2):
+                target_framework = model['targets'][j]
+                env_str += '  - TEST_SOURCE_FRAMEWORK={0} TEST_TARGET_FRAMEWORK={1} TEST_MODEL={2}\n'.format(source_framework, target_framework, normalized_model_name)
 
     with open(travis_file, "w+") as f:
         code = travis_template_str.format(env_str)

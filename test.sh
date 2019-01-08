@@ -28,12 +28,19 @@ PING_LOOP_PID=$!
 
 # My build is using maven, but you could build anything with this, E.g.
 python tests/gen_test.py -o tests/
-test_file=tests/test_$1_$2_$3.py
-if [ -f $test_file ]; then
-    python -m pytest -s -q $test_file >> $BUILD_OUTPUT 2>&1
+if [ $# -eq 3 ]; then
+    test_file=mytests/test_$1_$2_$3.py
+    if [ ! -f $test_file ]; then
+        echo "File $test_file does not exist."
+        exit 1
+    fi
+elif [ $# -eq 2 ]; then
+    test_file=mytests/test_$1_*_$2.py
 else
-    echo "File $test_file does not exist."
+	echo "Wrong test arguments."
+	exit 1
 fi
+python -m pytest -s -q $test_file >> $BUILD_OUTPUT 2>&1
 
 # The build finished without returning an error so dump a tail of the output
 dump_output
