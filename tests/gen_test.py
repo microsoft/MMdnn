@@ -342,7 +342,7 @@ def gen_test(output_dir, model):
     length = len(model['targets'])
     for i in range(length):
         test_file = os.path.join(output_dir, 'test_{0}_{1}_{2}.py'
-                    .format(model['source'], model['targets'][i], model_name))
+                    .format(model['source'], model['targets'][i], normalized_model_name))
         with open(test_file, "w+") as f:
             code = code_template_str.format(model_name, model['source'], model['targets'][i], normalized_model_name)
             f.write(code)
@@ -364,11 +364,12 @@ def gen_travis(output_dir):
     for i in range(length):
         model = y['models'][i]['model']
         model_name = model['name']
+        normalized_model_name = model_name.replace('.', '_')
         source_framework = model['source']
         length2 = len(model['targets'])
         for j in range(length2):
             target_framework = model['targets'][j]
-            env_str += '  - TEST_SOURCE_FRAMEWORK={0} TEST_TARGET_FRAMEWORK={1} TEST_MODEL={2}\n'.format(source_framework, target_framework, model_name)
+            env_str += '  - TEST_SOURCE_FRAMEWORK={0} TEST_TARGET_FRAMEWORK={1} TEST_MODEL={2}\n'.format(source_framework, target_framework, normalized_model_name)
 
     with open(travis_file, "w+") as f:
         code = travis_template_str.format(env_str)
