@@ -272,8 +272,6 @@ if __name__ == '__main__':
 '''
 
 travis_template_str = '''
-if: type = pull_request
-
 sudo: required
 dist: xenial
 
