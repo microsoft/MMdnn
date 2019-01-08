@@ -2,7 +2,9 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import os
+import sys
 from conversion_imagenet import TestModels
+
 
 def get_test_table():
     TRAVIS_CI = os.environ.get('TRAVIS')
@@ -30,10 +32,8 @@ def get_test_table():
 def test_tensorflow():
     test_table = get_test_table()
     tester = TestModels(test_table)
+    tester._test_function('tensorflow', tester.tensorflow_parse)
 
-    tester._test_function('tensorflow', tester.TensorFlowParse)
 
 if __name__ == "__main__":
     test_tensorflow()
-
-
