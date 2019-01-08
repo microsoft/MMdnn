@@ -52,6 +52,13 @@ class PytorchEmitter(Emitter):
         for code in codes:
             self.init_code += ("    " * indent) + code + '\n'
 
+    def parent_variable_name(self, IR_node, path=[0], weight_type='weights'):
+        if not IR_node.in_edges and IR_node.name in self.weights_dict.keys():
+            self.weights_dict[IR_node.name][weight_type] = self.weights_dict[IR_node.name][weight_type]
+            return "torch.from_numpy(__weights_dict['{}']['{}'])".format(IR_node.name, weight_type)
+
+        return super(PytorchEmitter, self).parent_variable_name(IR_node, path=path)
+
 
     @property
     def header_code(self):

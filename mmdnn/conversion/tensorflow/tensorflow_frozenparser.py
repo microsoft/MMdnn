@@ -339,6 +339,27 @@ class TensorflowParser2(Parser):
         return False
 
 
+    def _add_constant_node(self, source_node):
+        parent_ids=range(len(source_node.in_edges))
+        for idx in parent_ids:
+            s = source_node.in_edges[idx]
+            parent_node = self.tf_graph.get_node(s)
+            if parent_node.type == 'Const':
+                self._rename_Const(parent_node)
+    
+    def _rename_Const(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, end_idx=0, new_op='Constant') # Constant
+        value = source_node.get_attr('value')
+        if value.float_val:
+            value = value.float_val[0]
+        elif value.int_val:
+            value = value.int_val[0]
+        else:
+            value = tensor_util.MakeNdarray(value).tolist()
+        kwargs = {'value': value}
+        assign_IRnode_values(IR_node, kwargs)
+
+
     def gen_IR(self):
 
         for layer in self.src_graph.topological_sort:
@@ -622,19 +643,8 @@ class TensorflowParser2(Parser):
         if len(scopes) >= 2:
             if scopes[-2] == "batchnorm" or scopes[-2].startswith("Assign"):
                 return
-
-        input_node = self.check_const(self.src_graph.get_parent(source_node.name, [1]))
-        if input_node:
-            tensor_content = input_node.get_attr('value')
-            IR_node = self._convert_identity_operation(source_node, start_idx=0, end_idx=1, new_op='Mul')
-        else:
-            input_node = self.check_const(self.src_graph.get_parent(source_node.name, [0]))
-            tensor_content = input_node.get_attr('value')
-            IR_node = self._convert_identity_operation(source_node, start_idx=1, end_idx=2, new_op='Mul')
-
-        W = tensor_util.MakeNdarray(tensor_content)
-
-        self.set_weight(source_node.name, 'weights', W)
+        self._add_constant_node(source_node)
+        self._convert_identity_operation(source_node)
 
 
     def rename_Add(self, source_node):
