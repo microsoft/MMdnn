@@ -3,7 +3,6 @@ dist: xenial
 
 os:
   - linux
-  - osx
 
 language: python
 python:
@@ -66,7 +65,6 @@ matrix:
   fast_finish: true
 
   allow_failures:
-    - os: osx
     - env: TEST_PARSER=paddle TEST_ONNX=true
     - env: TEST_PARSER=paddle TEST_ONNX=false
 

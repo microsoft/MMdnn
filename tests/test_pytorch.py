@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import os
+import sys
 from conversion_imagenet import TestModels
 
 def get_test_table():
@@ -26,8 +27,5 @@ def test_pytorch():
     tester._test_function('pytorch', tester.pytorch_parse)
 
 
-# def main():
-#     test_pytorch()
-
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    test_pytorch()
