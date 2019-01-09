@@ -437,7 +437,10 @@ if __name__=='__main__':
         ))
 
     def emit_Flatten(self, IR_node):
-        IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        self.add_body(1, "n.{:<15} = L.Flatten(n.{})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            ))
 
 
     def emit_Squeeze(self, IR_node):
@@ -552,11 +555,18 @@ if __name__=='__main__':
     def emit_Shape(self, IR_node):
         pass
     def emit_Reshape(self, IR_node):
-        # currently for the flatten layer
-        self.add_body(1, "n.{:<15} = L.Flatten(n.{})".format(
-            IR_node.variable_name,
-            self.parent_variable_name(IR_node),
-            ))
+        shape = IR_node.get_attr("_output_shapes")[0]
+        shape = shape_to_list(shape)
+        if shape:
+            dim_str = "'dim': {}".format(shape)
+            dim_str = " reshape_param={'shape': { " + dim_str + '} }'
+            self.add_body(1, "n.{:<15} = L.Reshape(n.{}, {})".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                dim_str
+                ))
+        else:
+            IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
 
     def emit_Slice(self, IR_node):
         pass
