@@ -44,6 +44,7 @@ def checkfrozen(f):
     else:
         return f
 
+
 class CorrectnessTest(unittest.TestCase):
 
     err_thresh = 0.15
