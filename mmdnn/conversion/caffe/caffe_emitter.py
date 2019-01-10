@@ -306,14 +306,26 @@ if __name__=='__main__':
                 IR_node.get_attr('strides')[1]))
         else:
             pad_h, pad_w = self._get_symmetric_padding(IR_node)
-            self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, kernel_size={}, pad_h={}, pad_w={}, stride={}, ntop=1)".format(
-                IR_node.variable_name,
-                self.parent_variable_name(IR_node),
-                pooling_type,
-                IR_node.get_attr('kernel_shape')[1],
-                pad_h,
-                pad_w,
-                IR_node.get_attr('strides')[1]))
+            pool_size = IR_node.get_attr('kernel_shape')[1:3]
+            if pool_size[0] != pool_size[1]:
+                self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, kernel_h={}, kernel_w={}, pad_h={}, pad_w={}, stride={}, ntop=1)".format(
+                    IR_node.variable_name,
+                    self.parent_variable_name(IR_node),
+                    pooling_type,
+                    pool_size[0],
+                    pool_size[1],
+                    pad_h,
+                    pad_w,
+                    IR_node.get_attr('strides')[1]))
+            else:
+                self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, kernel_size={}, pad_h={}, pad_w={}, stride={}, ntop=1)".format(
+                    IR_node.variable_name,
+                    self.parent_variable_name(IR_node),
+                    pooling_type,
+                    pool_size[0],
+                    pad_h,
+                    pad_w,
+                    IR_node.get_attr('strides')[1]))
 
             # check if need crop output shape
             self.check_if_need_crop(IR_node)
