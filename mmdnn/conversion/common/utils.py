@@ -41,6 +41,8 @@ def assign_attr_value(attr, val):
             attr.list.f.extend(val)
         else:
             raise NotImplementedError('AttrValue cannot be of list[{}].'.format(val[0]))
+    elif isinstance(val, np.ndarray):
+        assign_attr_value(attr, val.tolist())
     else:
         raise NotImplementedError('AttrValue cannot be of %s' % type(val))
 

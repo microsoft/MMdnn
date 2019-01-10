@@ -2,7 +2,8 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import os
-from test_conversion_imagenet import TestModels
+import sys
+from conversion_imagenet import TestModels
 
 def get_test_table():
     TRAVIS_CI = os.environ.get('TRAVIS')
@@ -14,20 +15,17 @@ def get_test_table():
         return None
 
     return { 'pytorch' : {
-        'alexnet'     : [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
-        'densenet201' : [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
-        'inception_v3': [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
-        'resnet152'   : [TestModels.CaffeEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
+        'alexnet'     : [TestModels.caffe_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+        'densenet201' : [TestModels.caffe_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+        'inception_v3': [TestModels.caffe_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+        'resnet152'   : [TestModels.caffe_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
     }}
 
 def test_pytorch():
     test_table = get_test_table()
     tester = TestModels(test_table)
-    tester._test_function('pytorch', tester.PytorchParse)
+    tester._test_function('pytorch', tester.pytorch_parse)
 
 
-# def main():
-#     test_pytorch()
-
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    test_pytorch()

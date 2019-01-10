@@ -2,8 +2,9 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import os
+import sys
 import six
-from test_conversion_imagenet import TestModels
+from conversion_imagenet import TestModels
 
 def get_test_table():
     TRAVIS_CI = os.environ.get('TRAVIS')
@@ -15,23 +16,28 @@ def get_test_table():
     ONNX = os.environ.get('TEST_ONNX')
     if ONNX and ONNX.lower() == 'true':
         return { 'mxnet' : {
-            'imagenet1k-inception-bn'      : [TestModels.OnnxEmit],
-            'imagenet1k-resnet-18'         : [TestModels.OnnxEmit],
-            'imagenet1k-resnet-152'        : [TestModels.OnnxEmit],
-            'squeezenet_v1.1'              : [TestModels.OnnxEmit],
-            'imagenet1k-resnext-50'        : [TestModels.OnnxEmit],
+            'imagenet1k-inception-bn'      : [TestModels.onnx_emit],
+            'imagenet1k-resnet-18'         : [TestModels.onnx_emit],
+            'imagenet1k-resnet-152'        : [TestModels.onnx_emit],
+            'squeezenet_v1.1'              : [TestModels.onnx_emit],
+            'imagenet1k-resnext-50'        : [TestModels.onnx_emit],
         }}
     else:
         return { 'mxnet' : {
-            'imagenet1k-inception-bn'      : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
-            'imagenet1k-resnet-18'         : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
-            'imagenet1k-resnet-152'        : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
-            'squeezenet_v1.1'              : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
-            'imagenet1k-resnext-50'        : [TestModels.CaffeEmit, TestModels.CntkEmit, TestModels.CoreMLEmit, TestModels.KerasEmit, TestModels.MXNetEmit, TestModels.PytorchEmit, TestModels.TensorflowEmit],
+            'imagenet1k-inception-bn'      : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+            'imagenet1k-resnet-18'         : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+            'imagenet1k-resnet-152'        : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+            'squeezenet_v1.1'              : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+            'imagenet1k-resnext-50'        : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
         }}
 
 
 def test_mxnet():
     test_table = get_test_table()
     tester = TestModels(test_table)
-    tester._test_function('mxnet', tester.MXNetParse)
+    tester._test_function('mxnet', tester.mxnet_parse)
+
+
+if __name__ == '__main__':
+    test_mxnet()
+

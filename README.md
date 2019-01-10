@@ -32,12 +32,14 @@ Major features
   
 
 ## Related Projects
-Targeting at openness and advancing state-of-art technology, [Microsoft Research (MSR)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/) had also released few other open source projects.
+[Microsoft Research Asia (MSRA)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/)
+and Microsoft Search Technology Center Asia (STCA)
+have released some projects to advance the state-of-art technology:
+* [Open Platform for AI (OpenPAI)](https://github.com/Microsoft/pai): an open source platform that provides complete AI model training and resource management capabilities.
+It is easy to extend and supports on-premise, cloud and hybrid environments in various scale.
+* [Neural Network Intelligence (NNI)](https://github.com/Microsoft/nni): an open source AutoML toolkit for neural architecture search and hyper-parameter tuning.
 
-* [OpenPAI](https://github.com/Microsoft/pai): an open source platform that provides complete AI model training and resource management capabilities, it is easy to extend and supports on-premise, cloud and hybrid environments in various scale.
-* [NNI](https://github.com/Microsoft/nni): An open source AutoML toolkit for neural architecture search and hyper-parameter tuning.
-
-We encourage researchers and students to leverage these projects to accelerate the AI development and research.
+We encourage researchers, developers and students to leverage such projects to boost their Deep Learning / AI productivity.
 
 ## Installation
 
@@ -57,7 +59,8 @@ pip install -U git+https://github.com/Microsoft/MMdnn.git@master
 
 ### Install with docker image
 
-MMdnn provides a docker image, which packages MMdnn, deep learning frameworks we support and other dependencies in one image. You can easily get the image in several steps:
+MMdnn provides a docker image, which packages MMdnn and Deep Learning frameworks that we support as well as other dependencies.
+You can easily try the image with the following steps:
 
 1. Install Docker Community Edition(CE)
 

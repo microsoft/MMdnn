@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from collections import namedtuple
 from functools import reduce
 from google.protobuf import text_format

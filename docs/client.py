@@ -33,7 +33,7 @@ def main(_):
     request.model_spec.name = 'tensorflow-serving'
     request.model_spec.signature_name = tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
     request.inputs['image'].CopyFrom(tf.contrib.util.make_tensor_proto(image))
-    #request.inputs['input'].CopyFrom()    
+    #request.inputs['input'].CopyFrom()
 
     result = stub.Predict(request, 10.0)  # 10 secs timeout
     print(result)
