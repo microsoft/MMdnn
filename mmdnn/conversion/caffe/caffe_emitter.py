@@ -406,6 +406,7 @@ if __name__=='__main__':
 
 
     def emit_Constant(self, IR_node):
+        value = IR_node.get_attr('value')
         IR_node_after = self.IR_graph.get_son(IR_node.name, [0])
         shape = IR_node_after.get_attr("_output_shapes")[0]
         shape = shape_to_list(shape)
@@ -414,7 +415,7 @@ if __name__=='__main__':
             shape[-1],
             shape[1],
             shape[2],
-            self.weights_dict[IR_node.name]['value'][0]
+            value
         ))
 
 
@@ -558,8 +559,31 @@ if __name__=='__main__':
             self.parent_variable_name(IR_node),
             ))
 
+    #Caffe only support one dim slice by appointing axis.
     def emit_Slice(self, IR_node):
-        pass
+
+        start = IR_node.get_attr('starts')
+        end = IR_node.get_attr('ends')
+
+        #Compute slice dim
+        start_n_end_len = len(start)
+        slice_dim = -1
+        for i in range(start_n_end_len):
+            if start[i] < 0 or end[i] < 0:
+                raise ValueError("Caffe does not support minus stride!")
+            if start[i] + end[i] != start_n_end_len:
+                if slice_dim != -1:
+                    raise ValueError("Caffe does not support multi dim slice!")
+                slice_dim = i
+                start_point = start[i]
+                end_point = end[i]
+
+        self.add_body(1, "_, n.{:<15}, _ = L.Slice(n.{},  ntop=3, slice_param=dict(slice_dim={}, slice_point={}))".format(
+            IR_node.variable_name,
+            self.parent_variable_idx_name(IR_node),
+            slice_dim,
+            [start_point, end_point]
+        ))
 
     def emit_Pack(self, IR_node):
         pass
