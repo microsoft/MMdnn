@@ -551,7 +551,7 @@ class TestModels(CorrectnessTest):
             img = func(test_input_path(architecture_name))
             img = np.transpose(img, [2, 0, 1])
             input_data = np.expand_dims(img, 0)
-
+            
             model_converted.blobs[model_converted._layer_names[0]].data[...] = input_data
             predict = model_converted.forward()[model_converted._layer_names[-1]]
             converted_predict = np.squeeze(predict)
@@ -881,7 +881,7 @@ class TestModels(CorrectnessTest):
                 'inception_v1'      : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit], # TODO: cntk_emit
                 'inception_v3'      : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit], # TODO: cntk_emit
                 'mobilenet_v1_1.0'  : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit],
-                'facenet'           : [mxnet_emit, tensorflow_emit, keras_emit] # TODO: coreml_emit
+                'facenet'           : [caffe_emit, mxnet_emit, tensorflow_emit, keras_emit] # TODO: coreml_emit
             },
 
             'coreml' : {
