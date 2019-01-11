@@ -270,7 +270,7 @@ def KitModel(weight_file = None):
                 self.parent_variable_name(IR_node, [0]) if scale1.type=='Constant' else self.parent_variable_name(IR_node, [1]),
                 self.parent_variable_name(IR_node, [0]) if not scale1.type=='Constant' else self.parent_variable_name(IR_node, [1])))
         else:
-            self.add_body(1, "{:<15} = {} * {}".format(
+            self.add_body(1, "{:<15} = layers.Multiply()([{}, {}])".format(
                 IR_node.variable_name,
                 scale1.real_variable_name,
                 scale2.real_variable_name))
@@ -774,8 +774,10 @@ def convolution(weights_dict, name, input, group, conv_type, filters=None, **kwa
     elif conv_type == 'layers.DepthwiseConv2D':
         layer = layers.DepthwiseConv2D(name=name, **kwargs)(input)
         return layer
-
-    grouped_channels = int(filters / group)
+    
+    inp_filters = K.int_shape(input)[-1]
+    inp_grouped_channels = int(inp_filters / group)
+    out_grouped_channels = int(filters / group)
     group_list = []
 
     if group == 1:
@@ -789,8 +791,8 @@ def convolution(weights_dict, name, input, group, conv_type, filters=None, **kwa
         weight_groups = np.split(w, indices_or_sections=group, axis=-1)
 
     for c in range(group):
-        x = layers.Lambda(lambda z: z[:, :, :, c * grouped_channels:(c + 1) * grouped_channels])(input)
-        x = layers.Conv2D(name=name + "_" + str(c), filters=grouped_channels, **kwargs)(x)
+        x = layers.Lambda(lambda z: z[..., c * inp_grouped_channels:(c + 1) * inp_grouped_channels])(input)
+        x = layers.Conv2D(name=name + "_" + str(c), filters=out_grouped_channels, **kwargs)(x)
         weights_dict[name + "_" + str(c)] = dict()
         weights_dict[name + "_" + str(c)]['weights'] = weight_groups[c]
 
