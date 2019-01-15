@@ -836,9 +836,7 @@ class TestModels(CorrectnessTest):
                 'mobilenet'    : [coreml_emit, keras_emit, tensorflow_emit], # TODO: mxnet_emit
                 # 'nasnet'       : [tensorflow_emit, keras_emit, coreml_emit],
                 'yolo2'        : [keras_emit],
-                # 'facenet'      : [tensorflow_emit, coreml_emit,mxnet_emit,keras_emit]  # TODO:
-                'elutestnet'   : [caffe_emit, keras_emit, tensorflow_emit],
-
+                # 'facenet'      : [tensorflow_emit, coreml_emit,mxnet_emit,keras_emit]  # TODO
             },
 
             'mxnet' : {
