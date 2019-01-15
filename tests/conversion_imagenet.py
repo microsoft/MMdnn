@@ -553,7 +553,7 @@ class TestModels(CorrectnessTest):
             input_data = np.expand_dims(img, 0)
 
             model_converted.blobs[model_converted.inputs[0]].data[...] = input_data
-            predict = model_converted.forward()[model_converted._layer_names[-1]]
+            predict = model_converted.forward()[model_converted.outputs[-1]]
             converted_predict = np.squeeze(predict)
 
             del model_converted
@@ -828,15 +828,16 @@ class TestModels(CorrectnessTest):
             },
 
             'keras' : {
-                'vgg19'        : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'inception_v3' : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'resnet50'     : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'densenet'     : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'xception'     : [tensorflow_emit, keras_emit, coreml_emit],
-                'mobilenet'    : [coreml_emit, keras_emit, tensorflow_emit], # TODO: mxnet_emit
-                # 'nasnet'       : [tensorflow_emit, keras_emit, coreml_emit],
-                'yolo2'        : [keras_emit],
-                # 'facenet'      : [tensorflow_emit, coreml_emit,mxnet_emit,keras_emit]  # TODO:
+                # 'vgg19'        : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
+                # 'inception_v3' : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
+                # 'resnet50'     : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
+                # 'densenet'     : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
+                # 'xception'     : [tensorflow_emit, keras_emit, coreml_emit],
+                # 'mobilenet'    : [coreml_emit, keras_emit, tensorflow_emit], # TODO: mxnet_emit
+                # # 'nasnet'       : [tensorflow_emit, keras_emit, coreml_emit],
+                # 'yolo2'        : [keras_emit],
+                # # 'facenet'      : [tensorflow_emit, coreml_emit,mxnet_emit,keras_emit]  # TODO:
+                'elutestnet'   : [caffe_emit, keras_emit, tensorflow_emit],
 
             },
 
