@@ -10,14 +10,14 @@ class CaffeResolver(object):
     def import_caffe(self):
         self.caffe = None
 
-        # try:
-        import caffe
-        self.caffe = caffe
-        # except ImportError:
-        #     # # Fall back to the protobuf implementation
-        #     # from mmdnn.conversion.caffe import caffe_pb2
-        #     # self.caffepb = caffe_pb2
-        #     # show_fallback_warning()
+        try:
+            import caffe
+            self.caffe = caffe
+        except ImportError:
+            # Fall back to the protobuf implementation
+            from mmdnn.conversion.caffe import caffe_pb2
+            self.caffepb = caffe_pb2
+            show_fallback_warning()
         if self.caffe:
             self.caffepb = self.caffe.proto.caffe_pb2
         self.NetParameter = self.caffepb.NetParameter
