@@ -27,6 +27,7 @@ def get_test_table():
     elif six.PY2: return { 'caffe' :
             {
                 'alexnet'       : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'inception_v4'  : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
                 'squeezenet'    : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
                 # 'voc-fcn8s'    : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.tensorflow_emit],
                 'xception'      : [TestModels.coreml_emit, TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
@@ -36,6 +37,7 @@ def get_test_table():
         return { 'caffe' :
             {
                 'squeezenet'    : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'inception_v4'  : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
                 # 'vgg19'         : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
                 # 'voc-fcn8s'     : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.tensorflow_emit],
                 # 'voc-fcn16s'    : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.tensorflow_emit],
