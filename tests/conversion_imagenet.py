@@ -552,8 +552,8 @@ class TestModels(CorrectnessTest):
             img = np.transpose(img, [2, 0, 1])
             input_data = np.expand_dims(img, 0)
 
-            model_converted.blobs[model_converted._layer_names[0]].data[...] = input_data
-            predict = model_converted.forward()[model_converted._layer_names[-1]]
+            model_converted.blobs[model_converted.inputs[0]].data[...] = input_data
+            predict = model_converted.forward()[model_converted.outputs[-1]]
             converted_predict = np.squeeze(predict)
 
             del model_converted
@@ -836,8 +836,7 @@ class TestModels(CorrectnessTest):
                 'mobilenet'    : [coreml_emit, keras_emit, tensorflow_emit], # TODO: mxnet_emit
                 # 'nasnet'       : [tensorflow_emit, keras_emit, coreml_emit],
                 'yolo2'        : [keras_emit],
-                # 'facenet'      : [tensorflow_emit, coreml_emit,mxnet_emit,keras_emit]  # TODO:
-
+                # 'facenet'      : [tensorflow_emit, coreml_emit,mxnet_emit,keras_emit]  # TODO
             },
 
             'mxnet' : {
@@ -881,7 +880,7 @@ class TestModels(CorrectnessTest):
                 'inception_v1'      : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit], # TODO: cntk_emit
                 'inception_v3'      : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit], # TODO: cntk_emit
                 'mobilenet_v1_1.0'  : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit],
-                'facenet'           : [mxnet_emit, tensorflow_emit, keras_emit] # TODO: coreml_emit
+                'facenet'           : [mxnet_emit, tensorflow_emit, keras_emit, caffe_emit] # TODO: coreml_emit
             },
 
             'coreml' : {

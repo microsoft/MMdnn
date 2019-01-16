@@ -418,6 +418,7 @@ if __name__=='__main__':
 
 
     def emit_Constant(self, IR_node):
+        value = IR_node.get_attr('value')
         IR_node_after = self.IR_graph.get_son(IR_node.name, [0])
         shape = IR_node_after.get_attr("_output_shapes")[0]
         shape = shape_to_list(shape)
@@ -426,7 +427,7 @@ if __name__=='__main__':
             shape[-1],
             shape[1],
             shape[2],
-            self.weights_dict[IR_node.name]['value'][0]
+            value
         ))
 
 
