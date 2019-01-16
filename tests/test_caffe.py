@@ -26,28 +26,17 @@ def get_test_table():
         }
     elif six.PY2: return { 'caffe' :
             {
-                'alexnet'       : [TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'inception_v1'  : [TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'inception_v4'  : [TestModels.cntk_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'resnet152'     : [TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'squeezenet'    : [TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                # 'voc-fcn8s'    : [TestModels.tensorflow_emit],
-                'xception'      : [TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'alexnet'       : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'inception_v1'  : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'inception_v4'  : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
             }
         }
     else:
         return { 'caffe' :
             {
-                # 'alexnet'       : [TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'inception_v1'  : [TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'inception_v4'  : [TestModels.cntk_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'resnet152'     : [TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'squeezenet'    : [TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                # 'vgg19'         : [TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                # 'voc-fcn8s'     : [TestModels.tensorflow_emit],
-                # 'voc-fcn16s'    : [TestModels.tensorflow_emit],
-                # 'voc-fcn32s'    : [TestModels.tensorflow_emit],
-                'xception'      : [TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                # 'alexnet'       : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'inception_v1'  : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'inception_v4'  : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
             }
         }
 
