@@ -17,6 +17,7 @@ env:
   - TEST_PARSER=keras_2 TEST_ONNX=true
   - TEST_PARSER=keras TEST_ONNX=false
   - TEST_PARSER=keras_2 TEST_ONNX=false
+  - TEST_PARSER=keras_3 TEST_ONNX=false
   - TEST_PARSER=cntk TEST_ONNX=true
   - TEST_PARSER=cntk TEST_ONNX=false
   - TEST_PARSER=caffe TEST_ONNX=true

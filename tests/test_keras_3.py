@@ -14,8 +14,8 @@ def get_test_table():
     if ONNX and ONNX.lower() == 'true':
         return {
             'keras' : {
-                'inception_v3' : [TestModels.onnx_emit],
-                'resnet50'     : [TestModels.onnx_emit],
+                'densenet'     : [TestModels.onnx_emit],
+                'mobilenet'    : [TestModels.onnx_emit],
                 # 'xception'     : [TestModels.onnx_emit],
                 # 'nasnet'       : [TestModels.onnx_emit],
             },
@@ -24,8 +24,8 @@ def get_test_table():
     else:
         return {
             'keras' : {
-                'resnet50'     : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'xception'     : [TestModels.tensorflow_emit, TestModels.keras_emit, TestModels.coreml_emit],
+                'densenet'     : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'mobilenet'    : [TestModels.coreml_emit, TestModels.keras_emit, TestModels.tensorflow_emit],
         }}
 
 
