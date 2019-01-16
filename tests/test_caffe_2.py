@@ -30,7 +30,7 @@ def get_test_table():
                 'inception_v4'  : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
                 'squeezenet'    : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
                 # 'voc-fcn8s'    : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.tensorflow_emit],
-                'xception'      : [TestModels.coreml_emit, TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'xception'      : [TestModels.mxnet_emit],
             }
         }
     else:
@@ -42,7 +42,7 @@ def get_test_table():
                 # 'voc-fcn8s'     : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.tensorflow_emit],
                 # 'voc-fcn16s'    : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.tensorflow_emit],
                 # 'voc-fcn32s'    : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.tensorflow_emit],
-                'xception'      : [TestModels.coreml_emit, TestModels.cntk_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'xception'      : [TestModels.mxnet_emit],
             }
         }
 
