@@ -17,16 +17,12 @@ def get_test_table():
     if ONNX and ONNX.lower() == 'true':
         return { 'mxnet' : {
             'imagenet1k-inception-bn'      : [TestModels.onnx_emit],
-            'imagenet1k-resnet-18'         : [TestModels.onnx_emit],
-            'imagenet1k-resnet-152'        : [TestModels.onnx_emit],
             'squeezenet_v1.1'              : [TestModels.onnx_emit],
             'imagenet1k-resnext-50'        : [TestModels.onnx_emit],
         }}
     else:
         return { 'mxnet' : {
             'imagenet1k-inception-bn'      : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-            'imagenet1k-resnet-18'         : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-            'imagenet1k-resnet-152'        : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
             'squeezenet_v1.1'              : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
             'imagenet1k-resnext-50'        : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
         }}
