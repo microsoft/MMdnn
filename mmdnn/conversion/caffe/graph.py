@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from collections import namedtuple
 from functools import reduce
 from google.protobuf import text_format
@@ -267,7 +268,15 @@ class CaffeGraph(object):
                     continue
             for node in sorted_nodes:
                 if node.output_shape is None:
-                    node.output_shape = TensorShape(*NodeKind.compute_output_shape(node))
+                    top_name = net.top_names.get(node.name)
+                    if top_name is not None:
+                        value = net.blobs.get(top_name[0])
+                        dims = list(value.shape)
+                        dims = dims + [1] * (4 - len(dims))
+                        node.output_shape = TensorShape(*dims)
+                    else:
+                        node.output_shape = TensorShape(*NodeKind.compute_output_shape(node))
+
             os.close(tmp_handle)
         else:
             for node in sorted_nodes:
