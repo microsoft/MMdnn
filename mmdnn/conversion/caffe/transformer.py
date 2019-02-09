@@ -284,6 +284,8 @@ class ParameterNamer(object):
                     names += ('scale', 'bias')
             elif node.kind == NodeKind.PReLU:
                 names = ('gamma',)
+            elif node.kind == NodeKind.ELU:
+                names = ('alpha',)
             else:
                 print_stderr('WARNING: Unhandled parameters: {}'.format(node.kind))
                 continue

@@ -242,7 +242,5 @@ def inception_resnet_v1(inputs, num_classes,is_training=True,
                 
                 # net = slim.fully_connected(net, bottleneck_layer_size, activation_fn=None, 
                 #         scope='Bottleneck', reuse=False)
-
-                # embeddings = tf.nn.l2_normalize(net, 1, 1e-10, name='embeddings')
   
     return net, end_points

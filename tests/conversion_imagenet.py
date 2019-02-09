@@ -873,7 +873,7 @@ class TestModels(CorrectnessTest):
                 'nasnet-a_large'        : [mxnet_emit, pytorch_emit, tensorflow_emit], # TODO: keras_emit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
                 'inception_resnet_v2'   : [caffe_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit], #  CoremlEmit worked once, then always
                 'facenet'               : [mxnet_emit, tensorflow_emit, keras_emit, pytorch_emit, caffe_emit], # TODO: coreml_emit
-                'rnn_embedding'         : [tensorflow_emit, keras_emit, pytorch_emit, mxnet_emit, cntk_emit]
+                'rnn_lstm_gru_stacked'  : [tensorflow_emit, keras_emit, pytorch_emit, mxnet_emit] #TODO cntk_emit
             },
 
             'tensorflow_frozen' : {

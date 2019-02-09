@@ -184,9 +184,9 @@ class tensorflow_extractor(base_extractor):
             'feed_dict'   : lambda img: {'input:0':img,'phase_train:0':False},
             'num_classes' : 0,
         },
-        'rnn_embedding' :             {
+        'rnn_lstm_gru_stacked': {
             'url'         :'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/tf_rnn/tf_rnn.zip',   #This testing model only trained for one round.
-            'filename'    :'tf_rnn/tf_rnn_model.ckpt',
+            'filename'    :'tf_rnn/tf_lstm_gru_stacked.ckpt',
             'builder'     :lambda: TF_RNN.create_symbol,
             'arg_scope'   :TF_RNN.dummy_arg_scope,
             'input'       :lambda: tf.placeholder(name='input', dtype=tf.int32, shape=[None, 150]),
