@@ -108,8 +108,6 @@ def KitModel(weight_file = None):
 
 
     def parent_variable_name(self, IR_node, path=[0]):
-        # if self.IR_graph.get_parent(IR_node.name, path):
-        #     return super().parent_variable_name(IR_node, path=path)
         if not IR_node.in_edges and IR_node.name in self.weights_dict.keys():
             return "tf.constant(__weights_dict['{}']['weights'], name='{}')".format(
                 IR_node.name,

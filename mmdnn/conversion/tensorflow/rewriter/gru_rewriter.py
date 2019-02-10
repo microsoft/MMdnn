@@ -5,7 +5,7 @@ import re
 class GRURewriter(UnitRewriterBase):
 
     def __init__(self, graph, weights_dict):
-        return super().__init__(graph, weights_dict)
+        return super(GRURewriter, self).__init__(graph, weights_dict)
     
     def process_gru_cell(self, match_result):
         if 'gru_cell' not in match_result._pattern_to_op.keys():
@@ -71,4 +71,4 @@ class GRURewriter(UnitRewriterBase):
 
 
     def run(self):
-        return super().run(['gru_cell', 'h_zero'], 'tensorflow')
+        return super(GRURewriter, self).run(['gru_cell', 'h_zero'], 'tensorflow')

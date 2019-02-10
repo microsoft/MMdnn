@@ -6,7 +6,7 @@ import re
 class LSTMRewriter(UnitRewriterBase):
 
     def __init__(self, graph, weights_dict):
-        return super().__init__(graph, weights_dict)
+        return super(LSTMRewriter, self).__init__(graph, weights_dict)
 
 
     def process_lstm_cell(self, match_result):
@@ -76,4 +76,4 @@ class LSTMRewriter(UnitRewriterBase):
 
 
     def run(self):
-        return super().run(['lstm_cell', 'h_zero'], 'tensorflow')
+        return super(LSTMRewriter, self).run(['lstm_cell', 'h_zero'], 'tensorflow')
