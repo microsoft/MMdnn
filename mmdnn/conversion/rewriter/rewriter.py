@@ -17,7 +17,7 @@ from tensorflow.core.framework.node_def_pb2 import NodeDef
 from mmdnn.conversion.rewriter.rnn_utils import *
 
 
-class UnitRewriterBase:
+class UnitRewriterBase(object):
 
 
     def __init__(self, graph, weights_dict):

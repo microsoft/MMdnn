@@ -5,7 +5,7 @@ import numpy as np
 import collections
 
 
-class Folder:
+class Folder(object):
     """A floder to fold a graph' nodes which has same scope into one node."""
 
     def __init__(self, graph, weights_dict, init_level=0, fold_level_num=0, scope_names=None):
