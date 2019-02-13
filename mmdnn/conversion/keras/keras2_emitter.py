@@ -448,7 +448,7 @@ def KitModel(weight_file = None):
             if pooling_type == "AVG" and pool_size.count(pool_size[0]) == len(pool_size) and strides[0] == 1 and strides.count(strides[0]) == len(strides) and padding.count(padding[0]) == len(padding) and pool_size[0] == padding[0]*2 + 1:
                 pool_size = ', '.join('%s' % i for i in pool_size)
                 strides = ', '.join('%s' % i for i in strides)
-                code = "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
+                codes.append("{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
                     IR_node.variable_name,
                     pool_name,
                     IR_node.name,
@@ -456,7 +456,7 @@ def KitModel(weight_file = None):
                     strides,
                     'same',
                     self.parent_variable_name(IR_node)
-                    )
+                    ))
 
 
             else:
