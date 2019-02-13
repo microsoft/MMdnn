@@ -238,7 +238,7 @@ class TestKit(object):
             choices=['SERVING', 'TRAINING'])
 
 
-        self.args = parser.parse_args()        
+        self.args = parser.parse_args()
         import imp
         self.MainModel = imp.load_source('MainModel', self.args.n)
 

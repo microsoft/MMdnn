@@ -1055,7 +1055,7 @@ class TensorflowParser2(Parser):
 
     def rename_FusedBatchNorm(self, source_node):
         scalenode = self.check_const(self.get_parent(source_node.name, [1], True))
-        if ':' in source_node.in_edges[1]:
+        if ':' in source_node.in_edges[1]: # ?
             scalenode = None
 
         if scalenode:

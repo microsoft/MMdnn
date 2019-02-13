@@ -7,7 +7,6 @@ from mmdnn.conversion.common.DataStructure.graph import GraphNode, Graph
 from tensorflow.core.framework.node_def_pb2 import NodeDef
 from tensorflow.core.framework import attr_value_pb2
 
-from mmdnn.conversion.rewriter.rewriter import UnitRewriterBase
 
 class TensorflowGraphNode(GraphNode):
 
@@ -89,8 +88,6 @@ class TensorflowGraph(Graph):
 
         super(TensorflowGraph, self).build()
 
-        # rewriter = UnitRewriterBase(self)
-        # rewriter.run(['gru_cell'])
 
     def tf_make_connection(self, src, dst):
 

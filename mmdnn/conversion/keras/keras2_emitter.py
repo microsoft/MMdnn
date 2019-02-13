@@ -396,6 +396,7 @@ def KitModel(weight_file = None):
 
 
     def emit_Pool(self, IR_node, in_scope=False):
+        codes = list()
         dim = len(IR_node.get_attr("strides")) - 2
 
         pooling_type = IR_node.get_attr('pooling_type')
@@ -414,24 +415,24 @@ def KitModel(weight_file = None):
             if shape_str:
                 shape_str = ','.join([str(i) for i in shape_str])
 
-                code =  "{:<15} = layers.Global{}(name = '{}')({})".format(
+                codes.append("{:<15} = layers.Global{}(name = '{}')({})".format(
                     IR_node.variable_name+'before',
                     pool_name,
                     IR_node.name,
-                    self.parent_variable_name(IR_node))
-                code += '\n'
+                    self.parent_variable_name(IR_node)))
+
                 #  when converting from coreml model, reshape is needed after the global pooling
-                code += "{:<15} = layers.Reshape(name = '{}', target_shape = ({},))({})".format(
+                codes.append("{:<15} = layers.Reshape(name = '{}', target_shape = ({},))({})".format(
                     IR_node.variable_name,
                     IR_node.name + 'reshape',
                     shape_str,
-                    IR_node.variable_name+'before')
+                    IR_node.variable_name+'before'))
             else:
-                code = "{:<15} = layers.Global{}(name = '{}')({})".format(
+                codes.append("{:<15} = layers.Global{}(name = '{}')({})".format(
                 IR_node.variable_name,
                 pool_name,
                 IR_node.name,
-                self.parent_variable_name(IR_node))
+                self.parent_variable_name(IR_node)))
 
         else:
             dilations = IR_node.get_attr('dilations')
@@ -464,15 +465,15 @@ def KitModel(weight_file = None):
                 strides = ', '.join('%s' % i for i in strides)
                 input_node, padding = self._defuse_padding(IR_node)
 
-                code =  "{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
+                codes.append("{:<15} = layers.{}(name = '{}', pool_size = ({}), strides = ({}), padding = '{}')({})".format(
                     IR_node.variable_name,
                     pool_name,
                     IR_node.name,
                     pool_size,
                     strides,
                     padding,
-                    input_node)
-        return code
+                    input_node))
+        return codes
 
 
     def emit_Reshape(self, IR_node, in_scope=False):
@@ -673,12 +674,6 @@ def KitModel(weight_file = None):
         else:
            pass 
 
-    def _emit_Constant(self, IR_node, in_scope=False):
-        if in_scope:
-            if IR_node.get_attr('value'):
-                return "K.constant({})".format(IR_node.get_attr('value'))
-            else:
-                return "K.constant(weights_dict['{}']['value'])".format(IR_node.name)
 
     def emit_Shape(self, IR_node, in_scope=False):
         self.used_layers.add(IR_node.type)
@@ -1062,34 +1057,29 @@ def convolution(weights_dict, name, input, group, conv_type, filters=None, **kwa
     if not conv_type.startswith('layer'):
         layer = keras.applications.mobilenet.DepthwiseConv2D(name=name, **kwargs)(input)
         return layer
-
     elif conv_type == 'layers.DepthwiseConv2D':
         layer = layers.DepthwiseConv2D(name=name, **kwargs)(input)
         return layer
-
-    grouped_channels = int(filters / group)
+    
+    inp_filters = K.int_shape(input)[-1]
+    inp_grouped_channels = int(inp_filters / group)
+    out_grouped_channels = int(filters / group)
     group_list = []
-
     if group == 1:
         func = getattr(layers, conv_type.split('.')[-1])
         layer = func(name = name, filters = filters, **kwargs)(input)
         return layer
-
     weight_groups = list()
     if not weights_dict == None:
         w = np.array(weights_dict[name]['weights'])
         weight_groups = np.split(w, indices_or_sections=group, axis=-1)
-
     for c in range(group):
-        x = layers.Lambda(lambda z: z[:, :, :, c * grouped_channels:(c + 1) * grouped_channels])(input)
-        x = layers.Conv2D(name=name + "_" + str(c), filters=grouped_channels, **kwargs)(x)
+        x = layers.Lambda(lambda z: z[..., c * inp_grouped_channels:(c + 1) * inp_grouped_channels])(input)
+        x = layers.Conv2D(name=name + "_" + str(c), filters=out_grouped_channels, **kwargs)(x)
         weights_dict[name + "_" + str(c)] = dict()
         weights_dict[name + "_" + str(c)]['weights'] = weight_groups[c]
-
         group_list.append(x)
-
     layer = layers.concatenate(group_list, axis = -1)
-
     if 'bias' in weights_dict[name]:
         b = K.variable(weights_dict[name]['bias'], name = name + "_bias")
         layer = layer + b
