@@ -53,7 +53,8 @@ layer_num_to_name = {
     37: 'ContrastiveLoss',
     38: 'Exp',
     39: 'Deconvolution',
-    40: 'PReLU'
+    40: 'PReLU',
+    41: 'ELU',
     }
 
 LAYER_DESCRIPTORS = {
@@ -103,7 +104,8 @@ LAYER_DESCRIPTORS = {
     'Threshold': shape_identity,
     'Reshape' : shape_reshape,
     'ResizeBilinear': shape_reshape,
-    'PReLU'   : shape_identity
+    'PReLU'   : shape_identity,
+    'ELU' : shape_identity,
     }
 
 LAYER_TYPES = LAYER_DESCRIPTORS.keys()
