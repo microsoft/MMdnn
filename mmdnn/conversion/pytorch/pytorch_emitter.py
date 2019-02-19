@@ -353,8 +353,6 @@ class KitModel(nn.Module):
 
 
     def emit_Relu(self, IR_node):
-        if IR_node.variable_name == 'cell_stem_0_comb_iter_0_left_Relu':
-            print('yes')
         code = "{:<15} = F.relu({})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node, [0]))
