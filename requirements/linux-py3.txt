@@ -4,7 +4,7 @@ protobuf==3.6.1
 pillow == 5.2.0
 setuptools==39.1.0
 tensorflow==1.9.0 # this pre-trained facenet model can not run on 1.10.0 version
-keras==2.1.6
+keras==2.2.4
 coremltools==0.8
 mxnet==1.1.0.post0
 cntk==2.5.1
