@@ -304,6 +304,9 @@ class KitModel(nn.Module):
         for i in self.IR_graph.get_parent(IR_node.name, [0]).layer.attr['_output_shapes'].list.shape[0].dim[1:]:
             in_features *= i.size
 
+        if IR_node.get_attr('in_features') != None:
+            in_features = IR_node.get_attr('in_features')
+
         self.add_init(2, "self.{} = self.__dense(name = '{}', in_features = {}, out_features = {}, bias = {})".format(
             IR_node.variable_name,
             IR_node.name,

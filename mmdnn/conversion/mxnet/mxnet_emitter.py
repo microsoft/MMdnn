@@ -520,8 +520,10 @@ def predict(model, labels, url):
 
             if self.weight_loaded:
                 if not fix_gamma:
-                    self.output_weights[IR_node.name + "_gamma"] = np.multiply(weight_dict['scale'], weight_dict_scale['scale'])
-                self.output_weights[IR_node.name + "_beta"] = np.multiply(weight_dict['bias'], weight_dict_scale['scale']) + weight_dict_scale['bias']
+                #     self.output_weights[IR_node.name + "_gamma"] = np.multiply(weight_dict['scale'], weight_dict_scale['scale'])
+                # self.output_weights[IR_node.name + "_beta"] = np.multiply(weight_dict['bias'], weight_dict_scale['scale']) + weight_dict_scale['bias']
+                    self.output_weights[IR_node.name + "_gamma"] = weight_dict['scale']
+                self.output_weights[IR_node.name + "_beta"] = weight_dict['bias']
 
             # not supported yet
             use_global_stats = "False"

@@ -93,7 +93,7 @@ class coreml_extractor(base_extractor):
 
             prob = coreml_output[output_name]
             if isinstance(prob, dict):
-                prob = coreml_output[output_name].values()
+                prob = list(coreml_output[output_name].values())
             prob = np.array(prob).squeeze()
 
             return prob

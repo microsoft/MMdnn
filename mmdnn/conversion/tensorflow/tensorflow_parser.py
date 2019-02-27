@@ -272,47 +272,50 @@ class TensorflowParser(Parser):
 
         #  Get input node name
         if not in_nodes:
-            in_nodes = {}
+            in_nodes = list()
+            in_shape_list = {}
             for node in model.node:
                 if node.op == 'Placeholder':
                     in_node_name = str(node.name)
                     in_node_shape = node.attr['_output_shapes'].list.shape[0]
                     in_node_shape_str = self._shapeToStr(in_node_shape)
-                    in_nodes[in_node_name] = in_node_shape_str
+                    in_nodes.append(in_node_name)
+                    in_shape_list[in_node_name] = in_node_shape_str
 
-        transformed_graph_def = TransformGraph(model, in_nodes.keys(),
+        transformed_graph_def = TransformGraph(model, in_nodes,
                                             dest_nodes, transforms)
-        in_type_list = {}
-        for n in transformed_graph_def.node:
-            if n.name in in_nodes:
-                in_type_list[n.name] = n.attr['dtype'].type
+        # in_type_list = {}
+        # for n in transformed_graph_def.node:
+        #     if n.name in in_nodes:
+        #         in_type_list[n.name] = n.attr['dtype'].type
+
+        # dtype = tensorflow.float32
+        # with tensorflow.Graph().as_default() as g:
+        #     input_map = {}
+        #     for in_node in in_nodes:
+        #         if in_type_list[in_node] == 1 or in_type_list[in_node] == 0:
+        #             dtype = tensorflow.float32
+
+        #         elif in_type_list[in_node] == 3:
+        #             dtype = tensorflow.int32
+
+        #         elif in_type_list[in_node] == 10:
+        #             dtype = tensorflow.bool
+
+        #         x = tensorflow.placeholder(dtype, shape = in_shape_list[in_node])
+        #         input_map[in_node] = x
+
+            # tensorflow.import_graph_def(transformed_graph_def, name='', input_map=input_map)
+
+        # with tensorflow.Session(graph = g) as sess:
+
+        #     meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
+        #     model = meta_graph_def.graph_def
         
-        dtype = tensorflow.float32
-        with tensorflow.Graph().as_default() as g:
-            input_map = {}
-            for in_node in in_nodes:
-                if in_type_list[in_node] == 1 or in_type_list[in_node] == 0:
-                    dtype = tensorflow.float32
-
-                elif in_type_list[in_node] == 3:
-                    dtype = tensorflow.int32
-
-                elif in_type_list[in_node] == 10:
-                    dtype = tensorflow.bool
-                
-                x = tensorflow.placeholder(dtype, shape = in_nodes[in_node])
-                input_map[in_node] = x
-
-            tensorflow.import_graph_def(transformed_graph_def, name='', input_map=input_map)
-
-        with tensorflow.Session(graph = g) as sess:
-
-            meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
-            model = meta_graph_def.graph_def
-        
-        self.tf_graph = TensorflowGraph(model)
+        self.tf_graph = TensorflowGraph(transformed_graph_def)
         self.tf_graph.build()
 
+        # rewrite the graph to fold.
         process_graph(self.tf_graph, self.ckpt_data)
 
     @classmethod
