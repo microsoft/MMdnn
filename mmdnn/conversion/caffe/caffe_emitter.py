@@ -306,14 +306,26 @@ if __name__=='__main__':
                 IR_node.get_attr('strides')[1]))
         else:
             pad_h, pad_w = self._get_symmetric_padding(IR_node)
-            self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, kernel_size={}, pad_h={}, pad_w={}, stride={}, ntop=1)".format(
-                IR_node.variable_name,
-                self.parent_variable_name(IR_node),
-                pooling_type,
-                IR_node.get_attr('kernel_shape')[1],
-                pad_h,
-                pad_w,
-                IR_node.get_attr('strides')[1]))
+            pool_size = IR_node.get_attr('kernel_shape')[1:3]
+            if pool_size[0] != pool_size[1]:
+                self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, kernel_h={}, kernel_w={}, pad_h={}, pad_w={}, stride={}, ntop=1)".format(
+                    IR_node.variable_name,
+                    self.parent_variable_name(IR_node),
+                    pooling_type,
+                    pool_size[0],
+                    pool_size[1],
+                    pad_h,
+                    pad_w,
+                    IR_node.get_attr('strides')[1]))
+            else:
+                self.add_body(1, "n.{:<15} = L.Pooling(n.{}, pool={}, kernel_size={}, pad_h={}, pad_w={}, stride={}, ntop=1)".format(
+                    IR_node.variable_name,
+                    self.parent_variable_name(IR_node),
+                    pooling_type,
+                    pool_size[0],
+                    pad_h,
+                    pad_w,
+                    IR_node.get_attr('strides')[1]))
 
             # check if need crop output shape
             self.check_if_need_crop(IR_node)
@@ -406,6 +418,10 @@ if __name__=='__main__':
 
 
     def emit_Constant(self, IR_node):
+        if IR_node.get_attr('value'):
+            value = IR_node.get_attr('value')
+        else:
+            value = self.weights_dict[IR_node.name]['value'][0]
         IR_node_after = self.IR_graph.get_son(IR_node.name, [0])
         shape = IR_node_after.get_attr("_output_shapes")[0]
         shape = shape_to_list(shape)
@@ -414,7 +430,7 @@ if __name__=='__main__':
             shape[-1],
             shape[1],
             shape[2],
-            self.weights_dict[IR_node.name]['value'][0]
+            value
         ))
 
 
@@ -437,7 +453,10 @@ if __name__=='__main__':
         ))
 
     def emit_Flatten(self, IR_node):
-        IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
+        self.add_body(1, "n.{:<15} = L.Flatten(n.{})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            ))
 
 
     def emit_Squeeze(self, IR_node):
@@ -552,11 +571,18 @@ if __name__=='__main__':
     def emit_Shape(self, IR_node):
         pass
     def emit_Reshape(self, IR_node):
-        # currently for the flatten layer
-        self.add_body(1, "n.{:<15} = L.Flatten(n.{})".format(
-            IR_node.variable_name,
-            self.parent_variable_name(IR_node),
-            ))
+        shape = IR_node.get_attr("_output_shapes")[0]
+        shape = shape_to_list(shape)
+        if shape:
+            dim_str = "'dim': {}".format(shape)
+            dim_str = " reshape_param={'shape': { " + dim_str + '} }'
+            self.add_body(1, "n.{:<15} = L.Reshape(n.{}, {})".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                dim_str
+                ))
+        else:
+            IR_node.real_name = self.IR_graph.get_parent(IR_node.name, [0]).real_name
 
     def emit_Slice(self, IR_node):
         pass
@@ -610,3 +636,9 @@ if __name__=='__main__':
     #         input_layers))
 
 
+    def emit_Elu(self, IR_node):
+        in_place = True
+        self.add_body(1, "n.{:<15} = L.ELU(n.{}, in_place={}, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            in_place))

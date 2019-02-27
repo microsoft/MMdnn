@@ -13,6 +13,7 @@ from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.utils import *
 from mmdnn.conversion.common.DataStructure.parser import Parser
 from tensorflow.tools.graph_transforms import TransformGraph
+from mmdnn.conversion.rewriter.utils import *
 
 
 class TensorflowParser(Parser):
@@ -135,8 +136,7 @@ class TensorflowParser(Parser):
     def _add_constant_node(self, source_node):
         parent_ids=range(len(source_node.in_edges))
         for idx in parent_ids:
-            s = source_node.in_edges[idx]
-            parent_node = self.tf_graph.get_node(s)
+            parent_node = self.tf_graph.get_node(source_node.in_edges[idx])
             if parent_node.type == 'Const':
                 self._rename_Const(parent_node)
     
@@ -144,13 +144,19 @@ class TensorflowParser(Parser):
         IR_node = self._convert_identity_operation(source_node, in_edge_count=0, new_op='Constant') # Constant
         value = source_node.get_attr('value')
         if value.float_val:
-            value = value.float_val[0]
+            shape = tuple(self.tensor_shape_to_list(value.tensor_shape))
+            value = np.full(shape, value.float_val[0])
         elif value.int_val:
-            value = value.int_val[0]
+            shape = tuple(self.tensor_shape_to_list(value.tensor_shape))
+            value = np.full(shape, value.int_val[0])
         else:
-            value = tensor_util.MakeNdarray(value).tolist()
-        kwargs = {'value': value}
-        assign_IRnode_values(IR_node, kwargs)
+            value = np.array(tensor_util.MakeNdarray(value).tolist())
+        
+        if value.ndim > 1:
+            self.set_weight(source_node.name, 'value', value)
+        else:
+            kwargs = {'value': value}
+            assign_IRnode_values(IR_node, kwargs)
 
 
     def _convert_reduction_operators(self, source_node, new_op = None):
@@ -307,6 +313,8 @@ class TensorflowParser(Parser):
         self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
 
+        process_graph(self.tf_graph, self.ckpt_data)
+
     @classmethod
     def _skip_node(cls, source_node):
         if source_node.covered:
@@ -432,6 +440,11 @@ class TensorflowParser(Parser):
         if hasattr(source_node, 'feed_weights'):
             kwargs["feed_weights"] = True
 
+        if hasattr(source_node, 'kwargs'):
+            kwargs.update(source_node.kwargs)
+
+        kwargs['scope'] = source_node.scope
+
         assign_IRnode_values(IR_node, kwargs)
 
 
@@ -441,7 +454,14 @@ class TensorflowParser(Parser):
             in_ids = range(start_idx, end_idx + start_idx)
 
         for idx in in_ids:
-            IR_node.input.append(self.src_graph.get_node(source_node.in_edges[idx]).real_name)
+            if ':' in source_node.in_edges[idx]:
+                input_tensor = self.src_graph.get_node(source_node.in_edges[idx]).real_name + ':' + source_node.in_edges[idx].split(':')[1]
+            else:
+                input_tensor = self.src_graph.get_node(source_node.in_edges[idx]).real_name
+
+            IR_node.input.append(input_tensor)
+
+
 
 
     def _get_bias(self, source_node, IR_node):
@@ -561,10 +581,12 @@ class TensorflowParser(Parser):
 
             else:
                 # normal Add
+                self._add_constant_node(source_node)
                 self._convert_identity_operation(source_node)
 
 
     def rename_Sub(self, source_node):
+        self._add_constant_node(source_node)
         self._convert_identity_operation(source_node)
 
 
@@ -719,6 +741,7 @@ class TensorflowParser(Parser):
 
     def rename_ConcatV2(self, source_node):
         n = len(source_node.in_edges) - 1
+        self._add_constant_node(source_node)
         IR_node = self._convert_identity_operation(source_node, in_edge_count = n, new_op = 'Concat')
         axis = self.tf_graph.get_parent(source_node.name, [n])
         IR_node.attr['axis'].i = axis.layer.attr['value'].tensor.int_val[0]
@@ -796,7 +819,7 @@ class TensorflowParser(Parser):
             if this_node.type == 'Const':
 
                 IR_node = self.IR_graph.node.add()
-                TensorflowParser._copy_and_reop(this_node, IR_node, 'Const')
+                TensorflowParser._copy_and_reop(this_node, IR_node, 'Constant')
                 kwargs = {
                     'value' : this_node.layer.attr['value'].tensor.int_val[0],
                 }
@@ -880,7 +903,12 @@ class TensorflowParser(Parser):
 
 
     def rename_Split(self, source_node):
-        if source_node.get_attr('num_split') == 1:
+        if source_node.get_attr('num_split') == 1:            
+            for n in source_node.out_nodes:
+                for idx, e in enumerate(n.in_edges):
+                    if source_node.name in e:
+                        n.in_edges[idx] = e.split(':')[0]
+
             source_node.real_name = self.get_parent(source_node.name, [1]).real_name
 
         else:
@@ -895,10 +923,17 @@ class TensorflowParser(Parser):
     def rename_StridedSlice(self, source_node):
         # TODO: Current it is only for slice
 
+        if self.get_parent(source_node.name, [1]).type != 'Const':
+            self._add_constant_node(source_node)
+            IR_node = self._convert_identity_operation(source_node, new_op='Slice')
+            return
+
         IR_node = self._convert_identity_operation(source_node, in_edge_count=1, new_op='Slice')
         kwargs = {
             'begin_mask' : source_node.get_attr('begin_mask'),
             'end_mask'   : source_node.get_attr('end_mask'),
+            'shrink_axis_mask': source_node.get_attr('shrink_axis_mask'),
+            'new_axis_mask' :source_node.get_attr('new_axis_mask')
         }
 
         starts = self.get_parent(source_node.name, [1]).layer.attr['value'].tensor
@@ -947,3 +982,65 @@ class TensorflowParser(Parser):
             'size' : source_node.get_attr('depth_radius') + 1
         }
         assign_IRnode_values(IR_node, kwargs)
+
+
+    def rename_Tanh(self, source_node):
+        self._convert_identity_operation(source_node)
+
+
+    def rename_ExpandDims(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, 0, 1, new_op='Unsqueeze')
+        
+        ax_node = self.get_parent(source_node.name, [1])
+        kwargs = {
+            'axes': [ax_node.layer.attr['value'].tensor.int_val[0]]
+        }
+        assign_IRnode_values(IR_node, kwargs)
+
+
+    def rename_Fill(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, 0, 1, new_op='Fill')
+
+        value_node = self.get_parent(source_node.name, [1])
+        if value_node.layer.attr['value'].tensor.float_val:
+            IR_node.attr['value'].f = value_node.layer.attr['value'].tensor.float_val[0]
+        elif value_node.layer.attr['value'].tensor.int_val:
+            IR_node.attr['value'].i = value_node.layer.attr['value'].tensor.int_val[0]
+        else:
+            raise NotImplementedError()
+
+
+    def rename_Conv2DBackpropInput(self, source_node):
+        """
+        weights: name_weights, name_bias
+        """
+        IR_node = self._convert_identity_operation(source_node, new_op = 'ConvTranspose')
+
+        kwargs = {}
+
+        # strides
+        kwargs['strides'] = source_node.get_attr('strides')
+
+        # input[1] : W
+        # filter
+        W = self.tf_graph.get_node(source_node.layer.input[1])
+        W = self.tf_graph.get_node(W.layer.input[0]).layer
+        kwargs['kernel_shape'] = self.tensor_shape_to_list(W.attr['shape'])
+
+        # padding
+        self._convert_padding(source_node, IR_node, kwargs['kernel_shape'][:-2])
+
+        if self.weight_loaded:
+            self.set_weight(source_node.name, 'weights', self.ckpt_data[W.name])
+
+        assign_IRnode_values(IR_node, kwargs)
+        # output[0] : B
+        self._get_bias(source_node, IR_node)
+    
+    def rename_Minimum(self, source_node):
+        self._add_constant_node(source_node)
+        self._convert_identity_operation(source_node)
+    
+    def rename_Maxmum(self, source_node):
+        self._add_constant_node(source_node)
+        self._convert_identity_operation(source_node)

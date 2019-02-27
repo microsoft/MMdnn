@@ -15,6 +15,7 @@ class Emitter(object):
         self.weights_dict = dict()
         self.used_layers = set()
         self.weight_loaded = False
+        self.layers_codes = dict()
 
 
     def run(self, dstNetworkPath, dstWeightPath = None, phase = 'test'):
@@ -37,9 +38,14 @@ class Emitter(object):
             self.weights_dict = np.load(file_name, encoding='bytes').item()
 
 
-    def parent_variable_name(self, IR_node, path = [0]):
-        return self.IR_graph.get_parent(IR_node.name, path).real_variable_name
-
+    def parent_variable_name(self, IR_node, path_or_name = [0]):
+        if isinstance(path_or_name, _string_types):
+            path = [IR_node.in_edges.index(path_or_name)]
+        elif isinstance(path_or_name, list):
+            path = path_or_name
+        else:
+            raise ValueError
+        return self.IR_graph.get_parent_variable_name(IR_node.name, path)
 
     def _build(self):
         self.IR_graph.build()

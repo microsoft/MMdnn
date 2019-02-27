@@ -12,6 +12,18 @@ class TensorflowGraphNode(GraphNode):
 
     def __init__(self, layer):
         super(TensorflowGraphNode, self).__init__(layer)
+        self.in_nodes = list()
+        self.out_nodes = list()
+        self._scope = str()
+
+
+    @property
+    def scope(self):
+        return self._scope
+
+    @scope.setter
+    def scope(self, scope):
+        self._scope = scope
 
 
     @property
@@ -44,6 +56,13 @@ class TensorflowGraphNode(GraphNode):
 
 class TensorflowGraph(Graph):
 
+    multi_tensor_type = [
+        "Slice",
+        "Split",
+        "Unpack"
+    ]
+
+
     def __init__(self, model):
         # sanity check.
         pass
@@ -58,13 +77,28 @@ class TensorflowGraph(Graph):
             self.layer_name_map[layer.name] = layer.name
             for pred in layer.input:
                 if pred not in self.layer_map:
+                    if not pred.split(':')[0] in self.layer_map: #test
+                        new_node = NodeDef()
+                        new_node.name = pred
+                        new_node.op = "NoOp"
+                        self.layer_map[pred] = TensorflowGraphNode(new_node)
+                        self.layer_name_map[pred] = pred
 
-                    new_node = NodeDef()
-                    new_node.name = pred
-                    new_node.op = "NoOp"
-                    self.layer_map[pred] = TensorflowGraphNode(new_node)
-                    self.layer_name_map[pred] = pred
-
-                self._make_connection(pred, layer.name)
+                self.tf_make_connection(pred, layer.name)
 
         super(TensorflowGraph, self).build()
+
+
+    def tf_make_connection(self, src, dst):
+
+        if ':' not in src and self.get_node(src).type in self.multi_tensor_type:
+            src += ':0'
+
+        self._make_connection(src, dst)
+        src_node = self.get_node(src.split(':')[0])
+        dst_node = self.get_node(dst.split(':')[0])
+
+        if not src_node in self.layer_map[dst.split(':')[0]].in_nodes:
+            self.layer_map[dst.split(':')[0]].in_nodes.append(src_node)
+        if not dst_node in self.layer_map[src.split(':')[0]].out_nodes:
+            self.layer_map[src.split(':')[0]].out_nodes.append(dst_node)
