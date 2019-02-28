@@ -903,8 +903,8 @@ class TestModels(CorrectnessTest):
             },
 
             'pytorch' : {
-                # 'alexnet'     : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'densenet201' : [mxnet_emit, caffe_emit, coreml_emit, keras_emit, pytorch_emit, tensorflow_emit],
+                'alexnet'     : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
+                'densenet201' : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
                 'inception_v3': [caffe_emit, coreml_emit, keras_emit, pytorch_emit, tensorflow_emit],  # Mxnet broken https://github.com/apache/incubator-mxnet/issues/10194
                 'vgg19'       : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
                 'vgg19_bn'    : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
