@@ -253,7 +253,7 @@ class TensorflowParser(Parser):
             self.tf_graph = TensorflowGraph(model)
             for node in self.tf_graph.model.node:
                 if node.name in in_nodes:
-                    node.attr['shape'].list.shape.extend([tensor_input.as_proto()])
+                    node.attr['shape'].shape.CopyFrom(tensor_input.as_proto())
                     node.attr['_output_shapes'].list.shape.pop()  #unknown_rank pop
                     node.attr['_output_shapes'].list.shape.extend([tensor_input.as_proto()])
 
@@ -272,21 +272,23 @@ class TensorflowParser(Parser):
 
         #  Get input node name
         if not in_nodes:
-            in_nodes = {}
+            in_nodes = []
             for node in model.node:
                 if node.op == 'Placeholder':
-                    in_node_name = str(node.name)
-                    in_node_shape = node.attr['_output_shapes'].list.shape[0]
-                    in_node_shape_str = self._shapeToStr(in_node_shape)
-                    in_nodes[in_node_name] = in_node_shape_str
+                    in_nodes.append(node.name)
 
-        transformed_graph_def = TransformGraph(model, in_nodes.keys(),
+        transformed_graph_def = TransformGraph(model, in_nodes,
                                             dest_nodes, transforms)
         in_type_list = {}
+        in_shape_list = {}
+
         for n in transformed_graph_def.node:
             if n.name in in_nodes:
                 in_type_list[n.name] = n.attr['dtype'].type
-        
+                in_node_shape = n.attr['shape'].shape
+                in_node_shape_str = self._shapeToStr(in_node_shape)
+                in_shape_list[n.name] = in_node_shape_str
+
         dtype = tensorflow.float32
         with tensorflow.Graph().as_default() as g:
             input_map = {}
@@ -300,7 +302,7 @@ class TensorflowParser(Parser):
                 elif in_type_list[in_node] == 10:
                     dtype = tensorflow.bool
                 
-                x = tensorflow.placeholder(dtype, shape = in_nodes[in_node])
+                x = tensorflow.placeholder(dtype, shape = in_shape_list[in_node])
                 input_map[in_node] = x
 
             tensorflow.import_graph_def(transformed_graph_def, name='', input_map=input_map)
@@ -309,7 +311,7 @@ class TensorflowParser(Parser):
 
             meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
             model = meta_graph_def.graph_def
-        
+
         self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
 
