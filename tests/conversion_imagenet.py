@@ -6,7 +6,6 @@ TEST_ONNX = os.environ.get('TEST_ONNX')
 import sys
 import imp
 import numpy as np
-
 from mmdnn.conversion.examples.imagenet_test import TestKit
 import utils
 from utils import *
@@ -653,7 +652,7 @@ class TestModels(CorrectnessTest):
         else:
 
             from PIL import Image as pil_image
-            img = pil_image.open(test_input_path)
+            img = pil_image.open(test_input_path(architecture_name))
             img = img.resize((size, size))
 
             # inference
@@ -887,7 +886,7 @@ class TestModels(CorrectnessTest):
                 'inception_v3' : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
                 'mobilenet'    : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
                 'resnet50'     : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'tinyyolo'     : [coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
+                # 'tinyyolo'     : [coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
                 'vgg16'        : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
             },
 
