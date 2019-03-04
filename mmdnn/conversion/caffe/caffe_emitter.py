@@ -427,6 +427,7 @@ if __name__=='__main__':
         shape = shape_to_list(shape)
         if len(shape) == 4:
             shape[1], shape[3] = shape[3], shape[1]
+            shape[0] = 1
         shape = list(map(lambda x:str(x), shape))
 
         self.add_body(1, "n.{:<15} = L.DummyData(shape=[dict(dim=[{}])], data_filler=dict(type='constant', value={}), ntop=1)".format(
