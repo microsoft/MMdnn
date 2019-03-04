@@ -293,3 +293,8 @@ class NodeMapper(object):
         # skip the split node
         return
 
+    @classmethod
+    def map_elu(cls, node):
+        kwargs = {}
+        cls._convert_output_shape(kwargs, node)
+        return Node.create('ELU', **kwargs)
