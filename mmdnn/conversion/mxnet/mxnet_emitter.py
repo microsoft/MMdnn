@@ -13,6 +13,7 @@ import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.DataStructure.emitter import Emitter
 from mmdnn.conversion.common.utils import *
+from mmdnn.conversion.rewriter.folder import Folder
 
 class MXNetEmitter(Emitter):
 
@@ -37,6 +38,8 @@ class MXNetEmitter(Emitter):
        -1 : 1
     }
 
+    naive_scope_pattern = []
+
     channels_last = ['NDHWC', 'NHWC']
 
     def __init__(self, model):
@@ -59,6 +62,8 @@ class MXNetEmitter(Emitter):
         self.IR_graph = IRGraph(network_path)
         self.IR_graph.build()
 
+        folder = Folder(self.IR_graph, self.weights)
+        folder.fold()
 
     @property
     def header_code(self):
@@ -116,6 +121,7 @@ def RefactorModel():
 
                 cur_shape.insert(1, cur_shape.pop())
                 shape[current_node.name] = ', '.join('%s' % i for i in cur_shape)
+                self.input_name_shape = {current_node.name: tuple(cur_shape)}
 
 
         if self.weight_loaded:
@@ -134,12 +140,17 @@ def RefactorModel():
         # of the last layer (real_variable_name).
         last_line = "{:<15} = mx.mod.Module(symbol = {}, context = mx.cpu(), data_names = ['{}'])".format(
             "model",
-            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type != 'Pack']),
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type !='Pack' and self.IR_graph.get_node(name).type != 'Shape']),
             ', '.join([self.IR_graph.get_node(name).real_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']))
 
         self.add_body(1, comment)
         self.add_body(1, last_line)
         self.add_body(1, "return model")
+
+
+        self.add_body(0, "")
+        for code in self.layers_codes.values():
+            self.add_body(0, code)
 
         weight_code = ""
         if not self.weight_loaded:
@@ -245,7 +256,7 @@ def predict(model, labels, url):
             str += "('" + k + "', " + "(" + v + "))"
             first = False
         str += "])\n"
-        str += "    model.set_params(arg_params = arg_params, aux_params = aux_params, allow_missing = True)\n\n    return model\n\n\n"
+        str += "    model.set_params(arg_params = arg_params, aux_params = aux_params, allow_missing = True, allow_extra=True)\n\n    return model\n\n\n"
         return str
 
 
@@ -313,21 +324,12 @@ def predict(model, labels, url):
                 IR_node.name + "_pad")
 
         for e in IR_node.in_edges:
+            e = e.split(':')[0]
             if e == 'data':
                 continue
-            self.IR_layer_map[e].out_edges = [x if not self.IR_layer_map[x].name == IR_node.variable_name else IR_node.variable_name + "_pad" for x in self.IR_layer_map[e].out_edges]
+            self.IR_layer_map[e].out_edges = [x if not self.IR_layer_map[x.split(':')[0]].name == IR_node.variable_name else IR_node.variable_name + "_pad" for x in self.IR_layer_map[e].out_edges]
 
         return code
-
-
-    def parent_variable_name(self, IR_node, path=[0]):
-
-        if self.IR_graph.get_parent(IR_node.name, path):
-            return super(MXNetEmitter, self).parent_variable_name(IR_node, path=path)
-
-        if IR_node.name in self.weights and 'weights' in self.weights[IR_node.name]:
-            self.output_weights[IR_node.name + '_weight'] = [self.weights[IR_node.name]['weights']]
-            return "mx.sym.Variable('{}', shape=(1,))".format(IR_node.name+'_weight')
 
 
     def emit_UNKNOWN(self, IR_node):
@@ -518,8 +520,10 @@ def predict(model, labels, url):
 
             if self.weight_loaded:
                 if not fix_gamma:
-                    self.output_weights[IR_node.name + "_gamma"] = np.multiply(weight_dict['scale'], weight_dict_scale['scale'])
-                self.output_weights[IR_node.name + "_beta"] = np.multiply(weight_dict['bias'], weight_dict_scale['scale']) + weight_dict_scale['bias']
+                #     self.output_weights[IR_node.name + "_gamma"] = np.multiply(weight_dict['scale'], weight_dict_scale['scale'])
+                # self.output_weights[IR_node.name + "_beta"] = np.multiply(weight_dict['bias'], weight_dict_scale['scale']) + weight_dict_scale['bias']
+                    self.output_weights[IR_node.name + "_gamma"] = weight_dict['scale']
+                self.output_weights[IR_node.name + "_beta"] = weight_dict['bias']
 
             # not supported yet
             use_global_stats = "False"
@@ -876,7 +880,7 @@ def predict(model, labels, url):
         dim = MXNetEmitter._convert_axis(IR_node, IR_node.IR_layer.attr["axis"].i)
         code = "{:<15} = mx.sym.concat({}, dim = {}, name = '{}')".format(
                 IR_node.variable_name,
-                ', '.join(self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges),
+                ', '.join(self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))),
                 dim,
                 IR_node.name)
 
@@ -884,9 +888,7 @@ def predict(model, labels, url):
 
 
     def emit_Cast(self, IR_node):
-
         dtype = IR_node.IR_layer.attr["dtype"].type
-
         code = "{:<15} = mx.sym.cast(data = {}, dtype = {}, name = '{}')".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
@@ -897,9 +899,7 @@ def predict(model, labels, url):
 
 
     def emit_Expand_dims(self, IR_node):
-
         axis = IR_node.IR_layer.attr["axis"].i
-
         code = "{:<15} = mx.sym.expand_dims(data = {}, axis = {}, name = '{}')".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
@@ -975,15 +975,19 @@ def predict(model, labels, url):
 
     def emit_Constant(self, IR_node):
         # save the constant into weight dict
-        value = IR_node.get_attr('value')
+        if IR_node.get_attr('value'):
+            value = IR_node.get_attr('value')
+        else:
+            value = self.weights[IR_node.name]['value']
+    
         if not isinstance(value, list):
-            shape = (1, )
             self.output_weights[IR_node.name + '_weight'] = [value] # mxnet's bug, it does not surpport scalar weight. 
+            code = "{:<15} = mx.sym.var(name = '{}', shape=(1,))".format(IR_node.variable_name, IR_node.name+'_weight')
         else:
             shape = np.array(value).shape
             self.output_weights[IR_node.name + '_weight'] = value
 
-        code = "{:<15} = mx.sym.Variable('{}', shape={})".format(IR_node.variable_name, IR_node.name+'_weight', shape)
+            code = "{:<15} = mx.sym.var(name = '{}', shape={})".format(IR_node.variable_name, IR_node.name+'_weight', shape)
 
         return code
 
@@ -997,44 +1001,343 @@ def predict(model, labels, url):
 
 
     def emit_Relu6(self, IR_node):
-        self.add_body(1, self.emit_Activation(IR_node, 'relu'))
+        codes = list()
+        codes.append(self.emit_Activation(IR_node, 'relu'))
         old_name = IR_node.variable_name
         IR_node.real_name = IR_node.real_name + "_clip"
-        self.add_body(1, "{:<15} = mx.sym.clip({}, a_min=0, a_max=6, name='{}')".format(
+        codes.append("{:<15} = mx.sym.clip({}, a_min=0, a_max=6, name='{}')".format(
             IR_node.real_variable_name,
             old_name,
             IR_node.real_name))
 
-        return ""
+        return codes
 
 
     def emit_Slice(self, IR_node):
-        if self.IR_graph.get_parent(IR_node.name, [0]).type == 'Shape':
-            pass
-        else:
-            starts = IR_node.get_attr('starts')
-            starts = [starts[0], starts[-1]] + starts[1:-1]
-            ends = IR_node.get_attr('ends')
-            ends = [ends[0], ends[-1]] + ends[1:-1]
-            ends = [i if i else None for i in ends]
-            strides = IR_node.get_attr('strides')
-            if strides:
-                strides = [strides[0], strides[-1]] + strides[1:-1]
 
-            self.add_body(1, "{:<15} = mx.sym.slice({}, begin={}, end={}, step={}, name='{}')".format(
-                IR_node.real_variable_name,
-                self.parent_variable_name(IR_node),
-                starts,
-                ends,
-                strides,
-                IR_node.name
-            ))
-            return ""
+        starts = IR_node.get_attr('starts')
+        starts = [starts[0], starts[-1]] + starts[1:-1]
+        ends = IR_node.get_attr('ends')
+        ends = [ends[0], ends[-1]] + ends[1:-1]
+        ends = [i if i else None for i in ends]
+        strides = IR_node.get_attr('strides')
+        if strides:
+            strides = [strides[0], strides[-1]] + strides[1:-1]
+
+        code =  "{:<15} = mx.sym.slice({}, begin={}, end={}, step={}, name='{}')".format(
+            IR_node.real_variable_name,
+            self.parent_variable_name(IR_node),
+            starts,
+            ends,
+            strides,
+            IR_node.name
+        )
+        return code
 
     def emit_Const(self, IR_node):
         pass
 
     def emit_Shape(self, IR_node):
-        pass
+        code = "{:<15} = mx.sym.var(init = mx.init.Constant({}.infer_shape({}={})[1][0]), name='{}')".format(
+            IR_node.real_variable_name,
+            self.parent_variable_name(IR_node),
+            list(self.input_name_shape.keys())[0],
+            list(self.input_name_shape.values())[0],
+            IR_node.name
+        )
+        return code
+
     def emit_Pack(self, IR_node):
         pass
+
+    def emit_Unsqueeze(self, IR_node):
+        axis = IR_node.get_attr('axes')[0]
+        code = "{:<15} = mx.sym.expand_dims(data = {}, axis = {}, name = '{}')".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                axis,
+                IR_node.name)
+
+        return code
+
+    def emit_Unstack(self, IR_node):
+        squeeze_axis = axis = IR_node.get_attr('axis')
+        num = IR_node.get_attr('num')
+        if num is None:
+            args_str = ""
+            for input_name in self.IR_graph.input_layers:
+                if self.IR_graph.get_node(input_name).type!='Const':
+                    args_str += '{}={}, '.format(self.IR_graph.get_node(input_name).real_variable_name, self.data_input_shape[input_name])
+
+            args_str = args_str[:-2]
+            num_outputs = "{}.infer_shape({})[1][0][{}]".format(
+                IR_node.variable_name,
+                args_str,
+                axis
+            )
+        else:
+            num_outputs = num
+
+        code = "{:<15} = mx.sym.split({}, num_outputs={}, axis={}, squeeze_axis={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            num_outputs,
+            axis,
+            squeeze_axis
+        )
+        return code
+
+    def emit_Fill(self, IR_node):
+        value = IR_node.get_attr('value')
+        code = "{:<15} = mx.sym.full({}, {})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            value
+        )
+        return code
+
+    def emit_Split(self, IR_node):
+        axis = IR_node.get_attr('axis')
+        num_outputs = IR_node.get_attr('split')
+
+        if isinstance(num_outputs, list):
+            raise NotImplementedError()
+        code = "{:<15} = mx.sym.split({}, num_outputs={}, axis={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            num_outputs,
+            axis)
+
+        return code
+
+
+    def emit_Sigmoid(self, IR_node):
+        code = "{:<15} = mx.sym.sigmoid(data={}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name
+        )
+        return code
+
+
+    def emit_Tanh(self, IR_node):
+        code = "{:<15} = mx.sym.tanh(data={}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name
+        )
+        return code
+
+
+    def emit_Maxmum(self, IR_node):
+        code = "{:<15} = mx.sym.maxmum({}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            self.parent_variable_name(IR_node, [1]),
+            IR_node.name
+        )
+        return code
+
+
+    def emit_Minimum(self, IR_node):
+        code = "{:<15} = mx.sym.minimum({}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            self.parent_variable_name(IR_node, [1]),
+            IR_node.name
+        )
+        return code
+
+
+    def emit_Scope(self, IR_node):
+        import re
+        pattern = IR_node.pattern
+        
+        if pattern not in self.naive_scope_pattern and re.sub(r'(_\d+)*$', '', IR_node.pattern) not in self.naive_scope_pattern:
+            origi_pattern = re.sub(r'(_\d+)*$', '', IR_node.pattern)
+            func = getattr(self, "_emit_" + origi_pattern)
+            code = func(IR_node)
+        else:
+            code = "{:<15} = __{}({})".format(
+                IR_node.real_variable_name,
+                IR_node.pattern,
+                ', '.join(self.parent_variable_name(IR_node, s) for s in IR_node.in_edges))
+            self._gen_scope_code(IR_node)
+        return code
+
+
+    def _gen_scope_code(self, scope_node):
+
+        def _get_weight_related_op_name(node):
+            weight_related_ops = ['Constant', 'Conv', 'FullyConnected', 'BatchNorm']
+            op_type = node.type
+            if op_type in weight_related_ops:
+                return op_type, node.name
+
+        def _scope_func(params, code, return_var):
+            code = """
+    def __call__(self, {}):
+{}
+        return {}
+    """.format(params, code, ', '.join(return_var))
+            return code
+
+        class_inits = dict()
+
+        body_code = str()
+        for node_name in scope_node.topology_list:
+            node = self.IR_graph.get_node(node_name)
+            node_type = node.type
+
+            if hasattr(self, "emit_" + node_type):
+                func = getattr(self, "emit_" + node_type)
+                line = func(node)
+                if line != None:
+                    body_code += "        " + line + '\n'
+                    inits = _get_weight_related_op_name(node)
+                    if inits:
+                        if class_inits.get(inits[0], None):
+                            class_inits[inits[0]].append(inits[1])
+                        else:
+                            class_inits[inits[0]] = list([inits[1]])
+            else:
+                print("MXNetEmitter has not supported operator [%s]." % (node_type))
+                self.emit_UNKNOWN(node)
+
+        # param_code does not need parameter slice.
+        param_code = ', '.join('%s'  %self.IR_graph.get_node(s).real_variable_name for s in scope_node.in_edges)
+        function_code = _scope_func(param_code, body_code, scope_node.return_variables)
+
+        return class_inits, function_code
+
+
+    def _emit_gru_cell(self, IR_node):
+        if not self.layers_codes.get(IR_node.pattern, None):
+            class_inits, func_code = self._gen_scope_code(IR_node)
+            variables, variable_codes, init_code, func_code = self.process_inits_func_code(class_inits, func_code)
+
+            states = [self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges]
+            states.pop(0)
+            states_code = ', '.join(states)
+
+            class_code ='''
+class _{}(mx.rnn.BaseRNNCell):
+    def __init__(self, {}):
+
+{}
+
+{}
+
+            '''.format(IR_node.pattern,
+            ', '.join(variables),
+            init_code,
+            func_code)
+            self.layers_codes[IR_node.pattern] = class_code
+
+            if not hasattr(self, 'pattern_variables'):
+                self.pattern_variables = {IR_node.pattern: variables}
+            else:
+                self.pattern_variables[IR_node.pattern] = variables
+
+            code = variable_codes
+            code.append("{:<15} = _{}({})({})".format(
+                IR_node.real_variable_name,
+                IR_node.pattern,
+                ', '.join(variables),
+                ', '.join(self.parent_variable_name(IR_node, s) for s in IR_node.in_edges)))
+        else:
+            code = "{:<15} = _{}({})({})".format(
+                IR_node.real_variable_name,
+                IR_node.pattern,
+                ', '.join(self.pattern_variables[IR_node.pattern]),
+                ', '.join(self.parent_variable_name(IR_node, s) for s in IR_node.in_edges))
+
+        return code
+
+
+    def _emit_h_zero(self, IR_node):
+        code = "{:<15} = mx.sym.full((1, {}), {})".format(
+            IR_node.variable_name,
+            IR_node.get_attr('fill_size'),
+            IR_node.get_attr('fill_value')
+        )
+        return code
+    
+
+    def _emit_lstm_cell(self, IR_node):
+
+        if not self.layers_codes.get(IR_node.pattern, None):
+            class_inits, func_code = self._gen_scope_code(IR_node)
+            variables, variable_codes, init_code, func_code = self.process_inits_func_code(class_inits, func_code)
+
+            states = [self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges]
+            states.pop(0)
+            states_code = ', '.join(states)
+
+            class_code ='''
+class _{}(mx.rnn.BaseRNNCell):
+    def __init__(self, {}):
+
+{}
+
+{}
+
+            '''.format(IR_node.pattern,
+            ', '.join(variables),
+            init_code,
+            func_code)
+            self.layers_codes[IR_node.pattern] = class_code
+
+            if not hasattr(self, 'pattern_variables'):
+                self.pattern_variables = {IR_node.pattern: variables}
+            else:
+                self.pattern_variables[IR_node.pattern] = variables
+
+            code = variable_codes
+            code.append("{:<15} = _{}({})({})".format(
+                IR_node.real_variable_name,
+                IR_node.pattern,
+                ', '.join(variables),
+                ', '.join(self.parent_variable_name(IR_node, s) for s in IR_node.in_edges)))
+        else:
+            code = "{:<15} = _{}({})({})".format(
+                IR_node.real_variable_name,
+                IR_node.pattern,
+                ', '.join(self.pattern_variables[IR_node.pattern]),
+                ', '.join(self.parent_variable_name(IR_node, s) for s in IR_node.in_edges))
+
+        return code
+
+
+    def process_inits_func_code(self, class_inits, func_code):
+        init_code = str()
+        variables = list()
+        variable_codes = list()
+        for k, v in class_inits.items():
+            if k == 'FullyConnected':
+                for i, name in enumerate(class_inits[k]):
+                    variable_name = self.IR_graph.get_node(name).variable_name
+                    variables.append("W_" + variable_name)
+                    variable_codes.append("W_{:<15} = mx.sym.var(name='{}_weight')".format(variable_name, name))
+                    init_code += "        self.W_{} = W_{}\n".format(variable_name, variable_name)
+
+                    if self.weight_loaded and self.weights[name].get('bias', None).any() != None:
+                        variable_codes.append("B_{:<15} = mx.sym.var(name='{}_bias')".format(variable_name, name))
+                        variables.append("B_" + variable_name)
+                        init_code += "        self.B_{} = B_{}\n".format(variable_name, variable_name)
+                        func_code = func_code.replace("name = '{}'".format(name), "name = '{}', weight = self.W_{}, bias = self.B_{}".format(name, variable_name, variable_name))
+                    else:
+                        func_code = func_code.replace("name = '{}'".format(name), "name = '{}', weight = self.W_{}".format(name, variable_name))
+            elif k == 'Constant':
+                for name in class_inits[k]:
+                    variable_name = self.IR_graph.get_node(name.replace('_weight', '')).variable_name
+                    variables.append(variable_name)
+                    constant_line = self.emit_Constant(self.IR_graph.get_node(name.replace('_weight', '')))
+                    variable_codes.append("{:<15} = {}".format(variable_name, '='.join(constant_line.split('=')[1:])))
+                    init_code += "        self.{} = {}\n".format(variable_name, variable_name)
+                    func_code = func_code.replace(constant_line, constant_line.split('=')[0] + ' = self.'+constant_line.split('=')[0])
+            else:
+                raise NotImplementedError
+
+        return variables, variable_codes, init_code, func_code
+

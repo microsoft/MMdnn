@@ -53,7 +53,8 @@ layer_num_to_name = {
     37: 'ContrastiveLoss',
     38: 'Exp',
     39: 'Deconvolution',
-    40: 'PReLU'
+    40: 'PReLU',
+    41: 'ELU',
     }
 
 LAYER_DESCRIPTORS = {
@@ -103,7 +104,8 @@ LAYER_DESCRIPTORS = {
     'Threshold': shape_identity,
     'Reshape' : shape_reshape,
     'ResizeBilinear': shape_reshape,
-    'PReLU'   : shape_identity
+    'PReLU'   : shape_identity,
+    'ELU' : shape_identity,
     }
 
 LAYER_TYPES = LAYER_DESCRIPTORS.keys()
@@ -145,9 +147,10 @@ class CaffeNode(object):
         self.output_shape = None
         self.metadata = {}
 
-    def add_parent(self, parent_node, from_output):
+    def add_parent(self, parent_node, from_output, index=None):
         assert parent_node not in self.parents
-        self.parents.append((parent_node, from_output))
+        index = len(self.parents) if index is None else index
+        self.parents.insert(index, (parent_node, from_output))
         if self not in parent_node.children:
             parent_node.children.append(self)
 

@@ -17,10 +17,9 @@ def get_test_table():
 
     return { 'tensorflow' :
     {
-        'vgg19'                : [TestModels.caffe_emit, TestModels.coreml_emit, TestModels.cntk_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit],
-        'inception_v1'         : [TestModels.caffe_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-        'inception_v3'         : [TestModels.caffe_emit, TestModels.coreml_emit, TestModels.cntk_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-        'resnet_v1_152'        : [TestModels.caffe_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+        'resnet_v2_152'        : [TestModels.caffe_emit, TestModels.coreml_emit, TestModels.cntk_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+        'mobilenet_v1_1.0'     : [TestModels.coreml_emit, TestModels.cntk_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+        'mobilenet_v2_1.0_224' : [TestModels.coreml_emit, TestModels.cntk_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
         #'nasnet-a_large'       : [TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
         #'inception_resnet_v2'  : [TestModels.caffe_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
     }}
