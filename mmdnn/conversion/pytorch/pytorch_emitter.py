@@ -765,6 +765,12 @@ class KitModel(nn.Module):
         return code
 
 
+    def emit_Square(self, IR_node):
+        code = "{:<15} = {}.pow(2)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node))
+        return code
+
     def emit_Scope(self, IR_node):
         input_vars = [self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))]
         code = "{:<15} = self.__{}({})".format(
