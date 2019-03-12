@@ -382,7 +382,7 @@ def prepare_env(FLAGS):
     if (not os.path.exists(output_dir)):
         os.mkdir(output_dir)
     if ((not os.path.isdir(output_dir)) or (not os.path.exists(output_dir))):
-        printf('Cannot create target output directory: "{0}"'.format(output_dir))
+        print('Cannot create target output directory: "{0}"'.format(output_dir))
         return False
     return True
 
