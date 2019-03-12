@@ -771,6 +771,7 @@ class KitModel(nn.Module):
             self.parent_variable_name(IR_node))
         return code
 
+
     def emit_PRelu(self, IR_node):
         code = "{:<15} = F.prelu({}, torch.from_numpy(__weights_dict['{}']['weights']))".format(
             IR_node.variable_name,
@@ -781,6 +782,25 @@ class KitModel(nn.Module):
             self.weights_dict[IR_node.name]['weights'] = self.weights_dict[IR_node.name]['gamma']
         
         return code
+
+
+    def emit_Cast(self, IR_node):
+        dstType = IR_node.get_attr('dstType')
+
+        if dstType == 'float':
+            dst = 'torch.FloatTensor'
+        elif dstType == 'double':
+            dst = 'torch.DoubleTensor'
+        elif dstType == 'int':
+            dst = 'torch.IntTensor'
+        
+        code = "{:<15} = {}.type({})".format(
+            IR_node.real_variable_name,
+            self.parent_variable_name(IR_node),
+            dst)
+
+        return code
+
 
     def emit_Scope(self, IR_node):
         input_vars = [self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))]
