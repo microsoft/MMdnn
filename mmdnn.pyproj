@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{f52d66f2-ff19-4700-bcaf-734e1a2fb037}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>tests\test_tensorflow.py</StartupFile>
+    <StartupFile></StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
