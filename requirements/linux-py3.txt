@@ -10,6 +10,6 @@ mxnet==1.1.0.post0
 cntk==2.5.1
 http://download.pytorch.org/whl/cpu/torch-0.4.0-cp35-cp35m-linux_x86_64.whl
 https://raw.githubusercontent.com/PaulaQin/pycaffe_packages/master/caffe-1.0-py3-none-any.whl
-torchvision
+torchvision==0.2.1
 onnx==1.2.1
 onnx-tf==1.1.2
