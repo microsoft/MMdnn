@@ -430,7 +430,7 @@ class TensorflowParser(Parser):
 
         kwargs = {}
         if 'data_format' in source_node.layer.attr:
-            kwargs['data_format'] = source_node.get_attr('data_format')
+            kwargs["data_format"] = source_node.get_attr('data_format')
 
         if 'dtype' in source_node.layer.attr:
             assert source_node.layer.attr['dtype'].type in TensorflowParser.dtype_map, 'type [{}] is unknown.'.format(source_node.layer.attr['dtype'].type)
@@ -512,8 +512,9 @@ class TensorflowParser(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
         # shape
         TensorflowParser._copy_shape(source_node, IR_node)
-        IR_node.attr['shape'].shape.dim[0].size = -1
-        IR_node.attr['_output_shapes'].list.shape[0].dim[0].size = -1
+        if len(IR_node.attr['shape'].shape.dim)>0 and len(IR_node.attr['_output_shapes'].list.shape)>0 and len(IR_node.attr['_output_shapes'].list.shape[0].dim)>0:
+            IR_node.attr['shape'].shape.dim[0].size = -1
+            IR_node.attr['_output_shapes'].list.shape[0].dim[0].size = -1
 
 
     def rename_Conv2D(self, source_node):
@@ -1046,3 +1047,16 @@ class TensorflowParser(Parser):
     def rename_Maxmum(self, source_node):
         self._add_constant_node(source_node)
         self._convert_identity_operation(source_node)
+
+    def rename_Cast(self, source_node):
+        IR_node = self._convert_identity_operation(source_node)
+        dst = source_node.get_attr('DstT')
+        if dst == 1:
+            dst = 'float'
+        elif dst == 3:
+            dst = 'int'
+        else:
+            raise NotImplementedError
+
+        kwargs = {'dstType' : dst}
+        assign_IRnode_values(IR_node, kwargs)

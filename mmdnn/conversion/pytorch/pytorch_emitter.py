@@ -765,6 +765,43 @@ class KitModel(nn.Module):
         return code
 
 
+    def emit_Square(self, IR_node):
+        code = "{:<15} = {}.pow(2)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node))
+        return code
+
+
+    def emit_PRelu(self, IR_node):
+        code = "{:<15} = F.prelu({}, torch.from_numpy(__weights_dict['{}']['weights']))".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node, [0]),
+            IR_node.name)
+        
+        if self.weight_loaded:
+            self.weights_dict[IR_node.name]['weights'] = self.weights_dict[IR_node.name]['gamma']
+        
+        return code
+
+
+    def emit_Cast(self, IR_node):
+        dstType = IR_node.get_attr('dstType')
+
+        if dstType == 'float':
+            dst = 'torch.FloatTensor'
+        elif dstType == 'double':
+            dst = 'torch.DoubleTensor'
+        elif dstType == 'int':
+            dst = 'torch.IntTensor'
+        
+        code = "{:<15} = {}.type({})".format(
+            IR_node.real_variable_name,
+            self.parent_variable_name(IR_node),
+            dst)
+
+        return code
+
+
     def emit_Scope(self, IR_node):
         input_vars = [self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))]
         code = "{:<15} = self.__{}({})".format(
@@ -849,7 +886,7 @@ class KitModel(nn.Module):
         self.add_body(0, """
     @staticmethod
     def __batch_normalization(dim, name, **kwargs):
-        if   dim == 1:  layer = nn.BatchNorm1d(**kwargs)
+        if   dim == 0 or dim == 1:  layer = nn.BatchNorm1d(**kwargs)
         elif dim == 2:  layer = nn.BatchNorm2d(**kwargs)
         elif dim == 3:  layer = nn.BatchNorm3d(**kwargs)
         else:           raise NotImplementedError()
