@@ -142,7 +142,7 @@ def _progress_check(count, block_size, total_size):
         percent = min(percent, 100)
         sys.stdout.write("\rprogress: {} downloaded, {}%.".format(read_size_str, percent))
         if read_size >= total_size:
-            sys.stderr.write("\n")
+            sys.stdout.write("\n")
     else:
         sys.stdout.write("\rprogress: {} downloaded.".format(read_size_str))
     sys.stdout.flush()
