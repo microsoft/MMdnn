@@ -126,11 +126,25 @@ def compute_tf_same_padding(input_shape, kernel_shape, strides, data_format='NHW
 
 
 # network library
+def sizeof_fmt(num, suffix='B'):
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f %s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f %s%s" % (num, 'Yi', suffix)
+
+
 def _progress_check(count, block_size, total_size):
-    progress_size = int(count * block_size) / 1024
-    percent = int(count * block_size * 100 / total_size)
-    percent = min(percent, 100)
-    sys.stdout.write("\rprogress: {} KB downloaded, {}%".format(progress_size, percent))
+    read_size = count * block_size
+    read_size_str = sizeof_fmt(read_size)
+    if total_size > 0:
+        percent = int(count * block_size * 100 / total_size)
+        percent = min(percent, 100)
+        sys.stdout.write("\rprogress: {} downloaded, {}%.".format(read_size_str, percent))
+        if read_size >= total_size:
+            sys.stderr.write("\n")
+    else:
+        sys.stdout.write("\rprogress: {} downloaded.".format(read_size_str))
     sys.stdout.flush()
 
 

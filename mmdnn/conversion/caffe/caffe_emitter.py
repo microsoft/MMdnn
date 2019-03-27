@@ -418,15 +418,21 @@ if __name__=='__main__':
 
 
     def emit_Constant(self, IR_node):
-        value = IR_node.get_attr('value')
+        if IR_node.get_attr('value'):
+            value = IR_node.get_attr('value')
+        else:
+            value = self.weights_dict[IR_node.name]['value'][0]
         IR_node_after = self.IR_graph.get_son(IR_node.name, [0])
         shape = IR_node_after.get_attr("_output_shapes")[0]
         shape = shape_to_list(shape)
-        self.add_body(1, "n.{:<15} = L.DummyData(shape=[dict(dim=[1,{},{},{}])], data_filler=dict(type='constant', value={}), ntop=1)".format(
+        if len(shape) == 4:
+            shape[1], shape[3] = shape[3], shape[1]
+            shape[0] = 1
+        shape = list(map(lambda x:str(x), shape))
+
+        self.add_body(1, "n.{:<15} = L.DummyData(shape=[dict(dim=[{}])], data_filler=dict(type='constant', value={}), ntop=1)".format(
             IR_node.variable_name,
-            shape[-1],
-            shape[1],
-            shape[2],
+            ', '.join(shape),
             value
         ))
 
@@ -633,3 +639,9 @@ if __name__=='__main__':
     #         input_layers))
 
 
+    def emit_Elu(self, IR_node):
+        in_place = True
+        self.add_body(1, "n.{:<15} = L.ELU(n.{}, in_place={}, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            in_place))

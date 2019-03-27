@@ -105,3 +105,10 @@ node_modules/
 package-lock.json
 *.log
 .vscode/
+
+# tests temporary files
+tests/cache/
+tests/tmp/
+
+# Visual Studio
+.vs/

@@ -51,7 +51,7 @@ class CoremlParser(Parser):
         # load model file into Coreml Graph
         if isinstance(model, _string_types):
             # model.encode() convert to str --- python2 may crash due to type 'unicode'
-            model = _MLModel(model.encode())
+            model = _MLModel(model)
             model = model.get_spec()
             self.weight_loaded = True
         else:
@@ -772,6 +772,8 @@ class CoremlParser(Parser):
 
 
         self.set_weight(coreml_node_layer.name, "scale", np.array(coreml_node_scale.scale.floatValue).astype(np.float32))
+        self.set_weight(coreml_node_layer.name, "scale_mean", np.zeros_like(coreml_node_scale.scale.floatValue).astype(np.float32))
+        self.set_weight(coreml_node_layer.name, "scale_var", np.ones_like(coreml_node_scale.scale.floatValue).astype(np.float32))
 
         self.set_weight(coreml_node_layer.name, "shapeScale", coreml_node_scale.shapeScale[0])
 
@@ -887,7 +889,9 @@ class CoremlParser(Parser):
         if IR_node.attr['use_bias'].b:
             self.set_weight(source_node_layer.name, 'bias', np.array(source_node_inner.bias.floatValue).astype(np.float32) )
         # change to single because of the tf matmul
-
+        
+        # in features
+        IR_node.attr['in_features'].i = source_node_inner.inputChannels
 
     def rename_Padding(self, source_node):
         IR_node = self.IR_graph.node.add()

@@ -15,7 +15,7 @@ def _convert(args):
 
     elif args.dstFramework == 'keras':
         from mmdnn.conversion.keras.keras2_emitter import Keras2Emitter
-        emitter = Keras2Emitter(args.IRModelPath)
+        emitter = Keras2Emitter((args.IRModelPath, args.IRWeightPath))
 
     elif args.dstFramework == 'tensorflow':
         from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
