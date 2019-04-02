@@ -16,6 +16,7 @@ from tensorflow.tools.graph_transforms import TransformGraph
 from mmdnn.conversion.rewriter.utils import *
 import tempfile
 import os
+import shutil
 
 
 class TensorflowParser(Parser):
@@ -310,9 +311,10 @@ class TensorflowParser(Parser):
             tensorflow.import_graph_def(transformed_graph_def, name='', input_map=input_map)
 
         with tensorflow.Session(graph = g) as sess:
-            with tempfile.TemporaryDirectory() as tempdir:
-                meta_graph_def = tensorflow.train.export_meta_graph(filename=os.path.join(tempdir, 'my-model.meta'))
-                model = meta_graph_def.graph_def
+            tempdir = tempfile.mkdtemp()
+            meta_graph_def = tensorflow.train.export_meta_graph(filename=os.path.join(tempdir, 'my-model.meta'))
+            model = meta_graph_def.graph_def
+            shutil.rmtree(tempdir)
 
         self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
