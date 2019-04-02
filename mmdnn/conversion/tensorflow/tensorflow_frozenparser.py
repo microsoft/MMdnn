@@ -8,6 +8,8 @@ from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.utils import *
 from mmdnn.conversion.common.DataStructure.parser import Parser
 from distutils.version import LooseVersion
+import tempfile
+import os
 
 
 class TensorflowParser2(Parser):
@@ -120,11 +122,12 @@ class TensorflowParser2(Parser):
                 output_node_names = dest_nodes,
                 placeholder_type_enum = dtypes.float32.as_datatype_enum)
         # Save it to an output file
-        frozen_model_file = './frozen.pb'
-        with gfile.GFile(frozen_model_file, "wb") as f:
-            f.write(original_gdef.SerializeToString())
-        with open(frozen_model_file, 'rb') as f:
-            serialized = f.read()
+        with tempfile.TemporaryDirectory() as tempdir:
+            frozen_model_file = os.path.join(tempdir, 'frozen.pb')
+            with gfile.GFile(frozen_model_file, "wb") as f:
+                f.write(original_gdef.SerializeToString())
+            with open(frozen_model_file, 'rb') as f:
+                serialized = f.read()
         tensorflow.reset_default_graph()
         model = tensorflow.GraphDef()
         model.ParseFromString(serialized)
@@ -154,8 +157,9 @@ class TensorflowParser2(Parser):
 
         with tensorflow.Session(graph = g) as sess:
 
-            meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
-            model = meta_graph_def.graph_def
+            with tempfile.TemporaryDirectory() as tempdir:
+                meta_graph_def = tensorflow.train.export_meta_graph(filename=os.path.join(tempdir, 'my-model.meta'))
+                model = meta_graph_def.graph_def
 
 
         self.tf_graph = TensorflowGraph(model)
