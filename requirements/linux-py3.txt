@@ -5,10 +5,10 @@ pillow == 5.2.0
 setuptools==39.1.0
 tensorflow==1.13.1
 keras==2.2.4
-#coremltools==2.1.0
+coremltools==2.1.0
 mxnet==1.4.0
 cntk==2.6
-https://download.pytorch.org/whl/cpu/torch-1.0.1-cp35-cp35m-win_amd64.whl
+http://download.pytorch.org/whl/cpu/torch-0.4.0-cp35-cp35m-linux_x86_64.whl
 https://raw.githubusercontent.com/PaulaQin/pycaffe_packages/master/caffe-1.0-py3-none-any.whl
 torchvision==0.2.1
 onnx==1.4.1
