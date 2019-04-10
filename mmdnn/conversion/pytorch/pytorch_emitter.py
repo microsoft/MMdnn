@@ -254,7 +254,7 @@ class KitModel(nn.Module):
                 ceil_mode = self.is_ceil_mode(IR_node.get_attr('pads'))
 
                 # input_node = self._defuse_padding(IR_node, exstr)
-                code = "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
+                code = "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={}, count_include_pad=False)".format(
                     IR_node.variable_name,
                     pool_name,
                     self.parent_variable_name(IR_node),
