@@ -540,7 +540,7 @@ def KitModel(weight_file = None):
 
 
     def emit_ConvTranspose(self, IR_node):
-        self.emit_Conv(IR_node)
+        return self.emit_Conv(IR_node)
 
 
     def emit_yolo(self, IR_node):
