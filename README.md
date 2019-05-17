@@ -187,6 +187,8 @@ $ mmtoir -f keras -w imagenet_inception_v3.h5 -o keras_inception_v3
 
 - [MXNet "ResNet-152-11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
 
+- [Another Example of MXNet "ResNet-152-11k" to PyTorch](https://blog.paperspace.com/convert-full-imagenet-pre-trained-model-from-mxnet-to-pytorch/)
+
 - [MXNet "ResNeXt" to Keras](https://github.com/Microsoft/MMdnn/issues/58)
 
 - [TensorFlow "ResNet-101" to PyTorch](https://github.com/Microsoft/MMdnn/issues/22)

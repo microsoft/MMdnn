@@ -691,12 +691,6 @@ class TestModels(CorrectnessTest):
 
             predict = tf_rep.run(input_data)[0]
 
-            return predict
-
-        except ImportError:
-            print('Please install Onnx! Or Onnx is not supported in your platform.', file=sys.stderr)
-
-        finally:
             del prepare
             del model_converted
             del tf_rep
@@ -705,6 +699,10 @@ class TestModels(CorrectnessTest):
             os.remove(converted_file + '.py')
             os.remove(converted_file + '.npy')
 
+            return predict
+
+        except ImportError:
+            print('Please install Onnx! Or Onnx is not supported in your platform.', file=sys.stderr)
 
 
     # In case of odd number add the extra padding at the end for SAME_UPPER(eg. pads:[0, 2, 2, 0, 0, 3, 3, 0]) and at the beginning for SAME_LOWER(eg. pads:[0, 3, 3, 0, 0, 2, 2, 0])
