@@ -495,7 +495,7 @@ def KitModel(weight_file = None):
                     IR_node.variable_name + '_weight_array'))
             inputs += ', '+''.join("'"+IR_node.variable_name +"_weight'")
             self.nodes.append(IR_node.variable_name+'_weight')
-        
+
         self.add_body(1, "{:15} = helper.make_node('Mul', inputs=[{}], outputs=['{}'], broadcast=1)".format(
             IR_node.variable_name,
             inputs,
@@ -615,6 +615,14 @@ def KitModel(weight_file = None):
             self.parent_variable_name(IR_node),
             IR_node.variable_name,
             blocksize))
+        self.nodes.append(IR_node.variable_name)
+
+    def emit_Sigmoid(self, IR_node):
+        self.add_body(1, "{: <15} = helper.make_node('Sigmoid', inputs=['{}'], outputs=['{}'])".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.variable_name
+        ))
         self.nodes.append(IR_node.variable_name)
 
     def emit_UNKNOWN(self, IR_node):
