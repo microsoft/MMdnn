@@ -33,10 +33,6 @@ class NodeMapper(object):
                 dim.size = i
             dim = shape.dim.add()
             dim.size = node.output_shape.channels
-        #test
-        elif len(node.output_shape) ==1:
-            dim = shape.dim.add()
-            dim.size = node.output_shape[0]
         else:
             dim = shape.dim.add()
             dim.size = node.output_shape[1]
