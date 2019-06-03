@@ -33,6 +33,10 @@ class NodeMapper(object):
                 dim.size = i
             dim = shape.dim.add()
             dim.size = node.output_shape.channels
+        #test
+        elif len(node.output_shape) ==1:
+            dim = shape.dim.add()
+            dim.size = node.output_shape[0]
         else:
             dim = shape.dim.add()
             dim.size = node.output_shape[1]
@@ -248,12 +252,17 @@ class NodeMapper(object):
 
     @classmethod
     def map_scale(cls, node):
-        raise NotImplementedError
         # TODO: The gamma parameter has to be set (in node.data?) and this should work.
         # Also, mean should be set to 0, and var to 1, just to be safe.
-        scale_value = float(node.parameters.filler.value)
-        kwargs = {'scale' : True, 'bias' : False, 'gamma' : scale_value, 'epsilon': 0}
-        return Node.create('BatchNorm', **kwargs)
+        if node.data:
+            raise NotImplementedError
+            scale_value = float(node.parameters.filler.value)
+            kwargs = {'scale' : False, 'bias' : False, 'gamma' : scale_value, 'epsilon': 0}
+            cls._convert_output_shape(kwargs, node)
+            return Node.create('Scale', **kwargs)
+        else:
+            return Node.create('Mul')
+
 
     @classmethod
     def map_eltwise(cls, node):

@@ -60,7 +60,18 @@ def shape_reshape(node):
     shapes = []
     for idx, shape in enumerate(node.layer.reshape_param.shape.dim):
         shapes.append(shape if shape != 0 else last_shape[idx])
-    return TensorShape(shapes[0], shapes[1], shapes[2], shapes[3])
+
+    if len(shapes) == 1 and shapes[0]==-1:
+        total_dim = 1
+        for i in last_shape:
+            total_dim *= i
+        return TensorShape(1, 1, 1, total_dim) # return NHWC format
+
+    elif len(shapes) == 4:
+        return TensorShape(shapes[0], shapes[1], shapes[2], shapes[3])
+
+    else:
+        raise NotImplementedError
 
 def shape_data(node):
     if node.output_shape:
