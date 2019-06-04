@@ -92,9 +92,13 @@ def set_layer_weights(model, weights_dict):
                     current_layer_parameters.append(cur_dict['bias'])
             elif layer.__class__.__name__ == "Embedding":
                 current_layer_parameters.append(cur_dict['weights'])
+            elif layer.__class__.__name__ == "PReLU":
+                gamma =  np.ones(list(layer.input_shape[1:]))*cur_dict['gamma']
+                current_layer_parameters.append(gamma)
             else:
-                # rot weights
-                current_layer_parameters = [cur_dict['weights']]
+                # rot 
+                if 'weights' in cur_dict:
+                    current_layer_parameters = [cur_dict['weights']]
                 if 'bias' in cur_dict:
                     current_layer_parameters.append(cur_dict['bias'])
             model.get_layer(layer.name).set_weights(current_layer_parameters)
@@ -838,6 +842,17 @@ def KitModel(weight_file = None):
         else:
             return self._emit_merge(IR_node, 'Minimum')
 
+
+    def emit_PRelu(self, IR_node, in_scope=False):
+        if in_scope:
+            raise NotImplementedError
+        else:
+            code = "{:<15} = layers.PReLU(name='{}')({})".format(
+                IR_node.variable_name,
+                IR_node.name,
+                self.parent_variable_name(IR_node)
+            )
+            return code
 
     def emit_yolo(self, IR_node, in_scope=False):
         self.used_layers.add('Yolo')
