@@ -116,6 +116,9 @@ class TensorflowParser(Parser):
         data = dict()
         for name in var_to_shape_map:
             tensor = reader.get_tensor(name)
+            name_seg = name.split("/")
+            if name_seg[-1] == "ExponentialMovingAverage":
+                name = "/".join(name_seg[:-1])
             data[name] = tensor
 
         print ("Tensorflow checkpoint file [%s] loaded successfully. [%d] variables loaded." % (model_weight_path, len(data)))
