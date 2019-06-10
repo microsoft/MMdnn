@@ -87,6 +87,19 @@ class TensorflowParser2(Parser):
         10: graph_pb2.DT_BOOL
     }
 
+    tf_dtype_map = {
+        0: tensorflow.float32,  # set default to be float
+        1: tensorflow.float32,
+        2: tensorflow.float64,
+        3: tensorflow.int32,
+        4: tensorflow.uint8,
+        5: tensorflow.int16,
+        6: tensorflow.int8,
+        7: tensorflow.string,
+        9: tensorflow.int64,
+        10: tensorflow.bool
+    }
+
 
     @property
     def src_graph(self):
@@ -142,17 +155,15 @@ class TensorflowParser2(Parser):
         with tensorflow.Graph().as_default() as g:
             input_map = {}
             for i in range(len(inputshape)):
-                if in_type_list[in_nodes[i]] == 1 or in_type_list[in_nodes[i]] == 0:
-                    dtype = tensorflow.float32
-                    x = tensorflow.placeholder(dtype, shape = [None] + inputshape[i])
-
-                elif in_type_list[in_nodes[i]] == 3:
-                    dtype = tensorflow.int32
-                    x = tensorflow.placeholder(dtype, shape = inputshape[i])
-
+                dtype = TensorflowParser2.tf_dtype_map[in_type_list[in_nodes[i]]]
+                if in_type_list[in_nodes[i]] in (0, 1, 2):
+                    x = tensorflow.placeholder(dtype, shape=[None] + inputshape[i])
+                elif in_type_list[in_nodes[i]] in (3, 4, 5, 6, 7):
+                    x = tensorflow.placeholder(dtype, shape=inputshape[i])
                 elif in_type_list[in_nodes[i]] == 10:
-                    dtype = tensorflow.bool
                     x = tensorflow.placeholder(dtype)
+                else:
+                    raise NotImplementedError
 
                 input_map[in_nodes[i] + ':0'] = x
 
