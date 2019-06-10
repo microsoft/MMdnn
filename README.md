@@ -32,14 +32,15 @@ Major features
   
 
 ## Related Projects
-[Microsoft Research Asia (MSRA)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/)
-and Microsoft Search Technology Center Asia (STCA)
-have released some projects to advance the state-of-art technology:
-* [Open Platform for AI (OpenPAI)](https://github.com/Microsoft/pai): an open source platform that provides complete AI model training and resource management capabilities.
-It is easy to extend and supports on-premise, cloud and hybrid environments in various scale.
-* [Neural Network Intelligence (NNI)](https://github.com/Microsoft/nni): an open source AutoML toolkit for neural architecture search and hyper-parameter tuning.
 
-We encourage researchers, developers and students to leverage such projects to boost their Deep Learning / AI productivity.
+Targeting at openness and advancing state-of-art technology, [Microsoft Research (MSR)](https://www.microsoft.com/en-us/research/group/systems-research-group-asia/) and [Microsoft Search Technology Center (STC)](https://www.microsoft.com/en-us/ard/company/introduction.aspx) had also released few other open source projects.
+
+* [OpenPAI](https://github.com/Microsoft/pai) : an open source platform that provides complete AI model training and resource management capabilities, it is easy to extend and supports on-premise, cloud and hybrid environments in various scale.
+* [FrameworkController](https://github.com/Microsoft/frameworkcontroller) : an open source general-purpose Kubernetes Pod Controller that orchestrate all kinds of applications on Kubernetes by a single controller.
+* [NNI](https://github.com/Microsoft/nni) : An open source AutoML toolkit for neural architecture search and hyper-parameter tuning.
+* [NeuronBlocks](https://github.com/Microsoft/NeuronBlocks) : A NLP deep learning modeling toolkit that helps engineers to build DNN models like playing Lego. The main goal of this toolkit is to minimize developing cost for NLP deep neural network model building, including both training and inference stages.
+
+We encourage researchers, developers and students to leverage these projects to boost their AI / Deep Learning productivity.
 
 ## Installation
 
@@ -186,6 +187,8 @@ $ mmtoir -f keras -w imagenet_inception_v3.h5 -o keras_inception_v3
 ### Users' Examples
 
 - [MXNet "ResNet-152-11k" to PyTorch](https://github.com/Microsoft/MMdnn/issues/6)
+
+- [Another Example of MXNet "ResNet-152-11k" to PyTorch](https://blog.paperspace.com/convert-full-imagenet-pre-trained-model-from-mxnet-to-pytorch/)
 
 - [MXNet "ResNeXt" to Keras](https://github.com/Microsoft/MMdnn/issues/58)
 

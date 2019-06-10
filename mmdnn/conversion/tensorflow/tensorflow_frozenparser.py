@@ -8,6 +8,9 @@ from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.utils import *
 from mmdnn.conversion.common.DataStructure.parser import Parser
 from distutils.version import LooseVersion
+import tempfile
+import os
+import shutil
 
 
 class TensorflowParser2(Parser):
@@ -120,11 +123,14 @@ class TensorflowParser2(Parser):
                 output_node_names = dest_nodes,
                 placeholder_type_enum = dtypes.float32.as_datatype_enum)
         # Save it to an output file
-        frozen_model_file = './frozen.pb'
+        tempdir = tempfile.mkdtemp()
+        frozen_model_file = os.path.join(tempdir, 'frozen.pb')
         with gfile.GFile(frozen_model_file, "wb") as f:
             f.write(original_gdef.SerializeToString())
         with open(frozen_model_file, 'rb') as f:
             serialized = f.read()
+        shutil.rmtree(tempdir)
+
         tensorflow.reset_default_graph()
         model = tensorflow.GraphDef()
         model.ParseFromString(serialized)
@@ -149,14 +155,15 @@ class TensorflowParser2(Parser):
                     x = tensorflow.placeholder(dtype)
 
                 input_map[in_nodes[i] + ':0'] = x
-           
+
             tensorflow.import_graph_def(model, name='', input_map=input_map)
 
         with tensorflow.Session(graph = g) as sess:
 
-            meta_graph_def = tensorflow.train.export_meta_graph(filename='./my-model.meta')
+            tempdir = tempfile.mkdtemp()
+            meta_graph_def = tensorflow.train.export_meta_graph(filename=os.path.join(tempdir, 'my-model.meta'))
             model = meta_graph_def.graph_def
-
+            shutil.rmtree((tempdir))
 
         self.tf_graph = TensorflowGraph(model)
         self.tf_graph.build()
@@ -346,7 +353,7 @@ class TensorflowParser2(Parser):
             parent_node = self.tf_graph.get_node(s)
             if parent_node.type == 'Const':
                 self._rename_Const(parent_node)
-    
+
     def _rename_Const(self, source_node):
         IR_node = self._convert_identity_operation(source_node, end_idx=0, new_op='Constant') # Constant
         value = source_node.get_attr('value')
@@ -369,13 +376,13 @@ class TensorflowParser2(Parser):
                 continue
 
             node_type = current_node.type
-            
+
             if hasattr(self, "rename_" + node_type):
- 
+
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
             else:
-                
+
                 self.rename_UNKNOWN(current_node)
 
 
@@ -800,9 +807,9 @@ class TensorflowParser2(Parser):
         assign_IRnode_values(IR_node, kwargs)
 
         return IR_node
-    
+
     def rename_GatherV2(self, source_node):
-        
+
         IR_node = self.rename_Gather(source_node)
 
         kwargs = {}
@@ -1013,7 +1020,7 @@ class TensorflowParser2(Parser):
 
     def rename_Transpose(self, source_node):
         IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'Transpose')
-        
+
         input_node_perm = self.get_parent(source_node.name, [1])
         # input_node_perm = self.check_const(self.get_parent(source_node.name, [1], True))
         tensor_content = input_node_perm.get_attr('value')
@@ -1055,6 +1062,9 @@ class TensorflowParser2(Parser):
 
     def rename_FusedBatchNorm(self, source_node):
         scalenode = self.check_const(self.get_parent(source_node.name, [1], True))
+        if ':' in source_node.in_edges[1]: # ?
+            scalenode = None
+
         if scalenode:
             scale_value = scalenode.get_attr('value')
             IR_node = self._convert_identity_operation(source_node, end_idx=1, new_op = 'BatchNorm')
@@ -1139,6 +1149,6 @@ class TensorflowParser2(Parser):
         kwargs['shape'] = self.tensor_shape_to_list(input_node.get_attr('_output_shapes'))[0]
 
         assign_IRnode_values(IR_node, kwargs)
-    
+
     def rename_Log(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op = 'Log')

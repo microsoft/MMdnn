@@ -16,6 +16,7 @@ import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.DataStructure.emitter import Emitter
 from mmdnn.conversion.common.utils import *
+from mmdnn.conversion.rewriter.folder import *
 
 class CntkEmitter(Emitter):
     
@@ -31,6 +32,8 @@ class CntkEmitter(Emitter):
     }
 
 
+    naive_scope_pattern = ['gru_cell', 'lstm_cell']
+
     def __init__(self, model):
         from six import string_types as _string_types
         super(CntkEmitter, self).__init__()
@@ -43,6 +46,8 @@ class CntkEmitter(Emitter):
         self.IR_graph = IRGraph(network_path)
         super(CntkEmitter, self)._build()
         self.yolo_parameter = []
+        folder = Folder(self.IR_graph, self.weights_dict)
+        folder.fold()
 
 
     @property
@@ -83,7 +88,9 @@ def KitModel(weight_file = None):
 
             if hasattr(self, "emit_" + node_type):
                 func = getattr(self, "emit_" + node_type)
-                func(current_node)
+                line = func(current_node)
+                if line:
+                    self.add_body(1, line)
             else:
                 print("CntkEmitter has not supported operator [%s]." % (node_type))
                 self.emit_UNKNOWN(current_node)
@@ -95,6 +102,10 @@ def KitModel(weight_file = None):
         for i in self.used_layers:
             func = getattr(self, "_layer_" + i)
             func()
+
+        self.add_body(0, "")
+        for code in self.layers_codes.values():
+            self.add_body(0, code)
 
         return self.body_code
 
@@ -170,6 +181,7 @@ def KitModel(weight_file = None):
 
 
     def emit_Conv(self, IR_node):
+        codes = list()
         if self.weight_loaded:
             self.used_layers.add('Conv')
             input_node, padding = self._defuse_padding(IR_node)
@@ -179,12 +191,12 @@ def KitModel(weight_file = None):
 
             if IR_node.type == 'DepthwiseConv':
                 groups = IR_node.get_attr('kernel_shape')[-2]
-                self.add_body(1, "__weights_dict['{}']['weights'] = np.swapaxes(__weights_dict['{}']['weights'], -1, -2)".format(
+                codes.append("__weights_dict['{}']['weights'] = np.swapaxes(__weights_dict['{}']['weights'], -1, -2)".format(
                     IR_node.real_name, IR_node.real_name))
             else:
                 groups = IR_node.get_attr('group', 1)
 
-            self.add_body(1, "{:<15} = convolution({}, is_transpose={}, strides={}, auto_padding={}, dilation={}, groups={}, name='{}')".format(
+            codes.append("{:<15} = convolution({}, is_transpose={}, strides={}, auto_padding={}, dilation={}, groups={}, name='{}')".format(
                 IR_node.variable_name,
                 input_node,
                 IR_node.type == 'ConvTranspose',
@@ -195,7 +207,7 @@ def KitModel(weight_file = None):
                 IR_node.name))
 
         else:
-            self.add_body(1, "{:<15} = Convolution(name = '{}', num_filters = {}, filter_shape = ({}), strides = ({},), pad = {}, bias = {})({})\n".format(
+            codes.append("{:<15} = Convolution(name = '{}', num_filters = {}, filter_shape = ({}), strides = ({},), pad = {}, bias = {})({})\n".format(
                 IR_node.variable_name,
                 IR_node.name,
                 IR_node.get_attr('kernel_shape')[-1],
@@ -204,17 +216,18 @@ def KitModel(weight_file = None):
                 IR_node.get_attr('auto_pad') != 'VALID',
                 IR_node.get_attr('use_bias'),
                 self.parent_variable_name(IR_node)))
+        return codes
 
 
     def emit_Pool(self, IR_node):
         input_node = self.IR_graph.get_node(IR_node.in_edges[0]).real_variable_name
         if IR_node.layer.attr['global_pooling'].b:
             self.used_layers.add('GlobalPooling')
-            self.add_body(1, "{:<15} = global_pooling({}, '{}', name = '{}')".format(
+            code = "{:<15} = global_pooling({}, '{}', name = '{}')".format(
                 IR_node.variable_name,
                 input_node,
                 IR_node.get_attr('pooling_type'),
-                IR_node.name))
+                IR_node.name)
         else:
             for e in IR_node.get_attr('dilations', []):
                 assert e == 1
@@ -234,7 +247,7 @@ def KitModel(weight_file = None):
 
             if self.weight_loaded:
                 self.used_layers.add(IR_node.type)
-                self.add_body(1, "{:<15} = pooling({}, pooling_type={}, pooling_window_shape={}, strides={}, auto_padding={}, ceil_out_dim={})".format(
+                code = "{:<15} = pooling({}, pooling_type={}, pooling_window_shape={}, strides={}, auto_padding={}, ceil_out_dim={})".format(
                     IR_node.variable_name,
                     input_node,
                     pooling_type,
@@ -242,10 +255,10 @@ def KitModel(weight_file = None):
                     tuple(IR_node.get_attr('strides')[1:-1]),
                     padding,
                     ceil_out_dim
-                    ))
-
+                    )
             else:
                 raise NotImplementedError
+        return code
 
 
     def emit_UNKNOWN(self, IR_node):
@@ -256,28 +269,24 @@ def KitModel(weight_file = None):
 
         shape_str = self._shapeToStr(IR_node.IR_layer.attr["shape"].shape)
         
-        #For embedding the shape shouble be input_dim(vocabulary size)
-        for node_name in IR_node.out_edges:
-            if 'embed' in node_name.lower():
-                shape_str = self.IR_graph.get_node(node_name).get_attr('input_dim')
-                break
-        
         dtype_str = ", dtype = {}".format(self.dtype_map[IR_node.layer.attr['dtype'].type]) if 'dtype' in IR_node.layer.attr else ""
-        self.add_body(1, "{:<15} = cntk.sequence.input_variable(({},) {}, name='{}')".format(
+        code = "{:<15} = cntk.sequence.input_variable(({},) {}, name='{}')".format(
             IR_node.variable_name,
             shape_str,
             dtype_str,
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def emit_Dropout(self, IR_node):
         parent = self.IR_graph.get_parent(IR_node.name, [0])
         if self.phase == 'train':
-            self.add_body(1, "{:<15} = Dropout({}, name = '{}')({})".format(
+            code = "{:<15} = Dropout({}, name = '{}')({})".format(
                 IR_node.variable_name,
                 1 - IR_node.get_attr('keep_prob'),
                 IR_node.name,
-                parent.real_variable_name))
+                parent.real_variable_name)
+            return code
         else:
             IR_node.real_name = parent.real_name
 
@@ -286,57 +295,61 @@ def KitModel(weight_file = None):
         input_node = self.parent_variable_name(IR_node)
         if self.weight_loaded:
             self.used_layers.add(IR_node.type)
-            self.add_body(1, "{:<15} = dense({}, name = '{}')".format(
+            code = "{:<15} = dense({}, name = '{}')".format(
                 IR_node.variable_name,
                 input_node,
-                IR_node.name))
+                IR_node.name)
 
         else:
-            self.add_body(1, "{:<15} = Dense({}, bias = {}, name = '{}')({})".format(
+            code = "{:<15} = Dense({}, bias = {}, name = '{}')({})".format(
                 IR_node.variable_name,
                 IR_node.layer.attr["units"].i,
                 IR_node.layer.attr['use_bias'].b,
                 IR_node.name,
-                input_node))
+                input_node)
+        return code
 
 
     def emit_Flatten(self, IR_node):
-        self.add_body(1, "{:<15} = ops.reshape({}, (-1,), name = '{}')".format(
+        code = "{:<15} = ops.reshape({}, (-1,), name = '{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def emit_Reshape(self, IR_node):
-        self.add_body(1, "{:<15} = cntk.reshape({}, shape={}, name='{}')".format(
+        code = "{:<15} = cntk.reshape({}, shape={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             tuple(IR_node.get_attr('shape')),
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def _emit_activation(self, IR_node, op_name):
-        self.add_body(1, "{:<15} = layers.Activation(activation = {}, name = '{}')({})".format(
+        code = "{:<15} = layers.Activation(activation = {}, name = '{}')({})".format(
             IR_node.variable_name,
             op_name,
             IR_node.name,
-            self.parent_variable_name(IR_node)))
+            self.parent_variable_name(IR_node))
+        return code
 
 
     def emit_Tanh(self, IR_node):
-        self._emit_activation(IR_node, 'ops.tanh')
+        return self._emit_activation(IR_node, 'ops.tanh')
 
 
     def emit_Relu(self, IR_node):
-        self._emit_activation(IR_node, 'ops.relu')
+        return self._emit_activation(IR_node, 'ops.relu')
 
 
     def emit_Softmax(self, IR_node):
-        self._emit_activation(IR_node, 'ops.softmax')
+        return self._emit_activation(IR_node, 'ops.softmax')
 
 
     def emit_Sigmoid(self, IR_node):
-        self._emit_activation(IR_node, 'ops.sigmoid')
+        return self._emit_activation(IR_node, 'ops.sigmoid')
 
 
     def emit_RNNs(self, IR_node, func):
@@ -352,49 +365,62 @@ def KitModel(weight_file = None):
 
     def emit_Add(self, IR_node):
         if len(IR_node.in_edges) > 1:
-            inputs = ' + '.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
-            self.add_body(1, "{:<15} = {}".format(
+            inputs = ' + '.join(self.parent_variable_name(IR_node, i) for i in IR_node.in_edges)
+            code = "{:<15} = {}".format(
                 IR_node.variable_name,
-                inputs))
+                inputs)
+            return code
+
 
     def emit_Sub(self, IR_node):
         if len(IR_node.in_edges) > 1:
-            inputs = ' - '.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
-            self.add_body(1, "{:<15} = {}".format(
+            inputs = ' - '.join(self.parent_variable_name(IR_node, i) for i in IR_node.in_edges)
+            code = "{:<15} = {}".format(
                 IR_node.variable_name,
-                inputs))
+                inputs)
+            return code
 
 
     def emit_Mul(self, IR_node):
         if len(IR_node.in_edges) > 1:
-            inputs = ' * '.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
-            self.add_body(1, "{:<15} = {}".format(
+            inputs = ' * '.join(self.parent_variable_name(IR_node, i) for i in IR_node.in_edges)
+            code = "{:<15} = {}".format(
                 IR_node.variable_name,
-                inputs))
+                inputs)
+            return code
 
 
     def emit_Constant(self, IR_node):
-        self.add_body(1, "{:<15} = cntk.Constant(value=__weights_dict['{}']['value'])".format(
-            IR_node.variable_name, IR_node.name
-        ))
+        if IR_node.get_attr('value'):
+            code = "{:<15} = cntk.Constant(value={})".format(
+            IR_node.variable_name, IR_node.get_attr('value'))
+        else:
+            code = "{:<15} = cntk.Constant(value=__weights_dict['{}']['value'])".format(
+                IR_node.variable_name, IR_node.name)
+        return code
 
 
     def emit_Concat(self, IR_node):
-        inputs = ', '.join(self.IR_graph.get_node(i).real_variable_name for i in IR_node.in_edges)
-        self.add_body(1, "{:<15} = cntk.splice({}, axis={}, name='{}')".format(
+        inputs = ', '.join(self.parent_variable_name(IR_node, i) for i in IR_node.in_edges)
+        for s in IR_node.in_edges:
+            node = self.IR_graph.get_node(s)
+
+        code = "{:<15} = cntk.splice({}, axis={}, name='{}')".format(
             IR_node.variable_name,
             inputs,
-            IR_node.get_attr('axis') - 1,
-            IR_node.name))
+            IR_node.get_attr('axis') -1 , # why -1 ?
+            IR_node.name)
+        return code
 
 
     def emit_BatchNorm(self, IR_node):
         self.used_layers.add(IR_node.type)
-        self.add_body(1, "{:<15} = batch_normalization({}, epsilon={}, name='{}')".format(
+        code = "{:<15} = batch_normalization({}, epsilon={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('epsilon'),
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def emit_Pad(self, IR_node):
@@ -410,11 +436,12 @@ def KitModel(weight_file = None):
         padding = IR_node.get_attr('pads')
         padding = convert_onnx_pad_to_tf(padding)[1:]
 
-        self.add_body(1, "{:<15} = ops.pad({}, pattern={}, {})".format(
+        code = "{:<15} = ops.pad({}, pattern={}, {})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             padding,
-            mode))
+            mode)
+        return code
 
 
     def emit_Squeeze(self, IR_node):
@@ -422,124 +449,293 @@ def KitModel(weight_file = None):
 
 
     def emit_Log(self, IR_node):
-        self.add_body(1, "{:<15} = _cntk.log({}, name='{}')".format(
+        code = "{:<15} = _cntk.log({}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def emit_Exp(self, IR_node):
-        self.add_body(1, "{:<15} = _cntk.exp({}, name='{}')".format(
+        code = "{:<15} = _cntk.exp({}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def emit_Embedding(self, IR_node):
-        self.add_body(1, "{:<15} = layers.Embedding(weights={})({})".format(
+        
+        codes = list()
+        codes.append("{}_P = cntk.one_hot({}, __weights_dict['{}']['weights'].shape[0])".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name))
+        
+        codes.append("{:<15} = layers.Embedding(weights=__weights_dict['{}']['weights'])({}_P)".format(
             IR_node.variable_name,
             # IR_node.get_attr('output_dim'),
-            "__weights_dict['{}']['weights']".format(IR_node.name),
-            self.parent_variable_name(IR_node)
-        ))
+            IR_node.name,
+            IR_node.variable_name))
+
+        return codes
 
 
     def emit_Reciprocal(self, IR_node):
-        self.add_body(1, "{:<15} = _cntk.reciprocal({}, name='{}')".format(
+        code = "{:<15} = _cntk.reciprocal({}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def emit_ReduceMean(self, IR_node):
-        self.add_body(1, "{:<15} = ops.reduce_mean({}, axis = ({}), name = '{}')".format(
+        code = "{:<15} = ops.reduce_mean({}, axis = ({}), name = '{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             ', '.join('%s' % (i - 1) for i in IR_node.get_attr('axes')),
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def emit_LRN(self, IR_node):
         self.used_layers.add(IR_node.type)
-        self.add_body(1, "{:<15} = lrn({}, k=1, n={}, alpha={}, beta={}, name='{}')".format(
+        code = "{:<15} = lrn({}, k=1, n={}, alpha={}, beta={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.layer.attr['size'].i,
             IR_node.layer.attr['alpha'].f,
             IR_node.layer.attr['beta'].f,
-            IR_node.name))
+            IR_node.name)
+        return code
 
     # ??
     def emit_LeakRelu(self, IR_node):
-        self.add_body(1, "{:<15} = _cntk.relu({}) - {} * _cntk.relu(-{})".format(
+        code = "{:<15} = _cntk.relu({}) - {} * _cntk.relu(-{})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('alpha'),
-            self.parent_variable_name(IR_node)))
+            self.parent_variable_name(IR_node))
+        return code
 
 
     def emit_LeakyRelu(self, IR_node):
         self.used_layers.add(IR_node.type)
-        self.add_body(1, "{:<15} = _leaky_relu({}, {}, name='{}')".format(
+        code = "{:<15} = _leaky_relu({}, {}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('alpha'),
-            IR_node.name))
-
+            IR_node.name)
+        return code
 
 
     def emit_UpSampling2D(self, IR_node):
         self.used_layers.add(IR_node.type)
-        self.add_body(1, "{:<15} = Upsampling2D({}, stride = {}, name = '{}')".format(
+        code = "{:<15} = Upsampling2D({}, stride = {}, name = '{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('scales')[0],
-            IR_node.name))
+            IR_node.name)
+        return code
 
 
     def emit_ConvTranspose(self, IR_node):
-        self.emit_Conv(IR_node)
+        return self.emit_Conv(IR_node)
 
 
     def emit_yolo(self, IR_node):
         self.used_layers.add(IR_node.type)
-        self.add_body(1, "{:<15} = {}".format(
+        code = "{:<15} = {}".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node)
-        ))
+        )
         # print(IR_node.layer)
         self.yolo_parameter = [IR_node.get_attr('anchors'),
             IR_node.get_attr('classes'),
             IR_node.get_attr("ignore_thresh"),
             IR_node.get_attr("jitter")]
         # assert False
+        return code
 
 
     def emit_Crop(self, IR_node):
         self.used_layers.add(IR_node.type)
         output_shape = IR_node.get_attr('_output_shapes')[0]
         output_shape = shape_to_list(output_shape)[1:]
-        self.add_body(1, "{:<15} = _crop({}, {}, {}, name='{}')".format(
+        code = "{:<15} = _crop({}, {}, {}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.get_attr('border')[:2],
             output_shape,
-            IR_node.real_name
-        ))
+            IR_node.real_name)
+        return code
 
 
     def emit_Relu6(self, IR_node):
-        self.emit_Relu(IR_node)
-        self.add_body(1, "{:<15} = cntk.clip({}, 0, 6, name='{}_clip')".format(
+        codes = list()
+        codes.append(self.emit_Relu(IR_node))
+        codes.append("{:<15} = cntk.clip({}, 0, 6, name='{}_clip')".format(
             IR_node.variable_name + "_clip",
             IR_node.variable_name,
             IR_node.name
         ))
         IR_node.real_name = IR_node.name + '_clip'
+        return codes
 
 
     def emit_DepthwiseConv(self, IR_node):
-        self.emit_Conv(IR_node)
+        return self.emit_Conv(IR_node)
+
+
+    # def emit_Unstack(self, IR_node):
+        # num_str = "{}.shape[{}]".format(self.parent_variable_name(IR_node), IR_node.get_attr('axis'))
+        # axis = IR_node.get_attr('axis')
+        # parent_variable_shape = "list({}.shape)".format(self.parent_variable_name(IR_node) 
+        #         if self.IR_graph.get_parent(IR_node.name, [0]).type != 'Embedding' 
+        #             else self.parent_variable_name(IR_node)+'.E')
+        # if axis==1:
+        #     shape_str = "tuple([{}[0]*{}[{}], 1].extend({}[{}+1:]))".format(
+        #         parent_variable_shape,
+        #         parent_variable_shape,
+        #         str(axis),
+        #         parent_variable_shape,
+        #         str(axis))
+        # else:
+        #     shape_str = "tuple([{}[0]*{}[{}]].extend({}[1:{}]).append(1).extend({}[{}+1:]))".format(
+        #         parent_variable_shape,
+        #         parent_variable_shape,
+        #         str(axis),
+        #         parent_variable_shape,
+        #         str(axis),
+        #         parent_variable_shape,
+        #         str(axis))
+        # code = "{:<15} = cntk.reshape({}, {}, name='{}')".format(
+        #     IR_node.variable_name, 
+        #     self.parent_variable_name(IR_node), 
+        #     shape_str,
+        #     IR_node.variable_name)
+        # code = "{: <15} = cntk.reshape({}, {}.shape, name='{}')".format(
+        #     IR_node.variable_name,
+        #     self.parent_variable_name(IR_node),
+        #     self.parent_variable_name(IR_node),
+        #     IR_node.name
+        # )
+        # return code
+
+
+    def emit_Shape(self, IR_node):
+        parent_node = self.IR_graph.get_parent(IR_node.name, [0])
+        code = "{:<15} = {}.shape".format(
+            IR_node.variable_name, 
+            self.parent_variable_name(IR_node) if parent_node.type != 'Embedding' else self.parent_variable_name(IR_node)+".E")
+        return code
+
+
+    def emit_Slice(self, IR_node):
+        starts = IR_node.get_attr('starts')
+        if len(starts) > 1:
+            starts = [starts[0], starts[-1]] + starts[1:-1]
+        ends = IR_node.get_attr('ends')
+        if len(ends) > 1:
+            ends = [ends[0], ends[-1]] + ends[1:-1]
+        extra_str = ""
+        for idx, _ in enumerate(starts):
+            if idx:
+                extra_str += ", "
+            extra_str += "{}:".format(starts[idx])
+            if ends[idx]:
+                extra_str += "{}".format(ends[idx])
+        code = "{:<15} = {}[{}]".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            extra_str)
+        return code
+
+
+    def emit_Split(self, IR_node):
+        self.used_layers.add(IR_node.type)
+        axis = IR_node.get_attr('axis')
+        split_num = IR_node.get_attr('split')
+        code = "{:<15} = split(input={}, axis={}, split_num={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            str(axis),
+            str(split_num))
+        
+        return code
+
+
+    # def emit_Fill(self, IR_node):
+    #     code = "{:<15} = cntk.Constant({}, {}, name='{}')".format(
+    #         IR_node.variable_name,
+    #         IR_node.get_attr('value'),
+    #         self.parent_variable_name(IR_node),
+    #         IR_node.name)
+    #     return code
+
+
+    def emit_Unsqueeze(self, IR_node):
+        code = "{:<15} = cntk.expand_dims({}, axis={}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('axes')[0],
+            IR_node.name)
+        return code
+
+
+    def emit_Scope(self, IR_node):
+        pattern = IR_node.pattern
+        if pattern not in self.naive_scope_pattern and re.sub(r'(_\d+)*$', '', IR_node.pattern) not in self.naive_scope_pattern:
+            func = getattr(self, "_emit_" + pattern)
+            code = func(IR_node)
+        else:
+            code = "{:<15} = __{}({})".format(
+                IR_node.real_variable_name,
+                IR_node.pattern,
+                ', '.join(self.parent_variable_name(IR_node, s) for s in IR_node.in_edges))
+            self._gen_scope_code(IR_node)
+        return code
+
+
+    def _gen_scope_code(self, scope_node):
+
+        def _scope_func(scope_name, params, code, return_var):
+            code = """
+def __{}({}):
+{}
+    return {}
+    """.format(scope_name, params, code, ', '.join(return_var))
+            return code
+
+        if not self.layers_codes.get(scope_node.pattern, None):
+            body_code = str()
+            for node_name in scope_node.topology_list:
+                node = self.IR_graph.get_node(node_name)
+                node_type = node.type
+
+                if hasattr(self, "emit_" + node_type):
+                    func = getattr(self, "emit_" + node_type)
+                    line = func(node)
+                    if line != None:
+                        body_code += "    " + line + '\n'
+                else:
+                    print("CntkEmitter has not supported operator [%s]." % (node_type))
+                    self.emit_UNKNOWN(node)
+
+            # param_code does not need parameter slice.
+            input_params = scope_node.input_params
+            param_code = ', '.join(input_params)
+            function_code = _scope_func(scope_node.pattern, param_code, body_code, scope_node.return_variables)
+
+            self.layers_codes[scope_node.pattern] = function_code
+
+
+    def _emit_h_zero(self, IR_node):
+        code = "{:<15} = cntk.Constant({}, (1, {}))".format(
+            IR_node.variable_name,
+            IR_node.get_attr('fill_value'),
+            IR_node.get_attr('fill_size'))
+        return code
 
 
     def _layer_Crop(self):
@@ -674,3 +870,16 @@ def batch_normalization(input, name, epsilon, **kwargs):
 """)
 
 
+    def _layer_Split(self):
+        self.add_body(0, """
+def split(input, axis, split_num):
+        split_len = input.shape[axis]
+        res = []
+        st = 0
+        for i in range(split_num):
+            ed = st + split_len//split_num
+            res.append(cntk.slice(input, axis, st, ed))
+            st += split_len//split_num
+
+        return res
+        """)

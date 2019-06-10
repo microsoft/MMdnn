@@ -246,8 +246,10 @@ class Keras2Parser(Parser):
 
         else:
             if source_node.type.startswith('Conv'):
-                Keras2Parser._copy_and_reop(source_node, IR_node, "Conv")
-
+                if source_node.type.endswith('Transpose'):
+                    Keras2Parser._copy_and_reop(source_node, IR_node, "ConvTranspose")
+                else:
+                    Keras2Parser._copy_and_reop(source_node, IR_node, "Conv")
             elif source_node.type.startswith('Deconv'):
                 Keras2Parser._copy_and_reop(source_node, IR_node, "ConvTranspose")
 
@@ -421,14 +423,20 @@ class Keras2Parser(Parser):
     def rename_Conv1D(self, source_node):
         self._convert_convolution(source_node, 1)
 
+    def rename_Conv1DTranspose(self, source_node):
+        self._convert_convolution(source_node, 1)
 
     def rename_Conv2D(self, source_node):
         self._convert_convolution(source_node, 2)
 
+    def rename_Conv2DTranspose(self, source_node):
+        self._convert_convolution(source_node, 2)
 
     def rename_Conv3D(self, source_node):
         self._convert_convolution(source_node, 3)
 
+    def rename_Conv3DTranspose(self, source_node):
+        self._convert_convolution(source_node, 3)
 
     def rename_InputLayer(self, source_node):
         # only for training

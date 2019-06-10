@@ -1,15 +1,15 @@
 six==1.10.0
-numpy==1.14.5
+numpy==1.15.4
 protobuf==3.6.1
 pillow == 5.2.0
 setuptools==39.1.0
-tensorflow==1.9.0 # this pre-trained facenet model can not run on 1.10.0 version
-keras==2.1.6
-coremltools==0.8
-mxnet==1.1.0.post0
-cntk==2.5.1
+tensorflow==1.13.1
+keras==2.2.4
+coremltools==2.1.0
+mxnet==1.2.0
+cntk==2.6
 http://download.pytorch.org/whl/cpu/torch-0.4.0-cp35-cp35m-linux_x86_64.whl
 https://raw.githubusercontent.com/PaulaQin/pycaffe_packages/master/caffe-1.0-py3-none-any.whl
-torchvision
-onnx==1.2.1
-onnx-tf==1.1.2
+torchvision==0.2.1
+onnx==1.4.1
+onnx-tf==1.2.1

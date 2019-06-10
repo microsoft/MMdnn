@@ -10,6 +10,7 @@ import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.DataStructure.emitter import Emitter
 from mmdnn.conversion.common.utils import *
+from mmdnn.conversion.rewriter.folder import Folder
 
 
 class TensorflowEmitter(Emitter):
@@ -66,7 +67,9 @@ def KitModel(weight_file = None):
 
         self.IR_graph = IRGraph(network_path)
         super(TensorflowEmitter, self)._build()
-
+        
+        folder = Folder(self.IR_graph, self.weights_dict)
+        folder.fold()
 
     def gen_code(self, phase):
         self.trainable = (phase == 'train')
@@ -97,17 +100,19 @@ def KitModel(weight_file = None):
             func = getattr(self, "_layer_" + i)
             func()
 
+        self.add_body(0, "")
+        for code in self.layers_codes.values():
+            self.add_body(0, code)
+
         return self.body_code
 
 
     def parent_variable_name(self, IR_node, path=[0]):
-        # if self.IR_graph.get_parent(IR_node.name, path):
-        #     return super().parent_variable_name(IR_node, path=path)
         if not IR_node.in_edges and IR_node.name in self.weights_dict.keys():
             return "tf.constant(__weights_dict['{}']['weights'], name='{}')".format(
                 IR_node.name,
                 IR_node.name)
-        return super(TensorflowEmitter, self).parent_variable_name(IR_node, path=path)
+        return super(TensorflowEmitter, self).parent_variable_name(IR_node, path)
 
 
     @staticmethod
@@ -167,7 +172,7 @@ def KitModel(weight_file = None):
             dtype_str = "tf.float32"
         code = "{:<15} = tf.constant({}, dtype={}, name='{}')".format(
             IR_node.variable_name,
-            "__weights_dict['{}']['value']".format(IR_node.name) if not IR_node.get_attr('value') else IR_node.get_attr('value'),
+            "__weights_dict['{}']['value']".format(IR_node.name) if IR_node.get_attr('value')== None else IR_node.get_attr('value'),
             dtype_str,
             IR_node.name)
 
@@ -244,7 +249,7 @@ def KitModel(weight_file = None):
     def emit_Add(self, IR_node):
         code = "{:<15} = {}".format(
             IR_node.variable_name,
-            ' + '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges))
+            ' + '.join('%s' % self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))))
         
         return code
 
@@ -299,8 +304,7 @@ def KitModel(weight_file = None):
                 kernel_str,
                 bias_str,
                 IR_node.layer.attr['use_bias'].b)
-            self.add_body(1, code)
-            # return code
+            return code
 
         else:
             code = "{:<15} = tf.layers.dense({}, {}, {}{}use_bias = {})".format(
@@ -310,8 +314,7 @@ def KitModel(weight_file = None):
                 kernel_str,
                 bias_str,
                 IR_node.layer.attr['use_bias'].b)
-            self.add_body(1, code)
-            # return code
+            return code
 
 
     def emit_UpSampling2D(self, IR_node):
@@ -336,8 +339,7 @@ def KitModel(weight_file = None):
 
         code = "{:<15} = {}".format(
             IR_node.variable_name,
-            ' * '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges))
-
+            ' * '.join('%s' % self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))))
         return code
 
 
@@ -405,7 +407,7 @@ def KitModel(weight_file = None):
     def emit_Sub(self, IR_node):
         code = "{:<15} = {}".format(
             IR_node.variable_name,
-            ' - '.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges))
+            ' - '.join('%s' % self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))))
         
         return code
 
@@ -491,7 +493,7 @@ def KitModel(weight_file = None):
         
         code = "{:<15} = tf.concat([{}], {}, name = '{}')".format(
             IR_node.variable_name,
-            ', '.join(self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges),
+            ', '.join(self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))),
             IR_node.layer.attr['axis'].i,
             IR_node.name)
 
@@ -620,20 +622,36 @@ def KitModel(weight_file = None):
 
     def emit_Slice(self, IR_node):
         extra_str = ""
-        if IR_node.get_attr('strides'):
-            extra_str += ", strides={}".format(IR_node.get_attr('strides'))
         if IR_node.get_attr('begin_mask'):
             extra_str += ", begin_mask={}".format(IR_node.get_attr('begin_mask'))
-        if IR_node.get_attr('end_mask'):
+        if IR_node.get_attr('end_mask') != None:
             extra_str += ", end_mask={}".format(IR_node.get_attr('end_mask'))
-        if IR_node.get_attr('shrink_axis_mask'):
+        if IR_node.get_attr('shrink_axis_mask') != None:
             extra_str += ", shrink_axis_mask={}".format(IR_node.get_attr('shrink_axis_mask'))
+        if IR_node.get_attr('new_axis_mask')!= None:
+            extra_str += ", new_axis_mask={}".format(IR_node.get_attr('new_axis_mask'))
+
+        if IR_node.get_attr('starts') != None:
+            starts = IR_node.get_attr('starts')
+        else:
+            starts = self.parent_variable_name(IR_node, [1])
         
-        code = "{:<15} = tf.strided_slice({}, {}, {} {}, name='{}')".format(
+        if IR_node.get_attr('ends') != None:
+            ends = IR_node.get_attr('ends')
+        else:
+            ends = self.parent_variable_name(IR_node, [2])
+        
+        if IR_node.get_attr('strides') != None:
+            strides = IR_node.get_attr('strides')
+        else:
+            strides = self.parent_variable_name(IR_node, [3])
+
+        code = "{:<15} = tf.strided_slice({}, {}, {}, {} {}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.get_attr('starts'),
-            IR_node.get_attr('ends'),
+            starts,
+            ends,
+            strides,
             extra_str,
             IR_node.name)
         
@@ -650,7 +668,7 @@ def KitModel(weight_file = None):
     def emit_Pack(self, IR_node):
         code = "{:<15} = tf.stack({}, axis={}, name='{}')".format(
             IR_node.variable_name,
-            '[' +  ','.join('%s' % self.IR_graph.get_node(s).real_variable_name for s in IR_node.in_edges) + ']',
+            '[' +  ','.join('%s' % self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))) + ']',
             IR_node.get_attr('axis'),
             IR_node.name)
         return code
@@ -663,6 +681,85 @@ def KitModel(weight_file = None):
             IR_node.get_attr('axis'),
             IR_node.name)
         return code
+
+    def emit_Unsqueeze(self, IR_node):
+        code = "{:<15} = tf.expand_dims({}, axis={}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('axes')[0],
+            IR_node.name)
+        return code
+
+    def emit_Fill(self, IR_node):
+        code = "{:<15} = tf.fill({}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('value'),
+            IR_node.name)
+        return code
+
+    def emit_Maxmum(self, IR_node):
+        code = "{:<15} = tf.maxmum({}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            self.parent_variable_name(IR_node, [1]),
+            IR_node.name
+        )
+        return code
+
+    def emit_Minimum(self, IR_node):
+        code = "{:<15} = tf.minimum({}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            self.parent_variable_name(IR_node, [1]),
+            IR_node.name
+        )
+        return code
+
+    def emit_Scope(self, IR_node):
+        input_vars = [self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))]
+        input_vars.append('__weights_dict')
+        code = "{:<15} = _{}({})".format(
+            IR_node.real_variable_name,
+            IR_node.pattern,
+            ', '.join(input_vars))
+        self._gen_scope_code(IR_node)
+        return code
+
+
+    def _gen_scope_code(self, scope_node):
+
+        def _scope_func(scope_name, params, code, return_var):
+            code = """
+def _{}({}):
+{}
+    return {}
+    """.format(scope_name, params, code, ', '.join(return_var))
+            return code
+
+        if not self.layers_codes.get(scope_node.pattern, None):
+            body_code = str()
+            for node_name in scope_node.topology_list:
+                node = self.IR_graph.get_node(node_name)
+                node_type = node.type
+
+                if hasattr(self, "emit_" + node_type):
+                    func = getattr(self, "emit_" + node_type)
+                    line = func(node)
+                    if line != None:
+                        body_code += "    " + line + '\n'
+                else:
+                    print("TensorflowEmitter has not supported operator [%s]." % (node_type))
+                    self.emit_UNKNOWN(node)
+
+            # param_code does not need parameter slice.
+            input_params = scope_node.input_params
+            input_params.append("__weights_dict")
+            param_code = ', '.join(input_params)
+            function_code = _scope_func(scope_node.pattern, param_code, body_code, scope_node.return_variables)
+
+            self.layers_codes[scope_node.pattern] = function_code
+
 
 
     def _layer_Conv(self):

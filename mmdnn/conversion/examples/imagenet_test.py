@@ -112,6 +112,7 @@ class TestKit(object):
             'nasnet-a_large'     : lambda path : TestKit.Standard(path, 331),
             'inception_resnet_v2' : lambda path : TestKit.Standard(path, 299),
             'facenet'           : lambda path: TestKit.Standard(path, 160),
+            'rnn'               : lambda path : TestKit.RNN(path),
         },
 
         'keras' : {
@@ -299,6 +300,11 @@ class TestKit(object):
             x = x[..., ::-1]
         return x
 
+
+    @staticmethod
+    def RNN(path):
+        x = np.load(path)
+        return x
 
     def preprocess(self, image_path):
         func = self.preprocess_func[self.args.s][self.args.preprocess]

@@ -17,7 +17,7 @@ from mmdnn.conversion.examples.tensorflow.models import mobilenet_v1
 from mmdnn.conversion.examples.tensorflow.models import nasnet
 from mmdnn.conversion.examples.tensorflow.models.mobilenet import mobilenet_v2
 from mmdnn.conversion.examples.tensorflow.models import inception_resnet_v1
-from mmdnn.conversion.examples.tensorflow.models import TF_RNN
+from mmdnn.conversion.examples.tensorflow.models import test_rnn
 slim = tf.contrib.slim
 from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.examples.extractor import base_extractor
@@ -184,11 +184,11 @@ class tensorflow_extractor(base_extractor):
             'feed_dict'   : lambda img: {'input:0':img,'phase_train:0':False},
             'num_classes' : 0,
         },
-        'rnn_embedding' :             {
-            'url'         :'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/tf_rnn/tf_rnn.zip',   #This testing model only trained for one round.
-            'filename'    :'tf_rnn/tf_rnn_model.ckpt',
-            'builder'     :lambda: TF_RNN.create_symbol,
-            'arg_scope'   :TF_RNN.dummy_arg_scope,
+        'rnn_lstm_gru_stacked': {
+            'url'         :'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/tf_rnn/tf_rnn.zip',  # Note this is just a model used for test, not a standard rnn model.
+            'filename'    :'tf_rnn/tf_lstm_gru_stacked.ckpt',
+            'builder'     :lambda: test_rnn.create_symbol,
+            'arg_scope'   :test_rnn.dummy_arg_scope,
             'input'       :lambda: tf.placeholder(name='input', dtype=tf.int32, shape=[None, 150]),
             'feed_dict'   :lambda x:{'input:0': x},
             'num_classes' : 0

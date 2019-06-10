@@ -9,7 +9,7 @@ from conversion_imagenet import is_coreml_supported
 def test_coreml():
     if is_coreml_supported():
         tester = TestModels()
-        tester._test_function('coreml', tester.CoreMLParse)
+        tester._test_function('coreml', tester.coreml_parse)
 
 
 if __name__ == '__main__':

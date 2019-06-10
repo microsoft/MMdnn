@@ -71,6 +71,10 @@ class DataInjector(object):
         squeeze_indices = [1]  # Squeeze biases.
         if node.kind == NodeKind.InnerProduct:
             squeeze_indices.append(0)  # Squeeze FC.
+        if len(data)==1:
+            squeeze_indices=[0]
+        if node.kind == 'Convolution':
+            return data
         for idx in squeeze_indices:
             data[idx] = np.squeeze(data[idx])
         return data
@@ -176,8 +180,9 @@ class SubNodeFuser(object):
                 continue
             # Rewrite the fused node's children to its parent.
             for child in node.children:
-                child.parents = [(input, idx) for input, idx in child.parents if input != node]
-                child.add_parent(parent, from_output)
+                index = [n for n, (input, idx) in enumerate(child.parents) if input == node][0]
+                child.parents.pop(index)
+                child.add_parent(parent, from_output, index)
             # Disconnect the fused node from the graph.
             parent.children.remove(node)
             fused_nodes.append(node)

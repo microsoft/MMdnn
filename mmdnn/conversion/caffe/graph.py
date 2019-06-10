@@ -147,9 +147,10 @@ class CaffeNode(object):
         self.output_shape = None
         self.metadata = {}
 
-    def add_parent(self, parent_node, from_output):
+    def add_parent(self, parent_node, from_output, index=None):
         assert parent_node not in self.parents
-        self.parents.append((parent_node, from_output))
+        index = len(self.parents) if index is None else index
+        self.parents.insert(index, (parent_node, from_output))
         if self not in parent_node.children:
             parent_node.children.append(self)
 
