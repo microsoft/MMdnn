@@ -88,7 +88,6 @@ class TestKit(object):
             'voc-fcn8s'     : lambda path : TestKit.ZeroCenter(path, 500, True),
             'voc-fcn16s'    : lambda path : TestKit.ZeroCenter(path, 500, True),
             'voc-fcn32s'    : lambda path : TestKit.ZeroCenter(path, 500, True),
-            'elutestnet'    : lambda path : TestKit.Identity(path, 1, True),
         },
 
         'tensorflow' : {
@@ -127,7 +126,6 @@ class TestKit(object):
             'nasnet'               : lambda path : TestKit.Standard(path, 331),
             'yolo2-tiny'           : lambda path : TestKit.Identity(path, 416),
             'yolo2'                : lambda path : TestKit.Identity(path, 416),
-            'elutestnet'           : lambda path : TestKit.Identity(path, 1),
         },
 
         'mxnet' : {

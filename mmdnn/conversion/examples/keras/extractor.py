@@ -26,7 +26,6 @@ class keras_extractor(base_extractor):
         'inception_resnet_v2' : lambda : keras.applications.inception_resnet_v2.InceptionResNetV2(input_shape=(299, 299, 3)),
         'densenet'            : lambda : keras.applications.densenet.DenseNet201(),
         'nasnet'              : lambda : keras.applications.nasnet.NASNetLarge(),
-        'elutestnet'          : lambda : keras.models.Sequential([keras.layers.Activation(activation="elu", input_shape=(1,1,3))])
     }
 
     thirdparty_map = {
