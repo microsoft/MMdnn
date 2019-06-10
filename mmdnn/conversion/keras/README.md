@@ -96,7 +96,7 @@ IR weights are saved as [inception_v3.npy].
 Since the generated Keras model code snippet can restore weights from IR weights file directly, you don't need to convert weights in this step.You can use following bash command to convert the IR architecture file [*inception_v3.pb*] to Keras Python code file[*keras_inception_v3.py*]
 
 ```bash
-$ mmtocode -f keras --IRModelPath inception_v3.pb --dstModelPath keras_inception_v3.py
+$ mmtocode -f keras --IRModelPath inception_v3.pb --IRWeightPath inception_v3.npy --dstModelPath keras_inception_v3.py
 
 Parse file [inception_v3.pb] with binary format successfully.
 Target network code snippet is saved as [keras_inception_v3.py].
