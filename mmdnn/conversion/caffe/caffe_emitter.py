@@ -501,6 +501,15 @@ if __name__=='__main__':
             self.parent_variable_name(IR_node),
             in_place))
 
+
+    def emit_Elu(self, IR_node):
+        in_place = True
+        self.add_body(1, "n.{:<15} = L.ELU(n.{}, in_place={}, ntop=1)".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            in_place))
+
+
     def emit_LeakyRelu(self, IR_node):
         in_place = True
         self.add_body(1, "n.{:<15} = L.ReLU(n.{}, in_place={}, negative_slope={}, ntop=1)".format(

@@ -490,6 +490,14 @@ def KitModel(weight_file = None):
         return code
 
 
+    def emit_Elu(self, IR_node):
+        self._emit_activation(IR_node, 'elu')
+
+
+    def emit_Relu(self, IR_node):
+        self._emit_activation(IR_node, 'relu')
+
+
     def emit_Tanh(self, IR_node, in_scope=False):
         code = self._emit_activation(IR_node, 'tanh', in_scope)
         return code

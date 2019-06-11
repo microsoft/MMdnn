@@ -948,6 +948,7 @@ class TestModels(CorrectnessTest):
             # get original model prediction result
             original_predict = parser(network_name, test_input)
 
+
             IR_file = TestModels.tmpdir + original_framework + '_' + network_name + "_converted"
             for emit in self.test_table[original_framework][network_name]:
                 if isinstance(emit, staticmethod):
@@ -965,6 +966,7 @@ class TestModels(CorrectnessTest):
                     IR_file + ".pb",
                     IR_file + ".npy",
                     test_input)
+
 
                 self._compare_outputs(
                     original_framework,

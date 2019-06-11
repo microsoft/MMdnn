@@ -4,6 +4,7 @@
 #----------------------------------------------------------------------------------------------
 
 from __future__ import absolute_import
+import os
 from mmdnn.conversion.examples.imagenet_test import TestKit
 from mmdnn.conversion.examples.extractor import base_extractor
 from mmdnn.conversion.common.utils import download_file
@@ -59,6 +60,7 @@ class caffe_extractor(base_extractor):
             if not weight_file:
                 return None
 
+
             print("Caffe Model {} saved as [{}] and [{}].".format(architecture, architecture_file, weight_file))
             return (architecture_file, weight_file)
 
@@ -72,6 +74,7 @@ class caffe_extractor(base_extractor):
             import caffe
             import numpy as np
             net = caffe.Net(architecture[0], architecture[1], caffe.TEST)
+
             func = TestKit.preprocess_func['caffe'][architecture_name]
             img = func(image_path)
             img = np.transpose(img, (2, 0, 1))

@@ -142,10 +142,18 @@ class NodeMapper(object):
 
 
     @classmethod
+    def map_elu(cls, node):
+        kwargs = {}
+        cls._convert_output_shape(kwargs, node)
+        return Node.create('ELU', **kwargs)
+
+
+    @classmethod
     def map_relu(cls, node):
         kwargs = {}
         cls._convert_output_shape(kwargs, node)
         return Node.create('Relu', **kwargs)
+
 
     @classmethod
     def map_p_re_lu(cls, node):

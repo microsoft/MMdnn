@@ -25,7 +25,7 @@ class keras_extractor(base_extractor):
         'xception'            : lambda : keras.applications.xception.Xception(input_shape=(299, 299, 3)),
         'inception_resnet_v2' : lambda : keras.applications.inception_resnet_v2.InceptionResNetV2(input_shape=(299, 299, 3)),
         'densenet'            : lambda : keras.applications.densenet.DenseNet201(),
-        'nasnet'              : lambda : keras.applications.nasnet.NASNetLarge()
+        'nasnet'              : lambda : keras.applications.nasnet.NASNetLarge(),
     }
 
     thirdparty_map = {
