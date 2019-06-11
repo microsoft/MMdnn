@@ -310,9 +310,3 @@ op {
   summary: "Selects slices from an input tensor along a given axis where condition evaluates to True for each axis index. In case axis is not provided, input is flattened before elements are selected."
   description: "Follow ONNX Compress. This version of the operator has been available since version 9 of the default ONNX operator set."
 }
-
-
-
-
-
-
