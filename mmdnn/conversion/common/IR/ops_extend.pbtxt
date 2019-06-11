@@ -1,0 +1,318 @@
+op {
+  name: "Abs"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: ""
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: ""
+  }
+  summary: "Absolute takes one input data (Tensor) and produces one output data (Tensor) where the absolute is, y = abs(x), is applied to the tensor elementwise."
+  description: "Follow ONNX Abs.This version of the operator has been available since version 6 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Acos"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: ""
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: ""
+  }
+  summary: "Calculates the arccosine (inverse of cosine) of the given input tensor, element-wise."
+  description: "Follow ONNX Acos. This version of the operator has been available since version 7 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Acosh"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: ""
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: ""
+  }
+  summary: "Calculates the hyperbolic arccosine of the given input tensor element-wise."
+  description: "Follow ONNX Acosh. This version of the operator has been available since version 9 of the default ONNX operator set."
+}
+
+
+op {
+  name: "And"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: ""
+  }
+  input_arg {
+    name: "y"
+    type_attr: "T"
+    description: ""
+  }
+  output_arg {
+    name: "z"
+    type_attr: "T"
+    description: ""
+  }
+  summary: "Returns the tensor resulted from performing the and logical operation elementwise on the input tensors A and B (with Numpy-style broadcasting support)."
+  description: "Follow ONNX And. This version of the operator has been available since version 7 of the default ONNX operator set."
+}
+
+
+op {
+  name: "ArgMax"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "An input tensor."
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Reduced output tensor with integer data type."
+  }
+  attr {
+    name: "axis"
+    type: "int"
+    default_value {
+      i: 0
+    }
+    description: "The axis in which to compute the arg indices."
+  }
+  attr {
+    name: "keepdims"
+    type: "int"
+    default_value {
+      i: 1
+    }
+    description: "Keep the reduced dimension or not, default 1 mean keep reduced dimension."
+  }
+  summary: "Computes the indices of the max elements of the input tensor's element along the provided axis. The resulted tensor has the same rank as the input if keepdims equal 1. If keepdims equal 0, then the resulted tensor have the reduced dimension pruned. The type of the output tensor is integer."
+  description: "Follow ONNX ArgMax. This version of the operator has been available since version 1 of the default ONNX operator set."
+}
+
+
+op {
+  name: "ArgMin"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "An input tensor."
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Reduced output tensor with integer data type."
+  }
+  attr {
+    name: "axis"
+    type: "int"
+    default_value {
+      i: 0
+    }
+    description: "The axis in which to compute the arg indices."
+  }
+  attr {
+    name: "keepdims"
+    type: "int"
+    default_value {
+      i: 1
+    }
+  summary: "Computes the indices of the min elements of the input tensor's element along the provided axis. The resulted tensor has the same rank as the input if keepdims equal 1. If keepdims equal 0, then the resulted tensor have the reduced dimension pruned. The type of the output tensor is integer."
+  description: "Follow ONNX ArgMin. This version of the operator has been available since version 1 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Asinh"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Input tensor"
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "The hyperbolic arcsine values of the input tensor computed element-wise"
+  }
+  summary: "Calculates the hyperbolic arcsine of the given input tensor element-wise."
+  description: "Follow ONNX Acosh. This version of the operator has been available since version 9 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Atan"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Input tensor"
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "The arctangent of the input tensor computed element-wise"
+  }
+  summary: "Calculates the arctangent (inverse of tangent) of the given input tensor, element-wise."
+  description: "Follow ONNX Atan. This version of the operator has been available since version 7 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Atanh"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Input tensor"
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "The hyperbolic arctangent values of the input tensor computed element-wise"
+  }
+  summary: "Calculates the hyperbolic arctangent of the given input tensor element-wise."
+  description: "Follow ONNX Atanh. This version of the operator has been available since version 9 of the default ONNX operator set."
+}
+
+
+op {
+  name: "BitShift"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "First operand, input to be shifted."
+  }
+  input_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Second operand, amounts of shift."
+  }
+  output_arg {
+    name: "z"
+    type_attr: "T"
+    description: "Output tensor"
+  }
+  attr {
+    name: "direction"
+    type: "string"
+    description: "Direction of moving bits. It can be either "RIGHT" (for right shift) or "LEFT" (for left shift)."
+  }
+  summary: "Bitwise shift operator performs element-wise operation. For each input element, if the attribute "direction" is "RIGHT", this operator moves its binary representation toward the right side so that the input value is effectively decreased. If the attribute "direction" is "LEFT", bits of binary representation moves toward the left side, which results the increase of its actual value. The input X is the tensor to be shifted and another input Y specifies the amounts of shifting. For example, if "direction" is "Right", X is [1, 4], and S is [1, 1], the corresponding output Z would be [0, 2]. If "direction" is "LEFT" with X=[1, 2] and S=[1, 2], the corresponding output Y would be [2, 8]."
+  description: "Follow ONNX BitShift. This version of the operator has been available since version 11 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Cast"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Input tensor to be cast."
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Output tensor with the same shape as input with type specified by the 'to' argument"
+  }
+  attr {
+    name: "to"
+    type: "int"
+    description: "The data type to which the elements of the input tensor are cast. Strictly must be one of the types from DataType enum in TensorProto"
+  }
+  summary: "The operator casts the elements of a given input tensor to a data type specified by the 'to' argument and returns an output tensor of the same size in the converted type. The 'to' argument must be one of the data types specified in the 'DataType' enum field in the TensorProto message."
+  description: "Follow ONNX Cast. This version of the operator has been available since version 9 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Ceil"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Input tensor"
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Output tensor"
+  }
+  summary: "Ceil takes one input data (Tensor) and produces one output data (Tensor) where the ceil is, y = ceil(x), is applied to the tensor elementwise."
+  description: "Follow ONNX Ceil. This version of the operator has been available since version 6 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Clip"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Input tensor whose elements to be clipped"
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Output tensor with clipped input elements"
+  }
+  attr {
+    name: "max"
+    type: "float"
+    default_value {
+      f: 3.4028234663852886e+38
+    }
+    description: "Maximum value, above which element is replaced by max"
+  }
+  attr {
+    name: "min"
+    type: "float"
+    default_value {
+      f: -3.4028234663852886e+38
+    }
+    description: "Minimum value, under which element is replaced by min"
+  }
+  summary: "Clip operator limits the given input within an interval. The interval is specified with arguments 'min' and 'max'. They default to numeric_limits::lowest() and numeric_limits::max() respectively."
+  description: "Follow ONNX Clip. This version of the operator has been available since version 6 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Compress"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Tensor of rank r >= 1."
+  }
+  input_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Rank 1 tensor of booleans to indicate which slices or data elements to be selected. Its length can be less than the input length alone the axis or the flattened input size if axis is not specified. In such cases data slices or elements exceeding the condition length are discarded."
+  }
+  output_arg {
+    name: "z"
+    type_attr: "T"
+    description: "Tensor of rank r if axis is specified. Otherwise output is a Tensor of rank 1."
+  }
+  attr {
+    name: "axis"
+    type: "int"
+    description: "Axis along which to take slices. If not specified, input is flattened before elements being selected."
+  }
+  summary: "Selects slices from an input tensor along a given axis where condition evaluates to True for each axis index. In case axis is not provided, input is flattened before elements are selected."
+  description: "Follow ONNX Compress. This version of the operator has been available since version 9 of the default ONNX operator set."
+}
+
+
+
+
+
+
