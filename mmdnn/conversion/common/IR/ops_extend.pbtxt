@@ -3,12 +3,12 @@ op {
   input_arg {
     name: "x"
     type_attr: "T"
-    description: ""
+    description: "Input tensor"
   }
   output_arg {
     name: "y"
     type_attr: "T"
-    description: ""
+    description: "Output tensor"
   }
   summary: "Absolute takes one input data (Tensor) and produces one output data (Tensor) where the absolute is, y = abs(x), is applied to the tensor elementwise."
   description: "Follow ONNX Abs.This version of the operator has been available since version 6 of the default ONNX operator set."
@@ -20,12 +20,12 @@ op {
   input_arg {
     name: "x"
     type_attr: "T"
-    description: ""
+    description: "Input tensor"
   }
   output_arg {
     name: "y"
     type_attr: "T"
-    description: ""
+    description: "The arccosine of the input tensor computed element-wise"
   }
   summary: "Calculates the arccosine (inverse of cosine) of the given input tensor, element-wise."
   description: "Follow ONNX Acos. This version of the operator has been available since version 7 of the default ONNX operator set."
@@ -37,12 +37,12 @@ op {
   input_arg {
     name: "x"
     type_attr: "T"
-    description: ""
+    description: "Input tensor"
   }
   output_arg {
     name: "y"
     type_attr: "T"
-    description: ""
+    description: "The hyperbolic arccosine values of the input tensor computed element-wise"
   }
   summary: "Calculates the hyperbolic arccosine of the given input tensor element-wise."
   description: "Follow ONNX Acosh. This version of the operator has been available since version 9 of the default ONNX operator set."
@@ -54,17 +54,17 @@ op {
   input_arg {
     name: "x"
     type_attr: "T"
-    description: ""
+    description: "First input operand for the logical operator."
   }
   input_arg {
     name: "y"
     type_attr: "T"
-    description: ""
+    description: "Second input operand for the logical operator."
   }
   output_arg {
     name: "z"
     type_attr: "T"
-    description: ""
+    description: "Result tensor."
   }
   summary: "Returns the tensor resulted from performing the and logical operation elementwise on the input tensors A and B (with Numpy-style broadcasting support)."
   description: "Follow ONNX And. This version of the operator has been available since version 7 of the default ONNX operator set."
