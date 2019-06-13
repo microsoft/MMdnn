@@ -6,6 +6,7 @@ import sys
 import six
 from conversion_imagenet import TestModels
 
+
 def get_test_table():
     TRAVIS_CI = os.environ.get('TRAVIS')
     if not TRAVIS_CI or TRAVIS_CI.lower() != 'true':
@@ -15,14 +16,21 @@ def get_test_table():
 
     ONNX = os.environ.get('TEST_ONNX')
     if ONNX and ONNX.lower() == 'true':
-        return { 'mxnet' : {
-            'imagenet1k-resnet-18'         : [TestModels.onnx_emit],
-            'imagenet1k-resnet-152'        : [TestModels.onnx_emit],
+        return {'mxnet': {
+            'imagenet1k-resnet-18': [TestModels.onnx_emit],
+            'imagenet1k-resnet-152': [TestModels.onnx_emit],
         }}
     else:
-        return { 'mxnet' : {
-            'imagenet1k-resnet-18'         : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-            'imagenet1k-resnet-152'        : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+        return {'mxnet': {
+            'imagenet1k-resnet-18': [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit,
+                                     TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit,
+                                     TestModels.tensorflow_emit],
+            'imagenet1k-resnet-152': [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit,
+                                      TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit,
+                                      TestModels.tensorflow_emit],
+            'imagenet1k-resnext-101-64x4d': [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit,
+                                             TestModels.mxnet_emit, TestModels.pytorch_emit,
+                                             TestModels.tensorflow_emit],
         }}
 
 
@@ -34,4 +42,3 @@ def test_mxnet():
 
 if __name__ == '__main__':
     test_mxnet()
-

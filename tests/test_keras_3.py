@@ -6,16 +6,14 @@ import sys
 import six
 from conversion_imagenet import TestModels
 
-def get_test_table():
-    if six.PY3:
-        return None
 
+def get_test_table():
     ONNX = os.environ.get('TEST_ONNX')
     if ONNX and ONNX.lower() == 'true':
         return {
-            'keras' : {
-                'densenet'     : [TestModels.onnx_emit],
-                'mobilenet'    : [TestModels.onnx_emit],
+            'keras': {
+                'densenet': [TestModels.onnx_emit],
+                'mobilenet': [TestModels.onnx_emit],
                 # 'xception'     : [TestModels.onnx_emit],
                 # 'nasnet'       : [TestModels.onnx_emit],
             },
@@ -23,10 +21,12 @@ def get_test_table():
 
     else:
         return {
-            'keras' : {
-                'densenet'     : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'mobilenet'    : [TestModels.coreml_emit, TestModels.keras_emit, TestModels.tensorflow_emit],
-        }}
+            'keras': {
+                'densenet': [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit,
+                             TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                'mobilenet': [TestModels.coreml_emit, TestModels.keras_emit, TestModels.tensorflow_emit],
+                'yolo2': [TestModels.keras_emit]
+            }}
 
 
 def test_keras():
