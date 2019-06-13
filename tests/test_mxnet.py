@@ -21,6 +21,8 @@ def get_test_table():
         }}
     else:
         return {'mxnet': {
+            'vgg19': [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit,
+                      TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
             'imagenet1k-inception-bn': [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit,
                                         TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit,
                                         TestModels.tensorflow_emit],

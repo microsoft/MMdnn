@@ -12,8 +12,6 @@ def get_test_table():
     if not TRAVIS_CI or TRAVIS_CI.lower() != 'true':
         return None
 
-    if six.PY2: return None
-
     ONNX = os.environ.get('TEST_ONNX')
     if ONNX and ONNX.lower() == 'true':
         return {'mxnet': {
