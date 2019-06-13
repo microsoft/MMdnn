@@ -11,7 +11,7 @@ op {
     description: "Output tensor"
   }
   summary: "Absolute takes one input data (Tensor) and produces one output data (Tensor) where the absolute is, y = abs(x), is applied to the tensor elementwise."
-  description: "Follow ONNX Abs.This version of the operator has been available since version 6 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 Abs.This version of the operator has been available since version 6 of the default ONNX operator set."
 }
 
 
@@ -28,7 +28,7 @@ op {
     description: "The arccosine of the input tensor computed element-wise"
   }
   summary: "Calculates the arccosine (inverse of cosine) of the given input tensor, element-wise."
-  description: "Follow ONNX Acos. This version of the operator has been available since version 7 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 Acos. This version of the operator has been available since version 7 of the default ONNX operator set."
 }
 
 
@@ -45,7 +45,7 @@ op {
     description: "The hyperbolic arccosine values of the input tensor computed element-wise"
   }
   summary: "Calculates the hyperbolic arccosine of the given input tensor element-wise."
-  description: "Follow ONNX Acosh. This version of the operator has been available since version 9 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 Acosh. This version of the operator has been available since version 9 of the default ONNX operator set."
 }
 
 
@@ -67,7 +67,7 @@ op {
     description: "Result tensor."
   }
   summary: "Returns the tensor resulted from performing the and logical operation elementwise on the input tensors A and B (with Numpy-style broadcasting support)."
-  description: "Follow ONNX And. This version of the operator has been available since version 7 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 And. This version of the operator has been available since version 7 of the default ONNX operator set."
 }
 
 
@@ -100,7 +100,7 @@ op {
     description: "Keep the reduced dimension or not, default 1 mean keep reduced dimension."
   }
   summary: "Computes the indices of the max elements of the input tensor's element along the provided axis. The resulted tensor has the same rank as the input if keepdims equal 1. If keepdims equal 0, then the resulted tensor have the reduced dimension pruned. The type of the output tensor is integer."
-  description: "Follow ONNX ArgMax. This version of the operator has been available since version 1 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 ArgMax. This version of the operator has been available since version 1 of the default ONNX operator set."
 }
 
 
@@ -131,7 +131,7 @@ op {
       i: 1
     }
   summary: "Computes the indices of the min elements of the input tensor's element along the provided axis. The resulted tensor has the same rank as the input if keepdims equal 1. If keepdims equal 0, then the resulted tensor have the reduced dimension pruned. The type of the output tensor is integer."
-  description: "Follow ONNX ArgMin. This version of the operator has been available since version 1 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 ArgMin. This version of the operator has been available since version 1 of the default ONNX operator set."
 }
 
 
@@ -148,7 +148,7 @@ op {
     description: "The hyperbolic arcsine values of the input tensor computed element-wise"
   }
   summary: "Calculates the hyperbolic arcsine of the given input tensor element-wise."
-  description: "Follow ONNX Acosh. This version of the operator has been available since version 9 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 Acosh. This version of the operator has been available since version 9 of the default ONNX operator set."
 }
 
 
@@ -165,7 +165,7 @@ op {
     description: "The arctangent of the input tensor computed element-wise"
   }
   summary: "Calculates the arctangent (inverse of tangent) of the given input tensor, element-wise."
-  description: "Follow ONNX Atan. This version of the operator has been available since version 7 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 Atan. This version of the operator has been available since version 7 of the default ONNX operator set."
 }
 
 
@@ -182,34 +182,7 @@ op {
     description: "The hyperbolic arctangent values of the input tensor computed element-wise"
   }
   summary: "Calculates the hyperbolic arctangent of the given input tensor element-wise."
-  description: "Follow ONNX Atanh. This version of the operator has been available since version 9 of the default ONNX operator set."
-}
-
-
-op {
-  name: "BitShift"
-  input_arg {
-    name: "x"
-    type_attr: "T"
-    description: "First operand, input to be shifted."
-  }
-  input_arg {
-    name: "y"
-    type_attr: "T"
-    description: "Second operand, amounts of shift."
-  }
-  output_arg {
-    name: "z"
-    type_attr: "T"
-    description: "Output tensor"
-  }
-  attr {
-    name: "direction"
-    type: "string"
-    description: "Direction of moving bits. It can be either "RIGHT" (for right shift) or "LEFT" (for left shift)."
-  }
-  summary: "Bitwise shift operator performs element-wise operation. For each input element, if the attribute "direction" is "RIGHT", this operator moves its binary representation toward the right side so that the input value is effectively decreased. If the attribute "direction" is "LEFT", bits of binary representation moves toward the left side, which results the increase of its actual value. The input X is the tensor to be shifted and another input Y specifies the amounts of shifting. For example, if "direction" is "Right", X is [1, 4], and S is [1, 1], the corresponding output Z would be [0, 2]. If "direction" is "LEFT" with X=[1, 2] and S=[1, 2], the corresponding output Y would be [2, 8]."
-  description: "Follow ONNX BitShift. This version of the operator has been available since version 11 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 Atanh. This version of the operator has been available since version 9 of the default ONNX operator set."
 }
 
 
@@ -231,7 +204,7 @@ op {
     description: "The data type to which the elements of the input tensor are cast. Strictly must be one of the types from DataType enum in TensorProto"
   }
   summary: "The operator casts the elements of a given input tensor to a data type specified by the 'to' argument and returns an output tensor of the same size in the converted type. The 'to' argument must be one of the data types specified in the 'DataType' enum field in the TensorProto message."
-  description: "Follow ONNX Cast. This version of the operator has been available since version 9 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 Cast. This version of the operator has been available since version 9 of the default ONNX operator set."
 }
 
 
@@ -248,7 +221,7 @@ op {
     description: "Output tensor"
   }
   summary: "Ceil takes one input data (Tensor) and produces one output data (Tensor) where the ceil is, y = ceil(x), is applied to the tensor elementwise."
-  description: "Follow ONNX Ceil. This version of the operator has been available since version 6 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 Ceil. This version of the operator has been available since version 6 of the default ONNX operator set."
 }
 
 
@@ -281,7 +254,7 @@ op {
     description: "Minimum value, under which element is replaced by min"
   }
   summary: "Clip operator limits the given input within an interval. The interval is specified with arguments 'min' and 'max'. They default to numeric_limits::lowest() and numeric_limits::max() respectively."
-  description: "Follow ONNX Clip. This version of the operator has been available since version 6 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 Clip. This version of the operator has been available since version 6 of the default ONNX operator set."
 }
 
 
@@ -308,5 +281,228 @@ op {
     description: "Axis along which to take slices. If not specified, input is flattened before elements being selected."
   }
   summary: "Selects slices from an input tensor along a given axis where condition evaluates to True for each axis index. In case axis is not provided, input is flattened before elements are selected."
-  description: "Follow ONNX Compress. This version of the operator has been available since version 9 of the default ONNX operator set."
+  description: "Follow ONNX v1.5.0 Compress. This version of the operator has been available since version 9 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Constant"
+  output_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Output tensor containing the same value of the provided tensor."
+  }
+  attr {
+    name: "value"
+    type: "T"
+    description: "The value for the elements of the output tensor."
+  }
+  summary: "A constant tensor."
+  description: "Follow ONNX v1.5.0 Constant. This version of the operator has been available since version 9 of the default ONNX operator set."
+}
+
+
+op {
+  name: "ConstantOfShape"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "1D tensor. The shape of the expected output tensor. If empty tensor is given, the output would be a scalar."
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Output tensor of shape specified by 'input'.If attribute 'value' is specified, the value and datatype of the output tensor is taken from 'value'.If attribute 'value' is not specified, the value in the output defaults to 0, and the datatype defaults to float32."
+  }
+  attr {
+    name: "value"
+    type: "T"
+    description: "(Optional) The value of the output elements.Should be a one-element tensor. If not specified, it defaults to a tensor of value 0 and datatype float32"
+  }
+  summary: "Generate a tensor with given value and shape."
+  description: "Follow ONNX v1.5.0 ConstantOfShape. This version of the operator has been available since version 9 of the default ONNX operator set."
+}
+
+
+op {
+  name: "ConvInteger"
+  input_arg {
+    name: "v"
+    type_attr: "T"
+    description: "Input data tensor from previous layer; has size (N x C x H x W), where N is the batch size, C is the number of channels, and H and W are the height and width. Note that this is for the 2D image. Otherwise the size is (N x C x D1 x D2 ... x Dn). Optionally, if dimension denotation is in effect, the operation expects input data tensor to arrive with the dimension denotation of [DATA_BATCH, DATA_CHANNEL, DATA_FEATURE, DATA_FEATURE ...]."
+  }
+  input_arg {
+    name: "w"
+    type_attr: "T"
+    description: "The weight tensor that will be used in the convolutions; has size (M x C/group x kH x kW), where C is the number of channels, and kH and kW are the height and width of the kernel, and M is the number of feature maps. For more than 2 dimensions, the kernel shape will be (M x C/group x k1 x k2 x ... x kn), where (k1 x k2 x ... kn) is the dimension of the kernel. Optionally, if dimension denotation is in effect, the operation expects the weight tensor to arrive with the dimension denotation of [FILTER_OUT_CHANNEL, FILTER_IN_CHANNEL, FILTER_SPATIAL, FILTER_SPATIAL ...]. X.shape[1] == (W.shape[1] * group) == C (assuming zero based indices for the shape array). Or in other words FILTER_IN_CHANNEL should be equal to DATA_CHANNEL."
+  }
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Zero point tensor for input 'x'. It's optional and default value is 0. It's a scalar, which means a per-tensor/layer quantization."
+  }
+  input_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Scale tensor for input 'w'. It's optional and default value is 0. It could be a scalar or a 1-D tensor, which means a per-tensor/layer or per output channel quantization. If it's a 1-D tensor, its number of elements should be equal to the number of output channels (M)"
+  }
+  output_arg {
+    name: "z"
+    type_attr: "T"
+    description: "Output data tensor that contains the result of the convolution. The output dimensions are functions of the kernel size, stride size, and pad lengths."
+  }
+  attr {
+    name: "auto_pad"
+    type: "string"
+    description: "auto_pad must be either NOTSET, SAME_UPPER, SAME_LOWER or VALID. Where default value is NOTSET, which means explicit padding is used. SAME_UPPER or SAME_LOWER mean pad the input so that the output size match the input.In case of odd number add the extra padding at the end for SAME_UPPER and at the beginning for SAME_LOWER. VALID mean no padding."
+  }
+  attr {
+    name: "dilations"
+    type: "list(int)"
+    description: "dilation value along each axis of the filter. If not present, the dilation defaults to 1 along each axis."
+  }
+  attr {
+    name: "group"
+    type: "int"
+    description: "number of groups input channels and output channels are divided into. default is 1."
+  }
+  attr {
+    name: "kernel_shape"
+    type: "list(int)"
+    description: "The shape of the convolution kernel. If not present, should be inferred from input 'w'."
+  }
+  attr {
+    name: "pads"
+    type: "list(int)"
+    description: "Padding for the beginning and ending along each axis, it can take any value greater than or equal to 0.The value represent the number of pixels added to the beginning and end part of the corresponding axis.`pads` format should be as follow [x1_begin, x2_begin...x1_end, x2_end,...], where xi_begin the number ofpixels added at the beginning of axis `i` and xi_end, the number of pixels added at the end of axis `i`.This attribute cannot be used simultaneously with auto_pad attribute. If not present, the padding defaultsto 0 along start and end of each axis."
+  }
+  attr {
+    name: "strides"
+    type: "list(int)"
+    description: "Stride along each axis. If not present, the stride defaults to 1 along each axis."
+  }
+  summary: "The integer convolution operator consumes an input tensor, its zero-point, a filter, and its zero-point, and computes the output. The production MUST never overflow. The accumulation may overflow if and only if in 32 bits."
+  description: "Follow ONNX v1.5.0 ConvInteger. This version of the operator has been available since version 10 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Cos"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Input tensor"
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "The cosine of the input tensor computed element-wise"
+  }
+  summary: "Calculates the cosine of the given input tensor, element-wise."
+  description: "Follow ONNX v1.5.0 Cos. This version of the operator has been available since version 7 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Cosh"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Input tensor"
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "The hyperbolic cosine values of the input tensor computed element-wise"
+  }
+  summary: "Calculates the hyperbolic cosine of the given input tensor element-wise."
+  description: "Follow ONNX v1.5.0 Cosh. This version of the operator has been available since version 9 of the default ONNX operator set."
+}
+
+
+op {
+  name: "DepthToSpace"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Input tensor of [N,C,H,W], where N is the batch axis, C is the channel or depth, H is the height and W is the width."
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Output tensor of [N, C/(blocksize * blocksize), H * blocksize, W * blocksize]."
+  }
+  attr {
+    name: "blocksize"
+    type: "int"
+    description: "Blocks of [blocksize, blocksize] are moved."
+  }
+  summary: "DepthToSpace rearranges (permutes) data from depth into blocks of spatial data. This is the reverse transformation of SpaceToDepth. More specifically, this op outputs a copy of the input tensor where values from the depth dimension are moved in spatial blocks to the height and width dimensions."
+  description: "Follow ONNX v1.5.0 DepthToSpace. This version of the operator has been available since version 1 of the default ONNX operator set."
+}
+
+
+op {
+  name: "DequantizeLinear"
+  input_arg {
+    name: "w"
+    type_attr: "T"
+    description: "N-D quantized input tensor to be de-quantized."
+  }
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Scale for input 'x'. It's a scalar, which means a per-tensor/layer quantization."
+  }
+  input_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Zero point for input 'x'. It's a scalar, which means a per-tensor/layer quantization. It's optional. 0 is the default value when it's not specified."
+  }
+  output_arg {
+    name: "z"
+    type_attr: "T"
+    description: "N-D full precision output tensor. It has same shape as input 'x'."
+  }
+  summary: "The linear dequantization operator. It consumes a quantized tensor, a scale, a zero point to compute the full precision tensor. The dequantization formula is y = (x - x_zero_point) * x_scale. 'x_scale' and 'x_zero_point' must have same shape. 'x_zero_point' and 'x' must have same type. 'x' and 'y' must have same shape. In the case of dequantizing int32, there's no zero point (zero point is supposed to be 0)."
+  description: "Follow ONNX v1.5.0 DequantizeLinear. This version of the operator has been available since version 10 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Equal"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "First input operand for the logical operator."
+  }
+  input_arg {
+    name: "y"
+    type_attr: "T"
+    description: "Second input operand for the logical operator."
+  }
+  output_arg {
+    name: "z"
+    type_attr: "T"
+    description: "Result tensor."
+  }
+  summary: "Returns the tensor resulted from performing the equal logical operation elementwise on the input tensors A and B (with Numpy-style broadcasting support)."
+  description: "Follow ONNX v1.5.0 Equal. This version of the operator has been available since version 7 of the default ONNX operator set."
+}
+
+
+op {
+  name: "Erf"
+  input_arg {
+    name: "x"
+    type_attr: "T"
+    description: "Input tensor"
+  }
+  output_arg {
+    name: "y"
+    type_attr: "T"
+    description: "The error function of the input tensor computed element-wise. It has the same shape and type of the input."
+  }
+  summary: "Computes the error function of the given input tensor element-wise."
+  description: "Follow ONNX v1.5.0 Erf. This version of the operator has been available since version 9 of the default ONNX operator set."
 }
