@@ -84,7 +84,7 @@ def KitModel(weight_file = None):
                                                                                              ', '.join(
                                                                                                  self.initializer))
                       )
-        self.add_body(1, "return helper.make_model(graph, opset_imports=[helper.make_opsetid('', 6)])")
+        self.add_body(1, "return helper.make_model(graph, opset_imports=[helper.make_opsetid('', 9)])")
         return self.body_code
 
     def run(self, dstNetworkPath, dstWeightPath=None, phase='test'):
@@ -244,7 +244,7 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_var_array',
                           IR_node.variable_name + '_var_array',
                           IR_node.variable_name + '_var_array'))
-        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={}, is_test={})".format(
+        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={})".format(
                           IR_node.variable_name,
                           self.parent_variable_name(IR_node),
                           IR_node.variable_name + '_scale',
@@ -252,8 +252,7 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_mean',
                           IR_node.variable_name + '_var',
                           IR_node.variable_name,
-                          epsilon,
-                          0 if self.phase == 'train' else 1))
+                          epsilon))
         self.nodes.append(IR_node.variable_name + '_scale')
         self.nodes.append(IR_node.variable_name + '_bias')
         self.nodes.append(IR_node.variable_name + '_mean')
@@ -308,7 +307,7 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_var_array',
                           IR_node.variable_name + '_var_array',
                           IR_node.variable_name + '_var_array'))
-        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={}, is_test={})".format(
+        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={})".format(
                           IR_node.variable_name,
                           self.parent_variable_name(IR_node),
                           IR_node.variable_name + '_scale',
@@ -316,8 +315,7 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_mean',
                           IR_node.variable_name + '_var',
                           IR_node.variable_name,
-                          epsilon,
-                          0 if self.phase == 'train' else 1))
+                          epsilon))
         self.nodes.append(IR_node.variable_name + '_scale')
         self.nodes.append(IR_node.variable_name + '_bias')
         self.nodes.append(IR_node.variable_name + '_mean')
@@ -496,18 +494,17 @@ def KitModel(weight_file = None):
             inputs += ', '+''.join("'"+IR_node.variable_name +"_weight'")
             self.nodes.append(IR_node.variable_name+'_weight')
 
-        self.add_body(1, "{:15} = helper.make_node('Mul', inputs=[{}], outputs=['{}'], broadcast=1)".format(
+        self.add_body(1, "{:15} = helper.make_node('Mul', inputs=[{}], outputs=['{}'])".format(
             IR_node.variable_name,
             inputs,
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Dropout(self, IR_node):
-        self.add_body(1, "{:15} = helper.make_node('Dropout', inputs=['{}'], outputs=['{}'], is_test={}, ratio={})".format(
+        self.add_body(1, "{:15} = helper.make_node('Dropout', inputs=['{}'], outputs=['{}'], ratio={})".format(
                           IR_node.variable_name,
                           self.parent_variable_name(IR_node),
                           IR_node.variable_name,
-                          0 if self.phase == 'train' else 1,
                           1 - IR_node.get_attr('keep_prob')))
         self.nodes.append(IR_node.variable_name)
 

@@ -9,6 +9,7 @@ def get_kernel_extents(params, dilation):
     ko_w = dilation * (int(params.k_w) - 1) + 1
     return ko_h, ko_w
 
+
 def get_filter_output_shape(i_h, i_w, dilation, params, round_func):
     ko_h, ko_w = get_kernel_extents(params, dilation)
 
@@ -34,6 +35,7 @@ def get_strided_kernel_output_shape(node, round_func):
 def shape_not_implemented(node):
     raise NotImplementedError
 
+
 def shape_deconvolution(node):
     input_shape = node.get_only_parent()[0].output_shape
     params = node.kernel_parameters
@@ -47,6 +49,7 @@ def shape_deconvolution(node):
     c = node.parameters.num_output if has_c_o else input_shape.channels
     return TensorShape(input_shape.batch_size, c, o_h, o_w)
 
+
 def shape_identity(node):
     assert len(node.parents) > 0
     return node.parents[0][0].output_shape
@@ -55,23 +58,25 @@ def shape_identity(node):
 def shape_scalar(node):
     return TensorShape(1, 1, 1, 1)
 
+
 def shape_reshape(node):
     last_shape = node.get_only_parent()[0].output_shape
     shapes = []
     for idx, shape in enumerate(node.layer.reshape_param.shape.dim):
         shapes.append(shape if shape != 0 else last_shape[idx])
 
-    if len(shapes) == 1 and shapes[0]==-1:
+    if len(shapes) == 1 and shapes[0] == -1:
         total_dim = 1
         for i in last_shape:
             total_dim *= i
-        return TensorShape(1, 1, 1, total_dim) # return NHWC format
+        return TensorShape(1, 1, 1, total_dim)  # return NHWC format
 
     elif len(shapes) == 4:
         return TensorShape(shapes[0], shapes[1], shapes[2], shapes[3])
 
     else:
         raise NotImplementedError
+
 
 def shape_data(node):
     if node.output_shape:
@@ -137,4 +142,3 @@ def shape_split(node):
 def shape_flatten(node):
     input_shape = node.get_only_parent()[0].output_shape
     return TensorShape(input_shape.batch_size, input_shape.channels * input_shape.height * input_shape.width, 1, 1)
-

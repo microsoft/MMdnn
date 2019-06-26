@@ -25,7 +25,8 @@ class NodeMapper(object):
     def _convert_output_shape(cls, kwargs, node):
         shape = TensorShape()
         dim = shape.dim.add()
-        dim.size = -1
+        # dim.size = -1
+        dim.size = node.output_shape[0]
 
         if len(node.output_shape) > 2:
             for i in node.output_shape[2:]:
@@ -82,7 +83,8 @@ class NodeMapper(object):
         # TODO: We need to identify whether this is 4D image data, otherwise we shouldn't change the dimension order
         shape = TensorShape()
         dim = shape.dim.add()
-        dim.size = -1
+        # dim.size = -1
+        dim.size = node.output_shape[0]
         for i in node.output_shape[2:]:
             dim = shape.dim.add()
             dim.size = i
@@ -187,7 +189,8 @@ class NodeMapper(object):
     def _add_flatten_layer(cls, node):
         shape = TensorShape()
         dim = shape.dim.add()
-        dim.size = -1
+        # dim.size = -1
+        dim.size = node.output_shape[0]
 
         dim = shape.dim.add()
         dim.size = 1
@@ -203,7 +206,8 @@ class NodeMapper(object):
         #TODO: Unbiased
         shape = TensorShape()
         dim = shape.dim.add()
-        dim.size = -1
+        # dim.size = -1
+        dim.size = node.output_shape[0]
         dim = shape.dim.add()
         dim.size = 1
         for i in node.output_shape[1:]:
