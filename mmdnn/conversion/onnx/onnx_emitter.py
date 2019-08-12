@@ -111,6 +111,7 @@ def KitModel(weight_file = None):
             if IR_node.type == 'Shape' or IR_node.type == 'Pack':
                 continue
             shape_str = IRGraph.shapeToStr(IR_node.layer.attr["_output_shapes"].list.shape[0])
+
             if IR_node.layer.attr['dtype'].type == graph_pb2.DT_UNDEFINED:
                 IR_node.layer.attr['dtype'].type = graph_pb2.DT_FLOAT32
             dtype_str = self.dtype_map[IR_node.layer.attr['dtype'].type]
@@ -118,7 +119,8 @@ def KitModel(weight_file = None):
                 IR_node.variable_name + '_out',
                 IR_node.variable_name,
                 dtype_str,
-                shape_str))
+                shape_str
+                ))
             self.outputs.append(IR_node.variable_name + '_out')
 
     def emit_DataInput(self, IR_node):
@@ -132,10 +134,12 @@ def KitModel(weight_file = None):
             IR_node.variable_name + '_orig',
             dtype_str,
             shape_str))
-        self.add_body(1, "{:15} = helper.make_node('Transpose', inputs=['{}'], outputs=['{}'], perm=[0, 3, 1, 2])".format(
+        self.add_body(1, "{:15} = helper.make_node('Transpose', inputs=['{}'], outputs=['{}'], perm=[0, 3, 1, 2], name='{}')".format(
             IR_node.variable_name,
             IR_node.variable_name + '_orig',
-            IR_node.variable_name))
+            IR_node.variable_name,
+            IR_node.variable_name
+            ))
         self.inputs.append(IR_node.variable_name + '_orig')
         self.nodes.append(IR_node.variable_name)
 
@@ -157,23 +161,37 @@ def KitModel(weight_file = None):
         self.add_body(1, "{} = {}.transpose([3,2,0,1])".format(
             IR_node.variable_name + '_weight_array',
             IR_node.variable_name + '_weight_array'))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float)))".format(
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
                           IR_node.variable_name + '_weight',
+                          IR_node.variable_name + '_weight',
+                          IR_node.variable_name + '_weight_array',
+                          IR_node.variable_name + '_weight_array'))
+
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float))".format(
+                          IR_node.variable_name + '_weight_init',
                           IR_node.variable_name + '_weight',
                           IR_node.variable_name + '_weight_array',
                           IR_node.variable_name + '_weight_array',
                           IR_node.variable_name + '_weight_array'))
+
         if use_bias:
-            self.add_body(1, "{:15} = __weights_dict['{}']['bias']".format(
+            self.add_body(1, "{:15} = __weights_dict['{}']['bias'].squeeze()".format(
                 IR_node.variable_name + '_bias_array',
                 IR_node.name))
-            self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float)))".format(
-                              IR_node.variable_name + '_bias',
+
+            self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+                            IR_node.variable_name + '_bias',
+                            IR_node.variable_name + '_bias',
+                            IR_node.variable_name + '_bias_array',
+                            IR_node.variable_name + '_bias_array'))
+
+            self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float))".format(
+                              IR_node.variable_name + '_bias_init',
                               IR_node.variable_name + '_bias',
                               IR_node.variable_name + '_bias_array',
                               IR_node.variable_name + '_bias_array',
                               IR_node.variable_name + '_bias_array'))
-            self.add_body(1, "{:15} = helper.make_node('Conv', inputs=['{}', '{}', '{}'],outputs=['{}'], dilations={}, group={}, kernel_shape={}, pads={}, strides={})".format(
+            self.add_body(1, "{:15} = helper.make_node('Conv', inputs=['{}', '{}', '{}'],outputs=['{}'], dilations={}, group={}, kernel_shape={}, pads={}, strides={}, name='{}')".format(
                               IR_node.variable_name,
                               self.parent_variable_name(IR_node),
                               IR_node.variable_name + '_weight',
@@ -183,10 +201,13 @@ def KitModel(weight_file = None):
                               group,
                               kernel_shape,
                               pads,
-                              strides))
-            self.nodes.append(IR_node.variable_name + '_bias')
+                              strides,
+                              IR_node.variable_name))
+            # self.nodes.append(IR_node.variable_name + '_bias')
+            self.initializer.append(IR_node.variable_name + '_bias_init')
+            self.inputs.append(IR_node.variable_name + '_bias')
         else:
-            self.add_body(1, "{:15} = helper.make_node('Conv', inputs=['{}', '{}'],outputs=['{}'], dilations={}, group={}, kernel_shape={}, pads={}, strides={})".format(
+            self.add_body(1, "{:15} = helper.make_node('Conv', inputs=['{}', '{}'], outputs=['{}'], dilations={}, group={}, kernel_shape={}, pads={}, strides={}, name='{}')".format(
                               IR_node.variable_name,
                               self.parent_variable_name(IR_node),
                               IR_node.variable_name + '_weight',
@@ -195,56 +216,87 @@ def KitModel(weight_file = None):
                               group,
                               kernel_shape,
                               pads,
-                              strides))
-        self.nodes.append(IR_node.variable_name + '_weight')
+                              strides,
+                              IR_node.variable_name))
+        # self.nodes.append(IR_node.variable_name + '_weight')
+        self.initializer.append(IR_node.variable_name + '_weight_init')
+        self.inputs.append(IR_node.variable_name + '_weight')
         self.nodes.append(IR_node.variable_name)
 
     def emit_BatchNorm(self, IR_node):
         epsilon = IR_node.get_attr('epsilon')
         if IR_node.get_attr('scale'):
-            self.add_body(1, "{:15} = __weights_dict['{}']['scale']".format(
+            self.add_body(1, "{:15} = __weights_dict['{}']['scale'].squeeze()".format(
                 IR_node.variable_name + '_scale_array',
                 IR_node.name))
         else:
-            self.add_body(1, "{:15} = np.ndarray(__weights_dict['{}']['bias'].shape, dtype=__weights_dict['{}']['bias'].dtype)".format(
+            self.add_body(1, "{:15} = np.ndarray(__weights_dict['{}']['bias'].shape, dtype=__weights_dict['{}']['bias'].dtype).squeeze()".format(
                               IR_node.variable_name + '_scale_array',
                               IR_node.name,
                               IR_node.name))
             self.add_body(1, "{:15}.fill(1)".format(IR_node.variable_name + '_scale_array'))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
-                          IR_node.variable_name + '_scale',
+
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+            IR_node.variable_name + '_scale',
+            IR_node.variable_name + '_scale',
+            IR_node.variable_name + '_scale_array',
+            IR_node.variable_name + '_scale_array'))
+    
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={})".format(
+                          IR_node.variable_name + '_scale_init',
                           IR_node.variable_name + '_scale',
                           IR_node.variable_name + '_scale_array',
                           IR_node.variable_name + '_scale_array',
                           IR_node.variable_name + '_scale_array'))
-        self.add_body(1, "{:15} = __weights_dict['{}']['bias']".format(
+        self.add_body(1, "{:15} = __weights_dict['{}']['bias'].squeeze()".format(
             IR_node.variable_name + '_bias_array',
             IR_node.name))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
-                          IR_node.variable_name + '_bias',
-                          IR_node.variable_name + '_bias',
-                          IR_node.variable_name + '_bias_array',
-                          IR_node.variable_name + '_bias_array',
-                          IR_node.variable_name + '_bias_array'))
-        self.add_body(1, "{:15} = __weights_dict['{}']['mean']".format(
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+                        IR_node.variable_name + '_bias',
+                        IR_node.variable_name + '_bias',
+                        IR_node.variable_name + '_bias_array',
+                        IR_node.variable_name + '_bias_array'))
+
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float))".format(
+                            IR_node.variable_name + '_bias_init',
+                            IR_node.variable_name + '_bias',
+                            IR_node.variable_name + '_bias_array',
+                            IR_node.variable_name + '_bias_array',
+                            IR_node.variable_name + '_bias_array'))
+
+        self.add_body(1, "{:15} = __weights_dict['{}']['mean'].squeeze()".format(
             IR_node.variable_name + '_mean_array',
             IR_node.name))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
-                          IR_node.variable_name + '_mean',
-                          IR_node.variable_name + '_mean',
-                          IR_node.variable_name + '_mean_array',
-                          IR_node.variable_name + '_mean_array',
-                          IR_node.variable_name + '_mean_array'))
-        self.add_body(1, "{:15} = __weights_dict['{}']['var']".format(
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+                        IR_node.variable_name + '_mean',
+                        IR_node.variable_name + '_mean',
+                        IR_node.variable_name + '_mean_array',
+                        IR_node.variable_name + '_mean_array'))
+
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float))".format(
+                            IR_node.variable_name + '_mean_init',
+                            IR_node.variable_name + '_mean',
+                            IR_node.variable_name + '_mean_array',
+                            IR_node.variable_name + '_mean_array',
+                            IR_node.variable_name + '_mean_array'))
+
+        self.add_body(1, "{:15} = __weights_dict['{}']['var'].squeeze()".format(
                           IR_node.variable_name + '_var_array',
                           IR_node.name))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
-                          IR_node.variable_name + '_var',
-                          IR_node.variable_name + '_var',
-                          IR_node.variable_name + '_var_array',
-                          IR_node.variable_name + '_var_array',
-                          IR_node.variable_name + '_var_array'))
-        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={}, is_test={})".format(
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+                            IR_node.variable_name + '_var',
+                            IR_node.variable_name + '_var',
+                            IR_node.variable_name + '_var_array',
+                            IR_node.variable_name + '_var_array'))
+    
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float))".format(
+                            IR_node.variable_name + '_var_init',
+                            IR_node.variable_name + '_var',
+                            IR_node.variable_name + '_var_array',
+                            IR_node.variable_name + '_var_array',
+                            IR_node.variable_name + '_var_array'))                         
+
+        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={}, is_test={}, name='{}')".format(
                           IR_node.variable_name,
                           self.parent_variable_name(IR_node),
                           IR_node.variable_name + '_scale',
@@ -253,11 +305,16 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_var',
                           IR_node.variable_name,
                           epsilon,
-                          0 if self.phase == 'train' else 1))
-        self.nodes.append(IR_node.variable_name + '_scale')
-        self.nodes.append(IR_node.variable_name + '_bias')
-        self.nodes.append(IR_node.variable_name + '_mean')
-        self.nodes.append(IR_node.variable_name + '_var')
+                          0 if self.phase == 'train' else 1,
+                          IR_node.variable_name))
+        self.initializer.append(IR_node.variable_name + '_scale_init')
+        self.initializer.append(IR_node.variable_name + '_bias_init')
+        self.initializer.append(IR_node.variable_name + '_mean_init')
+        self.initializer.append(IR_node.variable_name + '_var_init')
+        self.inputs.append(IR_node.variable_name + '_scale')
+        self.inputs.append(IR_node.variable_name + '_bias')
+        self.inputs.append(IR_node.variable_name + '_mean')
+        self.inputs.append(IR_node.variable_name + '_var')
         self.nodes.append(IR_node.variable_name)
 
 
@@ -266,49 +323,73 @@ def KitModel(weight_file = None):
         units = dims[-1]
         epsilon = 1e-5
         if IR_node.get_attr('scale'):
-            self.add_body(1, "{:15} = __weights_dict['{}']['scale']".format(
+            self.add_body(1, "{:15} = __weights_dict['{}']['scale'].squeeze()".format(
                 IR_node.variable_name + '_scale_array',
                 IR_node.name))
         else:
-            self.add_body(1, "{:15} = np.ndarray(__weights_dict['{}']['bias'].shape, dtype=__weights_dict['{}']['bias'].dtype)".format(
+            self.add_body(1, "{:15} = np.ndarray(__weights_dict['{}']['bias'].shape, dtype=__weights_dict['{}']['bias'].dtype).squeeze()".format(
                               IR_node.variable_name + '_scale_array',
                               IR_node.name,
                               IR_node.name))
             self.add_body(1, "{:15}.fill(1)".format(IR_node.variable_name + '_scale_array'))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
-                          IR_node.variable_name + '_scale',
-                          IR_node.variable_name + '_scale',
-                          IR_node.variable_name + '_scale_array',
-                          IR_node.variable_name + '_scale_array',
-                          IR_node.variable_name + '_scale_array'))
-        self.add_body(1, "{:15} = __weights_dict['{}']['bias']".format(
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+            IR_node.variable_name + '_scale',
+            IR_node.variable_name + '_scale',
+            IR_node.variable_name + '_scale_array',
+            IR_node.variable_name + '_scale_array'))
+    
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={})".format(
+                            IR_node.variable_name + '_scale_init',
+                            IR_node.variable_name + '_scale',
+                            IR_node.variable_name + '_scale_array',
+                            IR_node.variable_name + '_scale_array',
+                            IR_node.variable_name + '_scale_array'))
+        self.add_body(1, "{:15} = __weights_dict['{}']['bias'].squeeze()".format(
             IR_node.variable_name + '_bias_array',
             IR_node.name))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
-                          IR_node.variable_name + '_bias',
-                          IR_node.variable_name + '_bias',
-                          IR_node.variable_name + '_bias_array',
-                          IR_node.variable_name + '_bias_array',
-                          IR_node.variable_name + '_bias_array'))
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+            IR_node.variable_name + '_bias',
+            IR_node.variable_name + '_bias',
+            IR_node.variable_name + '_bias_array',
+            IR_node.variable_name + '_bias_array'))
+
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float))".format(
+                            IR_node.variable_name + '_bias_init',
+                            IR_node.variable_name + '_bias',
+                            IR_node.variable_name + '_bias_array',
+                            IR_node.variable_name + '_bias_array',
+                            IR_node.variable_name + '_bias_array'))
         self.add_body(1, "{:15} = np.zeros({}, dtype=np.float32)".format(
             IR_node.variable_name + '_mean_array',
             units))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
-                          IR_node.variable_name + '_mean',
-                          IR_node.variable_name + '_mean',
-                          IR_node.variable_name + '_mean_array',
-                          IR_node.variable_name + '_mean_array',
-                          IR_node.variable_name + '_mean_array'))
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+            IR_node.variable_name + '_mean',
+            IR_node.variable_name + '_mean',
+            IR_node.variable_name + '_mean_array',
+            IR_node.variable_name + '_mean_array'))
+
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float))".format(
+                            IR_node.variable_name + '_mean_init',
+                            IR_node.variable_name + '_mean',
+                            IR_node.variable_name + '_mean_array',
+                            IR_node.variable_name + '_mean_array',
+                            IR_node.variable_name + '_mean_array'))
         self.add_body(1, "{:15} = np.ones({}, dtype=np.float32)".format(
                           IR_node.variable_name + '_var_array',
                           units))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
-                          IR_node.variable_name + '_var',
-                          IR_node.variable_name + '_var',
-                          IR_node.variable_name + '_var_array',
-                          IR_node.variable_name + '_var_array',
-                          IR_node.variable_name + '_var_array'))
-        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={}, is_test={})".format(
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+                            IR_node.variable_name + '_var',
+                            IR_node.variable_name + '_var',
+                            IR_node.variable_name + '_var_array',
+                            IR_node.variable_name + '_var_array'))
+    
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float))".format(
+                            IR_node.variable_name + '_var_init',
+                            IR_node.variable_name + '_var',
+                            IR_node.variable_name + '_var_array',
+                            IR_node.variable_name + '_var_array',
+                            IR_node.variable_name + '_var_array'))   
+        self.add_body(1, "{:15} = helper.make_node('BatchNormalization', inputs=['{}', '{}', '{}', '{}', '{}'],outputs=['{}'], epsilon={}, is_test={}, name='{}')".format(
                           IR_node.variable_name,
                           self.parent_variable_name(IR_node),
                           IR_node.variable_name + '_scale',
@@ -317,18 +398,24 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_var',
                           IR_node.variable_name,
                           epsilon,
-                          0 if self.phase == 'train' else 1))
-        self.nodes.append(IR_node.variable_name + '_scale')
-        self.nodes.append(IR_node.variable_name + '_bias')
-        self.nodes.append(IR_node.variable_name + '_mean')
-        self.nodes.append(IR_node.variable_name + '_var')
+                          0 if self.phase == 'train' else 1,
+                          IR_node.variable_name))
+        self.inputs.append(IR_node.variable_name + '_scale')
+        self.inputs.append(IR_node.variable_name + '_bias')
+        self.inputs.append(IR_node.variable_name + '_mean')
+        self.inputs.append(IR_node.variable_name + '_var')
+        self.initializer.append(IR_node.variable_name + '_scale_init')
+        self.initializer.append(IR_node.variable_name + '_bias_init')
+        self.initializer.append(IR_node.variable_name + '_mean_init')
+        self.initializer.append(IR_node.variable_name + '_var_init')
         self.nodes.append(IR_node.variable_name)
 
 
     def emit_Relu(self, IR_node):
-        self.add_body(1, "{:15} = helper.make_node('Relu', inputs=['{}'], outputs=['{}'])".format(
+        self.add_body(1, "{:15} = helper.make_node('Relu', inputs=['{}'], outputs=['{}'], name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
+            IR_node.variable_name,
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
@@ -336,9 +423,10 @@ def KitModel(weight_file = None):
         input_layers = ', '.join(
             ("'" + self.IR_graph.get_parent(IR_node.name, [num]).real_variable_name) + "'" for num in
             range(0, len(IR_node.in_edges)))
-        self.add_body(1, "{:15} = helper.make_node('Add', inputs=[{}], outputs=['{}'])".format(
+        self.add_body(1, "{:15} = helper.make_node('Add', inputs=[{}], outputs=['{}'], name='{}')".format(
             IR_node.variable_name,
             input_layers,
+            IR_node.variable_name,
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
@@ -346,9 +434,10 @@ def KitModel(weight_file = None):
         pooling_type = IR_node.get_attr('pooling_type')
         if IR_node.layer.attr['global_pooling'].b:
             if pooling_type == 'AVG':
-                self.add_body(1, "{:15} = helper.make_node('GlobalAveragePool', inputs=['{}'], outputs=['{}'])".format(
+                self.add_body(1, "{:15} = helper.make_node('GlobalAveragePool', inputs=['{}'], outputs=['{}'], name='{}')".format(
                     IR_node.variable_name,
                     self.parent_variable_name(IR_node),
+                    IR_node.variable_name,
                     IR_node.variable_name))
                 self.nodes.append(IR_node.variable_name)
             else:
@@ -365,14 +454,15 @@ def KitModel(weight_file = None):
                 pad_length = len(pads)
                 pads = pads[1:pad_length // 2 - 1] + pads[pad_length // 2 + 1:pad_length - 1]
                 strides = list(IR_node.get_attr('strides')[1:-1])
-                self.add_body(1, "{:15} = helper.make_node('{}', inputs=['{}'],outputs=['{}'], kernel_shape={}, pads={}, strides={})".format(
+                self.add_body(1, "{:15} = helper.make_node('{}', inputs=['{}'],outputs=['{}'], kernel_shape={}, pads={}, strides={}, name='{}')".format(
                                   IR_node.variable_name,
                                   op_name,
                                   self.parent_variable_name(IR_node),
                                   IR_node.variable_name,
                                   kernel_shape,
                                   pads,
-                                  strides))
+                                  strides,
+                                  IR_node.variable_name))
                 self.nodes.append(IR_node.variable_name)
             else:
                 print("OnnxEmitter has not supported Pool type [%s]." % (pooling_type))
@@ -386,34 +476,51 @@ def KitModel(weight_file = None):
         self.add_body(1, "{:15} = __weights_dict['{}']['weights']".format(
             IR_node.variable_name + '_weight_array',
             IR_node.name))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float)))".format(
-                          IR_node.variable_name + '_weight',
-                          IR_node.variable_name + '_weight',
-                          IR_node.variable_name + '_weight_array',
-                          IR_node.variable_name + '_weight_array',
-                          IR_node.variable_name + '_weight_array'))
+
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+            IR_node.variable_name + '_weight',
+            IR_node.variable_name + '_weight',
+            IR_node.variable_name + '_weight_array',
+            IR_node.variable_name + '_weight_array'))
+
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float))".format(
+            IR_node.variable_name + '_weight_init',
+            IR_node.variable_name + '_weight',
+            IR_node.variable_name + '_weight_array',
+            IR_node.variable_name + '_weight_array',
+            IR_node.variable_name + '_weight_array'))
+
         if use_bias:
-            self.add_body(1, "{:15} = __weights_dict['{}']['bias']".format(
+            self.add_body(1, "{:15} = __weights_dict['{}']['bias'].squeeze()".format(
                 IR_node.variable_name + '_bias_array',
                 IR_node.name))
         else:
             self.add_body(1, "{:15} = np.zeros({})".format(
                 IR_node.variable_name + '_bias_array',
                 units))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float)))".format(
-                          IR_node.variable_name + '_bias',
-                          IR_node.variable_name + '_bias',
-                          IR_node.variable_name + '_bias_array',
-                          IR_node.variable_name + '_bias_array',
-                          IR_node.variable_name + '_bias_array'))
-        self.add_body(1, "{:15} = helper.make_node('Gemm', inputs=['{}', '{}', '{}'],outputs=['{}'])".format(
+        self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
+            IR_node.variable_name + '_bias',
+            IR_node.variable_name + '_bias',
+            IR_node.variable_name + '_bias_array',
+            IR_node.variable_name + '_bias_array'))
+
+        self.add_body(1, "{:15} = helper.make_tensor(name='{}', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float))".format(
+                            IR_node.variable_name + '_bias_init',
+                            IR_node.variable_name + '_bias',
+                            IR_node.variable_name + '_bias_array',
+                            IR_node.variable_name + '_bias_array',
+                            IR_node.variable_name + '_bias_array'))
+        self.add_body(1, "{:15} = helper.make_node('Gemm', inputs=['{}', '{}', '{}'], outputs=['{}'], name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.variable_name + '_weight',
             IR_node.variable_name + '_bias',
+            IR_node.variable_name,
             IR_node.variable_name))
-        self.nodes.append(IR_node.variable_name + '_weight')
-        self.nodes.append(IR_node.variable_name + '_bias')
+        self.initializer.append(IR_node.variable_name + '_weight_init')
+        self.initializer.append(IR_node.variable_name + '_bias_init')
+        self.inputs.append(IR_node.variable_name + '_weight')
+        self.inputs.append(IR_node.variable_name + '_bias')
         self.nodes.append(IR_node.variable_name)
 
     def emit_Pad(self, IR_node):
@@ -421,35 +528,39 @@ def KitModel(weight_file = None):
         pads = IR_node.get_attr('pads')
         pad_length = len(pads)
         pads = [0, 0] + pads[1:pad_length // 2 - 1] + [0, 0] + pads[pad_length // 2 + 1:pad_length - 1]
-        self.add_body(1, "{:15} = helper.make_node('Pad', inputs=['{}'], outputs=['{}'], mode='{}', pads={})".format(
+        self.add_body(1, "{:15} = helper.make_node('Pad', inputs=['{}'], outputs=['{}'], mode='{}', pads={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.variable_name,
             mode,
-            pads))
+            pads,
+            IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Concat(self, IR_node):
         axis = IR_node.get_attr('axis') - 2
         inputs = ', '.join("'" + self.IR_graph.get_node(i).real_variable_name + "'" for i in IR_node.in_edges)
-        self.add_body(1, "{:15} = helper.make_node('Concat', inputs=[{}], outputs=['{}'], axis={})".format(
+        self.add_body(1, "{:15} = helper.make_node('Concat', inputs=[{}], outputs=['{}'], axis={}, name='{}')".format(
             IR_node.variable_name,
             inputs,
             IR_node.variable_name,
-            axis))
+            axis,
+            IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Flatten(self, IR_node):
-        self.add_body(1, "{:15} = helper.make_node('Flatten', inputs=['{}'], outputs=['{}'])".format(
+        self.add_body(1, "{:15} = helper.make_node('Flatten', inputs=['{}'], outputs=['{}'], name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
+            IR_node.variable_name,
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Softmax(self, IR_node):
-        self.add_body(1, "{:15} = helper.make_node('Softmax', inputs=['{}'], outputs=['{}'])".format(
+        self.add_body(1, "{:15} = helper.make_node('Softmax', inputs=['{}'], outputs=['{}'], name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
+            IR_node.variable_name,
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
@@ -463,19 +574,21 @@ def KitModel(weight_file = None):
             self.add_body(1, "{:15} = __weights_dict['{}']['value']".format(
                 IR_node.variable_name + '_value_array',
                 IR_node.name))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float)))".format(
+        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float)), name='{}')".format(
                           IR_node.variable_name,
                           IR_node.variable_name,
                           IR_node.variable_name + '_value_array',
                           IR_node.variable_name + '_value_array',
-                          IR_node.variable_name + '_value_array'))
+                          IR_node.variable_name + '_value_array',
+                          IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Sub(self, IR_node):
         inputs = ', '.join("'" + self.IR_graph.get_node(i).real_variable_name + "'" for i in IR_node.in_edges)
-        self.add_body(1, "{:15} = helper.make_node('Sub', inputs=[{}], outputs=['{}'], broadcast=1)".format(
+        self.add_body(1, "{:15} = helper.make_node('Sub', inputs=[{}], outputs=['{}'], broadcast=1, name='{}')".format(
             IR_node.variable_name,
             inputs,
+            IR_node.variable_name,
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
@@ -487,28 +600,32 @@ def KitModel(weight_file = None):
                 IR_node.variable_name+'_weight_array',
                 IR_node.name
             ))
-            self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
+            self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}), name='{}')".format(
                     IR_node.variable_name + '_weight',
                     IR_node.variable_name + '_weight',
                     IR_node.variable_name + '_weight_array',
                     IR_node.variable_name + '_weight_array',
-                    IR_node.variable_name + '_weight_array'))
+                    IR_node.variable_name + '_weight_array',
+                    IR_node.variable_name + '_weight'
+                    ))
             inputs += ', '+''.join("'"+IR_node.variable_name +"_weight'")
             self.nodes.append(IR_node.variable_name+'_weight')
 
-        self.add_body(1, "{:15} = helper.make_node('Mul', inputs=[{}], outputs=['{}'], broadcast=1)".format(
+        self.add_body(1, "{:15} = helper.make_node('Mul', inputs=[{}], outputs=['{}'], broadcast=1, name='{}')".format(
             IR_node.variable_name,
             inputs,
+            IR_node.variable_name,
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Dropout(self, IR_node):
-        self.add_body(1, "{:15} = helper.make_node('Dropout', inputs=['{}'], outputs=['{}'], is_test={}, ratio={})".format(
+        self.add_body(1, "{:15} = helper.make_node('Dropout', inputs=['{}'], outputs=['{}'], is_test={}, ratio={}, name='{}')".format(
                           IR_node.variable_name,
                           self.parent_variable_name(IR_node),
                           IR_node.variable_name,
                           0 if self.phase == 'train' else 1,
-                          1 - IR_node.get_attr('keep_prob')))
+                          1 - IR_node.get_attr('keep_prob'),
+                          IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Squeeze(self, IR_node):
@@ -517,12 +634,13 @@ def KitModel(weight_file = None):
     def emit_ReduceMean(self, IR_node):
         axes = IR_node.layer.attr['axes'].list.i[:]
         axes = ','.join('%s' % OnnxEmitter.transpose_map[i] for i in axes)
-        self.add_body(1, "{:15} = helper.make_node('ReduceMean', inputs=['{}'], outputs=['{}'], axes=[{}], keepdims={})".format(
+        self.add_body(1, "{:15} = helper.make_node('ReduceMean', inputs=['{}'], outputs=['{}'], axes=[{}], keepdims={}, name='{}')".format(
                           IR_node.variable_name,
                           self.parent_variable_name(IR_node),
                           IR_node.variable_name,
                           axes,
-                          1 if IR_node.layer.attr['keepdims'].b else 0))
+                          1 if IR_node.layer.attr['keepdims'].b else 0,
+                          IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Reshape(self, IR_node):
@@ -534,16 +652,18 @@ def KitModel(weight_file = None):
             IR_node.variable_name + '_shape_array',
             shape_str
         ))
-        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}))".format(
+        self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}), name='{}')".format(
                           IR_node.variable_name + '_shape',
                           IR_node.variable_name + '_shape',
                           IR_node.variable_name + '_shape_array',
                           IR_node.variable_name + '_shape_array',
-                          IR_node.variable_name + '_shape_array'))
-        self.add_body(1, "{:15} = helper.make_node('Reshape', inputs=['{}', '{}'], outputs=['{}'])".format(
+                          IR_node.variable_name + '_shape_array',
+                          IR_node.variable_name + '_shape'))
+        self.add_body(1, "{:15} = helper.make_node('Reshape', inputs=['{}', '{}'], outputs=['{}'], name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.variable_name + '_shape',
+            IR_node.variable_name,
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name + '_shape')
         self.nodes.append(IR_node.variable_name)
@@ -553,20 +673,22 @@ def KitModel(weight_file = None):
         beta = IR_node.get_attr('beta')
         bias = IR_node.get_attr('bias', 1.0)
         size = IR_node.get_attr('size') * 2 - 1
-        self.add_body(1, "{:15} = helper.make_node('LRN', inputs=['{}'], outputs=['{}'], alpha={}, beta={}, bias={}, size={})".format(
+        self.add_body(1, "{:15} = helper.make_node('LRN', inputs=['{}'], outputs=['{}'], alpha={}, beta={}, bias={}, size={}, name='{}')".format(
                           IR_node.variable_name,
                           self.parent_variable_name(IR_node),
                           IR_node.variable_name,
                           alpha,
                           beta,
                           bias,
-                          size))
+                          size,
+                          IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Relu6(self, IR_node):
-        self.add_body(1, "{:15} = helper.make_node('Clip', inputs=['{}'], outputs=['{}'], min=0.0, max=6.0)".format(
+        self.add_body(1, "{:15} = helper.make_node('Clip', inputs=['{}'], outputs=['{}'], min=0.0, max=6.0, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
+            IR_node.variable_name,
             IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
@@ -582,45 +704,50 @@ def KitModel(weight_file = None):
             ends = IR_node.get_attr('ends')
             ends = [ends[0], ends[-1]] + ends[1:-1]
             ends = [i if i != 0 else sys.maxsize for i in ends]
-            self.add_body(1, "{:15} = helper.make_node('Slice', inputs=['{}'], outputs=['{}'], starts={}, ends={})".format(
+            self.add_body(1, "{:15} = helper.make_node('Slice', inputs=['{}'], outputs=['{}'], starts={}, ends={}, name='{}')".format(
                 IR_node.variable_name,
                 self.parent_variable_name(IR_node),
                 IR_node.variable_name,
                 starts,
-                ends))
+                ends,
+                IR_node.variable_name))
             self.nodes.append(IR_node.variable_name)
 
     def emit_LeakyRelu(self, IR_node):
         alpha = IR_node.get_attr('alpha')
-        self.add_body(1, "{:15} = helper.make_node('LeakyRelu', inputs=['{}'], outputs=['{}'], alpha={})".format(
+        self.add_body(1, "{:15} = helper.make_node('LeakyRelu', inputs=['{}'], outputs=['{}'], alpha={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.variable_name,
-            alpha))
+            alpha,
+            IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_PRelu(self, IR_node):
       slope = IR_node.get_attr('gamma')
-      self.add_body(1, "{:15} = helper.make_node('PRelu', inputs=['{}'], outputs=['{}'], slope={})".format(
+      self.add_body(1, "{:15} = helper.make_node('PRelu', inputs=['{}'], outputs=['{}'], slope={}, name='{}')".format(
           IR_node.variable_name,
           self.parent_variable_name(IR_node),
           IR_node.variable_name,
-          slope))
+          slope,
+          IR_node.variable_name))
       self.nodes.append(IR_node.variable_name)
 
     def emit_SpaceToDepth(self, IR_node):
         blocksize = IR_node.get_attr('blocksize')
-        self.add_body(1, "{:15} = helper.make_node('SpaceToDepth', inputs=['{}'], outputs=['{}'], blocksize={})".format(
+        self.add_body(1, "{:15} = helper.make_node('SpaceToDepth', inputs=['{}'], outputs=['{}'], blocksize={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.variable_name,
-            blocksize))
+            blocksize,
+            IR_node.variable_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Sigmoid(self, IR_node):
-        self.add_body(1, "{: <15} = helper.make_node('Sigmoid', inputs=['{}'], outputs=['{}'])".format(
+        self.add_body(1, "{: <15} = helper.make_node('Sigmoid', inputs=['{}'], outputs=['{}'], name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
+            IR_node.variable_name,
             IR_node.variable_name
         ))
         self.nodes.append(IR_node.variable_name)
