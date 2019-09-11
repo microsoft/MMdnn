@@ -44,6 +44,8 @@ class caffe_extractor(base_extractor):
                            'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn16s-heavy-pascal.caffemodel'},
         'voc-fcn32s'    : {'prototxt' : MMDNN_BASE_URL + "caffe/voc-fcn32s_deploy.prototxt",
                            'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn32s-heavy-pascal.caffemodel'},
+        'trailnet_sresnet': {'prototxt': 'https://raw.githubusercontent.com/NVIDIA-AI-IOT/redtail/master/models/pretrained/TrailNet_SResNet-18.prototxt',
+                            'caffemodel': 'https://raw.githubusercontent.com/NVIDIA-AI-IOT/redtail/master/models/pretrained/TrailNet_SResNet-18.caffemodel'}
     }
 
 
@@ -80,7 +82,7 @@ class caffe_extractor(base_extractor):
             img = np.transpose(img, (2, 0, 1))
             img = np.expand_dims(img, 0)
             net.blobs['data'].data[...] = img
-            predict = np.squeeze(net.forward()[net._layer_names[-1]][0])
+            predict = np.squeeze(net.forward()[net._output_list[-1]][0])
             predict = np.squeeze(predict)
             return predict
 

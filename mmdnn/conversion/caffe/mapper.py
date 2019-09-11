@@ -259,11 +259,15 @@ class NodeMapper(object):
         # TODO: The gamma parameter has to be set (in node.data?) and this should work.
         # Also, mean should be set to 0, and var to 1, just to be safe.
         if node.data:
-            raise NotImplementedError
             scale_value = float(node.parameters.filler.value)
-            kwargs = {'scale' : False, 'bias' : False, 'gamma' : scale_value, 'epsilon': 0}
+            if node.parameters.bias_term:
+                bias_value = float(node.parameters.bias_filler.value)
+                kwargs = {'use_scale' : True, 'use_bias' : node.parameters.bias_term, 'gamma' : scale_value, 'beta': bias_value, 'epsilon': 0}
+            else:
+                kwargs = {'use_scale' : True, 'use_bias' : node.parameters.bias_term, 'gamma' : scale_value, 'epsilon': 0}
+
             cls._convert_output_shape(kwargs, node)
-            return Node.create('Scale', **kwargs)
+            return Node.create('Affine', **kwargs)
         else:
             return Node.create('Mul')
 

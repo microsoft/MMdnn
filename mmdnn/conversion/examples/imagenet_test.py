@@ -88,6 +88,7 @@ class TestKit(object):
             'voc-fcn8s'     : lambda path : TestKit.ZeroCenter(path, 500, True),
             'voc-fcn16s'    : lambda path : TestKit.ZeroCenter(path, 500, True),
             'voc-fcn32s'    : lambda path : TestKit.ZeroCenter(path, 500, True),
+            'trailnet_sresnet': lambda path: TestKit.ZeroCenter(path, (320, 180), True)
         },
 
         'tensorflow' : {
@@ -246,7 +247,11 @@ class TestKit(object):
     @staticmethod
     def ZeroCenter(path, size, BGRTranspose=False):
         img = Image.open(path)
-        img = img.resize((size, size))
+        if isinstance(size, tuple):
+            h, w = size[0], size[1]
+        else:
+            h, w = size, size
+        img = img.resize((h, w))
         x = np.array(img, dtype=np.float32)
 
         # Reference: 1) Keras image preprocess: https://github.com/keras-team/keras/blob/master/keras/applications/imagenet_utils.py
