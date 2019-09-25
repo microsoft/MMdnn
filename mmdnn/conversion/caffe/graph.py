@@ -89,6 +89,7 @@ LAYER_DESCRIPTORS = {
     'MultinomialLogisticLoss': shape_scalar,
     'MVN': shape_not_implemented,
     'Pooling': shape_pool,
+    'Unpooling': shape_unpool,
     'Power': shape_identity,
     'ReLU': shape_identity,
     'Scale': shape_identity,
@@ -191,7 +192,7 @@ class CaffeNode(object):
 
     @property
     def kernel_parameters(self):
-        assert self.kind in (NodeKind.Convolution, NodeKind.Pooling, NodeKind.Deconvolution)
+        assert self.kind in (NodeKind.Convolution, NodeKind.Pooling, NodeKind.Unpooling, NodeKind.Deconvolution)
         params = self.parameters
         global_pooling = hasattr(params, 'global_pooling') and params.global_pooling
         if not global_pooling:

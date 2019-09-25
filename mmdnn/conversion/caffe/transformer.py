@@ -123,7 +123,7 @@ class DataReshaper(object):
             raise ConversionError('Ordering not found for node kind: {}'.format(node_kind))
 
     def _is_image_data(self, node):
-        return len([child for child in node.children if child.kind in (NodeKind.Convolution, NodeKind.Pooling)])
+        return len([child for child in node.children if child.kind in (NodeKind.Convolution, NodeKind.Pooling, NodeKind.Unpooling)])
 
     def __call__(self, graph):
         for node in graph.nodes:
