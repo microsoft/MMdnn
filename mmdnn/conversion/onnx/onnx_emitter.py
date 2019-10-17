@@ -114,9 +114,6 @@ def KitModel(weight_file = None):
                 continue
             shape_str = IRGraph.shapeToStr(IR_node.layer.attr["_output_shapes"].list.shape[0])
 
-            print(self.IR_graph.get_parent(IR_node.name, [0]).variable_name)
-            print(IRGraph.shapeToStr(self.IR_graph.get_parent(IR_node.name, [0]).layer.attr["_output_shapes"].list.shape[0]))
-
             if IR_node.layer.attr['dtype'].type == graph_pb2.DT_UNDEFINED:
                 IR_node.layer.attr['dtype'].type = graph_pb2.DT_FLOAT32
             dtype_str = self.dtype_map[IR_node.layer.attr['dtype'].type]
