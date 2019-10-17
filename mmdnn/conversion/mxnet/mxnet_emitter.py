@@ -53,7 +53,7 @@ class MXNetEmitter(Emitter):
             network_path = model[0]
             weight_path = model[1]
             self.output_weights_file = model[2]
-            self.weights = np.load(weight_path).item()
+            self.weights = np.load(weight_path, allow_pickle=True).item()
             self.weight_loaded = True
             self.output_weights = dict()
         else:
@@ -64,6 +64,8 @@ class MXNetEmitter(Emitter):
 
         folder = Folder(self.IR_graph, self.weights)
         folder.fold()
+
+        refine_IR_graph_format(self.IR_graph)
 
     @property
     def header_code(self):
@@ -119,7 +121,7 @@ def RefactorModel():
                         cur_shape.append(dim.size)
                     first = False
 
-                cur_shape.insert(1, cur_shape.pop())
+                # cur_shape.insert(1, cur_shape.pop()) # convert thr inp
                 shape[current_node.name] = ', '.join('%s' % i for i in cur_shape)
                 self.input_name_shape = {current_node.name: tuple(cur_shape)}
 
@@ -877,7 +879,8 @@ def predict(model, labels, url):
 
 
     def emit_Concat(self, IR_node):
-        dim = MXNetEmitter._convert_axis(IR_node, IR_node.IR_layer.attr["axis"].i)
+        # dim = MXNetEmitter._convert_axis(IR_node, IR_node.IR_layer.attr["axis"].i)
+        dim = IR_node.IR_layer.attr["axis"].i
         code = "{:<15} = mx.sym.concat({}, dim = {}, name = '{}')".format(
                 IR_node.variable_name,
                 ', '.join(self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))),
@@ -950,7 +953,8 @@ def predict(model, labels, url):
 
     def emit_ReduceMean(self, IR_node):
         axes = IR_node.layer.attr['axes'].list.i[:]
-        axes = ','.join('%s' % MXNetEmitter.transpose_map[i] for i in axes)
+        # axes = ','.join('%s' % MXNetEmitter.transpose_map[i] for i in axes)
+        axes = ','.join('%s' % i for i in axes)
 
         code = "{:<15} = mx.sym.mean(data = {}, axis = ({}), keepdims = {})".format(
                 IR_node.variable_name,
@@ -979,9 +983,9 @@ def predict(model, labels, url):
             value = IR_node.get_attr('value')
         else:
             value = self.weights[IR_node.name]['value']
-    
+
         if not isinstance(value, list):
-            self.output_weights[IR_node.name + '_weight'] = [value] # mxnet's bug, it does not surpport scalar weight. 
+            self.output_weights[IR_node.name + '_weight'] = [value] # mxnet's bug, it does not surpport scalar weight.
             code = "{:<15} = mx.sym.var(name = '{}', shape=(1,))".format(IR_node.variable_name, IR_node.name+'_weight')
         else:
             shape = np.array(value).shape
@@ -1148,11 +1152,19 @@ def predict(model, labels, url):
         )
         return code
 
+    def emit_Transpose(self, IR_node):
+        code = "{:<15} = mx.sym.transpose({}, axes={}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.get_attr('perm'),
+            IR_node.name
+        )
+        return code
 
     def emit_Scope(self, IR_node):
         import re
         pattern = IR_node.pattern
-        
+
         if pattern not in self.naive_scope_pattern and re.sub(r'(_\d+)*$', '', IR_node.pattern) not in self.naive_scope_pattern:
             origi_pattern = re.sub(r'(_\d+)*$', '', IR_node.pattern)
             func = getattr(self, "_emit_" + origi_pattern)
@@ -1262,7 +1274,7 @@ class _{}(mx.rnn.BaseRNNCell):
             IR_node.get_attr('fill_value')
         )
         return code
-    
+
 
     def _emit_lstm_cell(self, IR_node):
 

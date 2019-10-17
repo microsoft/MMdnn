@@ -43,6 +43,8 @@ class PytorchEmitter(Emitter):
         folder = Folder(self.IR_graph, self.weights_dict)
         folder.fold()
 
+        refine_IR_graph_format(self.IR_graph)
+
     def run(self, dstNetworkPath, dstWeightPath = None, phase = 'test'):
         super(PytorchEmitter, self).run(dstNetworkPath, dstWeightPath, phase)
         if self.weight_loaded:
@@ -487,18 +489,19 @@ class KitModel(nn.Module):
         return code
 
 
-    def _convert_axis(self, IR_node, axis):
-        ndim = len(self.IR_graph.get_parent(IR_node.name, [0]).get_attr('_output_shapes')[0].dim)
-        if axis == 0:
-            return 0
-        elif axis == ndim - 1:
-            return 1
-        else:
-            return axis + 1
+    # def _convert_axis(self, IR_node, axis):
+    #     ndim = len(self.IR_graph.get_parent(IR_node.name, [0]).get_attr('_output_shapes')[0].dim)
+    #     if axis == 0:
+    #         return 0
+    #     elif axis == ndim - 1:
+    #         return 1
+    #     else:
+    #         return axis + 1
 
 
     def emit_Concat(self, IR_node):
-        axis = self._convert_axis(IR_node, IR_node.get_attr('axis'))
+        # axis = self._convert_axis(IR_node, IR_node.get_attr('axis'))
+        axis = IR_node.get_attr('axis')
         code = "{:<15} = torch.cat(({}), {})".format(
             IR_node.variable_name,
             ', '.join(self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))),
@@ -590,7 +593,8 @@ class KitModel(nn.Module):
 
 
     def emit_ReduceMean(self, IR_node):
-        axes = [self._convert_axis(IR_node, x) for x in IR_node.get_attr('axes')]
+        # axes = [self._convert_axis(IR_node, x) for x in IR_node.get_attr('axes')]
+        axes = [x for x in IR_node.get_attr('axes')]
         input_node = self.parent_variable_name(IR_node)
         codes = []
         for axis in sorted(axes, reverse=True):
@@ -742,10 +746,14 @@ class KitModel(nn.Module):
 
 
     def emit_Transpose(self, IR_node):
+        if IR_node.get_attr('perm') is not None:
+            perm = IR_node.get_attr('perm')
+        else:
+            perm = self.parent_variable_name(IR_node, [1])
         code = "{:<15} = {}.permute({})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            self.parent_variable_name(IR_node, [1]))
+            perm)
         return code
 
 

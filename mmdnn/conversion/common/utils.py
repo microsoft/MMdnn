@@ -9,11 +9,12 @@ import sys
 import numpy as np
 from six import text_type, binary_type, integer_types
 import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
+from mmdnn.conversion.common.IR.IR_graph import IRGraphNode
 
 
 __all__ = ["assign_IRnode_values", "convert_onnx_pad_to_tf", 'convert_tf_pad_to_onnx',
            'compute_tf_same_padding', 'is_valid_padding', 'download_file',
-           'shape_to_list', 'list_to_shape']
+           'shape_to_list', 'list_to_shape', 'refine_IR_graph_format']
 
 
 def assign_attr_value(attr, val):
@@ -256,3 +257,95 @@ def download_file(url, directory='./', local_fname=None, force_write=False, auto
 
     return result
 """
+
+FORMAT_SENSE_OP = {'ConvTranspose', 'Conv', 'BatchNorm', 'Pool', 'DepthwiseConv', 'SeparableConvolution', 'Scale', 'Pad'}
+
+FORMAT_NONSENSE_OP = {'Dropout', 'Exp', 'LeakyRelu', 'Reciprocal', 'Relu', 'Relu6', 'Sigmoid', 'Tanh', 'Elu'}
+
+FORMAT_UNION_OP = FORMAT_NONSENSE_OP.union(FORMAT_SENSE_OP)
+
+LAST_FIRST = 'last2first'
+FIRST_LAST = 'first2last'
+
+
+def refine_IR_graph_format(IR_graph, src_format='channel_last', dst_format='channel_first'):
+
+    if not(src_format=='channel_last' and dst_format=='channel_first'):
+        raise NotImplementedError
+
+    def add_transpose_node(in_node, node, node_idx, trans_dir=LAST_FIRST):
+        for idx, out_edge in enumerate(in_node.out_edges):
+            if out_edge == node.name:
+
+                # get transpose node
+                if IR_graph.layer_map.get(in_node.name + '_trans', None) is not None:
+                    transpose_node = IR_graph.layer_map[in_node.name + '_trans']
+                    transpose_node.in_edges.append(in_node.name)
+                    transpose_node.out_edges.append(node.name)
+                else:
+                    # construct transpose node
+                    dim = len(in_node.layer.attr['_output_shapes'].list.shape[0].dim)
+                    if trans_dir == LAST_FIRST:
+                        perm = [0, dim - 1] + list(range(1, dim - 1))
+                    else:
+                        perm = [0] + list(range(2, dim)) + [1]
+                    transpose_node = IR_graph.model.node.add()
+                    transpose_node.name = in_node.name + '_trans'
+                    transpose_node.op = 'Transpose'
+
+                    # assign attrs
+                    ori_output_shape = [i.size for i in in_node.layer.attr['_output_shapes'].list.shape[0].dim]
+                    output_shape = []
+                    for i in perm:
+                        output_shape.append(ori_output_shape[i])
+                    output_shape = list_to_shape(output_shape)
+                    kwargs = {'perm': perm, '_output_shapes': [output_shape]}
+                    assign_IRnode_values(transpose_node, kwargs)
+
+                    transpose_node = IRGraphNode(transpose_node)
+                    transpose_node.format = 'channel_last'
+                    transpose_node.in_edges.append(in_node.name)
+                    transpose_node.out_edges.append(node.name)
+
+                    # add transpose node into layer map
+                    IR_graph.layer_map[transpose_node.name] = transpose_node
+                    IR_graph.layer_name_map[transpose_node.name] = transpose_node.name
+
+                # insert transpose node into in_node and node
+                in_node.out_edges[idx] = transpose_node.name
+                node.in_edges[node_idx] = transpose_node.name
+
+    topo_sort = IR_graph.topological_sort
+    for i in topo_sort:
+        node = IR_graph.get_node(i)
+        if node.type not in FORMAT_UNION_OP:
+            node.format = 'channel_last'
+            for idx, in_edge in enumerate(node.in_edges):
+                in_node = IR_graph.get_node(in_edge)
+                if in_node.format == 'channel_first':
+                    add_transpose_node(in_node, node, idx, FIRST_LAST)
+        elif node.type in FORMAT_NONSENSE_OP:
+            node.format = IR_graph.get_parent(node.name, [0]).format
+        elif node.type in FORMAT_SENSE_OP:
+            node.format = 'channel_first'
+            # refine the sense op format, making it really channel_first
+            ori_output_shape = [i.size for i in node.layer.attr['_output_shapes'].list.shape[0].dim]
+            dim = len(ori_output_shape)
+            output_shape = []
+            for i in [0, dim - 1] + list(range(1, dim - 1)):
+                output_shape.append(ori_output_shape[i])
+            # output_shape = list_to_shape(output_shape)
+            # kwargs = {'_output_shapes': [output_shape]}
+            # assign_IRnode_values(node.layer, kwargs)
+
+            for idx, i in enumerate(node.layer.attr['_output_shapes'].list.shape[0].dim):
+                i.size = output_shape[idx]
+
+            for idx, in_edge in enumerate(node.in_edges):
+                in_node = IR_graph.get_node(in_edge)
+                if in_node.format == 'channel_last':
+                    add_transpose_node(in_node, node, idx, LAST_FIRST)
+        else:
+            raise ValueError
+
+    IR_graph.rebuild()

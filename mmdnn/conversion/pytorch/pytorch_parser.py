@@ -125,7 +125,7 @@ class PytorchParser(Parser):
                 new_dim.size = -1
             else:
                 new_dim.size = shape_pytorch[0]
-            for index in [2, 3, 1]:
+            for index in [1, 2, 3]:
                 new_dim = shape.dim.add()
                 dim = shape_pytorch[index]
                 new_dim.size = dim if dim else -1
@@ -169,7 +169,7 @@ class PytorchParser(Parser):
             new_dim.size = -1
         else:
             new_dim.size = self.input_shape[0]
-        for index in [2, 3, 1]:
+        for index in [1, 2, 3]:
             new_dim = IR_node.attr["shape"].shape.dim.add()
             new_dim.size = self.input_shape[index]
 
@@ -183,7 +183,7 @@ class PytorchParser(Parser):
                 new_dim.size = -1
             else:
                 new_dim.size = shape_pytorch[0]
-            for index in [2, 3, 1]:
+            for index in [1, 2, 3]:
                 new_dim = shape.dim.add()
                 dim = shape_pytorch[index]
                 new_dim.size = dim if dim else -1
@@ -298,6 +298,8 @@ class PytorchParser(Parser):
         if IR_node.attr['bias'].b:
             self.set_weight(source_node.name, "bias", beta)
 
+        # data format
+        assign_IRnode_values(IR_node, {'data_format':'NCHW'})
         # mean
         self.set_weight(source_node.name, "mean", mean)
 
@@ -398,11 +400,11 @@ class PytorchParser(Parser):
 
     def rename_Concat(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Concat')
-
-        if source_node.attrs['axis'] == 1:
-            IR_node.attr['axis'].i = len(self.shape_dict[source_node.name]) - 1
-        else:
-            IR_node.attr['axis'].i = source_node.attrs['axis']
+        IR_node.attr['axis'].i = source_node.attrs['axis']
+        # if source_node.attrs['axis'] == 1:
+        #     IR_node.attr['axis'].i = len(self.shape_dict[source_node.name]) - 1
+        # else:
+        #     IR_node.attr['axis'].i = source_node.attrs['axis']
 
     def rename_Add(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Add')

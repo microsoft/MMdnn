@@ -97,6 +97,8 @@ def get_network_filename(framework, temp_filename, output_model_filename):
 def _main():
     parser = _get_parser()
     args, unknown_args = parser.parse_known_args()
+    # unknown_args = ['--dstNodeName', 'MMdnn_Output']
+    # args = argparse.Namespace(dstFramework='pytorch', dump_tag=None, inputNetwork='imagenet_resnet_v1_152.ckpt.meta', inputWeight='imagenet_resnet_v1_152.ckpt', outputModel='tf_resnet_torch', srcFramework='tensorflow')
     temp_filename = uuid.uuid4().hex
     ir_args, unknown_args = _extract_ir_args(args, unknown_args, temp_filename)
     ret = convertToIR._convert(ir_args)

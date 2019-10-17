@@ -134,6 +134,10 @@ class Graph(object):
         idx = 0
         while idx < len(self.topological_sort):
             current_node = self.get_node(self.topological_sort[idx])
+
+            if current_node.name == 'resnet_v2_152/block1/unit_3/bottleneck_v2/add':
+                print('resnet_v2_152/block1/unit_3/bottleneck_v2/add')
+
             for next_node in current_node.out_edges:
                 next_node_info = self.get_node(next_node)
                 next_node_info.left_in_edges -= self._check_left_in_edges_num(current_node.name, next_node_info) # one node may connect another node by more than one edge. 
