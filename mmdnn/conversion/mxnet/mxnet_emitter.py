@@ -133,17 +133,27 @@ def RefactorModel():
                 np.save(outfile, self.output_weights)
 
         comment = "\n    # if a GPU is available, change mx.cpu() to mx.gpu()"
+        self.add_body(1, comment)
         # We use the real_name for specifying the input layer in data_names
         # since MXNet API wants the actual name of the layer. On the other
         # hand, the module API wants the last symbol in the symbol chain, so
         # for the output node we need to use the actual python variable name
-        # of the last layer (real_variable_name).
-        last_line = "{:<15} = mx.mod.Module(symbol = {}, context = mx.cpu(), data_names = ['{}'])".format(
+        # of the last layer (real_variable_name)
+        if len(self.IR_graph.output_layers) == 1:
+            last_line = "{:<15} = mx.mod.Module(symbol = {}, context = mx.cpu(), data_names = ['{}'])".format(
             "model",
             ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type !='Pack' and self.IR_graph.get_node(name).type != 'Shape']),
             ', '.join([self.IR_graph.get_node(name).real_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']))
+        else:
+            group_line = "{:<15} = mx.sym.Group([{}])".format(
+            "group",
+            ', '.join([self.IR_graph.get_node(name).real_variable_name for name in self.IR_graph.output_layers if self.IR_graph.get_node(name).type !='Pack' and self.IR_graph.get_node(name).type != 'Shape']))
+            last_line = "{:<15} = mx.mod.Module(symbol = {}, context = mx.cpu(), data_names = ['{}'])".format(
+            "model",
+            "group",
+            ', '.join([self.IR_graph.get_node(name).real_name for name in self.IR_graph.input_layers if self.IR_graph.get_node(name).type != 'Const']))
+            self.add_body(1, group_line)
 
-        self.add_body(1, comment)
         self.add_body(1, last_line)
         self.add_body(1, "return model")
 
