@@ -946,7 +946,13 @@ def predict(model, labels, url):
                 self.parent_variable_name(IR_node, [1]))
 
         return code
-
+    
+    def emit_RealDiv(self, IR_node):           
+        code = "{:<15} = mx.sym.broadcast_div({}, {})".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                self.parent_variable_name(IR_node, [1]))
+        return code
 
     def emit_ReduceMean(self, IR_node):
         axes = IR_node.layer.attr['axes'].list.i[:]
@@ -1109,7 +1115,16 @@ def predict(model, labels, url):
             axis)
 
         return code
-
+    
+    def emit_SplitV(self, IR_node):  
+        axis = IR_node.get_attr('axis')
+        indices_or_sections = tuple(IR_node.get_attr('indices_or_sections'))
+        code = "{:<15} = mx.sym.split_v2({}, {}, axis={})".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            indices_or_sections,
+            axis)
+        return code
 
     def emit_Sigmoid(self, IR_node):
         code = "{:<15} = mx.sym.sigmoid(data={}, name='{}')".format(
@@ -1118,7 +1133,15 @@ def predict(model, labels, url):
             IR_node.name
         )
         return code
+    
+    def emit_ResizeNearestNeighbor(self, IR_node): 
+        scale = int(IR_node.get_attr('upSample_scale'))
+        code = "{:<15} = mx.sym.UpSampling({}, scale={}, sample_type='nearest')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            scale)
 
+        return code
 
     def emit_Tanh(self, IR_node):
         code = "{:<15} = mx.sym.tanh(data={}, name='{}')".format(
@@ -1128,7 +1151,14 @@ def predict(model, labels, url):
         )
         return code
 
-
+    def emit_Exp(self, IR_node):                 
+        code = "{:<15} = mx.sym.exp(data={}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            IR_node.name
+        )
+        return code
+    
     def emit_Maxmum(self, IR_node):
         code = "{:<15} = mx.sym.maxmum({}, {}, name='{}')".format(
             IR_node.variable_name,
@@ -1137,7 +1167,15 @@ def predict(model, labels, url):
             IR_node.name
         )
         return code
-
+    
+    def emit_Maximum(self, IR_node):         
+        code = "{:<15} = mx.sym.broadcast_maximum({}, {}, name='{}')".format(
+            IR_node.variable_name,
+            self.parent_variable_name(IR_node),
+            self.parent_variable_name(IR_node, [1]),
+            IR_node.name
+        )
+        return code
 
     def emit_Minimum(self, IR_node):
         code = "{:<15} = mx.sym.minimum({}, {}, name='{}')".format(
