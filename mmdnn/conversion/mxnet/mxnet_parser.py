@@ -219,7 +219,6 @@ class MXNetParser(Parser):
 
 
     def __init__(self, input_arg):
-
         super(MXNetParser, self).__init__()
 
         json_data = list()
@@ -256,7 +255,6 @@ class MXNetParser(Parser):
         for layer in self.mxnet_graph.topological_sort:
             current_node = self.mxnet_graph.get_node(layer)
             node_type = current_node.type
-
             if hasattr(self, "rename_" + node_type):
                 func = getattr(self, "rename_" + node_type)
                 func(current_node)
@@ -933,6 +931,8 @@ class MXNetParser(Parser):
     def rename__minus_scalar(self, source_node):
         self._convert_scalar_operator(source_node, 'Sub')
 
+    def rename__div_scalar(self, source_node):
+        self._convert_scalar_operator(source_node, 'Div')
 
     def rename__copy(self, source_node):
         source_node.real_name = self.get_parent(source_node.name, [0]).real_name
