@@ -633,6 +633,7 @@ class TensorflowParser(Parser):
             W = self.tf_graph.get_node(self.tf_graph.get_node(source_node.in_edges[1]).in_edges[0])
             if self.weight_loaded:
                 self.set_weight(source_node.name, 'weights', self.ckpt_data[W.name])
+            IR_node.attr["weight_transpose"].b = False
 
             if source_node.out_edges and (self.tf_graph.get_node(source_node.out_edges[0]).type == 'Add' or self.tf_graph.get_node(source_node.out_edges[0]).type == 'BiasAdd'):
                 add_node = self.tf_graph.get_node(source_node.out_edges[0])
@@ -817,6 +818,9 @@ class TensorflowParser(Parser):
             self.set_weight(source_node.name, 'bias', self.ckpt_data[bias.name])
             self.set_weight(source_node.name, 'mean', self.ckpt_data[mean.name])
             self.set_weight(source_node.name, 'var', self.ckpt_data[var.name])
+        
+        # data format
+        assign_IRnode_values(IR_node, {'data_format':'NHWC'})
 
 
     def rename_Shape(self, source_node):

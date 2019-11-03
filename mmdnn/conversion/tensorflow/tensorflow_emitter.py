@@ -55,7 +55,7 @@ def KitModel(weight_file = None):
 """.format(self.trainable)
 
 
-    def __init__(self, model):
+    def __init__(self, model, src_format='channel_first'):
         super(TensorflowEmitter, self).__init__()
 
         from six import string_types as _string_types
@@ -70,6 +70,7 @@ def KitModel(weight_file = None):
         
         folder = Folder(self.IR_graph, self.weights_dict)
         folder.fold()
+        refine_IR_graph_format(self.IR_graph, src_format, 'channel_last')
 
     def gen_code(self, phase):
         self.trainable = (phase == 'train')
@@ -281,7 +282,8 @@ def KitModel(weight_file = None):
 
     def emit_FullyConnected(self, IR_node):
         if IR_node.name in self.weights_dict and 'weights' in self.weights_dict[IR_node.name]:
-            kernel_str = "kernel_initializer = tf.constant_initializer(__weights_dict['{}']['weights']), ".format(IR_node.name)
+            transpose_str = '.transpose()' if IR_node.get_attr('weight_transpose')  else ''
+            kernel_str = "kernel_initializer = tf.constant_initializer(__weights_dict['{}']['weights']{}), ".format(IR_node.name, transpose_str)
         else: kernel_str = ""
 
         if IR_node.name in self.weights_dict and 'bias' in self.weights_dict[IR_node.name]:
@@ -366,10 +368,14 @@ def KitModel(weight_file = None):
         return code
 
     def emit_Transpose(self, IR_node):
+        if IR_node.get_attr('perm') is not None:
+            perm = IR_node.get_attr('perm')
+        else:
+            perm = self.parent_variable_name(IR_node, [1])
         code ="{:<15} = tf.transpose(a = {}, perm = {})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node, [0]),
-            self.parent_variable_name(IR_node, [1]))
+            perm)
         
         return code
 

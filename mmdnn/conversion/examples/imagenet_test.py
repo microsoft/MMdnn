@@ -78,17 +78,17 @@ class TestKit(object):
 
     preprocess_func = {
         'caffe' : {
-            'alexnet'       : lambda path : TestKit.ZeroCenter(path, 227, True),
-            'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'resnet152'     : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'alexnet'       : lambda path : TestKit.ZeroCenter(path, 227, BGRTranspose=True),
+            'vgg19'         : lambda path : TestKit.ZeroCenter(path, 224, BGRTranspose=True),
+            'inception_v1'  : lambda path : TestKit.ZeroCenter(path, 224, BGRTranspose=True),
+            'resnet152'     : lambda path : TestKit.ZeroCenter(path, 224, BGRTranspose=True),
             'squeezenet'    : lambda path : TestKit.ZeroCenter(path, 227),
-            'inception_v4'  : lambda path : TestKit.Standard(path, 299, True),
-            'xception'      : lambda path : TestKit.Standard(path, 299, True),
-            'voc-fcn8s'     : lambda path : TestKit.ZeroCenter(path, 500, True),
-            'voc-fcn16s'    : lambda path : TestKit.ZeroCenter(path, 500, True),
-            'voc-fcn32s'    : lambda path : TestKit.ZeroCenter(path, 500, True),
-            'trailnet_sresnet': lambda path: TestKit.ZeroCenter(path, (320, 180), True)
+            'inception_v4'  : lambda path : TestKit.Standard(path, 299, BGRTranspose=True),
+            'xception'      : lambda path : TestKit.Standard(path, 299, BGRTranspose=True),
+            'voc-fcn8s'     : lambda path : TestKit.ZeroCenter(path, 500, BGRTranspose=True),
+            'voc-fcn16s'    : lambda path : TestKit.ZeroCenter(path, 500, BGRTranspose=True),
+            'voc-fcn32s'    : lambda path : TestKit.ZeroCenter(path, 500, BGRTranspose=True),
+            'trailnet_sresnet': lambda path: TestKit.ZeroCenter(path, (320, 180), BGRTranspose=True)
         },
 
         'tensorflow' : {
@@ -117,10 +117,10 @@ class TestKit(object):
         },
 
         'keras' : {
-            'vgg16'                : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'vgg19'                : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'vgg16'                : lambda path : TestKit.ZeroCenter(path, 224, BGRTranspose=True),
+            'vgg19'                : lambda path : TestKit.ZeroCenter(path, 224, BGRTranspose=True),
             'inception_v3'         : lambda path : TestKit.Standard(path, 299),
-            'resnet50'             : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'resnet50'             : lambda path : TestKit.ZeroCenter(path, 224, BGRTranspose=True),
             'xception'             : lambda path : TestKit.Standard(path, 299),
             'mobilenet'            : lambda path : TestKit.Standard(path, 224),
             'inception_resnet_v2'  : lambda path : TestKit.Standard(path, 299),
@@ -131,40 +131,40 @@ class TestKit(object):
         },
 
         'mxnet' : {
-            'vgg16'                         : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'vgg19'                         : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'resnet'                        : lambda path : TestKit.Identity(path, 224, True),
-            'squeezenet_v1.0'               : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'squeezenet_v1.1'               : lambda path : TestKit.ZeroCenter(path, 224, False),
-            'imagenet1k-inception-bn'       : lambda path : TestKit.Identity(path, 224, False),
-            'imagenet1k-resnet-18'          : lambda path : TestKit.Identity(path, 224, True),
-            'imagenet1k-resnet-152'         : lambda path : TestKit.Identity(path, 224, True),
-            'resnext'                       : lambda path : TestKit.Identity(path, 224, False),
-            'imagenet1k-resnext-50'         : lambda path : TestKit.Identity(path, 224, False),
-            'imagenet1k-resnext-101-64x4d'  : lambda path : TestKit.Identity(path, 224, False),
+            'vgg16'                         : lambda path : TestKit.ZeroCenter(path, 224, True, BGRTranspose=False),
+            'vgg19'                         : lambda path : TestKit.ZeroCenter(path, 224, True, BGRTranspose=False),
+            'resnet'                        : lambda path : TestKit.Identity(path, 224, True, BGRTranspose=True),
+            'squeezenet_v1.0'               : lambda path : TestKit.ZeroCenter(path, 224, True, BGRTranspose=False),
+            'squeezenet_v1.1'               : lambda path : TestKit.ZeroCenter(path, 224, True, BGRTranspose=False),
+            'imagenet1k-inception-bn'       : lambda path : TestKit.Identity(path, 224, True, BGRTranspose=False),
+            'imagenet1k-resnet-18'          : lambda path : TestKit.Identity(path, 224, True, BGRTranspose=True),
+            'imagenet1k-resnet-152'         : lambda path : TestKit.Identity(path, 224, True, BGRTranspose=True),
+            'resnext'                       : lambda path : TestKit.Identity(path, 224, True, BGRTranspose=False),
+            'imagenet1k-resnext-50'         : lambda path : TestKit.Identity(path, 224, True, BGRTranspose=False),
+            'imagenet1k-resnext-101-64x4d'  : lambda path : TestKit.Identity(path, 224, True, BGRTranspose=False),
         },
 
         'pytorch' : {
-            'alexnet'       : lambda path : TestKit.Standard(path, 227),
-            'densenet121'   : lambda path : TestKit.Standard(path, 224),
-            'densenet169'   : lambda path : TestKit.Standard(path, 224),
-            'densenet161'   : lambda path : TestKit.Standard(path, 224),
-            'densenet201'   : lambda path : TestKit.Standard(path, 224),
-            'vgg11'         : lambda path : TestKit.Standard(path, 224),
-            'vgg13'         : lambda path : TestKit.Standard(path, 224),
-            'vgg16'         : lambda path : TestKit.Standard(path, 224),
-            'vgg19'         : lambda path : TestKit.Standard(path, 224),
-            'vgg11_bn'         : lambda path : TestKit.Standard(path, 224),
-            'vgg13_bn'         : lambda path : TestKit.Standard(path, 224),
-            'vgg16_bn'         : lambda path : TestKit.Standard(path, 224),
-            'vgg19_bn'         : lambda path : TestKit.Standard(path, 224),
-            'resnet18'      : lambda path : TestKit.Standard(path, 224),
-            'resnet34'      : lambda path : TestKit.Standard(path, 224),
-            'resnet50'      : lambda path : TestKit.Standard(path, 224),
-            'resnet101'      : lambda path : TestKit.Standard(path, 224),
-            'resnet152'     : lambda path : TestKit.Standard(path, 224),
-            'squeezenet1_0' : lambda path : TestKit.Standard(path, 224),
-            'inception_v3'  : lambda path : TestKit.Standard(path, 299),
+            'alexnet'       : lambda path : TestKit.Standard(path, 227, True),
+            'densenet121'   : lambda path : TestKit.Standard(path, 224, True),
+            'densenet169'   : lambda path : TestKit.Standard(path, 224, True),
+            'densenet161'   : lambda path : TestKit.Standard(path, 224, True),
+            'densenet201'   : lambda path : TestKit.Standard(path, 224, True),
+            'vgg11'         : lambda path : TestKit.Standard(path, 224, True),
+            'vgg13'         : lambda path : TestKit.Standard(path, 224, True),
+            'vgg16'         : lambda path : TestKit.Standard(path, 224, True),
+            'vgg19'         : lambda path : TestKit.Standard(path, 224, True),
+            'vgg11_bn'         : lambda path : TestKit.Standard(path, 224, True),
+            'vgg13_bn'         : lambda path : TestKit.Standard(path, 224, True),
+            'vgg16_bn'         : lambda path : TestKit.Standard(path, 224, True),
+            'vgg19_bn'         : lambda path : TestKit.Standard(path, 224, True),
+            'resnet18'      : lambda path : TestKit.Standard(path, 224, True),
+            'resnet34'      : lambda path : TestKit.Standard(path, 224, True),
+            'resnet50'      : lambda path : TestKit.Standard(path, 224, True),
+            'resnet101'      : lambda path : TestKit.Standard(path, 224, True),
+            'resnet152'     : lambda path : TestKit.Standard(path, 224, True),
+            'squeezenet1_0' : lambda path : TestKit.Standard(path, 224, True),
+            'inception_v3'  : lambda path : TestKit.Standard(path, 299, True),
         },
 
         'cntk' : {
@@ -184,8 +184,8 @@ class TestKit(object):
         'coreml' : {
             'mobilenet'         : lambda path :  TestKit.Normalize(path, 224, 0.0170000009239, [-2.10256004333, -1.98526000977, -1.76698005199], [1.0, 1.0, 1.0], True),
             'inception_v3'      : lambda path : TestKit.Standard(path, 299),
-            'vgg16'             : lambda path : TestKit.ZeroCenter(path, 224, True),
-            'resnet50'          : lambda path : TestKit.ZeroCenter(path, 224, True),
+            'vgg16'             : lambda path : TestKit.ZeroCenter(path, 224, BGRTranspose=True),
+            'resnet50'          : lambda path : TestKit.ZeroCenter(path, 224, BGRTranspose=True),
             'tinyyolo'          : lambda path : TestKit.Normalize(path, 416, 0.00392156863, [0, 0, 0], [1.0, 1.0, 1.0], False),
         },
 
@@ -245,7 +245,7 @@ class TestKit(object):
 
 
     @staticmethod
-    def ZeroCenter(path, size, BGRTranspose=False):
+    def ZeroCenter(path, size, channel_first=False, BGRTranspose=False):
         img = Image.open(path)
         if isinstance(size, tuple):
             h, w = size[0], size[1]
@@ -266,11 +266,14 @@ class TestKit(object):
         if BGRTranspose == True:
             x = x[..., ::-1]
 
+        if channel_first == True:
+            x = np.transpose(x, (2, 0, 1))
+
         return x
 
 
     @staticmethod
-    def Normalize(path, size=224, scale=0.0392156863 ,mean=[-0.485, -0.456, -0.406], std=[0.229, 0.224, 0.225], BGRTranspose = False):
+    def Normalize(path, size=224, scale=0.0392156863 ,mean=[-0.485, -0.456, -0.406], std=[0.229, 0.224, 0.225], channel_first=False, BGRTranspose = False):
         img = Image.open(path)
         img = img.resize((size, size))
         x = np.array(img, dtype=np.float32)
@@ -280,11 +283,13 @@ class TestKit(object):
             x[..., i] /= std[i]
         if BGRTranspose == True:
             x = x[..., ::-1]
+        if channel_first == True:
+            x = np.transpose(x, (2, 0, 1))
         return x
 
 
     @staticmethod
-    def Standard(path, size, BGRTranspose=False):
+    def Standard(path, size, channel_first=False, BGRTranspose=False):
         img = Image.open(path)
         img = img.resize((size, size))
         x = np.array(img, dtype=np.float32)
@@ -293,16 +298,20 @@ class TestKit(object):
         x *= 2.0
         if BGRTranspose == True:
             x = x[..., ::-1]
+        if channel_first == True:
+            x = np.transpose(x, (2, 0, 1))
         return x
 
 
     @staticmethod
-    def Identity(path, size, BGRTranspose=False):
+    def Identity(path, size, channel_first=False, BGRTranspose=False):
         img = Image.open(path)
         img = img.resize((size, size))
         x = np.array(img, dtype=np.float32)
         if BGRTranspose == True:
             x = x[..., ::-1]
+        if channel_first == True:
+            x = np.transpose(x, (2, 0, 1))
         return x
 
 

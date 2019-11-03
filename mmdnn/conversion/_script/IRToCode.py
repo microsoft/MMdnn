@@ -5,6 +5,11 @@ from six import text_type as _text_type
 
 
 def _convert(args):
+    if args.srcFramework == 'tensorflow':
+        src_format = 'channel_last'
+    else:
+        src_format = 'channel_first'
+
     if args.dstFramework == 'caffe':
         from mmdnn.conversion.caffe.caffe_emitter import CaffeEmitter
         if args.IRWeightPath is None:
@@ -21,9 +26,9 @@ def _convert(args):
         from mmdnn.conversion.tensorflow.tensorflow_emitter import TensorflowEmitter
         if args.IRWeightPath is None:
             # Convert network architecture only
-            emitter = TensorflowEmitter(args.IRModelPath)
+            emitter = TensorflowEmitter(args.IRModelPath, src_format)
         else:
-            emitter = TensorflowEmitter((args.IRModelPath, args.IRWeightPath))
+            emitter = TensorflowEmitter((args.IRModelPath, args.IRWeightPath), src_format)
 
     elif args.dstFramework == 'cntk':
         from mmdnn.conversion.cntk.cntk_emitter import CntkEmitter
@@ -39,16 +44,16 @@ def _convert(args):
         if not args.dstWeightPath or not args.IRWeightPath:
             raise ValueError("Need to set a target weight filename.")
         from mmdnn.conversion.pytorch.pytorch_emitter import PytorchEmitter
-        emitter = PytorchEmitter((args.IRModelPath, args.IRWeightPath))
+        emitter = PytorchEmitter((args.IRModelPath, args.IRWeightPath), src_format)
 
     elif args.dstFramework == 'mxnet':
         from mmdnn.conversion.mxnet.mxnet_emitter import MXNetEmitter
         if args.IRWeightPath is None:
-            emitter = MXNetEmitter(args.IRModelPath)
+            emitter = MXNetEmitter(args.IRModelPath, src_format)
         else:
             if args.dstWeightPath is None:
                 raise ValueError("MXNet emitter needs argument [dstWeightPath(dw)], like -dw mxnet_converted-0000.param")
-            emitter = MXNetEmitter((args.IRModelPath, args.IRWeightPath, args.dstWeightPath))
+            emitter = MXNetEmitter((args.IRModelPath, args.IRWeightPath, args.dstWeightPath), src_format)
     elif args.dstFramework == 'onnx':
         from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
         if args.IRWeightPath is None:
@@ -75,6 +80,13 @@ def _get_parser():
         default='test',
         help='Convert phase (train/test) for destination toolkits.'
     )
+
+    parser.add_argument(
+        '--srcFramework', '-sf',
+        type=_text_type,
+        choices=['caffe', 'caffe2', 'cntk', 'mxnet', 'keras', 'tensorflow', 'coreml', 'pytorch', 'onnx'],
+        required=True,
+        help='Format of model at srcModelPath (default is to auto-detect).')
 
     parser.add_argument(
         '--dstFramework', '-f',

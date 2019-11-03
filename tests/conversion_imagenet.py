@@ -7,7 +7,6 @@ import sys
 import imp
 import numpy as np
 from mmdnn.conversion.examples.imagenet_test import TestKit
-import utils
 from utils import *
 
 
@@ -358,8 +357,11 @@ class TestModels(CorrectnessTest):
         # IR to code
         converted_file = TestModels.tmpdir + original_framework + '_tensorflow_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
-
-        emitter = TensorflowEmitter((architecture_path, weight_path))
+        if original_framework == 'tensorflow':
+            src_format = 'channel_last'
+        else:
+            src_format = 'channel_first'
+        emitter = TensorflowEmitter((architecture_path, weight_path), src_format)
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
         del TensorflowEmitter
@@ -399,7 +401,11 @@ class TestModels(CorrectnessTest):
         # IR to code
         converted_file = TestModels.tmpdir + original_framework + '_pytorch_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
-        emitter = PytorchEmitter((architecture_path, weight_path))
+        if original_framework == 'tensorflow':
+            src_format = 'channel_last'
+        else:
+            src_format = 'channel_first'
+        emitter = PytorchEmitter((architecture_path, weight_path), src_format)
         emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
         del emitter
         del PytorchEmitter
@@ -414,7 +420,6 @@ class TestModels(CorrectnessTest):
         if 'rnn' not in architecture_name:
             func = TestKit.preprocess_func[original_framework][architecture_name]
             img = func(test_input_path)
-            img = np.transpose(img, (2, 0, 1))
             img = np.expand_dims(img, 0).copy()
             input_data = torch.from_numpy(img)
             input_data = torch.autograd.Variable(input_data, requires_grad = False)
@@ -490,7 +495,11 @@ class TestModels(CorrectnessTest):
         converted_file = TestModels.tmpdir + original_framework + '_mxnet_' + architecture_name + "_converted"
         converted_file = converted_file.replace('.', '_')
         output_weights_file = converted_file + "-0000.params"
-        emitter = MXNetEmitter((architecture_path, weight_path, output_weights_file))
+        if original_framework == 'tensorflow':
+            src_format = 'channel_last'
+        else:
+            src_format = 'channel_first'
+        emitter = MXNetEmitter((architecture_path, weight_path, output_weights_file), src_format)
         emitter.run(converted_file + '.py', None, 'test')
         del emitter
         del MXNetEmitter
@@ -505,7 +514,6 @@ class TestModels(CorrectnessTest):
         if 'rnn' not in architecture_name:
             func = TestKit.preprocess_func[original_framework][architecture_name]
             img = func(test_input_path)
-            img = np.transpose(img, (2, 0, 1))
             input_data = np.expand_dims(img, 0)
         else:
             input_data = np.load(test_input_path)
@@ -680,16 +688,20 @@ class TestModels(CorrectnessTest):
 
             # import converted model
             from onnx_tf.backend import prepare
+            import onnxruntime as rt
+            import onnx
             model_converted = imp.load_source('OnnxModel', converted_file + '.py').KitModel(converted_file + '.npy')
-
-            tf_rep = prepare(model_converted)
+            onnx.save(model_converted, converted_file + '.onnx')
+            # tf_rep = prepare(model_converted)
+            tf_rep = rt.InferenceSession(converted_file + '.onnx')
 
             original_framework = checkfrozen(original_framework)
             func = TestKit.preprocess_func[original_framework][architecture_name]
             img = func(test_input_path)
+            input_name = tf_rep.get_inputs()[0].name
             input_data = np.expand_dims(img, 0)
 
-            predict = tf_rep.run(input_data)[0]
+            predict = tf_rep.run([], {input_name: input_data})[0]
 
             del prepare
             del model_converted
@@ -771,18 +783,18 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow' : {
-                'facenet'               : [onnx_emit],
-                'vgg19'                 : [onnx_emit],
-                'inception_v1'          : [onnx_emit],
-                'inception_v3'          : [onnx_emit],
+                # 'facenet'               : [onnx_emit],
+                # 'vgg19'                 : [onnx_emit],
+                # 'inception_v1'          : [onnx_emit],
+                # 'inception_v3'          : [onnx_emit],
                 # 'resnet_v1_50'          : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
                 # 'resnet_v1_152'         : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
                 # 'resnet_v2_50'          : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                # 'resnet_v2_152'         : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                'mobilenet_v1_1.0'      : [onnx_emit],
-                'mobilenet_v2_1.0_224'  : [onnx_emit],
-                # 'nasnet-a_large'        : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
-                'inception_resnet_v2'   : [onnx_emit],
+                'resnet_v2_152'         : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # 'mobilenet_v1_1.0'      : [onnx_emit],
+                # 'mobilenet_v2_1.0_224'  : [onnx_emit],
+                # # 'nasnet-a_large'        : [onnx_emit], # POOL: strides > window_shape not supported due to inconsistency between CPU and GPU implementations
+                # 'inception_resnet_v2'   : [onnx_emit],
             },
 
             'tensorflow_frozen' : {
@@ -837,13 +849,13 @@ class TestModels(CorrectnessTest):
             },
 
             'mxnet' : {
-                'vgg19'                        : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'imagenet1k-inception-bn'      : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'imagenet1k-resnet-18'         : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'imagenet1k-resnet-152'        : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'squeezenet_v1.1'              : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'imagenet1k-resnext-101-64x4d' : [caffe_emit, cntk_emit, coreml_emit, mxnet_emit, pytorch_emit, tensorflow_emit], # Keras is ok but too slow
-                'imagenet1k-resnext-50'        : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
+                'vgg19'                        : [tensorflow_emit, mxnet_emit, pytorch_emit],
+                'imagenet1k-inception-bn'      : [tensorflow_emit, mxnet_emit, pytorch_emit],
+                'imagenet1k-resnet-18'         : [tensorflow_emit, mxnet_emit, pytorch_emit],
+                'imagenet1k-resnet-152'        : [tensorflow_emit, mxnet_emit, pytorch_emit],
+                'squeezenet_v1.1'              : [tensorflow_emit, mxnet_emit, pytorch_emit],
+                'imagenet1k-resnext-101-64x4d' : [tensorflow_emit, mxnet_emit, pytorch_emit],
+                'imagenet1k-resnext-50'        : [tensorflow_emit, mxnet_emit, pytorch_emit],
             },
 
             'caffe' : {
@@ -860,25 +872,19 @@ class TestModels(CorrectnessTest):
             },
 
             'tensorflow' : {
-                'vgg19'                 : [caffe_emit, coreml_emit, cntk_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'inception_v1'          : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit], # TODO: cntk_emit
-                'inception_v3'          : [caffe_emit, coreml_emit, cntk_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'resnet_v1_152'         : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit], # TODO: cntk_emit
-                'resnet_v2_152'         : [caffe_emit, coreml_emit, cntk_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'mobilenet_v1_1.0'      : [caffe_emit, coreml_emit, cntk_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'mobilenet_v2_1.0_224'  : [caffe_emit, coreml_emit, cntk_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'nasnet-a_large'        : [mxnet_emit, pytorch_emit, tensorflow_emit], # TODO: keras_emit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
-                'inception_resnet_v2'   : [caffe_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit], #  CoremlEmit worked once, then always
-                'facenet'               : [mxnet_emit, tensorflow_emit, keras_emit, pytorch_emit, caffe_emit], # TODO: coreml_emit
-                'rnn_lstm_gru_stacked'  : [tensorflow_emit, keras_emit, pytorch_emit, mxnet_emit] #TODO cntk_emit
+                'vgg19'                 : [tensorflow_emit, pytorch_emit, mxnet_emit],
+                'inception_v1'          : [tensorflow_emit, pytorch_emit, mxnet_emit], # TODO: cntk_emit
+                'inception_v3'          : [tensorflow_emit, pytorch_emit, mxnet_emit],
+                'resnet_v1_152'         : [tensorflow_emit, pytorch_emit, mxnet_emit], # TODO: cntk_emit
+                'resnet_v2_152'         : [tensorflow_emit, pytorch_emit, mxnet_emit],
+                'mobilenet_v1_1.0'      : [tensorflow_emit, pytorch_emit, mxnet_emit],
+                'mobilenet_v2_1.0_224'  : [tensorflow_emit, pytorch_emit, mxnet_emit],
+                # 'nasnet-a_large'        : [pytorch_emit, mxnet_emit], # TODO: keras_emit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
+                'inception_resnet_v2'   : [tensorflow_emit, pytorch_emit, mxnet_emit], #  CoremlEmit worked once, then always
+                'facenet'               : [tensorflow_emit, pytorch_emit, mxnet_emit], # TODO: coreml_emit
+                # 'rnn_lstm_gru_stacked'  : [tensorflow_emit, pytorch_emit, mxnet_emit, tensorflow_emit], #TODO cntk_emit
             },
 
-            'tensorflow_frozen' : {
-                'inception_v1'      : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit], # TODO: cntk_emit
-                'inception_v3'      : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit], # TODO: cntk_emit
-                'mobilenet_v1_1.0'  : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit],
-                'facenet'           : [mxnet_emit, tensorflow_emit, keras_emit, caffe_emit] # TODO: coreml_emit
-            },
 
             'coreml' : {
                 'inception_v3' : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
@@ -901,12 +907,12 @@ class TestModels(CorrectnessTest):
             },
 
             'pytorch' : {
-                'alexnet'     : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'densenet201' : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'inception_v3': [caffe_emit, coreml_emit, keras_emit, pytorch_emit, tensorflow_emit],  # Mxnet broken https://github.com/apache/incubator-mxnet/issues/10194
-                'vgg19'       : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'vgg19_bn'    : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'resnet152'   : [caffe_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
+                'alexnet'     : [tensorflow_emit, mxnet_emit, pytorch_emit],
+                'densenet201' : [mxnet_emit, pytorch_emit, tensorflow_emit],
+                'inception_v3': [tensorflow_emit, mxnet_emit, pytorch_emit],  # Mxnet broken https://github.com/apache/incubator-mxnet/issues/10194
+                'vgg19'       : [tensorflow_emit, mxnet_emit, pytorch_emit],
+                'vgg19_bn'    : [tensorflow_emit, mxnet_emit, pytorch_emit],
+                'resnet152'   : [tensorflow_emit, mxnet_emit, pytorch_emit],
             }
         }
 

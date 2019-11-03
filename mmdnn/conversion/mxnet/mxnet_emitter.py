@@ -42,7 +42,7 @@ class MXNetEmitter(Emitter):
 
     channels_last = ['NDHWC', 'NHWC']
 
-    def __init__(self, model):
+    def __init__(self, model, src_format):
         super(MXNetEmitter, self).__init__()
         from six import string_types as _string_types
 
@@ -65,7 +65,7 @@ class MXNetEmitter(Emitter):
         folder = Folder(self.IR_graph, self.weights)
         folder.fold()
 
-        refine_IR_graph_format(self.IR_graph)
+        refine_IR_graph_format(self.IR_graph, src_format, 'channel_first')
 
     @property
     def header_code(self):
@@ -344,14 +344,10 @@ def predict(model, labels, url):
             parent = self.IR_graph.get_parent(IR_node.name, [0])
             while parent.type == "Flatten" or parent.type == 'Dropout':
                 parent = self.IR_graph.get_parent(parent.name, [0])
-            dim = len(parent.layer.attr['_output_shapes'].list.shape[0].dim)
-            if dim > 2:
-                original_dims = weight_dict['weights'].shape
-                dims = [i.size for i in parent.layer.attr['_output_shapes'].list.shape[0].dim[1:]] + [-1]
-                weight_dict['weights'] = np.reshape(weight_dict['weights'], dims)
-                weight_dict['weights'] = np.transpose(weight_dict['weights'], [dim - 2] + list(range(0, dim - 2)) + [dim - 1])
-                weight_dict['weights'] = np.reshape(weight_dict['weights'], original_dims)
-            self.output_weights[IR_node.name + "_weight"] = weight_dict['weights'].transpose((1, 0))
+            if not IR_node.get_attr('weight_transpose'):
+                self.output_weights[IR_node.name + "_weight"] = np.transpose(weight_dict['weights'], (1, 0))
+            else:
+                self.output_weights[IR_node.name + "_weight"] = weight_dict['weights']
 
         num_hidden = IR_node.IR_layer.attr["units"].i
         no_bias = not IR_node.IR_layer.attr["use_bias"].b

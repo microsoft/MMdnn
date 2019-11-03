@@ -88,7 +88,6 @@ class mxnet_extractor(base_extractor):
 
             func = TestKit.preprocess_func['mxnet'][architecture]
             img = func(image_path)
-            img = np.transpose(img, [2, 0, 1])
             img = np.expand_dims(img, axis=0)
 
             model.forward(cls.Batch([mx.nd.array(img)]))

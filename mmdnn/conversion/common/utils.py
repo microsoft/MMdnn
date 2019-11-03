@@ -270,10 +270,23 @@ FIRST_LAST = 'first2last'
 
 def refine_IR_graph_format(IR_graph, src_format='channel_last', dst_format='channel_first'):
 
-    if not(src_format=='channel_last' and dst_format=='channel_first'):
-        raise NotImplementedError
+    if src_format == dst_format:
+        return
 
-    def add_transpose_node(in_node, node, node_idx, trans_dir=LAST_FIRST):
+    if src_format == 'channel_last' and dst_format=='channel_first':
+        TRANS_DIR = LAST_FIRST
+        INV_TRANS_DIR = FIRST_LAST
+        allowed_layout = 'channel_first'
+        actual_layout = 'channel_last'
+    elif src_format == 'channel_first' and dst_format == 'channel_last':
+        TRANS_DIR = FIRST_LAST
+        INV_TRANS_DIR = LAST_FIRST
+        allowed_layout = 'channel_last'
+        actual_layout = 'channel_first  '
+    else:
+        raise ValueError('illegal format: {}, {}'.format(src_format, dst_format))
+
+    def add_transpose_node(in_node, node, node_idx, trans_dir):
         for idx, out_edge in enumerate(in_node.out_edges):
             if out_edge == node.name:
 
@@ -319,15 +332,15 @@ def refine_IR_graph_format(IR_graph, src_format='channel_last', dst_format='chan
     for i in topo_sort:
         node = IR_graph.get_node(i)
         if node.type not in FORMAT_UNION_OP:
-            node.format = 'channel_last'
+            node.format = actual_layout
             for idx, in_edge in enumerate(node.in_edges):
                 in_node = IR_graph.get_node(in_edge)
-                if in_node.format == 'channel_first':
-                    add_transpose_node(in_node, node, idx, FIRST_LAST)
+                if in_node.format == allowed_layout:
+                    add_transpose_node(in_node, node, idx, INV_TRANS_DIR)
         elif node.type in FORMAT_NONSENSE_OP:
             node.format = IR_graph.get_parent(node.name, [0]).format
         elif node.type in FORMAT_SENSE_OP:
-            node.format = 'channel_first'
+            node.format = allowed_layout
             # refine the sense op format, making it really channel_first
             ori_output_shape = [i.size for i in node.layer.attr['_output_shapes'].list.shape[0].dim]
             dim = len(ori_output_shape)
@@ -343,8 +356,8 @@ def refine_IR_graph_format(IR_graph, src_format='channel_last', dst_format='chan
 
             for idx, in_edge in enumerate(node.in_edges):
                 in_node = IR_graph.get_node(in_edge)
-                if in_node.format == 'channel_last':
-                    add_transpose_node(in_node, node, idx, LAST_FIRST)
+                if in_node.format == actual_layout:
+                    add_transpose_node(in_node, node, idx, TRANS_DIR)
         else:
             raise ValueError
 

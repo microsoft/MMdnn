@@ -282,10 +282,6 @@ class MXNetParser(Parser):
                 for idx in range(len(output_shape)):
                     output_list = list(output_shape[idx])
 
-                    # transpose to channel last
-                    if not self.data_format in MXNetParser.channels_last:
-                        channel = output_list.pop(1)
-                        output_list.append(channel)
 
                     if IR_node.op == "DataInput":
                         MXNetParser._copy_shape(IR_node, [-1] + output_list[1:])
@@ -404,26 +400,11 @@ class MXNetParser(Parser):
 
         # weights
         if self.weight_loaded:
-            if self.data_format == 'NM':
-                self.set_weight(source_node.name, "weights", self.weight_data.get(source_node.name + "_weight").asnumpy().transpose((1, 0)))
-            else:
-                weight = self.weight_data.get(source_node.name + "_weight").asnumpy().transpose((1, 0))
-                original_shape = weight.shape
-
-                channel_first_list = self.trace_shape(source_node, IR_node)
-                dim = len(channel_first_list) + 1
-                weight = weight.reshape(channel_first_list + [original_shape[1]])
-                assert dim > 2
-                weight = weight.transpose(list(range(1, dim-1)) + [0, dim-1])
-                weight = weight.reshape(original_shape)
-                self.set_weight(source_node.name, "weights", weight)
+            self.set_weight(source_node.name, "weights", self.weight_data.get(source_node.name + "_weight").asnumpy())
+            IR_node.attr["weight_transpose"].b = True
 
             if IR_node.attr["use_bias"].b:
                 self.set_weight(source_node.name, "bias", self.weight_data.get(source_node.name + "_bias").asnumpy())
-
-        if not self.data_format == 'NM':
-            # print("Warning: Layer [{}] has changed model data format from [{}] to [NM]".format(source_node.name, self.data_format))
-            self.data_format = 'NM'
 
 
     def rename_Convolution(self, source_node):
@@ -459,7 +440,7 @@ class MXNetParser(Parser):
         # groups
         group = int(source_node.get_attr("num_group", "1"))
         IR_node.attr["group"].i = group
-        in_channel = self.IR_layer_map[IR_node.input[0]].attr["_output_shapes"].list.shape[0].dim[-1].size
+        in_channel = self.IR_layer_map[IR_node.input[0]].attr["_output_shapes"].list.shape[0].dim[1].size
 
         if group == in_channel:
             self._copy_and_reop(source_node, IR_node, "DepthwiseConv")
@@ -523,11 +504,8 @@ class MXNetParser(Parser):
         IR_node = self._convert_identity_operation(source_node)
 
         # axis
-        if self.data_format in MXNetParser.channels_first or self.data_format == 'None':
-            IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(source_node.get_attr("axis", "1")))
-        else:
-            IR_node.attr["axis"].i = int(source_node.get_attr("axis", "1"))
 
+        IR_node.attr["axis"].i = int(source_node.get_attr("axis", "1"))
         # scale
         IR_node.attr["scale"].b = not MXNetParser.str2bool(source_node.get_attr("fix_gamma", "True"))
         IR_node.attr["bias"].b = True
@@ -537,6 +515,8 @@ class MXNetParser(Parser):
         # momentum
         IR_node.attr["momentum"].f = float(source_node.get_attr("momentum", "0.9"))
 
+        # data format
+        assign_IRnode_values(IR_node, {'data_format':'NCHW'})
         # weights
         if self.weight_loaded:
             # gamma
@@ -602,7 +582,8 @@ class MXNetParser(Parser):
                 IR_node.attr["pads"].list.i.extend(([0]+pad+[0])*2)
             else:
                 IR_node.attr["pads"].list.i.extend(([0])*8)
-
+        # data format
+        assign_IRnode_values(IR_node, {'data_format':'NCHW'})
         # output shape
         self.set_output_shape(source_node, IR_node)
 
@@ -627,12 +608,8 @@ class MXNetParser(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op='Softmax')
 
         # dim
-        if self.data_format in MXNetParser.channels_first or self.data_format == 'None':
-            IR_node.attr["dim"].i = MXNetParser._convert_axis(IR_node, int(source_node.get_attr("axis", "-1")))
-        else:
-            IR_node.attr["dim"].i = int(source_node.get_attr("axis", "-1"))
 
-
+        IR_node.attr["dim"].i = int(source_node.get_attr("axis", "-1"))
     # def rename_log_softmax(self, source_node):
     #   raise NotImplementedError("not support yet")
 
@@ -851,10 +828,7 @@ class MXNetParser(Parser):
         IR_node = self._convert_identity_operation(source_node, new_op='Concat')
 
         # dim
-        if self.data_format in MXNetParser.channels_first or self.data_format == 'None':
-            IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(source_node.get_attr("dim", "1")))
-        else:
-            IR_node.attr["axis"].i = int(source_node.get_attr("dim", "1"))
+        IR_node.attr["axis"].i = int(source_node.get_attr("dim", "1"))
 
 
     def rename_cast(self, source_node):
@@ -880,11 +854,7 @@ class MXNetParser(Parser):
         self.set_output_shape(source_node, IR_node)
 
         # axis
-        if self.data_format in MXNetParser.channels_first or self.data_format == 'None':
-            IR_node.attr["axis"].i = MXNetParser._convert_axis(IR_node, int(source_node.get_attr("axis")))
-        else:
-            IR_node.attr["axis"].i = int(source_node.get_attr("axis"))
-
+        IR_node.attr["axis"].i = int(source_node.get_attr("axis"))
 
     def rename_elemwise_add(self, source_node):
         self._convert_identity_operation(source_node, new_op='Add')

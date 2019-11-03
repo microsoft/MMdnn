@@ -27,7 +27,7 @@ class PytorchEmitter(Emitter):
     }
 
     # Base Functions
-    def __init__(self, model):
+    def __init__(self, model, src_format):
         super(PytorchEmitter, self).__init__()
         if isinstance(model, _string_types):
             network_path = model
@@ -43,7 +43,7 @@ class PytorchEmitter(Emitter):
         folder = Folder(self.IR_graph, self.weights_dict)
         folder.fold()
 
-        refine_IR_graph_format(self.IR_graph)
+        refine_IR_graph_format(self.IR_graph, src_format, 'channel_first')
 
     def run(self, dstNetworkPath, dstWeightPath = None, phase = 'test'):
         super(PytorchEmitter, self).run(dstNetworkPath, dstWeightPath, phase)
@@ -317,8 +317,6 @@ class KitModel(nn.Module):
             IR_node.IR_layer.attr["use_bias"].b))
 
         input_node = self.parent_variable_name(IR_node)
-        if len(self.IR_graph.get_parent(IR_node.name, [0]).get_attr('_output_shapes')[0].dim) > 2:
-            input_node = "{}.view({}.size(0), -1)".format(input_node, input_node)
         
         code = "{:<15} = self.{}({})".format(
             IR_node.variable_name,
@@ -326,8 +324,10 @@ class KitModel(nn.Module):
             input_node)
 
         if self.weight_loaded:
-            self.check_if_need_transpose(IR_node)
-            self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], (1, 0))
+            if not IR_node.get_attr('weight_transpose'):
+                self.weights_dict[IR_node.name]['weights'] = np.transpose(self.weights_dict[IR_node.name]['weights'], (1, 0))
+            else:
+                self.weights_dict[IR_node.name]['weights'] = self.weights_dict[IR_node.name]['weights']
 
         return code
 
@@ -515,10 +515,7 @@ class KitModel(nn.Module):
         dim = len(IR_node.layer.attr['_output_shapes'].list.shape[0].dim) - 2
 
         output_shape = IR_node.layer.attr['_output_shapes'].list.shape[0]
-        if IR_node.get_attr('data_format', "NHWC") == "NCHW":
-            num_features = output_shape.dim[1].size
-        else:
-            num_features = output_shape.dim[-1].size
+        num_features = output_shape.dim[1].size
 
         self.add_init(2, "self.{} = self.__batch_normalization({}, '{}', num_features={}, eps={}, momentum={})".format(
              IR_node.variable_name,

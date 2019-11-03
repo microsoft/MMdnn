@@ -53,7 +53,6 @@ class pytorch_extractor(base_extractor):
         import numpy as np
         func = TestKit.preprocess_func['pytorch'][architecture]
         img = func(image_path)
-        img = np.transpose(img, (2, 0, 1))
 
         img = np.expand_dims(img, 0).copy()
 
