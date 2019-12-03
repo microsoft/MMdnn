@@ -230,8 +230,13 @@ def download_file(url, directory='./', local_fname=None, force_write=False, auto
             try:
                 import tarfile
                 tar = tarfile.open(ret)
+                for name in tar.getnames():
+                    if not (os.path.realpath(os.path.join(directory, name))+ os.sep).startswith(os.path.realpath(directory) + os.sep):
+                        raise ValueError('The decompression path does not match the current path. For more info: https://docs.python.org/3/library/tarfile.html#tarfile.TarFile.extractall')
                 tar.extractall(directory)
                 tar.close()
+            except ValueError:
+                raise
             except:
                 print("Unzip file [{}] failed.".format(ret))
 
@@ -239,8 +244,13 @@ def download_file(url, directory='./', local_fname=None, force_write=False, auto
             try:
                 import zipfile
                 zip_ref = zipfile.ZipFile(ret, 'r')
+                for name in zip_ref.namelist():
+                    if not (os.path.realpath(os.path.join(directory, name))+ os.sep).startswith(os.path.realpath(directory) + os.sep):
+                        raise ValueError('The decompression path does not match the current path. For more info: https://docs.python.org/3/library/zipfile.html?highlight=zipfile#zipfile.ZipFile.extractall')
                 zip_ref.extractall(directory)
                 zip_ref.close()
+            except ValueError:
+                raise
             except:
                 print("Unzip file [{}] failed.".format(ret))
     return ret
