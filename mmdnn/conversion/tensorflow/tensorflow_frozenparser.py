@@ -490,7 +490,7 @@ class TensorflowParser2(Parser):
             return
 
         variable = self.check_const(self.tf_graph.get_node(add_node.in_edges[1])) #add_bias node
-        if variable.type != 'Const':
+        if not variable or variable.type != 'Const':
             return
 
 
