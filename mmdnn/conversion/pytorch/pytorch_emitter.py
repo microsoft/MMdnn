@@ -231,14 +231,16 @@ class KitModel(nn.Module):
                 pool_size = IR_node.get_attr('kernel_shape')[1:-1]
                 strides = IR_node.get_attr('strides')[1:-1]
 
-                code = "{:<15} = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={})".format(
+                code = "{}, {}_idx = F.{}({}, kernel_size={}, stride={}, padding={}, ceil_mode={}, return_indices={})".format(
+                    IR_node.variable_name,
                     IR_node.variable_name,
                     pool_name,
                     input_node,
                     tuple(pool_size),
                     tuple(strides),
                     0,
-                    False
+                    False,
+                    True
                     )
                 return code
 
@@ -266,6 +268,27 @@ class KitModel(nn.Module):
                 return code
             else:
                 raise ValueError()
+
+    def emit_Unpool(self, IR_node):
+        dim = len(IR_node.get_attr('strides')) - 2
+
+        # Change to padding defuse
+        input_node = self.parent_variable_name(IR_node)
+        index_node = self.parent_variable_name(IR_node,[1])
+        pool_name = "max_unpool{}d".format(dim)
+        pool_size = IR_node.get_attr('kernel_shape')[1:-1]
+        strides = IR_node.get_attr('strides')[1:-1]
+
+        code = "{:<15} = F.{}({},{}_idx, kernel_size={}, stride={}, padding={})".format(
+            IR_node.variable_name,
+            pool_name,
+            input_node,
+            index_node,
+            tuple(pool_size),
+            tuple(strides),
+            0
+            )
+        return code
 
 
     def emit_UNKNOWN(self, IR_node):

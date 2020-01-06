@@ -115,6 +115,8 @@ def shape_pool(node):
         return shape_global_pooling(node)
     return get_strided_kernel_output_shape(node, math.ceil)
 
+def shape_unpool(node):
+    return get_strided_kernel_output_shape(node, math.ceil)
 
 def shape_inner_product(node):
     input_shape = node.get_only_parent()[0].output_shape

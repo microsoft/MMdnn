@@ -70,6 +70,10 @@ class Network(object):
         raise NotImplementedError('Must be implemented by the subclass')
 
     @layer
+    def max_unpool(self, input, k_h, k_w, s_h, s_w, p_h, p_w, name):
+        raise NotImplementedError('Must be implemented by the subclass')
+
+    @layer
     def avg_pool(self, input, k_h, k_w, s_h, s_w, p_h, p_w, name):
         raise NotImplementedError('Must be implemented by the subclass')
 

@@ -595,6 +595,63 @@ op {
 }
 
 op {
+  name: "Unpool"
+  attr {
+    name: "kernel_shape"
+    description: "Shape `[1, depth, height, wide, 1]`."
+    type: "list(int)"
+  }
+  attr {
+    name: "strides"
+    type: "list(int)"
+    description: "1-D tensor of length N.  [1, stride_deep, stride_height, stride_width, 1]"
+  }
+  attr {
+    name: "audo_pad"
+    type: "string"
+    description: "The type of padding algorithm to use."
+    allowed_values {
+      list {
+        s: "SAME_UPPER"
+        s: "SAME_LOWER"
+        s: "VALID"
+      }
+    }
+  }
+  attr {
+    name: "pads"
+    type: "list(int)"
+    description: "1-D tensor of length N*2. [x1_begin, x2_begin...x1_end, x2_end,...]"
+    allowed_values {
+      list {
+        i: 0
+        f: 0.0
+      }
+    }
+  }
+  attr {
+    name: "data_format"
+    type: "string"
+    default_value {
+      s: "NHWC"
+    }
+    allowed_values {
+      list {
+        s: "NC"
+        s: "NWC"
+        s: "NCW"
+        s: "NHWC"
+        s: "NCHW"
+        s: "NDHWC"
+        s: "NCDHW"
+      }
+    }
+  }
+  summary: "Performs an N-D unpooling operation."
+  description: "tf.nn.unpool defined"
+}
+
+op {
   name: "Mul"
   summary: "Returns x * y element-wise."
   description: "*NOTE*: `Mul` supports broadcasting. More about broadcasting[here](http://docs.scipy.org/doc/numpy/user/basics.broadcasting.html)"

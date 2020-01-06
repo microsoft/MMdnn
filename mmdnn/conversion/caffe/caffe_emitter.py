@@ -172,6 +172,9 @@ if __name__=='__main__':
                 pad_w = pads[2] + (0 if pads[2] == pads[6] else stride_w)
             else:
                 pad_w = 0
+        elif IR_node.type == "Unpool":
+            pad_h = 0
+            pad_w = 0
         else:
             pad_h = pads[1] + (0 if pads[1] == pads[5] else stride_h)
             pad_w = pads[2] + (0 if pads[2] == pads[6] else stride_w)
@@ -245,6 +248,9 @@ if __name__=='__main__':
             if IR_node.type == 'Pool':
                 h_o = (h_i + 2 * pad_h - kernel_h + stride_h - 1) // stride_h + 1
                 w_o = (w_i + 2 * pad_w - kernel_w + stride_w - 1) // stride_w + 1
+            elif IR_node.type == 'Unpool':
+                h_o = (h_i - 2 * pad_h - kernel_h + stride_h) * stride_h
+                w_o = (w_i - 2 * pad_w - kernel_w + stride_w) * stride_w
             else:
                 h_o = (h_i + 2 * pad_h - kernel_h) // stride_h + 1
                 w_o = (w_i + 2 * pad_w - kernel_w) // stride_w + 1
@@ -260,7 +266,7 @@ if __name__=='__main__':
         ir_wo = shape[2]
         if ir_ho <0 or ir_wo<0:
             return
-        if IR_node.type == 'Pool':
+        if IR_node.type == 'Pool' or IR_node.type == 'Unpool':
             k_h = IR_node.get_attr('kernel_shape')[1]
             k_w = IR_node.get_attr('kernel_shape')[2]
         else:
@@ -330,6 +336,26 @@ if __name__=='__main__':
 
             # check if need crop output shape
             self.check_if_need_crop(IR_node)
+
+    def emit_Unpool(self, IR_node):
+        pad_h, pad_w = self._get_symmetric_padding(IR_node)
+        pool_size = IR_node.get_attr('kernel_shape')[1:3]
+        if pool_size[0] != pool_size[1]:
+            self.add_body(1, "n.{:<15} = L.Unpooling(n.{}, kernel_h={}, kernel_w={}, stride={}, ntop=1)".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                pool_size[0],
+                pool_size[1],
+                IR_node.get_attr('strides')[1]))
+        else:
+            self.add_body(1, "n.{:<15} = L.Unpooling(n.{}, kernel_size={}, stride={}, ntop=1)".format(
+                IR_node.variable_name,
+                self.parent_variable_name(IR_node),
+                pool_size[0],
+                IR_node.get_attr('strides')[1]))
+
+        # check if need crop output shape
+        self.check_if_need_crop(IR_node)
 
     def emit_ResizeBilinear(self, IR_node):
         shape = IR_node.get_attr("_output_shapes")[0]
