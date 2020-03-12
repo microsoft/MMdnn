@@ -225,7 +225,9 @@ Details are in [ops.txt](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/co
 We are working on other frameworks conversion and visualization, such as PyTorch, CoreML and so on. We're investigating more RNN related operators. Any contributions and suggestions are welcome! Details in [Contribution Guideline](https://github.com/Microsoft/MMdnn/wiki/Contribution-Guideline).
 
 ### License
+The entire codebase is under [MIT license](LICENSE)
 
+### Contributions
 Most contributions require you to agree to a Contributor License Agreement (CLA) declaring that you have the right to and actually do, grant us
 the rights to use your contribution. For details, visit https://cla.microsoft.com.
 
