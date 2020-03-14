@@ -112,3 +112,7 @@ tests/tmp/
 
 # Visual Studio
 .vs/
+
+# macOS
+# Desktop Services Store files
+.DS_Store
