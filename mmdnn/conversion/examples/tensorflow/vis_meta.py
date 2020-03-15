@@ -54,12 +54,10 @@ def _main():
     parser = _get_parser()
     args, unknown_args = parser.parse_known_args()
 
-    if not (os.path.exists(args.ckpt) and os.path.isfile(args.ckpt)):
+    if not os.path.isfile(args.ckpt):
         print('The checkpoint meta file does not exist.')
         exit(1)
 
-    if not os.path.exists(args.logdir):
-        os.mkdir(args.logdir)
     if not os.path.isdir(args.logdir):
         print('The log directory does not exist.')
         exit(1)
