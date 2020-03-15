@@ -791,6 +791,7 @@ class TensorflowParser(Parser):
             self.set_weight(source_node.name, 'weights', self.ckpt_data[weight.name])
 
         assign_IRnode_values(IR_node, kwargs)
+        self._get_bias(source_node, IR_node)
 
 
     def rename_FusedBatchNorm(self, source_node):

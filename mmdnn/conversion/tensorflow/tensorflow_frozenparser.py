@@ -560,6 +560,7 @@ class TensorflowParser2(Parser):
         weight_content = tensor_util.MakeNdarray(weight)
         self.set_weight(source_node.name, 'weights', weight_content)
         assign_IRnode_values(IR_node, kwargs)
+        self._get_bias(source_node, IR_node)
 
 
     def rename_BatchNormWithGlobalNormalization(self, source_node):
