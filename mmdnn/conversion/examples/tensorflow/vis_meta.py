@@ -1,15 +1,36 @@
 import tensorflow as tf
 from tensorflow.python.platform import gfile
 import os
+import os.path
 import shutil
 import sys
+import argparse
 
-def visualize(model_filename, log_dir):
+
+def _get_parser():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        '--ckpt',
+        required=True,
+        help='Path to the checkpoint meta file (.ckpt.meta).'
+        )
+    parser.add_argument(
+        '--logdir',
+        required=True,
+        help='Path to the log directory for writing the graph summary for visualization.'
+        )
+
+    return parser
+
+
+def visualize(ckpt, logdir):
     with tf.Session() as sess:
-        tf.train.import_meta_graph(model_filename)
-        train_writer = tf.summary.FileWriter(log_dir)
+        tf.train.import_meta_graph(ckpt)
+        train_writer = tf.summary.FileWriter(logdir)
         train_writer.add_graph(sess.graph)
         train_writer.close()
+
 
 def _main():
     """
@@ -17,12 +38,12 @@ def _main():
 
     Arguments
     ----------
-    - path to the checkpoint meta file (.ckpt.meta)
-    - path to a log directory for writing graph summary for visualization
+    --ckpt: path to the checkpoint meta file (.ckpt.meta)
+    --logdir: path to the log directory for writing graph summary for visualization
 
     Usage
     ----------
-    python vis_meta.py model.ckpt.meta /tmp/pb
+    python vis_meta.py --ckpt=model.ckpt.meta --logdir=/tmp/pb
 
 
     To kill a previous tensorboard process, use the following commands in the terminal
@@ -30,12 +51,28 @@ def _main():
     kill PID
     """
 
-    if len(sys.argv) != 3:
-        raise ValueError("Usage: python vis_meta.py /path/to/model.meta /path/to/log/directory")
-    # load file
-    visualize(sys.argv[1], sys.argv[2])
-    os.system("tensorboard --logdir=" + sys.argv[2])
+    parser = _get_parser()
+    args, unknown_args = parser.parse_known_args()
+
+    if not os.path.isfile(args.ckpt):
+        print('The checkpoint meta file does not exist.')
+        exit(1)
+
+    if not os.path.isdir(args.logdir):
+        print('The log directory does not exist.')
+        exit(1)
+
+    # Load file
+    visualize(args.ckpt, args.logdir)
+
+    # Run TensorBoard
+    cmd = 'tensorboard --logdir={} {}'.format(
+        args.logdir,
+        ' '.join(unknown_args)
+    )
+    #print(cmd)
+    os.system(cmd)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     _main()
