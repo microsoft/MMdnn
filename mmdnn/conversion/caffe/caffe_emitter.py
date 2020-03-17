@@ -600,7 +600,16 @@ if __name__=='__main__':
         self.reduction(IR_node, 1, IR_node.get_attr('axes'))
 
     def emit_Relu6(self, IR_node):
-        self.emit_Relu(IR_node)
+        relu_layer_var_name = IR_node.variable_name + "_relu"
+        in_place = True
+        self.add_body(1, "n.{:<15} = L.ReLU(n.{}, in_place={}, ntop=1)".format(
+            relu_layer_var_name,
+            self.parent_variable_name(IR_node),
+            in_place))
+        self.add_body(1, "n.{:<15} = L.Clip(n.{}, min=0, max=6)".format(
+            IR_node.variable_name,
+            relu_layer_var_name))
+
 
     def emit_DepthwiseConv(self, IR_node):
         self.emit_Conv(IR_node)
