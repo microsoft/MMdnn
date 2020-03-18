@@ -601,7 +601,7 @@ if __name__=='__main__':
 
     def emit_Relu6(self, IR_node):
         in_place = True
-        self.add_body(1, "n.{:<15} = L.Clip(n.{}, min=0, max=6)".format(
+        self.add_body(1, "n.{:<15} = L.Clip(n.{}, min=0, max=6, in_place={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             in_place))
