@@ -636,7 +636,7 @@ def KitModel(weight_file = None):
             IR_node.get_attr('size'),
             IR_node.get_attr('alpha'),
             IR_node.get_attr('beta'),
-            IR_node.get_attr('k'),
+            IR_node.get_attr('bias'),
             IR_node.name,
             self.parent_variable_name(IR_node))
         return code
