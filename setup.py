@@ -12,7 +12,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.2.4',
+    version='0.2.5',
 
     description='Deep learning model converter, visualization and editor.',
     long_description=long_description,
@@ -80,7 +80,7 @@ setup(
         'numpy >= 1.15.0',
         'protobuf >= 3.6.0',
         'six >= 1.10.0',
-        'pillow >= 3.1.0',
+        'pillow >= 6.2.1',
     ],
 
     # To provide executable scripts, use entry points in preference to the
