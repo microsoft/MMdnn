@@ -500,11 +500,11 @@ def KitModel(weight_file = None):
 
     def emit_LRN(self, IR_node):
         self.used_layers.add(IR_node.type)
-        code = "{:<15} = ops.local_response_normalization({}, depth_radius={}, bias={}, alpha={}, beta={}, name='{}')".format(
+        code = "{:<15} = lrn({}, k={}, n={}, alpha={}, beta={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.layer.attr['size'].i,
             IR_node.layer.attr['bias'].f,
+            IR_node.layer.attr['size'].i,
             IR_node.layer.attr['alpha'].f,
             IR_node.layer.attr['beta'].f,
             IR_node.name)

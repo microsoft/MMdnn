@@ -17,18 +17,18 @@ def get_test_table():
             {
                 'alexnet'       : [TestModels.onnx_emit],
                 'inception_v1'  : [TestModels.onnx_emit],
-                'inception_v4'  : [TestModels.onnx_emit],
+                #Temporarily disable 'inception_v4'  : [TestModels.onnx_emit],
                 'resnet152'     : [TestModels.onnx_emit],
                 'squeezenet'    : [TestModels.onnx_emit],
                 # 'vgg19'         : [TestModels.onnx_emit],
-                'xception'      : [TestModels.onnx_emit],
+                #Temporarily disable 'xception'      : [TestModels.onnx_emit],
             }
         }
     elif six.PY2: return { 'caffe' :
             {
                 'inception_v1'  : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
                 'resnet152'     : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'xception'      : [TestModels.coreml_emit, TestModels.cntk_emit, TestModels.tensorflow_emit],
+                #Temporarily disable 'xception'      : [TestModels.coreml_emit, TestModels.cntk_emit, TestModels.tensorflow_emit],
 
             }
         }
@@ -38,7 +38,7 @@ def get_test_table():
                 # 'alexnet'       : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
                 'inception_v1'  : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
                 'resnet152'     : [TestModels.caffe_emit, TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.mxnet_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
-                'xception'      : [TestModels.coreml_emit, TestModels.cntk_emit, TestModels.tensorflow_emit],
+                #Temporarily disable 'xception'      : [TestModels.coreml_emit, TestModels.cntk_emit, TestModels.tensorflow_emit],
             }
         }
 
