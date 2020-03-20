@@ -9,34 +9,10 @@ python:
   - "3.6"
 
 env:
-  - TEST_PARSER=tensorflow TEST_ONNX=true
-  - TEST_PARSER=tensorflow TEST_ONNX=false
-  - TEST_PARSER=tensorflow_2 TEST_ONNX=false
-  - TEST_PARSER=keras TEST_ONNX=true
-  - TEST_PARSER=keras_2 TEST_ONNX=true
-  - TEST_PARSER=keras TEST_ONNX=false
-  - TEST_PARSER=keras_2 TEST_ONNX=false
-  - TEST_PARSER=keras_3 TEST_ONNX=false
-  - TEST_PARSER=cntk TEST_ONNX=true
-  - TEST_PARSER=cntk TEST_ONNX=false
   - TEST_PARSER=caffe TEST_ONNX=true
   - TEST_PARSER=caffe TEST_ONNX=false
+  - TEST_PARSER=caffe_2 TEST_ONNX=true
   - TEST_PARSER=caffe_2 TEST_ONNX=false
-  - TEST_PARSER=mxnet TEST_ONNX=true
-  - TEST_PARSER=mxnet_2 TEST_ONNX=true
-  - TEST_PARSER=mxnet TEST_ONNX=false
-  - TEST_PARSER=mxnet_2 TEST_ONNX=false
-  - TEST_PARSER=pytorch TEST_ONNX=true
-  - TEST_PARSER=pytorch TEST_ONNX=false
-  - TEST_PARSER=pytorch_2 TEST_ONNX=false
-  - TEST_PARSER=paddle TEST_ONNX=true
-  - TEST_PARSER=paddle TEST_ONNX=false
-  - TEST_PARSER=coreml TEST_ONNX=true
-  - TEST_PARSER=coreml TEST_ONNX=false
-  - TEST_PARSER=darknet TEST_ONNX=true
-  - TEST_PARSER=darknet TEST_ONNX=false
-  - TEST_PARSER=tensorflow_frozen TEST_ONNX=true
-  - TEST_PARSER=tensorflow_frozen TEST_ONNX=false
 
 cache:
   directories:
@@ -57,7 +33,8 @@ install:
   - pip install -q wget
 
 before_script:
-  - export LD_LIBRARY_PATH=:${LD_LIBRARY_PATH}:/usr/lib/x86_64-linux-gnu
+  - export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/x86_64-linux-gnu
+  - export PYTHONPATH=${PYTHONPATH}:/usr/lib/python3/dist-packages
 
 after_failure: true
 
