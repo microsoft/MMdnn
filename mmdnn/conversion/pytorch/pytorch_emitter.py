@@ -635,7 +635,7 @@ class KitModel(nn.Module):
             IR_node.get_attr('size') * 2 - 1,
             IR_node.get_attr('alpha'),
             IR_node.get_attr('beta'),
-            IR_node.get_attr('k', 1)
+            IR_node.get_attr('bias', 1)
         )
         return code
 

@@ -799,7 +799,7 @@ class MXNetParser(Parser):
         # beta
         IR_node.attr["beta"].f = float(source_node.get_attr("beta", "0.75"))
         # knorm
-        IR_node.attr["k"].f = float(source_node.get_attr("knorm", "2"))
+        IR_node.attr["bias"].f = float(source_node.get_attr("knorm", "2"))
         # nsize
         IR_node.attr["size"].i = float(source_node.get_attr["nsize"])
 

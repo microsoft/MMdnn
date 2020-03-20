@@ -904,7 +904,7 @@ class CoreMLEmitter(Emitter):
         output_name = IR_node.real_name
         alpha = IR_node.get_attr('alpha')
         beta = IR_node.get_attr('beta')
-        k = IR_node.get_attr('k')
+        k = IR_node.get_attr('bias')
         depth_radius = int(IR_node.get_attr('size'))
         #  depth_radius: Half-width of the 1-D normalization window."
         self.builder.add_lrn(output_name, input_name, output_name,
