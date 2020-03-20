@@ -40,9 +40,9 @@ class caffe_extractor(base_extractor):
 ## Semantic Segmentation
         'voc-fcn8s'     : {'prototxt' : 'https://raw.githubusercontent.com/shelhamer/fcn.berkeleyvision.org/master/voc-fcn8s/deploy.prototxt',
                            'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn8s-heavy-pascal.caffemodel'},
-        'voc-fcn16s'    : {'prototxt' : MMDNN_BASE_URL + "caffe/voc-fcn16s_deploy.prototxt",
+        'voc-fcn16s'    : {'prototxt' : 'https://raw.githubusercontent.com/linmajia/mmdnn-models/master/caffe/voc-fcn16s-deploy.prototxt',
                            'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn16s-heavy-pascal.caffemodel'},
-        'voc-fcn32s'    : {'prototxt' : MMDNN_BASE_URL + "caffe/voc-fcn32s_deploy.prototxt",
+        'voc-fcn32s'    : {'prototxt' : 'https://raw.githubusercontent.com/linmajia/mmdnn-models/master/caffe/voc-fcn32s-deploy.prototxt',
                            'caffemodel' : 'http://dl.caffe.berkeleyvision.org/fcn32s-heavy-pascal.caffemodel'},
         'trailnet_sresnet': {'prototxt': 'https://raw.githubusercontent.com/NVIDIA-AI-IOT/redtail/master/models/pretrained/TrailNet_SResNet-18.prototxt',
                             'caffemodel': 'https://raw.githubusercontent.com/NVIDIA-AI-IOT/redtail/master/models/pretrained/TrailNet_SResNet-18.caffemodel'}
