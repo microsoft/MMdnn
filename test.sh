@@ -27,7 +27,8 @@ bash -c "while true; do echo \$(date) - building ...; sleep $PING_SLEEP; done" &
 PING_LOOP_PID=$!
 
 # My build is using maven, but you could build anything with this, E.g.
-python -m pytest -s -q tests/test_$1.py >> $BUILD_OUTPUT 2>&1
+#python -m pytest -s -q tests/test_$1.py >> $BUILD_OUTPUT 2>&1
+python -m pytest -s -q tests/test_$1.py
 
 # The build finished without returning an error so dump a tail of the output
 dump_output
