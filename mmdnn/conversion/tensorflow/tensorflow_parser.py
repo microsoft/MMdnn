@@ -1052,7 +1052,7 @@ class TensorflowParser(Parser):
             "alpha" : source_node.get_attr('alpha') * (source_node.get_attr('depth_radius') * 2 + 1),
             "beta" : source_node.get_attr('beta'),
             "bias" : source_node.get_attr('bias'),
-            'size' : source_node.get_attr('depth_radius') + 1
+            'size' : source_node.get_attr('depth_radius') * 2 + 1
         }
         assign_IRnode_values(IR_node, kwargs)
 

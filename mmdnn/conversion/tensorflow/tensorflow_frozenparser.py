@@ -907,10 +907,10 @@ class TensorflowParser2(Parser):
         IR_node = self._convert_identity_operation(source_node)
 
         # alpha
-        IR_node.attr["alpha"].f = float(source_node.get_attr("alpha", "0.0001"))
+        IR_node.attr["alpha"].f = float(source_node.get_attr("alpha", "0.0001") * (source_node.get_attr("depth_radius") * 2 + 1))
         # beta
         IR_node.attr["beta"].f = float(source_node.get_attr("beta", "0.75"))
-        IR_node.attr["size"].i = source_node.get_attr("depth_radius")
+        IR_node.attr["size"].i = source_node.get_attr("depth_radius") * 2 + 1
         IR_node.attr["bias"].f = float(source_node.get_attr("bias"))
 
 

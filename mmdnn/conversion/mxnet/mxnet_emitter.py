@@ -968,7 +968,7 @@ def predict(model, labels, url):
                 IR_node.layer.attr['alpha'].f,
                 IR_node.layer.attr['beta'].f,
                 IR_node.layer.attr['bias'].f,
-                IR_node.layer.attr['size'].i * 2 - 1,
+                IR_node.layer.attr['size'].i,
                 IR_node.name)
 
         return code

@@ -801,7 +801,7 @@ class MXNetParser(Parser):
         # knorm
         IR_node.attr["bias"].f = float(source_node.get_attr("knorm", "2"))
         # nsize
-        IR_node.attr["size"].i = float(source_node.get_attr["nsize"])
+        IR_node.attr["size"].i = int(source_node.get_attr["nsize"])
 
 
     def rename_ROIPooling(self, source_node):

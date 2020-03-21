@@ -558,9 +558,9 @@ def KitModel(weight_file = None):
         code = "{:<15} = tf.nn.lrn({}, depth_radius={}, bias={}, alpha={}, beta={}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.get_attr('size') - 1,
+            int(IR_node.get_attr('size')/2),
             IR_node.get_attr('bias', 1),
-            IR_node.get_attr('alpha') / (IR_node.get_attr('size') * 2 - 1),
+            IR_node.get_attr('alpha')/(int(IR_node.get_attr('size')/2)),
             IR_node.get_attr('beta'),
             IR_node.name)
         return code

@@ -629,10 +629,10 @@ class KitModel(nn.Module):
 
 
     def emit_LRN(self, IR_node):
-        code =  "{:<15} = F.local_response_norm({}, size={}, alpha={}, beta={}, k={})".format(
+        code =  "{:<15} = nn.LocalReponseNorm({}, size={}, alpha={}, beta={}, k={})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.get_attr('size') * 2 - 1,
+            IR_node.get_attr('size'),
             IR_node.get_attr('alpha'),
             IR_node.get_attr('beta'),
             IR_node.get_attr('bias', 1)

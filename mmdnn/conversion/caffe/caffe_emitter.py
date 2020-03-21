@@ -468,7 +468,7 @@ if __name__=='__main__':
         self.add_body(1, "n.{:<15} = L.LRN(n.{}, local_size={}, alpha={}, beta={}, k={})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
-            IR_node.get_attr('size') * 2 - 1,
+            IR_node.get_attr('size'),
             IR_node.get_attr('alpha'),
             IR_node.get_attr('beta'),
             IR_node.get_attr('bias')

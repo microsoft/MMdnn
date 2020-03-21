@@ -1065,23 +1065,23 @@ class LRN(Layer):
         super(LRN, self).build(input_shape)
 
     def call(self, x, mask=None):
-        half_n = self.n - 1
+        half_n = int(self.n/2)
         squared = K.square(x)
         scale = self.k
-        norm_alpha = self.alpha / (2 * half_n + 1)
+        norm_alpha = self.alpha / self.n
         if K.image_dim_ordering() == "th":
             b, f, r, c = self.shape
             squared = K.expand_dims(squared, 0)
             squared = K.spatial_3d_padding(squared, padding=((half_n, half_n), (0, 0), (0,0)))
             squared = K.squeeze(squared, 0)
-            for i in range(half_n*2+1):
+            for i in range(self.n):
                 scale += norm_alpha * squared[:, i:i+f, :, :]
         else:
             b, r, c, f = self.shape
             squared = K.expand_dims(squared, -1)
             squared = K.spatial_3d_padding(squared, padding=((0, 0), (0,0), (half_n, half_n)))
             squared = K.squeeze(squared, -1)
-            for i in range(half_n*2+1):
+            for i in range(self.n):
                 scale += norm_alpha * squared[:, :, :, i:i+f]
 
         scale = K.pow(scale, self.beta)
