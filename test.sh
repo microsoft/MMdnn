@@ -28,7 +28,7 @@ PING_LOOP_PID=$!
 
 # My build is using maven, but you could build anything with this, E.g.
 #python -m pytest -s -q tests/test_$1.py >> $BUILD_OUTPUT 2>&1
-python -m pytest -s -q tests/test_$1.py 2>/dev/null
+python -m pytest -s -q tests/test_$1.py 1>/dev/null
 
 # The build finished without returning an error so dump a tail of the output
 dump_output

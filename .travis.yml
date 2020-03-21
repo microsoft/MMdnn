@@ -12,9 +12,7 @@ virtualenv:
 
 env:
   - TEST_PARSER=caffe TEST_ONNX=true
-  - TEST_PARSER=caffe TEST_ONNX=false
   - TEST_PARSER=caffe_2 TEST_ONNX=true
-  - TEST_PARSER=caffe_2 TEST_ONNX=false
 
 cache:
   directories:
