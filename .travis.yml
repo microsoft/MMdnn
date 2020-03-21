@@ -7,6 +7,8 @@ os:
 language: python
 python:
   - "3.6"
+virtualenv:
+  system_site_packages: true
 
 env:
   - TEST_PARSER=caffe TEST_ONNX=true
@@ -34,7 +36,6 @@ install:
 
 before_script:
   - export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/x86_64-linux-gnu
-  - export PYTHONPATH=${PYTHONPATH}:/usr/lib/python3/dist-packages
 
 after_failure: true
 
