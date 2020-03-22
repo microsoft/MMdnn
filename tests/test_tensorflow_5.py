@@ -3,14 +3,13 @@ from __future__ import print_function
 
 import os
 import sys
-import six
 from conversion_imagenet import TestModels
 
 def get_test_table():
-    return {
-        'keras' : {
-            'densenet'     : [
-                TestModels.onnx_emit,
+    return { 'tensorflow' :
+        {
+            'resnet_v2_152'    : [
+                #TestModels.onnx_emit,
                 TestModels.caffe_emit,
                 TestModels.cntk_emit,
                 TestModels.coreml_emit,
@@ -19,14 +18,14 @@ def get_test_table():
                 TestModels.pytorch_emit,
                 TestModels.tensorflow_emit
                 ]
-    }}
+        }
+    }
 
-
-def test_keras():
+def test_tensorflow():
     test_table = get_test_table()
     tester = TestModels(test_table)
-    tester._test_function('keras', tester.keras_parse)
+    tester._test_function('tensorflow', tester.tensorflow_parse)
 
 
-if __name__ == '__main__':
-    test_keras()
+if __name__ == "__main__":
+    test_tensorflow()
