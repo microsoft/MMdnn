@@ -7,11 +7,14 @@ import six
 from conversion_imagenet import TestModels
 
 def get_test_table():
-    return { 'mxnet' : {
-        'imagenet1k-resnext-101-64x4d'      : [
+    return {
+        'mxnet' : {
+            # Run too slow on Travis.
+            'imagenet1k-resnext-101-64x4d'      : [
                 TestModels.onnx_emit,
                 TestModels.caffe_emit,
-                #TestModels.cntk_emit,
+                # cntk_emit OOM on Travis
+                TestModels.cntk_emit,
                 TestModels.coreml_emit,
                 TestModels.keras_emit,
                 TestModels.mxnet_emit,

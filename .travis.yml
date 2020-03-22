@@ -11,7 +11,39 @@ virtualenv:
   system_site_packages: true
 
 env:
-  - TEST_PARSER=mxnet_4
+  - TEST_PARSER=tensorflow
+  - TEST_PARSER=tensorflow_2
+  - TEST_PARSER=tensorflow_3
+  - TEST_PARSER=tensorflow_4
+  - TEST_PARSER=tensorflow_5
+  - TEST_PARSER=tensorflow_6
+  #- TEST_PARSER=tensorflow_7
+  - TEST_PARSER=tensorflow_frozen
+  - TEST_PARSER=pytorch
+  - TEST_PARSER=pytorch_2
+  - TEST_PARSER=pytorch_3
+  - TEST_PARSER=pytorch_4
+  - TEST_PARSER=pytorch_5
+  - TEST_PARSER=keras
+  - TEST_PARSER=keras_2
+  - TEST_PARSER=keras_3
+  - TEST_PARSER=keras_4
+  - TEST_PARSER=keras_5
+  - TEST_PARSER=cntk
+  - TEST_PARSER=cntk_2
+  - TEST_PARSER=caffe
+  - TEST_PARSER=caffe_2
+  - TEST_PARSER=caffe_3
+  #- TEST_PARSER=caffe_4
+  - TEST_PARSER=mxnet
+  - TEST_PARSER=mxnet_2
+  - TEST_PARSER=mxnet_3
+  #- TEST_PARSER=mxnet_4
+  - TEST_PARSER=mxnet_5
+  - TEST_PARSER=paddle
+  - TEST_PARSER=coreml
+  - TEST_PARSER=coreml_2
+  - TEST_PARSER=darknet
 
 cache:
   directories:
