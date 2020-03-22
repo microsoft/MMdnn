@@ -11,7 +11,7 @@ def get_test_table():
         'imagenet1k-resnext-101-64x4d'      : [
                 TestModels.onnx_emit,
                 TestModels.caffe_emit,
-                TestModels.cntk_emit,
+                #TestModels.cntk_emit,
                 TestModels.coreml_emit,
                 TestModels.keras_emit,
                 TestModels.mxnet_emit,

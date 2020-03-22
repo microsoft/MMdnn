@@ -9,6 +9,7 @@ from conversion_imagenet import TestModels
 def get_test_table():
     return { 'caffe' :
         {
+            # Cannot run on Travis since it seems to consume too much memory.
             'voc-fcn8s'     : [
                 TestModels.cntk_emit,
                 TestModels.coreml_emit,

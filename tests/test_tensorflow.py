@@ -17,16 +17,6 @@ def get_test_table():
                 TestModels.mxnet_emit,
                 TestModels.pytorch_emit,
                 TestModels.tensorflow_emit
-                ],
-            'nasnet-a_large'    : [
-                #TestModels.onnx_emit,
-                #TestModels.caffe_emit,
-                #TestModels.cntk_emit,
-                #TestModels.coreml_emit,
-                #TestModels.keras_emit,
-                TestModels.mxnet_emit,
-                TestModels.pytorch_emit,
-                TestModels.tensorflow_emit
                 ]
         }
     }
