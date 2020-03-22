@@ -16,6 +16,7 @@ env:
   - TEST_PARSER=tensorflow_3
   - TEST_PARSER=tensorflow_4
   - TEST_PARSER=tensorflow_5
+  - TEST_PARSER=tensorflow_6
   - TEST_PARSER=tensorflow_frozen
   - TEST_PARSER=pytorch
   - TEST_PARSER=pytorch_2
@@ -32,9 +33,12 @@ env:
   - TEST_PARSER=caffe
   - TEST_PARSER=caffe_2
   - TEST_PARSER=caffe_3
+  - TEST_PARSER=caffe_4
   - TEST_PARSER=mxnet
   - TEST_PARSER=mxnet_2
   - TEST_PARSER=mxnet_3
+  - TEST_PARSER=mxnet_4
+  - TEST_PARSER=mxnet_5
   - TEST_PARSER=paddle
   - TEST_PARSER=coreml
   - TEST_PARSER=coreml_2
@@ -74,8 +78,7 @@ matrix:
 
   allow_failures:
     - env: TEST_PARSER=paddle
-    - env: TEST_PARSER=paddle
-
+  
   exclude:
     - python: "3.6"
       env: TEST_PARSER=paddle

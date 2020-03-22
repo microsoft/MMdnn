@@ -18,24 +18,7 @@ def get_test_table():
                 TestModels.mxnet_emit,
                 TestModels.pytorch_emit,
                 TestModels.tensorflow_emit
-                ],
-            'voc-fcn8s'     : [
-                TestModels.cntk_emit,
-                TestModels.coreml_emit,
-                TestModels.tensorflow_emit
-                ],
-            'voc-fcn16s'     : [
-                TestModels.cntk_emit,
-                TestModels.coreml_emit,
-                TestModels.tensorflow_emit
-                ],
-            'voc-fcn32s'     : [
-                TestModels.cntk_emit,
-                TestModels.coreml_emit,
-                TestModels.tensorflow_emit
-                ],
-            #Temporarily disable 'xception'      : [TestModels.mxnet_emit, TestModels.pytorch_emit],
-            #Temporarily disable 'inception_v4'  : [TestModels.cntk_emit, TestModels.coreml_emit, TestModels.keras_emit, TestModels.pytorch_emit, TestModels.tensorflow_emit],
+                ]
         }
     }
 

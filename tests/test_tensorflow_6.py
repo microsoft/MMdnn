@@ -8,22 +8,12 @@ from conversion_imagenet import TestModels
 def get_test_table():
     return { 'tensorflow' :
         {
-            'vgg19'    : [
+            'inception_resnet_v2'    : [
                 TestModels.onnx_emit,
                 TestModels.caffe_emit,
-                TestModels.cntk_emit,
-                TestModels.coreml_emit,
-                TestModels.keras_emit,
-                TestModels.mxnet_emit,
-                TestModels.pytorch_emit,
-                TestModels.tensorflow_emit
-                ],
-            'nasnet-a_large'    : [
-                #TestModels.onnx_emit,
-                #TestModels.caffe_emit,
                 #TestModels.cntk_emit,
                 #TestModels.coreml_emit,
-                #TestModels.keras_emit,
+                TestModels.keras_emit,
                 TestModels.mxnet_emit,
                 TestModels.pytorch_emit,
                 TestModels.tensorflow_emit

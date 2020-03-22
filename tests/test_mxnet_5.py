@@ -7,23 +7,13 @@ import six
 from conversion_imagenet import TestModels
 
 def get_test_table():
-    return { 'mxnet' : {
-        'imagenet1k-resnet-18'      : [
+    return { 'mxnet' : {        
+        'imagenet1k-resnext-50'              : [
                 TestModels.onnx_emit,
                 TestModels.caffe_emit,
                 TestModels.cntk_emit,
                 TestModels.coreml_emit,
                 TestModels.keras_emit,
-                TestModels.mxnet_emit,
-                TestModels.pytorch_emit,
-                TestModels.tensorflow_emit
-                ],
-        'imagenet1k-resnet-152'              : [
-                TestModels.onnx_emit,
-                TestModels.caffe_emit,
-                TestModels.cntk_emit,
-                TestModels.coreml_emit,
-                #TestModels.keras_emit,
                 TestModels.mxnet_emit,
                 TestModels.pytorch_emit,
                 TestModels.tensorflow_emit
