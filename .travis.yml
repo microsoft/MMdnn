@@ -1,13 +1,14 @@
 sudo: required
-dist: xenial
+dist: bionic
 
 os:
   - linux
 
 language: python
 python:
-  - "2.7"
-  - "3.5"
+  - "3.6"
+virtualenv:
+  system_site_packages: true
 
 env:
   - TEST_PARSER=tensorflow TEST_ONNX=true
@@ -22,6 +23,7 @@ env:
   - TEST_PARSER=cntk TEST_ONNX=false
   - TEST_PARSER=caffe TEST_ONNX=true
   - TEST_PARSER=caffe TEST_ONNX=false
+  - TEST_PARSER=caffe_2 TEST_ONNX=true
   - TEST_PARSER=caffe_2 TEST_ONNX=false
   - TEST_PARSER=mxnet TEST_ONNX=true
   - TEST_PARSER=mxnet_2 TEST_ONNX=true
@@ -45,21 +47,20 @@ cache:
 
 addons:
   apt:
-    update: true
+    update: false
 
 before_install:
-  - sudo apt-get install -y openmpi-bin
-  - sudo apt-get install -y libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
-  - sudo apt-get install -y --no-install-recommends libboost-all-dev
-  - sudo apt-get install -y libatlas-base-dev
-  - sudo apt-get install -y libgflags-dev libgoogle-glog-dev
+  - sudo apt-get install -y --no-install-recommends caffe-cpu
+  - sudo apt-get install -y --no-install-recommends openmpi-bin
+  - sudo ln -s /usr/lib/x86_64-linux-gnu/libmpi_cxx.so.20 /usr/lib/x86_64-linux-gnu/libmpi_cxx.so.1
+  - sudo ln -s /usr/lib/x86_64-linux-gnu/libmpi.so.20 /usr/lib/x86_64-linux-gnu/libmpi.so.12
 
 install:
   - pip install -q -r $(python requirements/select_requirements.py)
-  - pip install wget
+  - pip install -q wget
 
 before_script:
-  - export LD_LIBRARY_PATH=$(python -c "import os; print(os.path.dirname(os.__file__) + '/site-packages/caffe/libs')"):${LD_LIBRARY_PATH}
+  - export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/x86_64-linux-gnu
 
 after_failure: true
 
@@ -77,9 +78,9 @@ matrix:
     - env: TEST_PARSER=paddle TEST_ONNX=false
 
   exclude:
-    - python: "3.5"
+    - python: "3.6"
       env: TEST_PARSER=paddle TEST_ONNX=true
-    - python: "3.5"
+    - python: "3.6"
       env: TEST_PARSER=paddle TEST_ONNX=false
     - os: linux
       env: TEST_PARSER=coreml TEST_ONNX=true
