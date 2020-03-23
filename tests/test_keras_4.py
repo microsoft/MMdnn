@@ -9,7 +9,7 @@ from conversion_imagenet import TestModels
 def get_test_table():
     return {
         'keras' : {
-            'densenet'     : [
+            'inception_v3' : [
                 TestModels.onnx_emit,
                 TestModels.caffe_emit,
                 TestModels.cntk_emit,
@@ -18,7 +18,7 @@ def get_test_table():
                 TestModels.mxnet_emit,
                 TestModels.pytorch_emit,
                 TestModels.tensorflow_emit
-                ]
+                ],
     }}
 
 

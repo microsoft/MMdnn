@@ -3,13 +3,12 @@ from __future__ import print_function
 
 import os
 import sys
-import six
 from conversion_imagenet import TestModels
 
 def get_test_table():
-    return { 'caffe' :
+    return { 'tensorflow' :
         {
-            'resnet152'     : [
+            'mobilenet_v1_1.0'    : [
                 TestModels.onnx_emit,
                 TestModels.caffe_emit,
                 TestModels.cntk_emit,
@@ -19,7 +18,7 @@ def get_test_table():
                 TestModels.pytorch_emit,
                 TestModels.tensorflow_emit
                 ],
-            'squeezenet'    : [
+            'mobilenet_v2_1.0_224'    : [
                 TestModels.onnx_emit,
                 TestModels.caffe_emit,
                 TestModels.cntk_emit,
@@ -28,15 +27,15 @@ def get_test_table():
                 TestModels.mxnet_emit,
                 TestModels.pytorch_emit,
                 TestModels.tensorflow_emit
-            ],
+                ]
         }
     }
 
-def test_caffe():
+def test_tensorflow():
     test_table = get_test_table()
     tester = TestModels(test_table)
-    tester._test_function('caffe', tester.caffe_parse)
+    tester._test_function('tensorflow', tester.tensorflow_parse)
 
 
-if __name__ == '__main__':
-    test_caffe()
+if __name__ == "__main__":
+    test_tensorflow()

@@ -9,6 +9,7 @@ import numpy as np
 from mmdnn.conversion.examples.imagenet_test import TestKit
 import utils
 from utils import *
+from datetime import datetime
 
 
 def is_paddle_supported():
@@ -936,11 +937,13 @@ class TestModels(CorrectnessTest):
 
 
     def _test_function(self, original_framework, parser):
+        print("[{}] Testing {} models starts.".format(datetime.now(), original_framework), file=sys.stderr)
+        
         ensure_dir(self.cachedir)
         ensure_dir(self.tmpdir)
 
         for network_name in self.test_table[original_framework].keys():
-            print("Test {} from {} start.".format(network_name, original_framework), file=sys.stderr)
+            print("[{}] Testing {} {} starts.".format(datetime.now(), original_framework, network_name), file=sys.stderr)
 
             # get test input path
             test_input = self._get_test_input(network_name)
@@ -959,7 +962,7 @@ class TestModels(CorrectnessTest):
                     if not is_coreml_supported():
                         continue
 
-                print('Testing {} from {} to {}.'.format(network_name, original_framework, target_framework), file=sys.stderr)
+                print('[{}] Converting {} from {} to {} starts.'.format(datetime.now(), network_name, original_framework, target_framework), file=sys.stderr)
                 converted_predict = emit(
                     original_framework,
                     network_name,
@@ -976,7 +979,7 @@ class TestModels(CorrectnessTest):
                     converted_predict,
                     self._need_assert(original_framework, target_framework, network_name, original_predict, converted_predict)
                 )
-                print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, target_framework), file=sys.stderr)
+                print('[{}] Converting {} from {} to {} passed.'.format(datetime.now(), network_name, original_framework, target_framework), file=sys.stderr)
 
             try:
                 os.remove(IR_file + ".json")
@@ -985,9 +988,9 @@ class TestModels(CorrectnessTest):
 
             os.remove(IR_file + ".pb")
             os.remove(IR_file + ".npy")
-            print("Testing {} model {} passed.".format(original_framework, network_name), file=sys.stderr)
+            print("[{}] Testing {} {} passed.".format(datetime.now(), original_framework, network_name), file=sys.stderr)
 
-        print("Testing {} model all passed.".format(original_framework), file=sys.stderr)
+        print("[{}] Testing {} models passed.".format(datetime.now(), original_framework), file=sys.stderr)
 
 
     def test_nothing(self):
