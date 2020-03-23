@@ -631,14 +631,22 @@ def KitModel(weight_file = None):
 
     def emit_LRN(self, IR_node, in_scope=False):
         self.used_layers.add(IR_node.type)
+        output_name = IR_node.variable_name
+        input_name = self.parent_variable_name(IR_node)
+        IR_name = IR_node.name
+        size = IR_node.get_attr('size')
+        alpha = IR_node.get_attr('alpha')
+        beta = IR_node.get_attr('beta')
+        bias = IR_node.get_attr('bias')
+
         code = "{:<15} = LRN(size = {}, alpha = {}, beta = {}, k = {}, name = '{}')({})".format(
-            IR_node.variable_name,
-            IR_node.get_attr('size'),
-            IR_node.get_attr('alpha'),
-            IR_node.get_attr('beta'),
-            IR_node.get_attr('bias'),
-            IR_node.name,
-            self.parent_variable_name(IR_node))
+            output_name,
+            size,
+            alpha,
+            beta,
+            bias,
+            IR_name,
+            input_name)
         return code
 
     def emit_Split(self, IR_node, in_scope=False):

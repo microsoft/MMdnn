@@ -752,7 +752,7 @@ op {
   attr {
     name: "alpha"
     type: "float"
-    description: "A scale factor, usually positive."
+    description: "A scale factor, without dividing size, usually positive."
   }
 
   attr {

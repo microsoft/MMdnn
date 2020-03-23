@@ -555,14 +555,23 @@ def KitModel(weight_file = None):
         return code
 
     def emit_LRN(self, IR_node):
+        input_name = IR_node.variable_name
+        output_name = self.parent_variable_name(IR_node)
+        IR_name = IR_node.name
+        size = IR_node.get_attr('size')
+        depth_radius = int(IR_node.get_attr('size') / 2)
+        bias = IR_node.get_attr('bias', 1)
+        alpha = IR_node.get_attr('alpha') / size
+        beta = IR_node.get_attr('beta')
+
         code = "{:<15} = tf.nn.lrn({}, depth_radius={}, bias={}, alpha={}, beta={}, name='{}')".format(
-            IR_node.variable_name,
-            self.parent_variable_name(IR_node),
-            int(IR_node.get_attr('size')/2),
-            IR_node.get_attr('bias', 1),
-            IR_node.get_attr('alpha')/(int(IR_node.get_attr('size')/2)),
-            IR_node.get_attr('beta'),
-            IR_node.name)
+            input_name,
+            output_name,
+            depth_radius,
+            bias,
+            alpha,
+            beta,
+            IR_name)
         return code
 
     def emit_SeparableConv(self, IR_node):

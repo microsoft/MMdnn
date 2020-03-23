@@ -905,13 +905,15 @@ class TensorflowParser2(Parser):
 
     def rename_LRN(self, source_node):
         IR_node = self._convert_identity_operation(source_node)
+        size = source_node.get_attr('depth_radius') * 2 + 1
+        alpha = source_node.get_attr('alpha') * size
+        beta = source_node.get_attr('beta')
+        bias = source_node.get_attr('bias')
 
-        # alpha
-        IR_node.attr["alpha"].f = float(source_node.get_attr("alpha", "0.0001") * (source_node.get_attr("depth_radius") * 2 + 1))
-        # beta
-        IR_node.attr["beta"].f = float(source_node.get_attr("beta", "0.75"))
-        IR_node.attr["size"].i = source_node.get_attr("depth_radius") * 2 + 1
-        IR_node.attr["bias"].f = float(source_node.get_attr("bias"))
+        IR_node.attr["alpha"].f = alpha
+        IR_node.attr["beta"].f = beta
+        IR_node.attr["size"].i = size
+        IR_node.attr["bias"].f = bias
 
 
     def rename_Concat(self, source_node):
