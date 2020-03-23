@@ -1048,11 +1048,16 @@ class TensorflowParser(Parser):
 
     def rename_LRN(self, source_node):
         IR_node = self._convert_identity_operation(source_node)
+        size = source_node.get_attr('depth_radius') * 2 + 1
+        alpha = source_node.get_attr('alpha') * size
+        beta = source_node.get_attr('beta')
+        bias = source_node.get_attr('bias')
+
         kwargs = {
-            "alpha" : source_node.get_attr('alpha') * (source_node.get_attr('depth_radius') * 2 + 1),
-            "beta" : source_node.get_attr('beta'),
-            "bias" : source_node.get_attr('bias'),
-            'size' : source_node.get_attr('depth_radius') + 1
+            "alpha" : alpha,
+            "beta" : beta,
+            "bias" : bias,
+            'size' : size,
         }
         assign_IRnode_values(IR_node, kwargs)
 

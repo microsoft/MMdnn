@@ -594,7 +594,7 @@ class PaddleParser(Parser):
         # beta
         IR_node.attr["beta"].f = beta
         # nsize
-        IR_node.attr["size"].i = int((size+1)/2)
+        IR_node.attr["size"].i = int(size)
 
 
         if lrn_spec.HasField('active_type') and  lrn_spec.active_type != '':

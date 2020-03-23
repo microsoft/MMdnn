@@ -746,13 +746,13 @@ op {
   attr {
     name: "size"
     type: "int"
-    description: "0-D.  Half-width of the 1-D normalization window."
+    description: "0-D.  width of the 1-D normalization window, always odd."
   }
 
   attr {
     name: "alpha"
     type: "float"
-    description: "A scale factor, usually positive."
+    description: "A scale factor, without dividing size, usually positive."
   }
 
   attr {

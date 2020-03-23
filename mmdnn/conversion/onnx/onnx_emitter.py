@@ -669,19 +669,23 @@ def KitModel(weight_file = None):
         self.nodes.append(IR_node.variable_name)
 
     def emit_LRN(self, IR_node):
+        output_name = IR_node.variable_name
+        input_name = self.parent_variable_name(IR_node)
+        IR_name = IR_node.name
         alpha = IR_node.get_attr('alpha')
         beta = IR_node.get_attr('beta')
         bias = IR_node.get_attr('bias', 1.0)
-        size = IR_node.get_attr('size') * 2 - 1
+        size = IR_node.get_attr('size')
+
         self.add_body(1, "{:15} = helper.make_node('LRN', inputs=['{}'], outputs=['{}'], alpha={}, beta={}, bias={}, size={}, name='{}')".format(
-                          IR_node.variable_name,
-                          self.parent_variable_name(IR_node),
-                          IR_node.variable_name,
+                          output_name,
+                          input_name,
+                          output_name,
                           alpha,
                           beta,
                           bias,
                           size,
-                          IR_node.variable_name))
+                          IR_name))
         self.nodes.append(IR_node.variable_name)
 
     def emit_Relu6(self, IR_node):
