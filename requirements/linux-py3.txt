@@ -12,4 +12,4 @@ cntk==2.7
 http://download.pytorch.org/whl/cpu/torch-0.4.0-cp36-cp36m-linux_x86_64.whl
 torchvision==0.2.1
 onnx==1.4.1
-onnx-tf==1.1.2
+onnx-tf==1.2.1
