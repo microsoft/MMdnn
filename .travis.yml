@@ -54,14 +54,14 @@ addons:
     update: false
 
 before_install:
+  - python -m pip install --upgrade pip
   - sudo apt-get install -y --no-install-recommends caffe-cpu
   - sudo apt-get install -y --no-install-recommends openmpi-bin
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libmpi_cxx.so.20 /usr/lib/x86_64-linux-gnu/libmpi_cxx.so.1
   - sudo ln -s /usr/lib/x86_64-linux-gnu/libmpi.so.20 /usr/lib/x86_64-linux-gnu/libmpi.so.12
 
 install:
-  - pip install -q -r $(python requirements/select_requirements.py)
-  - pip install -q wget
+  - python -m pip install -q -r $(python requirements/select_requirements.py)
 
 before_script:
   - export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/x86_64-linux-gnu
