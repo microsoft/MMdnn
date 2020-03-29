@@ -505,15 +505,16 @@ def KitModel(weight_file = None):
         IR_name = IR_node.name
         size = IR_node.get_attr('size')
         depth_radius = int(size / 2)
-        alpha = IR_node.get_attr('alpha') / size
+        alpha = IR_node.get_attr('alpha')
+        #alpha = alpha / size
         beta = IR_node.get_attr('beta')
         bias = IR_node.get_attr('bias')
 
-        code = "{:<15} = lrn({}, depth_radius={}, bias={}, alpha={}, beta={}, name='{}')".format(
+        code = "{:<15} = lrn({}, k={}, n={}, alpha={}, beta={}, name='{}')".format(
             output_name,
             input_name,
-            depth_radius,
             bias,
+            depth_radius + 1,
             alpha,
             beta,
             IR_name)
@@ -793,7 +794,7 @@ def Upsampling2D(x, stride, name):
 def lrn(input, **kwargs):
     dim = len(input.output.shape)
     input = cntk.transpose(input, [dim - 1] + list(range(0, dim - 1)))
-    layer = cntk.ops.local_response_normalization(input, **kwargs)
+    layer = BlockApiSetup.lrn(**kwargs)(input)
     layer = cntk.transpose(layer, list(range(1, dim)) + [0])
     return layer
 """)
