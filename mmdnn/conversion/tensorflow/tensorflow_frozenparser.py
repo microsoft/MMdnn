@@ -679,6 +679,8 @@ class TensorflowParser2(Parser):
         else:
             IR_node = self._convert_identity_operation(source_node, new_op = "Add")
 
+    def rename_AddV2(self, source_node):
+        self.rename_Add(source_node)
 
     def rename_Fill(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op="Fill")
@@ -1116,6 +1118,9 @@ class TensorflowParser2(Parser):
         variance_value = variancenode.get_attr('value')
         variance = tensor_util.MakeNdarray(variance_value)
         self.set_weight(source_node.name, 'var', variance)
+
+    def rename_FusedBatchNormV3(self, source_node):
+        self.rename_FusedBatchNorm(source_node)
 
 
     def rename_SpaceToBatchND(self, source_node):
