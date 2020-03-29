@@ -505,15 +505,16 @@ def KitModel(weight_file = None):
         IR_name = IR_node.name
         size = IR_node.get_attr('size')
         depth_radius = int(size / 2)
-        alpha = IR_node.get_attr('alpha') / size
+        alpha = IR_node.get_attr('alpha')
+        #alpha = alpha / size
         beta = IR_node.get_attr('beta')
         bias = IR_node.get_attr('bias')
 
-        code = "{:<15} = ops.local_response_normalization({}, depth_radius={}, bias={}, alpha={}, beta={}, name='{}')".format(
+        code = "{:<15} = lrn({}, k={}, n={}, alpha={}, beta={}, name='{}')".format(
             output_name,
             input_name,
-            depth_radius,
             bias,
+            depth_radius + 1,
             alpha,
             beta,
             IR_name)

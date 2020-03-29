@@ -668,42 +668,38 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def onnx_emit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
-        try:
-            from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
+        from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
 
-            # IR to code
-            converted_file = TestModels.tmpdir + original_framework + '_onnx_' + architecture_name + "_converted"
-            converted_file = converted_file.replace('.', '_')
-            emitter = OnnxEmitter(architecture_path, weight_path)
-            emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
-            del emitter
-            del OnnxEmitter
+        # IR to code
+        converted_file = TestModels.tmpdir + original_framework + '_onnx_' + architecture_name + "_converted"
+        converted_file = converted_file.replace('.', '_')
+        emitter = OnnxEmitter(architecture_path, weight_path)
+        emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
+        del emitter
+        del OnnxEmitter
 
-            # import converted model
-            from onnx_tf.backend import prepare
-            model_converted = imp.load_source('OnnxModel', converted_file + '.py').KitModel(converted_file + '.npy')
+        # import converted model
+        from onnx_tf.backend import prepare
+        model_converted = imp.load_source('OnnxModel', converted_file + '.py').KitModel(converted_file + '.npy')
 
-            tf_rep = prepare(model_converted)
+        tf_rep = prepare(model_converted)
 
-            original_framework = checkfrozen(original_framework)
-            func = TestKit.preprocess_func[original_framework][architecture_name]
-            img = func(test_input_path)
-            input_data = np.expand_dims(img, 0)
+        original_framework = checkfrozen(original_framework)
+        func = TestKit.preprocess_func[original_framework][architecture_name]
+        img = func(test_input_path)
+        input_data = np.expand_dims(img, 0)
 
-            predict = tf_rep.run(input_data)[0]
+        predict = tf_rep.run(input_data)[0]
 
-            del prepare
-            del model_converted
-            del tf_rep
-            del sys.modules['OnnxModel']
+        del prepare
+        del model_converted
+        del tf_rep
+        del sys.modules['OnnxModel']
 
-            os.remove(converted_file + '.py')
-            os.remove(converted_file + '.npy')
+        os.remove(converted_file + '.py')
+        os.remove(converted_file + '.npy')
 
-            return predict
-
-        except ImportError:
-            print('Please install Onnx! Or Onnx is not supported in your platform.', file=sys.stderr)
+        return predict
 
 
     # In case of odd number add the extra padding at the end for SAME_UPPER(eg. pads:[0, 2, 2, 0, 0, 3, 3, 0]) and at the beginning for SAME_LOWER(eg. pads:[0, 3, 3, 0, 0, 2, 2, 0])

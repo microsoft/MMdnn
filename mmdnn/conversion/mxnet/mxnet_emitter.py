@@ -53,9 +53,9 @@ class MXNetEmitter(Emitter):
             network_path = model[0]
             weight_path = model[1]
             self.output_weights_file = model[2]
-            self.weights = np.load(weight_path).item()
-            self.weight_loaded = True
             self.output_weights = dict()
+            self._load_weights(weight_path)
+            self.weights = self.weights_dict
         else:
             raise ValueError("the # of input arguments [{}] is not supported" % len(model))
 
