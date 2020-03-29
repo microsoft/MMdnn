@@ -509,7 +509,7 @@ def KitModel(weight_file = None):
         beta = IR_node.get_attr('beta')
         bias = IR_node.get_attr('bias')
 
-        code = "{:<15} = ops.local_response_normalization({}, depth_radius={}, bias={}, alpha={}, beta={}, name='{}')".format(
+        code = "{:<15} = lrn({}, depth_radius={}, bias={}, alpha={}, beta={}, name='{}')".format(
             output_name,
             input_name,
             depth_radius,
@@ -793,7 +793,7 @@ def Upsampling2D(x, stride, name):
 def lrn(input, **kwargs):
     dim = len(input.output.shape)
     input = cntk.transpose(input, [dim - 1] + list(range(0, dim - 1)))
-    layer = BlockApiSetup.lrn(**kwargs)(input)
+    layer = cntk.ops.local_response_normalization(input, **kwargs)
     layer = cntk.transpose(layer, list(range(1, dim)) + [0])
     return layer
 """)
