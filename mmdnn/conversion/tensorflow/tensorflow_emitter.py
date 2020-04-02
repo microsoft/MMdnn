@@ -245,12 +245,11 @@ def KitModel(weight_file = None):
     def emit_UNKNOWN(self, IR_node):
         print(IR_node.name)
 
-
     def emit_Add(self, IR_node):
         code = "{:<15} = {}".format(
             IR_node.variable_name,
             ' + '.join('%s' % self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))))
-        
+
         return code
 
     def emit_DataInput(self, IR_node):
@@ -707,8 +706,8 @@ def KitModel(weight_file = None):
             IR_node.name)
         return code
 
-    def emit_Maxmum(self, IR_node):
-        code = "{:<15} = tf.maxmum({}, {}, name='{}')".format(
+    def emit_Maximum(self, IR_node):
+        code = "{:<15} = tf.maximum({}, {}, name='{}')".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             self.parent_variable_name(IR_node, [1]),
