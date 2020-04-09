@@ -904,14 +904,14 @@ class CoreMLEmitter(Emitter):
         output_name = IR_node.real_name
         alpha = IR_node.get_attr('alpha')
         beta = IR_node.get_attr('beta')
-        k = IR_node.get_attr('k')
-        depth_radius = int(IR_node.get_attr('size'))
-        #  depth_radius: Half-width of the 1-D normalization window."
+        bias = IR_node.get_attr('bias')
+        size = IR_node.get_attr('size')
+
         self.builder.add_lrn(output_name, input_name, output_name,
                           alpha=alpha,
                           beta=beta,
-                          local_size=2*depth_radius-1,
-                          k=k)
+                          local_size=size,
+                          k=bias)
 
 
     def emit_SeparableConv(self, IR_node):

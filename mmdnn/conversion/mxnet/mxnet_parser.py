@@ -793,15 +793,15 @@ class MXNetParser(Parser):
 
     def rename_LRN(self, source_node):
         IR_node = self._convert_identity_operation(source_node)
+        alpha = source_node.get_attr("alpha", "0.0001")
+        beta = source_node.get_attr("beta", "0.75")
+        bias = source_node.get_attr("knorm", "2")
+        size = source_node.get_attr("nsize")
 
-        # alpha
-        IR_node.attr["alpha"].f = float(source_node.get_attr("alpha", "0.0001"))
-        # beta
-        IR_node.attr["beta"].f = float(source_node.get_attr("beta", "0.75"))
-        # knorm
-        IR_node.attr["k"].f = float(source_node.get_attr("knorm", "2"))
-        # nsize
-        IR_node.attr["size"].i = float(source_node.get_attr["nsize"])
+        IR_node.attr["alpha"].f = alpha
+        IR_node.attr["beta"].f = beta
+        IR_node.attr["bias"].f = bias
+        IR_node.attr["size"].i = size
 
 
     def rename_ROIPooling(self, source_node):

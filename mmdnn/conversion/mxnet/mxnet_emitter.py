@@ -53,9 +53,9 @@ class MXNetEmitter(Emitter):
             network_path = model[0]
             weight_path = model[1]
             self.output_weights_file = model[2]
-            self.weights = np.load(weight_path).item()
-            self.weight_loaded = True
             self.output_weights = dict()
+            self._load_weights(weight_path)
+            self.weights = self.weights_dict
         else:
             raise ValueError("the # of input arguments [{}] is not supported" % len(model))
 
@@ -962,14 +962,23 @@ def predict(model, labels, url):
 
 
     def emit_LRN(self, IR_node):
+        output_name = IR_node.variable_name
+        input_name = self.parent_variable_name(IR_node)
+        IR_name = IR_node.name
+        alpha = IR_node.get_attr('alpha')
+        beta = IR_node.get_attr('beta')
+        bias = IR_node.get_attr('bias')
+        size = IR_node.get_attr('size')
+
+
         code = "{:<15} = mx.sym.LRN(data = {}, alpha = {}, beta = {}, knorm = {}, nsize = {}, name = '{}')".format(
-                IR_node.variable_name,
-                self.parent_variable_name(IR_node),
-                IR_node.layer.attr['alpha'].f,
-                IR_node.layer.attr['beta'].f,
-                IR_node.layer.attr['k'].f,
-                IR_node.layer.attr['size'].i * 2 - 1,
-                IR_node.name)
+                output_name,
+                input_name,
+                alpha,
+                beta,
+                bias,
+                size,
+                IR_name)
 
         return code
 

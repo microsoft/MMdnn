@@ -465,13 +465,20 @@ if __name__=='__main__':
 
 
     def emit_LRN(self, IR_node):
+        output_name = IR_node.variable_name
+        input_name = self.parent_variable_name(IR_node)
+        size = IR_node.get_attr('size')
+        alpha = IR_node.get_attr('alpha')
+        beta = IR_node.get_attr('beta')
+        bias = IR_node.get_attr('bias')
+
         self.add_body(1, "n.{:<15} = L.LRN(n.{}, local_size={}, alpha={}, beta={}, k={})".format(
-            IR_node.variable_name,
-            self.parent_variable_name(IR_node),
-            IR_node.get_attr('size') * 2 - 1,
-            IR_node.get_attr('alpha'),
-            IR_node.get_attr('beta'),
-            IR_node.get_attr('k')
+            output_name,
+            input_name,
+            size,
+            alpha,
+            beta,
+            bias
         ))
 
 

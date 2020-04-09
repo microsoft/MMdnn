@@ -631,14 +631,22 @@ def KitModel(weight_file = None):
 
     def emit_LRN(self, IR_node, in_scope=False):
         self.used_layers.add(IR_node.type)
+        output_name = IR_node.variable_name
+        input_name = self.parent_variable_name(IR_node)
+        IR_name = IR_node.name
+        size = IR_node.get_attr('size')
+        alpha = IR_node.get_attr('alpha')
+        beta = IR_node.get_attr('beta')
+        bias = IR_node.get_attr('bias')
+
         code = "{:<15} = LRN(size = {}, alpha = {}, beta = {}, k = {}, name = '{}')({})".format(
-            IR_node.variable_name,
-            IR_node.get_attr('size'),
-            IR_node.get_attr('alpha'),
-            IR_node.get_attr('beta'),
-            IR_node.get_attr('k'),
-            IR_node.name,
-            self.parent_variable_name(IR_node))
+            output_name,
+            size,
+            alpha,
+            beta,
+            bias,
+            IR_name,
+            input_name)
         return code
 
     def emit_Split(self, IR_node, in_scope=False):
@@ -1065,23 +1073,23 @@ class LRN(Layer):
         super(LRN, self).build(input_shape)
 
     def call(self, x, mask=None):
-        half_n = self.n - 1
+        half_n = int(self.n/2)
         squared = K.square(x)
         scale = self.k
-        norm_alpha = self.alpha / (2 * half_n + 1)
+        norm_alpha = self.alpha / self.n
         if K.image_dim_ordering() == "th":
             b, f, r, c = self.shape
             squared = K.expand_dims(squared, 0)
             squared = K.spatial_3d_padding(squared, padding=((half_n, half_n), (0, 0), (0,0)))
             squared = K.squeeze(squared, 0)
-            for i in range(half_n*2+1):
+            for i in range(self.n):
                 scale += norm_alpha * squared[:, i:i+f, :, :]
         else:
             b, r, c, f = self.shape
             squared = K.expand_dims(squared, -1)
             squared = K.spatial_3d_padding(squared, padding=((0, 0), (0,0), (half_n, half_n)))
             squared = K.squeeze(squared, -1)
-            for i in range(half_n*2+1):
+            for i in range(self.n):
                 scale += norm_alpha * squared[:, :, :, i:i+f]
 
         scale = K.pow(scale, self.beta)

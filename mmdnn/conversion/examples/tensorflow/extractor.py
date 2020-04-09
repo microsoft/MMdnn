@@ -26,6 +26,8 @@ from mmdnn.conversion.common.utils import download_file
 
 class tensorflow_extractor(base_extractor):
 
+    MMDNN_BASE_URL = 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/'
+
     architecture_map = {
         'vgg16' : {
             'url'         : 'http://download.tensorflow.org/models/vgg_16_2016_08_28.tar.gz',
@@ -167,7 +169,7 @@ class tensorflow_extractor(base_extractor):
             'num_classes' : 1001,
         },
         'facenet' : {
-            'url'         : 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/facenet/20180408-102900.zip',
+            'url'         : MMDNN_BASE_URL + 'tensorflow/facenet/20180408-102900.zip',
             'filename'    : '20180408-102900/model-20180408-102900.ckpt-90',
             'builder'     : lambda : inception_resnet_v1.inception_resnet_v1,
             'arg_scope'   : inception_resnet_v1.inception_resnet_v1_arg_scope,
@@ -176,7 +178,7 @@ class tensorflow_extractor(base_extractor):
             'num_classes' : 0,
         },
         'facenet_frozen' : {
-            'url'         : 'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/facenet/20180408-102900.zip',
+            'url'         : MMDNN_BASE_URL + 'tensorflow/facenet/20180408-102900.zip',
             'filename'    : '20180408-102900/20180408-102900.pb',
             'tensor_out'  : ['InceptionResnetV1/Logits/AvgPool_1a_8x8/AvgPool:0'],
             'tensor_in'   : ['input:0','phase_train:0'],
@@ -185,7 +187,7 @@ class tensorflow_extractor(base_extractor):
             'num_classes' : 0,
         },
         'rnn_lstm_gru_stacked': {
-            'url'         :'http://mmdnn.eastasia.cloudapp.azure.com:89/models/tensorflow/tf_rnn/tf_rnn.zip',  # Note this is just a model used for test, not a standard rnn model.
+            'url'         : MMDNN_BASE_URL + 'tensorflow/tf_rnn/tf_rnn.zip',  # Note this is just a model used for test, not a standard rnn model.
             'filename'    :'tf_rnn/tf_lstm_gru_stacked.ckpt',
             'builder'     :lambda: test_rnn.create_symbol,
             'arg_scope'   :test_rnn.dummy_arg_scope,

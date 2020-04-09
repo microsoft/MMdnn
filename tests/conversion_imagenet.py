@@ -9,6 +9,7 @@ import numpy as np
 from mmdnn.conversion.examples.imagenet_test import TestKit
 import utils
 from utils import *
+from datetime import datetime
 
 
 def is_paddle_supported():
@@ -667,42 +668,38 @@ class TestModels(CorrectnessTest):
 
     @staticmethod
     def onnx_emit(original_framework, architecture_name, architecture_path, weight_path, test_input_path):
-        try:
-            from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
+        from mmdnn.conversion.onnx.onnx_emitter import OnnxEmitter
 
-            # IR to code
-            converted_file = TestModels.tmpdir + original_framework + '_onnx_' + architecture_name + "_converted"
-            converted_file = converted_file.replace('.', '_')
-            emitter = OnnxEmitter(architecture_path, weight_path)
-            emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
-            del emitter
-            del OnnxEmitter
+        # IR to code
+        converted_file = TestModels.tmpdir + original_framework + '_onnx_' + architecture_name + "_converted"
+        converted_file = converted_file.replace('.', '_')
+        emitter = OnnxEmitter(architecture_path, weight_path)
+        emitter.run(converted_file + '.py', converted_file + '.npy', 'test')
+        del emitter
+        del OnnxEmitter
 
-            # import converted model
-            from onnx_tf.backend import prepare
-            model_converted = imp.load_source('OnnxModel', converted_file + '.py').KitModel(converted_file + '.npy')
+        # import converted model
+        from onnx_tf.backend import prepare
+        model_converted = imp.load_source('OnnxModel', converted_file + '.py').KitModel(converted_file + '.npy')
 
-            tf_rep = prepare(model_converted)
+        tf_rep = prepare(model_converted)
 
-            original_framework = checkfrozen(original_framework)
-            func = TestKit.preprocess_func[original_framework][architecture_name]
-            img = func(test_input_path)
-            input_data = np.expand_dims(img, 0)
+        original_framework = checkfrozen(original_framework)
+        func = TestKit.preprocess_func[original_framework][architecture_name]
+        img = func(test_input_path)
+        input_data = np.expand_dims(img, 0)
 
-            predict = tf_rep.run(input_data)[0]
+        predict = tf_rep.run(input_data)[0]
 
-            del prepare
-            del model_converted
-            del tf_rep
-            del sys.modules['OnnxModel']
+        del prepare
+        del model_converted
+        del tf_rep
+        del sys.modules['OnnxModel']
 
-            os.remove(converted_file + '.py')
-            os.remove(converted_file + '.npy')
+        os.remove(converted_file + '.py')
+        os.remove(converted_file + '.npy')
 
-            return predict
-
-        except ImportError:
-            print('Please install Onnx! Or Onnx is not supported in your platform.', file=sys.stderr)
+        return predict
 
 
     # In case of odd number add the extra padding at the end for SAME_UPPER(eg. pads:[0, 2, 2, 0, 0, 3, 3, 0]) and at the beginning for SAME_LOWER(eg. pads:[0, 3, 3, 0, 0, 2, 2, 0])
@@ -744,7 +741,7 @@ class TestModels(CorrectnessTest):
                 # 'xception'     : [onnx_emit],
                 'mobilenet'    : [onnx_emit],
                 # 'nasnet'       : [onnx_emit],
-                'yolo2'        : [onnx_emit],
+                #Temporarily disable 'yolo2'        : [onnx_emit],
             },
 
             'mxnet' : {
@@ -760,18 +757,18 @@ class TestModels(CorrectnessTest):
             'caffe' : {
                 'alexnet'       : [onnx_emit],
                 'inception_v1'  : [onnx_emit],
-                'inception_v4'  : [onnx_emit],
+                #Temporarily disable 'inception_v4'  : [onnx_emit],
                 'resnet152'     : [onnx_emit],
                 'squeezenet'    : [onnx_emit],
                 'vgg19'         : [onnx_emit],
                 # 'voc-fcn8s'     : [onnx_emit], # TODO: ConvTranspose, Crop
                 # 'voc-fcn16s'    : [onnx_emit], # TODO: ConvTranspose, Crop
                 # 'voc-fcn32s'    : [onnx_emit], # TODO: ConvTranspose, Crop
-                'xception'      : [onnx_emit],
+                #Temporarily disable 'xception'      : [onnx_emit],
             },
 
             'tensorflow' : {
-                'facenet'               : [onnx_emit],
+                #Temporarily disable 'facenet'               : [onnx_emit],
                 'vgg19'                 : [onnx_emit],
                 'inception_v1'          : [onnx_emit],
                 'inception_v3'          : [onnx_emit],
@@ -789,7 +786,7 @@ class TestModels(CorrectnessTest):
                 'inception_v1'      : [onnx_emit],
                 'inception_v3'      : [onnx_emit],
                 'mobilenet_v1_1.0'  : [onnx_emit],
-                'facenet'           : [onnx_emit],
+                #Temporarily disable 'facenet'           : [onnx_emit],
             },
 
             'coreml' : {
@@ -832,7 +829,7 @@ class TestModels(CorrectnessTest):
                 'xception'     : [tensorflow_emit, keras_emit, coreml_emit],
                 'mobilenet'    : [coreml_emit, keras_emit, tensorflow_emit], # TODO: mxnet_emit
                 # 'nasnet'       : [tensorflow_emit, keras_emit, coreml_emit],
-                'yolo2'        : [keras_emit],
+                #Temporarily disable 'yolo2'        : [keras_emit],
                 # 'facenet'      : [tensorflow_emit, coreml_emit,mxnet_emit,keras_emit]  # TODO
             },
 
@@ -849,14 +846,14 @@ class TestModels(CorrectnessTest):
             'caffe' : {
                 'alexnet'       : [caffe_emit, cntk_emit, coreml_emit, mxnet_emit, pytorch_emit, tensorflow_emit], # TODO: keras_emit('Tensor' object has no attribute '_keras_history')
                 'inception_v1'  : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
-                'inception_v4'  : [cntk_emit, coreml_emit, keras_emit, pytorch_emit, tensorflow_emit], # TODO mxnet_emit(Small error), caffe_emit(Crash for shape)
+                #Temporarily disable 'inception_v4'  : [cntk_emit, coreml_emit, keras_emit, pytorch_emit, tensorflow_emit], # TODO mxnet_emit(Small error), caffe_emit(Crash for shape)
                 'resnet152'     : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
                 'squeezenet'    : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
                 'vgg19'         : [caffe_emit, cntk_emit, coreml_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
                 'voc-fcn8s'     : [cntk_emit, coreml_emit, tensorflow_emit],
                 'voc-fcn16s'    : [cntk_emit, coreml_emit, tensorflow_emit],
                 'voc-fcn32s'    : [cntk_emit, coreml_emit, tensorflow_emit],
-                'xception'      : [coreml_emit, cntk_emit, mxnet_emit, pytorch_emit, tensorflow_emit], #  TODO: Caffe(Crash) keras_emit(too slow)
+                #Temporarily disable 'xception'      : [coreml_emit, cntk_emit, mxnet_emit, pytorch_emit, tensorflow_emit], #  TODO: Caffe(Crash) keras_emit(too slow)
             },
 
             'tensorflow' : {
@@ -869,15 +866,15 @@ class TestModels(CorrectnessTest):
                 'mobilenet_v2_1.0_224'  : [caffe_emit, coreml_emit, cntk_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit],
                 'nasnet-a_large'        : [mxnet_emit, pytorch_emit, tensorflow_emit], # TODO: keras_emit(Slice Layer: https://blog.csdn.net/lujiandong1/article/details/54936185)
                 'inception_resnet_v2'   : [caffe_emit, keras_emit, mxnet_emit, pytorch_emit, tensorflow_emit], #  CoremlEmit worked once, then always
-                'facenet'               : [mxnet_emit, tensorflow_emit, keras_emit, pytorch_emit, caffe_emit], # TODO: coreml_emit
-                'rnn_lstm_gru_stacked'  : [tensorflow_emit, keras_emit, pytorch_emit, mxnet_emit] #TODO cntk_emit
+                #Temporarily disable 'facenet'               : [mxnet_emit, tensorflow_emit, keras_emit, pytorch_emit, caffe_emit], # TODO: coreml_emit
+                #Temporarily disable 'rnn_lstm_gru_stacked'  : [tensorflow_emit, keras_emit, pytorch_emit, mxnet_emit] #TODO cntk_emit
             },
 
             'tensorflow_frozen' : {
                 'inception_v1'      : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit], # TODO: cntk_emit
                 'inception_v3'      : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit], # TODO: cntk_emit
                 'mobilenet_v1_1.0'  : [tensorflow_emit, keras_emit, mxnet_emit, coreml_emit],
-                'facenet'           : [mxnet_emit, tensorflow_emit, keras_emit, caffe_emit] # TODO: coreml_emit
+                #Temporarily disable 'facenet'           : [mxnet_emit, tensorflow_emit, keras_emit, caffe_emit] # TODO: coreml_emit
             },
 
             'coreml' : {
@@ -936,11 +933,13 @@ class TestModels(CorrectnessTest):
 
 
     def _test_function(self, original_framework, parser):
+        print("[{}] Testing {} models starts.".format(datetime.now(), original_framework), file=sys.stderr)
+        
         ensure_dir(self.cachedir)
         ensure_dir(self.tmpdir)
 
         for network_name in self.test_table[original_framework].keys():
-            print("Test {} from {} start.".format(network_name, original_framework), file=sys.stderr)
+            print("[{}] Testing {} {} starts.".format(datetime.now(), original_framework, network_name), file=sys.stderr)
 
             # get test input path
             test_input = self._get_test_input(network_name)
@@ -959,7 +958,7 @@ class TestModels(CorrectnessTest):
                     if not is_coreml_supported():
                         continue
 
-                print('Testing {} from {} to {}.'.format(network_name, original_framework, target_framework), file=sys.stderr)
+                print('[{}] Converting {} from {} to {} starts.'.format(datetime.now(), network_name, original_framework, target_framework), file=sys.stderr)
                 converted_predict = emit(
                     original_framework,
                     network_name,
@@ -976,7 +975,7 @@ class TestModels(CorrectnessTest):
                     converted_predict,
                     self._need_assert(original_framework, target_framework, network_name, original_predict, converted_predict)
                 )
-                print('Conversion {} from {} to {} passed.'.format(network_name, original_framework, target_framework), file=sys.stderr)
+                print('[{}] Converting {} from {} to {} passed.'.format(datetime.now(), network_name, original_framework, target_framework), file=sys.stderr)
 
             try:
                 os.remove(IR_file + ".json")
@@ -985,9 +984,9 @@ class TestModels(CorrectnessTest):
 
             os.remove(IR_file + ".pb")
             os.remove(IR_file + ".npy")
-            print("Testing {} model {} passed.".format(original_framework, network_name), file=sys.stderr)
+            print("[{}] Testing {} {} passed.".format(datetime.now(), original_framework, network_name), file=sys.stderr)
 
-        print("Testing {} model all passed.".format(original_framework), file=sys.stderr)
+        print("[{}] Testing {} models passed.".format(datetime.now(), original_framework), file=sys.stderr)
 
 
     def test_nothing(self):

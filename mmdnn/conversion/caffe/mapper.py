@@ -240,7 +240,7 @@ class NodeMapper(object):
     def map_lrn(cls, node):
         params = node.parameters
         assert params.local_size % 2 == 1
-        kwargs = {'size': int((params.local_size + 1) / 2), 'alpha': params.alpha, 'beta': params.beta, 'k' : params.k}
+        kwargs = {'size': int(params.local_size), 'alpha': params.alpha, 'beta': params.beta, 'bias' : params.k}
         cls._convert_output_shape(kwargs, node)
         return Node.create('LRN', **kwargs)
 

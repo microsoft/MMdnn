@@ -1,43 +1,49 @@
 sudo: required
-dist: xenial
+dist: bionic
 
 os:
   - linux
 
 language: python
 python:
-  - "2.7"
-  - "3.5"
+  - "3.6"
+virtualenv:
+  system_site_packages: true
 
 env:
-  - TEST_PARSER=tensorflow TEST_ONNX=true
-  - TEST_PARSER=tensorflow TEST_ONNX=false
-  - TEST_PARSER=tensorflow_2 TEST_ONNX=false
-  - TEST_PARSER=keras TEST_ONNX=true
-  - TEST_PARSER=keras_2 TEST_ONNX=true
-  - TEST_PARSER=keras TEST_ONNX=false
-  - TEST_PARSER=keras_2 TEST_ONNX=false
-  - TEST_PARSER=keras_3 TEST_ONNX=false
-  - TEST_PARSER=cntk TEST_ONNX=true
-  - TEST_PARSER=cntk TEST_ONNX=false
-  - TEST_PARSER=caffe TEST_ONNX=true
-  - TEST_PARSER=caffe TEST_ONNX=false
-  - TEST_PARSER=caffe_2 TEST_ONNX=false
-  - TEST_PARSER=mxnet TEST_ONNX=true
-  - TEST_PARSER=mxnet_2 TEST_ONNX=true
-  - TEST_PARSER=mxnet TEST_ONNX=false
-  - TEST_PARSER=mxnet_2 TEST_ONNX=false
-  - TEST_PARSER=pytorch TEST_ONNX=true
-  - TEST_PARSER=pytorch TEST_ONNX=false
-  - TEST_PARSER=pytorch_2 TEST_ONNX=false
-  - TEST_PARSER=paddle TEST_ONNX=true
-  - TEST_PARSER=paddle TEST_ONNX=false
-  - TEST_PARSER=coreml TEST_ONNX=true
-  - TEST_PARSER=coreml TEST_ONNX=false
-  - TEST_PARSER=darknet TEST_ONNX=true
-  - TEST_PARSER=darknet TEST_ONNX=false
-  - TEST_PARSER=tensorflow_frozen TEST_ONNX=true
-  - TEST_PARSER=tensorflow_frozen TEST_ONNX=false
+  - TEST_PARSER=tensorflow
+  - TEST_PARSER=tensorflow_2
+  - TEST_PARSER=tensorflow_3
+  - TEST_PARSER=tensorflow_4
+  - TEST_PARSER=tensorflow_5
+  - TEST_PARSER=tensorflow_6
+  #- TEST_PARSER=tensorflow_7
+  - TEST_PARSER=tensorflow_frozen
+  - TEST_PARSER=pytorch
+  - TEST_PARSER=pytorch_2
+  - TEST_PARSER=pytorch_3
+  - TEST_PARSER=pytorch_4
+  - TEST_PARSER=pytorch_5
+  - TEST_PARSER=keras
+  - TEST_PARSER=keras_2
+  - TEST_PARSER=keras_3
+  - TEST_PARSER=keras_4
+  - TEST_PARSER=keras_5
+  - TEST_PARSER=cntk
+  - TEST_PARSER=cntk_2
+  - TEST_PARSER=caffe
+  - TEST_PARSER=caffe_2
+  - TEST_PARSER=caffe_3
+  #- TEST_PARSER=caffe_4
+  - TEST_PARSER=mxnet
+  - TEST_PARSER=mxnet_2
+  - TEST_PARSER=mxnet_3
+  #- TEST_PARSER=mxnet_4
+  - TEST_PARSER=mxnet_5
+  - TEST_PARSER=paddle
+  - TEST_PARSER=coreml
+  - TEST_PARSER=coreml_2
+  - TEST_PARSER=darknet
 
 cache:
   directories:
@@ -45,21 +51,20 @@ cache:
 
 addons:
   apt:
-    update: true
+    update: false
 
 before_install:
-  - sudo apt-get install -y openmpi-bin
-  - sudo apt-get install -y libprotobuf-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler
-  - sudo apt-get install -y --no-install-recommends libboost-all-dev
-  - sudo apt-get install -y libatlas-base-dev
-  - sudo apt-get install -y libgflags-dev libgoogle-glog-dev
+  - python -m pip install --upgrade pip
+  - sudo apt-get install -y --no-install-recommends caffe-cpu
+  - sudo apt-get install -y --no-install-recommends openmpi-bin
+  - sudo ln -s /usr/lib/x86_64-linux-gnu/libmpi_cxx.so.20 /usr/lib/x86_64-linux-gnu/libmpi_cxx.so.1
+  - sudo ln -s /usr/lib/x86_64-linux-gnu/libmpi.so.20 /usr/lib/x86_64-linux-gnu/libmpi.so.12
 
 install:
-  - pip install -q -r $(python requirements/select_requirements.py)
-  - pip install wget
+  - python -m pip install -q -r $(python requirements/select_requirements.py)
 
 before_script:
-  - export LD_LIBRARY_PATH=$(python -c "import os; print(os.path.dirname(os.__file__) + '/site-packages/caffe/libs')"):${LD_LIBRARY_PATH}
+  - export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib/x86_64-linux-gnu
 
 after_failure: true
 
@@ -73,18 +78,15 @@ matrix:
   fast_finish: true
 
   allow_failures:
-    - env: TEST_PARSER=paddle TEST_ONNX=true
-    - env: TEST_PARSER=paddle TEST_ONNX=false
-
+    - env: TEST_PARSER=paddle
+  
   exclude:
-    - python: "3.5"
-      env: TEST_PARSER=paddle TEST_ONNX=true
-    - python: "3.5"
-      env: TEST_PARSER=paddle TEST_ONNX=false
+    - python: "3.6"
+      env: TEST_PARSER=paddle
     - os: linux
-      env: TEST_PARSER=coreml TEST_ONNX=true
+      env: TEST_PARSER=coreml
     - os: linux
-      env: TEST_PARSER=coreml TEST_ONNX=false
+      env: TEST_PARSER=coreml_2
 
 notifications:
   email:
