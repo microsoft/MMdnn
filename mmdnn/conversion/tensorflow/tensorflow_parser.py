@@ -965,18 +965,16 @@ class TensorflowParser(Parser):
         input_node_begin = self.get_parent(source_node.name, [1])
         input_node_size = self.get_parent(source_node.name, [2])
 
-        shape = self.get_parent(source_node.name, [0]).layer.attr['value'].tensor
-        shape = tensor_util.MakeNdarray(shape).tolist()
+        begin = tensor_util.MakeNdarray(input_node_begin.layer.attr['value'].tensor)
+        size = tensor_util.MakeNdarray(input_node_size.layer.attr['value'].tensor)
 
-        begin = input_node_begin.get_attr("axis")
+        IR_node = self._convert_identity_operation(source_node, in_edge_count=1, new_op='Slice')
 
-        IR_node = self._convert_identity_operation(source_node, in_edge_count=2, new_op='Slice')
-
-        # TODO:  only for 1D
-        end = int(input_node_size.layer.attr['value'].tensor.int_val[0]) + begin
+        # TODO:  axis
+        end = size + begin
         kwargs = {
-            'begin_mask' : begin,
-            'end_mask' : end
+            'starts' : begin,
+            'ends' : end
         }
 
         assign_IRnode_values(IR_node, kwargs)
