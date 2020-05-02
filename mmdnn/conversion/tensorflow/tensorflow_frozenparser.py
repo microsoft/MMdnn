@@ -1136,7 +1136,22 @@ class TensorflowParser2(Parser):
 
 
     def rename_Slice(self, source_node):
-        IR_node = self._convert_identity_operation(source_node, new_op = 'Slice')
+        input_node_begin = self.get_parent(source_node.name, [1])
+        input_node_size = self.get_parent(source_node.name, [2])
+
+        begin = tensor_util.MakeNdarray(input_node_begin.layer.attr['value'].tensor)
+        size = tensor_util.MakeNdarray(input_node_size.layer.attr['value'].tensor)
+
+        IR_node = self._convert_identity_operation(source_node, new_op='Slice')
+
+        # TODO:  only for 1D
+        end = size + begin
+        kwargs = {
+            'starts': begin,
+            'ends': end
+        }
+
+        assign_IRnode_values(IR_node, kwargs)
 
 
     def rename_Split(self, source_node):
