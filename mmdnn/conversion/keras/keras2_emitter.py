@@ -1077,7 +1077,7 @@ class LRN(Layer):
         squared = K.square(x)
         scale = self.k
         norm_alpha = self.alpha / self.n
-        if K.image_dim_ordering() == "th":
+        if (K.image_data_format() == 'channels_first'):
             b, f, r, c = self.shape
             squared = K.expand_dims(squared, 0)
             squared = K.spatial_3d_padding(squared, padding=((half_n, half_n), (0, 0), (0,0)))
