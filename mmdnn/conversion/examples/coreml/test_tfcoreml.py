@@ -9,8 +9,8 @@ import tensorflow as tf
 from tensorflow.core.framework import graph_pb2
 import tfcoreml as tf_converter
 
-TMP_MODEL_DIR = '/Users/kit/tmp/tfcoreml'
-TEST_IMAGE = '/Users/kit/github/MMdnn/mmdnn/conversion/examples/data/seagull.jpg'
+TMP_MODEL_DIR = 'tmp/tfcoreml'
+TEST_IMAGE = 'mmdnn/conversion/examples/data/seagull.jpg'
 
 def _download_file(url):
   """Download the file.
