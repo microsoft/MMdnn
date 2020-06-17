@@ -19,7 +19,7 @@ Major features include:
 
 - **Model Search & Visualization**
 
-  - We provide a [model collection](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/models/README.md) to help you find some popular models.
+  - We provide a [model collection](mmdnn/models/README.md) to help you find some popular models.
   - We provide a <a href="#visualization">model visualizer</a> to display the network architecture more intuitively.
 
 - **Model Deployment**
