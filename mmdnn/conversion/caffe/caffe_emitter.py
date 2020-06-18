@@ -606,12 +606,33 @@ if __name__=='__main__':
     def emit_ReduceSum(self, IR_node):
         self.reduction(IR_node, 1, IR_node.get_attr('axes'))
 
-    def emit_Relu6(self, IR_node):
+    def get_layer_list(self):
+        try:
+            from caffe.proto import caffe_pb2
+            layer = caffe_pb2.LayerParameter()
+            param_list = [f.name for f in layer.DESCRIPTOR.fields if f.name.endswith('_param')]
+            layer_list = [type(getattr(layer, s)).__name__ for s in param_list]
+            layer_list = [s[:-len('Parameter')] for s in layer_list]
+            return layer_list
+        except:
+            return []
+
+    def clip_exists(self):
+        layer_list = self.get_layer_list()
+        return 'Clip' in layer_list
+
+    def emit_Relu6Clip(self, IR_node):
         in_place = True
         self.add_body(1, "n.{:<15} = L.Clip(n.{}, min=0, max=6, in_place={}, ntop=1)".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             in_place))
+
+    def emit_Relu6(self, IR_node):
+        if self.clip_exists():
+            self.emit_Relu6Clip(IR_node)
+        else:
+            self.emit_Relu(IR_node)
 
     def emit_DepthwiseConv(self, IR_node):
         self.emit_Conv(IR_node)
