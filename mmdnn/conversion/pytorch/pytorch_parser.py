@@ -21,6 +21,7 @@ class PytorchParser(Parser):
     'onnx::Gemm': 'FullyConnected',
     'onnx::MaxPool': 'Maxpool',
     'onnx::AveragePool': 'Avgpool',
+    'onnx::GlobalAveragePool': 'GAvgpool',
     'onnx::Dropout': 'Dropout',
     'onnx::BatchNormalization': 'BatchNormalization',
     'onnx::Add': 'Add',
@@ -88,10 +89,11 @@ class PytorchParser(Parser):
 
 
     def gen_IR(self):
-
+        # print(self.state_dict)
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
             onnx_node_type = current_node.type
+            #print(onnx_node_type)
             node_type = PytorchParser.layer_map[onnx_node_type]
 
 
@@ -148,11 +150,12 @@ class PytorchParser(Parser):
     # Layers #
     ##########
     def rename_UNKNOWN(self, source_node):
-        print (source_node.layer)
-        print (source_node.layer.data.size())
-        assert False
+        print(source_node.layer)
+        print(source_node.layer.data.size())
         print("PyTorch parser has not supported operator [%s] with name [%s]."
               % (source_node.type, source_node.name))
+        assert False
+
 
     def gen_Input(self):
         IR_node = self.IR_graph.node.add()
@@ -226,11 +229,11 @@ class PytorchParser(Parser):
 
         kwargs['group'] = attr['group']
 
+        weights_scope = self.pytorch_graph.layer_weight_map[source_node.name]
 
-
-        bias_name = '{0}.bias'.format(source_node.weights_name)
-        weights_name = '{0}.weight'.format(source_node.weights_name)
-
+        bias_name = '{0}.bias'.format(weights_scope)
+        weights_name = '{0}.weight'.format(weights_scope)
+        # print(weights_name)
         weight = self.state_dict[weights_name]
 
         weight = weight.numpy()
@@ -266,12 +269,12 @@ class PytorchParser(Parser):
         attr = source_node.attrs
         # epsilon
         IR_node.attr['epsilon'].f = attr['epsilon']
+        weights_scope = self.pytorch_graph.layer_weight_map[source_node.name]
 
-
-        bias_name = '{0}.bias'.format(source_node.weights_name)
-        weights_name = '{0}.weight'.format(source_node.weights_name)
-        mean_name = '{0}.running_mean'.format(source_node.weights_name)
-        var_name = '{0}.running_var'.format(source_node.weights_name)
+        bias_name = '{0}.bias'.format(weights_scope)
+        weights_name = '{0}.weight'.format(weights_scope)
+        mean_name = '{0}.running_mean'.format(weights_scope)
+        var_name = '{0}.running_var'.format(weights_scope)
 
 
 
@@ -340,8 +343,25 @@ class PytorchParser(Parser):
             kwargs['dilations'] = [1] + [1, 1] + [1]
         else:
             kwargs['dilations'] = [1] + attr['dilations'] + [1]
-        kwargs['pads'] = [0] + attr['pads'][0:2] + [0, 0] + attr['pads'][2:] + [0]
+        if 'pads' in attr:
+            kwargs['pads'] = [0] + attr['pads'][0:2] + [0, 0] + attr['pads'][2:] + [0]
+        else:
+            kwargs['pads'] = [0, 0, 0, 0, 0, 0, 0, 0]
         kwargs['kernel_shape'] = [1] + attr['kernel_shape'] + [1]
+        IR_node = self._convert_identity_operation(source_node, new_op="Pool")
+
+        kwargs['pooling_type'] = 'AVG'
+
+        assign_IRnode_values(IR_node, kwargs)
+
+    def rename_GAvgpool(self, source_node):
+        attr = source_node.attrs
+        input_shape = self.pytorch_graph.shape_dict[source_node.in_edges[0]]
+        kwargs = dict()
+        kwargs['strides'] = [1, 1, 1, 1]
+        kwargs['dilations'] = [1] + [1, 1] + [1]
+        kwargs['pads'] = [0, 0, 0, 0, 0, 0, 0, 0]
+        kwargs['kernel_shape'] = [1] + input_shape[2:] + [1]
         IR_node = self._convert_identity_operation(source_node, new_op="Pool")
 
         kwargs['pooling_type'] = 'AVG'
@@ -353,9 +373,9 @@ class PytorchParser(Parser):
 
     def rename_FullyConnected(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op="FullyConnected")
-
-        bias_name = '{0}.bias'.format(source_node.weights_name)
-        weights_name = '{0}.weight'.format(source_node.weights_name)
+        weights_scope = self.pytorch_graph.layer_weight_map[source_node.name]
+        bias_name = '{0}.bias'.format(weights_scope)
+        weights_name = '{0}.weight'.format(weights_scope)
 
 
         W = self.state_dict[weights_name].numpy().transpose()
