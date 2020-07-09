@@ -124,9 +124,9 @@ If you want to retrain the converted model, you can change all layers from "Chan
 from
 
 def batch_normalization(input, name, epsilon, **kwargs):
-    mean = cntk.Parameter(init = __weights_dict[name]['mean'],
+    mean = cntk.Parameter(init = _weights_dict[name]['mean'],
         name = name + "_mean")
-    var = cntk.Parameter(init = __weights_dict[name]['var'],
+    var = cntk.Parameter(init = _weights_dict[name]['var'],
         name = name + "_var")
     layer = (input - mean) / cntk.sqrt(var + epsilon)
 
@@ -136,10 +136,10 @@ to
 
 def batch_normalization(input, name, epsilon, **kwargs):
     layer = cntk.layers.BatchNormalization( map_rank = 1, name=name )(input)
-    mean = cntk.Parameter(init = __weights_dict[name]['mean'],
+    mean = cntk.Parameter(init = _weights_dict[name]['mean'],
         name = name + "_mean")
     layer.aggregate_mean = mean
-    var = cntk.Parameter(init = __weights_dict[name]['var'],
+    var = cntk.Parameter(init = _weights_dict[name]['var'],
         name = name + "_var")
     layer.aggregate_variance = var
     layer.aggregate_count    = 4096.0

@@ -57,7 +57,7 @@ import cntk
 from cntk import ops, layers
 from cntk.contrib.crosstalkcaffe.unimodel.cntkinstance import BlockApiSetup
 
-__weights_dict = dict()
+_weights_dict = dict()
 
 def load_weights(weight_file):
     if weight_file == None:
@@ -72,8 +72,8 @@ def load_weights(weight_file):
 
 
 def KitModel(weight_file = None):
-    global __weights_dict
-    __weights_dict = load_weights(weight_file)
+    global _weights_dict
+    _weights_dict = load_weights(weight_file)
 
 """
 
@@ -191,7 +191,7 @@ def KitModel(weight_file = None):
 
             if IR_node.type == 'DepthwiseConv':
                 groups = IR_node.get_attr('kernel_shape')[-2]
-                codes.append("__weights_dict['{}']['weights'] = np.swapaxes(__weights_dict['{}']['weights'], -1, -2)".format(
+                codes.append("_weights_dict['{}']['weights'] = np.swapaxes(_weights_dict['{}']['weights'], -1, -2)".format(
                     IR_node.real_name, IR_node.real_name))
             else:
                 groups = IR_node.get_attr('group', 1)
@@ -395,7 +395,7 @@ def KitModel(weight_file = None):
             code = "{:<15} = cntk.Constant(value={})".format(
             IR_node.variable_name, IR_node.get_attr('value'))
         else:
-            code = "{:<15} = cntk.Constant(value=__weights_dict['{}']['value'])".format(
+            code = "{:<15} = cntk.Constant(value=_weights_dict['{}']['value'])".format(
                 IR_node.variable_name, IR_node.name)
         return code
 
@@ -467,12 +467,12 @@ def KitModel(weight_file = None):
     def emit_Embedding(self, IR_node):
         
         codes = list()
-        codes.append("{}_P = cntk.one_hot({}, __weights_dict['{}']['weights'].shape[0])".format(
+        codes.append("{}_P = cntk.one_hot({}, _weights_dict['{}']['weights'].shape[0])".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node),
             IR_node.name))
         
-        codes.append("{:<15} = layers.Embedding(weights=__weights_dict['{}']['weights'])({}_P)".format(
+        codes.append("{:<15} = layers.Embedding(weights=_weights_dict['{}']['weights'])({}_P)".format(
             IR_node.variable_name,
             # IR_node.get_attr('output_dim'),
             IR_node.name,
@@ -803,8 +803,8 @@ def lrn(input, **kwargs):
     def _layer_FullyConnected(self):
         self.add_body(0, """
 def dense(input, name, **kwargs):
-    w = __weights_dict[name]['weights']
-    b = __weights_dict[name]['bias'] if 'bias' in __weights_dict[name] else None
+    w = _weights_dict[name]['weights']
+    b = _weights_dict[name]['bias'] if 'bias' in _weights_dict[name] else None
     return BlockApiSetup.linear(output_shape=w.shape[1], input_shape=w.shape[0], scale_init=w, bias_init=b, name=name, **kwargs)(input)
 """)
 
@@ -812,13 +812,13 @@ def dense(input, name, **kwargs):
     def _layer_Conv(self):
         self.add_body(0, """
 def convolution(input, is_transpose, name, **kwargs):
-    dim = __weights_dict[name]['weights'].ndim
+    dim = _weights_dict[name]['weights'].ndim
 
     if is_transpose:
-        weight = np.transpose(__weights_dict[name]['weights'], [dim - 2, dim - 1] + list(range(0, dim - 2)))
+        weight = np.transpose(_weights_dict[name]['weights'], [dim - 2, dim - 1] + list(range(0, dim - 2)))
         kwargs.pop('groups', None)
     else:
-        weight = np.transpose(__weights_dict[name]['weights'], [dim - 1, dim - 2] + list(range(0, dim - 2)))
+        weight = np.transpose(_weights_dict[name]['weights'], [dim - 1, dim - 2] + list(range(0, dim - 2)))
     w = cntk.Parameter(init=weight, name=name + '_weight')
 
     input = cntk.transpose(input, [dim - 2] + list(range(0, dim - 2)))
@@ -827,8 +827,8 @@ def convolution(input, is_transpose, name, **kwargs):
         layer = ops.convolution_transpose(w, input, **kwargs)
     else:
         layer = ops.convolution(w, input, **kwargs)
-    if 'bias' in __weights_dict[name]:
-        bias = np.reshape(__weights_dict[name]['bias'], [-1] + [1] * (dim - 2))
+    if 'bias' in _weights_dict[name]:
+        bias = np.reshape(_weights_dict[name]['bias'], [-1] + [1] * (dim - 2))
         b = cntk.Parameter(init=bias, name=name + '_bias')
         layer = layer + b
     layer = cntk.transpose(layer, list(range(1, dim - 1)) + [0])
@@ -861,19 +861,19 @@ def global_pooling(input, type, **kwargs):
     def _layer_BatchNorm(self):
         self.add_body(0, """
 def batch_normalization(input, name, epsilon, **kwargs):
-    mean = cntk.Parameter(init = __weights_dict[name]['mean'],
+    mean = cntk.Parameter(init = _weights_dict[name]['mean'],
         name = name + "_mean")
-    var = cntk.Parameter(init = __weights_dict[name]['var'],
+    var = cntk.Parameter(init = _weights_dict[name]['var'],
         name = name + "_var")
 
     layer = (input - mean) / cntk.sqrt(var + epsilon)
-    if 'scale' in __weights_dict[name]:
-        scale = cntk.Parameter(init = __weights_dict[name]['scale'],
+    if 'scale' in _weights_dict[name]:
+        scale = cntk.Parameter(init = _weights_dict[name]['scale'],
             name = name + "_scale")
         layer = scale * layer
 
-    if 'bias' in __weights_dict[name]:
-        bias = cntk.Parameter(init = __weights_dict[name]['bias'],
+    if 'bias' in _weights_dict[name]:
+        bias = cntk.Parameter(init = _weights_dict[name]['bias'],
             name = name + "_bias")
         layer = layer + bias
 
