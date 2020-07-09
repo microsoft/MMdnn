@@ -36,7 +36,7 @@ class OnnxEmitter(Emitter):
 from onnx import helper, TensorProto
 import onnx
 
-__weights_dict = dict()
+_weights_dict = dict()
 
 def load_weights(weight_file):
     if weight_file == None:
@@ -51,8 +51,8 @@ def load_weights(weight_file):
 
 
 def KitModel(weight_file = None):
-    global __weights_dict
-    __weights_dict = load_weights(weight_file)
+    global _weights_dict
+    _weights_dict = load_weights(weight_file)
 
 """
 
@@ -155,7 +155,7 @@ def KitModel(weight_file = None):
         pads = pads[1:pad_length // 2 - 1] + pads[pad_length // 2 + 1:pad_length - 1]
         strides = list(IR_node.get_attr('strides'))[1:-1]
         use_bias=IR_node.get_attr('use_bias')
-        self.add_body(1, "{:15} = __weights_dict['{}']['weights']".format(
+        self.add_body(1, "{:15} = _weights_dict['{}']['weights']".format(
             IR_node.variable_name + '_weight_array',
             IR_node.name))
         self.add_body(1, "{} = {}.transpose([3,2,0,1])".format(
@@ -175,7 +175,7 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_weight_array'))
 
         if use_bias:
-            self.add_body(1, "{:15} = __weights_dict['{}']['bias'].squeeze()".format(
+            self.add_body(1, "{:15} = _weights_dict['{}']['bias'].squeeze()".format(
                 IR_node.variable_name + '_bias_array',
                 IR_node.name))
 
@@ -226,11 +226,11 @@ def KitModel(weight_file = None):
     def emit_BatchNorm(self, IR_node):
         epsilon = IR_node.get_attr('epsilon')
         if IR_node.get_attr('scale'):
-            self.add_body(1, "{:15} = __weights_dict['{}']['scale'].squeeze()".format(
+            self.add_body(1, "{:15} = _weights_dict['{}']['scale'].squeeze()".format(
                 IR_node.variable_name + '_scale_array',
                 IR_node.name))
         else:
-            self.add_body(1, "{:15} = np.ndarray(__weights_dict['{}']['bias'].shape, dtype=__weights_dict['{}']['bias'].dtype).squeeze()".format(
+            self.add_body(1, "{:15} = np.ndarray(_weights_dict['{}']['bias'].shape, dtype=_weights_dict['{}']['bias'].dtype).squeeze()".format(
                               IR_node.variable_name + '_scale_array',
                               IR_node.name,
                               IR_node.name))
@@ -248,7 +248,7 @@ def KitModel(weight_file = None):
                           IR_node.variable_name + '_scale_array',
                           IR_node.variable_name + '_scale_array',
                           IR_node.variable_name + '_scale_array'))
-        self.add_body(1, "{:15} = __weights_dict['{}']['bias'].squeeze()".format(
+        self.add_body(1, "{:15} = _weights_dict['{}']['bias'].squeeze()".format(
             IR_node.variable_name + '_bias_array',
             IR_node.name))
         self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
@@ -264,7 +264,7 @@ def KitModel(weight_file = None):
                             IR_node.variable_name + '_bias_array',
                             IR_node.variable_name + '_bias_array'))
 
-        self.add_body(1, "{:15} = __weights_dict['{}']['mean'].squeeze()".format(
+        self.add_body(1, "{:15} = _weights_dict['{}']['mean'].squeeze()".format(
             IR_node.variable_name + '_mean_array',
             IR_node.name))
         self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
@@ -280,7 +280,7 @@ def KitModel(weight_file = None):
                             IR_node.variable_name + '_mean_array',
                             IR_node.variable_name + '_mean_array'))
 
-        self.add_body(1, "{:15} = __weights_dict['{}']['var'].squeeze()".format(
+        self.add_body(1, "{:15} = _weights_dict['{}']['var'].squeeze()".format(
                           IR_node.variable_name + '_var_array',
                           IR_node.name))
         self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
@@ -323,11 +323,11 @@ def KitModel(weight_file = None):
         units = dims[-1]
         epsilon = 1e-5
         if IR_node.get_attr('scale'):
-            self.add_body(1, "{:15} = __weights_dict['{}']['scale'].squeeze()".format(
+            self.add_body(1, "{:15} = _weights_dict['{}']['scale'].squeeze()".format(
                 IR_node.variable_name + '_scale_array',
                 IR_node.name))
         else:
-            self.add_body(1, "{:15} = np.ndarray(__weights_dict['{}']['bias'].shape, dtype=__weights_dict['{}']['bias'].dtype).squeeze()".format(
+            self.add_body(1, "{:15} = np.ndarray(_weights_dict['{}']['bias'].shape, dtype=_weights_dict['{}']['bias'].dtype).squeeze()".format(
                               IR_node.variable_name + '_scale_array',
                               IR_node.name,
                               IR_node.name))
@@ -344,7 +344,7 @@ def KitModel(weight_file = None):
                             IR_node.variable_name + '_scale_array',
                             IR_node.variable_name + '_scale_array',
                             IR_node.variable_name + '_scale_array'))
-        self.add_body(1, "{:15} = __weights_dict['{}']['bias'].squeeze()".format(
+        self.add_body(1, "{:15} = _weights_dict['{}']['bias'].squeeze()".format(
             IR_node.variable_name + '_bias_array',
             IR_node.name))
         self.add_body(1, "{:15} = helper.make_tensor_value_info('{}', onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], list({}.shape))".format(
@@ -473,7 +473,7 @@ def KitModel(weight_file = None):
         use_bias = IR_node.get_attr('use_bias', True)
         units = IR_node.get_attr('units')
 
-        self.add_body(1, "{:15} = __weights_dict['{}']['weights']".format(
+        self.add_body(1, "{:15} = _weights_dict['{}']['weights']".format(
             IR_node.variable_name + '_weight_array',
             IR_node.name))
 
@@ -491,7 +491,7 @@ def KitModel(weight_file = None):
             IR_node.variable_name + '_weight_array'))
 
         if use_bias:
-            self.add_body(1, "{:15} = __weights_dict['{}']['bias'].squeeze()".format(
+            self.add_body(1, "{:15} = _weights_dict['{}']['bias'].squeeze()".format(
                 IR_node.variable_name + '_bias_array',
                 IR_node.name))
         else:
@@ -571,7 +571,7 @@ def KitModel(weight_file = None):
                 IR_node.variable_name + '_value_array',
                 value))
         else:
-            self.add_body(1, "{:15} = __weights_dict['{}']['value']".format(
+            self.add_body(1, "{:15} = _weights_dict['{}']['value']".format(
                 IR_node.variable_name + '_value_array',
                 IR_node.name))
         self.add_body(1, "{:15} = helper.make_node('Constant', inputs=[], outputs=['{}'], value=helper.make_tensor(name='const_tensor', data_type=onnx.mapping.NP_TYPE_TO_TENSOR_TYPE[{}.dtype], dims={}.shape, vals={}.flatten().astype(float)), name='{}')".format(
@@ -596,7 +596,7 @@ def KitModel(weight_file = None):
         inputs = ', '.join("'" + self.IR_graph.get_node(i).real_variable_name + "'" for i in IR_node.in_edges)
         
         if IR_node.name in self.weights_dict and 'weights' in self.weights_dict[IR_node.name]:
-            self.add_body(1,"{:15} = np.array([__weights_dict['{}']['weights']])".format(
+            self.add_body(1,"{:15} = np.array([_weights_dict['{}']['weights']])".format(
                 IR_node.variable_name+'_weight_array',
                 IR_node.name
             ))

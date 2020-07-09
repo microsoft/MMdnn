@@ -47,7 +47,7 @@ from caffe import to_proto
 from six import text_type as _text_type
 
 
-__weights_dict = dict()
+_weights_dict = dict()
 
 def load_weights(weight_file):
     if weight_file == None:
@@ -75,25 +75,25 @@ def make_net(prototxt):
         print(n.to_proto(), file=fpb)
 
 def gen_weight(weight_file, model, prototxt):
-    global __weights_dict
-    __weights_dict = load_weights(weight_file)
+    global _weights_dict
+    _weights_dict = load_weights(weight_file)
 
     net = caffe.Net(prototxt, caffe.TRAIN)
 
-    for key in __weights_dict:
-        if 'weights' in __weights_dict[key]:
-            net.params[key][0].data.flat = __weights_dict[key]['weights']
-        elif 'mean' in __weights_dict[key]:
-            net.params[key][0].data.flat = __weights_dict[key]['mean']
-            net.params[key][1].data.flat = __weights_dict[key]['var']
-            if 'scale' in __weights_dict[key]:
-                net.params[key][2].data.flat = __weights_dict[key]['scale']
-        elif 'scale' in __weights_dict[key]:
-            net.params[key][0].data.flat = __weights_dict[key]['scale']
-        if 'bias' in __weights_dict[key]:
-            net.params[key][1].data.flat = __weights_dict[key]['bias']
-        if 'gamma' in __weights_dict[key]: # used for prelu, not sure if other layers use this too
-            net.params[key][0].data.flat = __weights_dict[key]['gamma']
+    for key in _weights_dict:
+        if 'weights' in _weights_dict[key]:
+            net.params[key][0].data.flat = _weights_dict[key]['weights']
+        elif 'mean' in _weights_dict[key]:
+            net.params[key][0].data.flat = _weights_dict[key]['mean']
+            net.params[key][1].data.flat = _weights_dict[key]['var']
+            if 'scale' in _weights_dict[key]:
+                net.params[key][2].data.flat = _weights_dict[key]['scale']
+        elif 'scale' in _weights_dict[key]:
+            net.params[key][0].data.flat = _weights_dict[key]['scale']
+        if 'bias' in _weights_dict[key]:
+            net.params[key][1].data.flat = _weights_dict[key]['bias']
+        if 'gamma' in _weights_dict[key]: # used for prelu, not sure if other layers use this too
+            net.params[key][0].data.flat = _weights_dict[key]['gamma']
     net.save(model)
     return net
 

@@ -31,7 +31,7 @@ class TensorflowEmitter(Emitter):
     def header_code(self):
         return """import tensorflow as tf
 
-__weights_dict = dict()
+_weights_dict = dict()
 
 is_train = {}
 
@@ -50,8 +50,8 @@ def load_weights(weight_file):
 
 
 def KitModel(weight_file = None):
-    global __weights_dict
-    __weights_dict = load_weights(weight_file)
+    global _weights_dict
+    _weights_dict = load_weights(weight_file)
 """.format(self.trainable)
 
 
@@ -109,7 +109,7 @@ def KitModel(weight_file = None):
 
     def parent_variable_name(self, IR_node, path=[0]):
         if not IR_node.in_edges and IR_node.name in self.weights_dict.keys():
-            return "tf.constant(__weights_dict['{}']['weights'], name='{}')".format(
+            return "tf.constant(_weights_dict['{}']['weights'], name='{}')".format(
                 IR_node.name,
                 IR_node.name)
         return super(TensorflowEmitter, self).parent_variable_name(IR_node, path)
@@ -172,7 +172,7 @@ def KitModel(weight_file = None):
             dtype_str = "tf.float32"
         code = "{:<15} = tf.constant({}, dtype={}, name='{}')".format(
             IR_node.variable_name,
-            "__weights_dict['{}']['value']".format(IR_node.name) if IR_node.get_attr('value')== None else IR_node.get_attr('value'),
+            "_weights_dict['{}']['value']".format(IR_node.name) if IR_node.get_attr('value')== None else IR_node.get_attr('value'),
             dtype_str,
             IR_node.name)
 
@@ -280,11 +280,11 @@ def KitModel(weight_file = None):
 
     def emit_FullyConnected(self, IR_node):
         if IR_node.name in self.weights_dict and 'weights' in self.weights_dict[IR_node.name]:
-            kernel_str = "kernel_initializer = tf.constant_initializer(__weights_dict['{}']['weights']), ".format(IR_node.name)
+            kernel_str = "kernel_initializer = tf.constant_initializer(_weights_dict['{}']['weights']), ".format(IR_node.name)
         else: kernel_str = ""
 
         if IR_node.name in self.weights_dict and 'bias' in self.weights_dict[IR_node.name]:
-            bias_str = "bias_initializer = tf.constant_initializer(__weights_dict['{}']['bias']), ".format(IR_node.name)
+            bias_str = "bias_initializer = tf.constant_initializer(_weights_dict['{}']['bias']), ".format(IR_node.name)
         else: bias_str = ""
 
         # check whether flatten operator should be added
@@ -373,7 +373,7 @@ def KitModel(weight_file = None):
         return code
 
     def emit_Gather(self, IR_node):
-        variable_str = "tf.convert_to_tensor(__weights_dict['{}']['weights'])".format(IR_node.name)
+        variable_str = "tf.convert_to_tensor(_weights_dict['{}']['weights'])".format(IR_node.name)
 
         code = "{:<15} = tf.gather(params = {}, indices = {}, axis = {})".format(
             IR_node.variable_name,
@@ -473,7 +473,7 @@ def KitModel(weight_file = None):
         return code
 
     def emit_Embedding(self, IR_node):
-        variable_str = "tf.convert_to_tensor(__weights_dict['{}']['weights'])".format(IR_node.name)
+        variable_str = "tf.convert_to_tensor(_weights_dict['{}']['weights'])".format(IR_node.name)
         code = "{:<15} = tf.nn.embedding_lookup(params = {}, ids = {})".format(
             IR_node.variable_name,
             variable_str,
@@ -726,7 +726,7 @@ def KitModel(weight_file = None):
 
     def emit_Scope(self, IR_node):
         input_vars = [self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))]
-        input_vars.append('__weights_dict')
+        input_vars.append('_weights_dict')
         code = "{:<15} = _{}({})".format(
             IR_node.real_variable_name,
             IR_node.pattern,
@@ -762,7 +762,7 @@ def _{}({}):
 
             # param_code does not need parameter slice.
             input_params = scope_node.input_params
-            input_params.append("__weights_dict")
+            input_params.append("_weights_dict")
             param_code = ', '.join(input_params)
             function_code = _scope_func(scope_node.pattern, param_code, body_code, scope_node.return_variables)
 
@@ -773,7 +773,7 @@ def _{}({}):
     def _layer_Conv(self):
         self.add_body(0, """
 def convolution(input, name, group, **kwargs):
-    w = tf.Variable(__weights_dict[name]['weights'], trainable=is_train, name=name + "_weight")
+    w = tf.Variable(_weights_dict[name]['weights'], trainable=is_train, name=name + "_weight")
     if group == 1:
         layer = tf.nn.convolution(input, w, name=name, **kwargs)
     else:
@@ -783,8 +783,8 @@ def convolution(input, name, group, **kwargs):
                     (x, weight) in zip(xs, weight_groups)]
         layer = tf.concat(convolved, axis=-1)
 
-    if 'bias' in __weights_dict[name]:
-        b = tf.Variable(__weights_dict[name]['bias'], trainable=is_train, name=name + "_bias")
+    if 'bias' in _weights_dict[name]:
+        b = tf.Variable(_weights_dict[name]['bias'], trainable=is_train, name=name + "_bias")
         layer = layer + b
     return layer""")
 
@@ -792,7 +792,7 @@ def convolution(input, name, group, **kwargs):
     def _layer_PRelu(self):
         self.add_body(0, """
 def prelu(input, name):
-    gamma = tf.Variable(__weights_dict[name]['gamma'], name=name + "_gamma", trainable=is_train)
+    gamma = tf.Variable(_weights_dict[name]['gamma'], name=name + "_gamma", trainable=is_train)
     return tf.maximum(0.0, input) + gamma * tf.minimum(0.0, input)
     """)
 
@@ -800,10 +800,10 @@ def prelu(input, name):
     def _layer_BatchNorm(self):
         self.add_body(0, """
 def batch_normalization(input, name, **kwargs):
-    mean = tf.Variable(__weights_dict[name]['mean'], name = name + "_mean", trainable = is_train)
-    variance = tf.Variable(__weights_dict[name]['var'], name = name + "_var", trainable = is_train)
-    offset = tf.Variable(__weights_dict[name]['bias'], name = name + "_bias", trainable = is_train) if 'bias' in __weights_dict[name] else None
-    scale = tf.Variable(__weights_dict[name]['scale'], name = name + "_scale", trainable = is_train) if 'scale' in __weights_dict[name] else None
+    mean = tf.Variable(_weights_dict[name]['mean'], name = name + "_mean", trainable = is_train)
+    variance = tf.Variable(_weights_dict[name]['var'], name = name + "_var", trainable = is_train)
+    offset = tf.Variable(_weights_dict[name]['bias'], name = name + "_bias", trainable = is_train) if 'bias' in _weights_dict[name] else None
+    scale = tf.Variable(_weights_dict[name]['scale'], name = name + "_scale", trainable = is_train) if 'scale' in _weights_dict[name] else None
     return tf.nn.batch_normalization(input, mean, variance, offset, scale, name = name, **kwargs)
 """)
 
@@ -811,10 +811,10 @@ def batch_normalization(input, name, **kwargs):
     def _layer_Scale(self):
         self.add_body(0, """
 def scale(input, name, **kwargs):
-    mean = tf.Variable(__weights_dict[name]['scale_mean'], name = name + "_mean", trainable = is_train)
-    variance = tf.Variable(__weights_dict[name]['scale_var'], name = name + "_var", trainable = is_train)
-    offset = tf.Variable(__weights_dict[name]['bias'], name = name + "_bias", trainable = is_train) if 'bias' in __weights_dict[name] else None
-    scale = tf.Variable(__weights_dict[name]['scale'], name = name + "_scale", trainable = is_train) if 'scale' in __weights_dict[name] else None
+    mean = tf.Variable(_weights_dict[name]['scale_mean'], name = name + "_mean", trainable = is_train)
+    variance = tf.Variable(_weights_dict[name]['scale_var'], name = name + "_var", trainable = is_train)
+    offset = tf.Variable(_weights_dict[name]['bias'], name = name + "_bias", trainable = is_train) if 'bias' in _weights_dict[name] else None
+    scale = tf.Variable(_weights_dict[name]['scale'], name = name + "_scale", trainable = is_train) if 'scale' in _weights_dict[name] else None
     return tf.nn.batch_normalization(input, mean, variance, offset, scale, variance_epsilon = 0, name = name)
 """)
 
@@ -822,11 +822,11 @@ def scale(input, name, **kwargs):
     def _layer_SeparableConv(self):
         self.add_body(0, """
 def separable_convolution(input, name, **kwargs):
-    depthwise = tf.Variable(__weights_dict[name]['depthwise_filter'], trainable = is_train, name = name + "_df")
-    pointwise = tf.Variable(__weights_dict[name]['pointwise_filter'], trainable = is_train, name = name + "_pf")
+    depthwise = tf.Variable(_weights_dict[name]['depthwise_filter'], trainable = is_train, name = name + "_df")
+    pointwise = tf.Variable(_weights_dict[name]['pointwise_filter'], trainable = is_train, name = name + "_pf")
     layer = tf.nn.separable_conv2d(input, depthwise, pointwise, **kwargs)
-    if 'bias' in __weights_dict[name]:
-        b = tf.Variable(__weights_dict[name]['bias'], trainable = is_train, name = name + "_bias")
+    if 'bias' in _weights_dict[name]:
+        b = tf.Variable(_weights_dict[name]['bias'], trainable = is_train, name = name + "_bias")
         layer = layer + b
     return layer""")
 
@@ -834,10 +834,10 @@ def separable_convolution(input, name, **kwargs):
     def _layer_DepthwiseConv(self):
         self.add_body(0, """
 def depthwise_convolution(input, name, **kwargs):
-    depthwise = tf.Variable(__weights_dict[name]['weights'], trainable = is_train, name = name + "_df")
+    depthwise = tf.Variable(_weights_dict[name]['weights'], trainable = is_train, name = name + "_df")
     layer = tf.nn.depthwise_conv2d(input, depthwise, **kwargs)
-    if 'bias' in __weights_dict[name]:
-        b = tf.Variable(__weights_dict[name]['bias'], trainable = is_train, name = name + "_bias")
+    if 'bias' in _weights_dict[name]:
+        b = tf.Variable(_weights_dict[name]['bias'], trainable = is_train, name = name + "_bias")
         layer = layer + b
     return layer""")
 
@@ -845,8 +845,8 @@ def depthwise_convolution(input, name, **kwargs):
     def _layer_ConvTranspose(self):
         self.add_body(0, """
 def convolution_transpose(input, name, **kwargs):
-    w = tf.Variable(__weights_dict[name]['weights'], trainable=is_train, name=name + "_weight")
-    dim = __weights_dict[name]['weights'].ndim - 2
+    w = tf.Variable(_weights_dict[name]['weights'], trainable=is_train, name=name + "_weight")
+    dim = _weights_dict[name]['weights'].ndim - 2
     if dim == 2:
         layer = tf.nn.conv2d_transpose(input, w, **kwargs)
     elif dim == 3:
@@ -854,7 +854,7 @@ def convolution_transpose(input, name, **kwargs):
     else:
         raise ValueError("Error dim number {} in ConvTranspose".format(dim))
 
-    if 'bias' in __weights_dict[name]:
-        b = tf.Variable(__weights_dict[name]['bias'], trainable=is_train, name=name + "_bias")
+    if 'bias' in _weights_dict[name]:
+        b = tf.Variable(_weights_dict[name]['bias'], trainable=is_train, name=name + "_bias")
         layer = layer + b
     return layer""")
