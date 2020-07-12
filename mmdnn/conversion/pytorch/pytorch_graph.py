@@ -5,10 +5,8 @@
 
 from mmdnn.conversion.common.DataStructure.graph import GraphNode, Graph
 import torch
-import torch.jit
 import torch.autograd
 import torch.serialization
-import torch.onnx.utils
 import contextlib
 from torch.jit import _unique_state_dict
 
@@ -17,17 +15,21 @@ from torch.jit import _unique_state_dict
 class PytorchGraphNode(GraphNode):
 
     def __init__(self, layer):
+        self.version = torch.__version__
         self._name = 'node'
-        self._kind = layer.kind()
         import re
+        if self.version =="0.4.0":
+            self._name = layer.scopeName()
+            
+            self.weights_name = '.'.join(
+                re.findall(r'\[([\w\d.]+)\]', self._name)
+            )
+        self._kind = layer.kind()
         node_id = re.search(r"[\d]+", layer.__str__())
         self.id = node_id.group(0)
         super(PytorchGraphNode, self).__init__(layer)
         self.attrs = {k : layer[k] for k in layer.attributeNames()}
 
-        # self.weights_name = '.'.join(
-        #     re.findall(r'\[([\w\d.]+)\]', self._name)
-        # )
 
 
     @property
@@ -54,6 +56,7 @@ class PytorchGraph(Graph):
 
     def __init__(self, model):
         # sanity check.
+        self.version = torch.__version__
         super(PytorchGraph, self).__init__(model)
         self.model = model
         self.state_dict = _unique_state_dict(self.model)
@@ -108,55 +111,80 @@ class PytorchGraph(Graph):
             if old_mode != mode:
                 model.train(old_mode)
 
+    
+    def extractgraph(self, dummy_input):
+        if self.version =="0.4.0":
+            with self.set_training(self.model, False):
+                import torch.jit
+                trace, output = torch.jit.get_trace_graph(self.model, (dummy_input, ))
+
+            trace.set_graph(PytorchGraph._optimize_graph(trace.graph(), False))
+            # nodes
+            nodes = list(trace.graph().nodes())
+            graph = trace.graph()
+        else:
+            import re
+            import torch.onnx.utils
+            # connect name and id in nodes with weights
+            graph, params_dict, torch_out = torch.onnx.utils._model_to_graph(self.model, dummy_input, _retain_param_name=True)
+            nodes = list(graph.nodes())
+            for node in nodes:
+                # print(node.__str__())
+                node_id = PytorchGraph.get_node_id(node)
+                node_name = 'node' + node_id
+                node_scope_str = re.findall(r'[^()!]+', node.__str__())[-2]
+                for x in node_scope_str.split(','):
+                    if re.findall(r'%\S+.weight', x):
+                        node_scope = '.'.join(re.findall(r'%\S+.weight', x)[0].replace('%','',1).split('.')[:-1])
+                        self.layer_weight_map[node_name] = node_scope
+
+            graph, params_dict, torch_out = torch.onnx.utils._model_to_graph(self.model, dummy_input)
+            nodes = list(graph.nodes())
+        return graph, nodes
+
+    def rename_nodes(self, node, node_id):
+        if torch.__version__ =="0.4.0":
+            node_scope = node.scopeName()
+            node_name = node_scope + node_id
+            node_name = node_name.replace('-','n').replace('\\','n').replace('/','n').replace('_','n').replace('[','n').replace(']','n')
+        else:
+            node_name = 'node' + node_id
+        return node_name
+
+    def node_connection(self, graph, node, node_name):
+        if torch.__version__ =="0.4.0":
+            for node_input in list(node.inputs()):
+                if PytorchGraph.get_node_id(node_input.node()) and node_input.node().scopeName():
+                        node_input_name = node_input.node().scopeName() + PytorchGraph.get_node_id(node_input.node())
+                        node_input_name = node_input_name.replace('-','n').replace('\\','n').replace('/','n').replace('_','n').replace('[','n').replace(']','n')
+                        self._make_connection(node_input_name, node_name)
+                    
+        else:
+            for node_input in list(node.inputs()):
+                if PytorchGraph.get_node_id(node_input.node()) and node_input.node() in graph.nodes():
+                    node_input_name = 'node' + PytorchGraph.get_node_id(node_input.node())
+                    self._make_connection(node_input_name, node_name)
 
     def build(self, shape):
         """
         build graph for pytorch 1.5.1
         """
-
         import re
         # construct graph
         dummy_input = torch.autograd.Variable(torch.randn(shape), requires_grad=False)
 
-        # connect name and id in nodes with weights
-        graph, params_dict, torch_out = torch.onnx.utils._model_to_graph(self.model, dummy_input, _retain_param_name=True)
-        nodes = list(graph.nodes())
-        for node in nodes:
-            #print(node.__str__())
-            node_id = PytorchGraph.get_node_id(node)
-            node_name = 'node' + node_id
-            #print(re.findall(r'[^()!]+', node.__str__()))
-            node_scope_str = re.findall(r'[^()!]+', node.__str__())[-2]
-            for x in node_scope_str.split(','):
-                if re.findall(r'%\S+.weight', x):
-                    node_scope = '.'.join(re.findall(r'%\S+.weight', x)[0].replace('%','',1).split('.')[:-1])
-                    self.layer_weight_map[node_name] = node_scope
-
-        graph, params_dict, torch_out = torch.onnx.utils._model_to_graph(self.model, dummy_input)
-        nodes = list(graph.nodes())
+        graph, nodes = self.extractgraph(dummy_input)
         
         # build each layer
         for node in nodes:
-            #print(node.__str__())
             node_id = PytorchGraph.get_node_id(node)
-            node_name = 'node' + node_id
-            #node_name = node_name.replace('-','n').replace('\\','n').replace('/','n').replace('_','n').replace('[','n').replace(']','n')
+            node_name = self.rename_nodes(node, node_id)
             output_shape_str = re.findall(r'[^()!]+', node.__str__())[1]
-            
-            #print(output_shape_str)
             output_shape = [int(x.replace('!', '')) for x in output_shape_str.split(',')]
-            # print(node_id, node_name)
             self.shape_dict[node_name] = output_shape
             self.layer_map[node_name] = PytorchGraphNode(node)
             self.layer_name_map[node_name] = node_name
             # make connection
-            for node_input in list(node.inputs()):
-                #print(node_input)
-                if PytorchGraph.get_node_id(node_input.node()) and node_input.node() in graph.nodes():
-                    node_input_name = 'node' + PytorchGraph.get_node_id(node_input.node())
-                    #node_input_name = node_input_name.replace('-','n').replace('\\','n').replace('/','n').replace('_','n').replace('[','n').replace(']','n')
-                    self._make_connection(node_input_name, node_name)
-                    # print(node_input_name ,'->', node_name)
-
+            self.node_connection(graph, node, node_name)
 
         super(PytorchGraph, self).build()
