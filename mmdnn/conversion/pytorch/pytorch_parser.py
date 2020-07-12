@@ -60,6 +60,11 @@ class PytorchParser(Parser):
     def src_graph(self):
         return self.pytorch_graph
 
+    def get_weight_name(self, node):
+        if torch.__version__ =="0.4.0":
+            return node.weights_name
+        else:
+            return self.pytorch_graph.layer_weight_map[node.name]
 
     ####################
     # Public Functions #
@@ -89,11 +94,9 @@ class PytorchParser(Parser):
 
 
     def gen_IR(self):
-        # print(self.state_dict)
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
             onnx_node_type = current_node.type
-            #print(onnx_node_type)
             node_type = PytorchParser.layer_map[onnx_node_type]
 
 
@@ -229,11 +232,10 @@ class PytorchParser(Parser):
 
         kwargs['group'] = attr['group']
 
-        weights_scope = self.pytorch_graph.layer_weight_map[source_node.name]
+        weights_scope = self.get_weight_name(source_node)
 
         bias_name = '{0}.bias'.format(weights_scope)
         weights_name = '{0}.weight'.format(weights_scope)
-        # print(weights_name)
         weight = self.state_dict[weights_name]
 
         weight = weight.numpy()
@@ -269,7 +271,7 @@ class PytorchParser(Parser):
         attr = source_node.attrs
         # epsilon
         IR_node.attr['epsilon'].f = attr['epsilon']
-        weights_scope = self.pytorch_graph.layer_weight_map[source_node.name]
+        weights_scope = self.get_weight_name(source_node)
 
         bias_name = '{0}.bias'.format(weights_scope)
         weights_name = '{0}.weight'.format(weights_scope)
@@ -373,7 +375,7 @@ class PytorchParser(Parser):
 
     def rename_FullyConnected(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op="FullyConnected")
-        weights_scope = self.pytorch_graph.layer_weight_map[source_node.name]
+        weights_scope = self.get_weight_name(source_node)
         bias_name = '{0}.bias'.format(weights_scope)
         weights_name = '{0}.weight'.format(weights_scope)
 
