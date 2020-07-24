@@ -9,7 +9,8 @@ import mmdnn.conversion.common.IR.graph_pb2 as graph_pb2
 from mmdnn.conversion.common.IR.graph_pb2 import NodeDef, GraphDef, DataType
 from mmdnn.conversion.common.utils import *
 from mmdnn.conversion.common.DataStructure.parser import Parser
-from mmdnn.conversion.pytorch.pytorch_graph import PytorchGraph
+from mmdnn.conversion.pytorch.pytorch_graph import PytorchGraph040
+from mmdnn.conversion.pytorch.pytorch_graph import PytorchGraph151
 import torch
 import torchvision
 
@@ -29,7 +30,8 @@ class PytorchParser(Parser):
     'onnx::Relu': 'Relu',
     'onnx::Tanh': 'Tanh',
     'onnx::Sigmoid': 'Sigmoid',
-    'onnx::Mul': 'Mul'
+    'onnx::Mul': 'Mul',
+    'onnx::Pad': 'Pad'
 
 
     # TODO
@@ -61,10 +63,7 @@ class PytorchParser(Parser):
         return self.pytorch_graph
 
     def get_weight_name(self, node):
-        if torch.__version__ =="0.4.0":
-            return node.weights_name
-        else:
-            return self.pytorch_graph.layer_weight_map[node.name]
+        pass
 
     ####################
     # Public Functions #
@@ -84,14 +83,15 @@ class PytorchParser(Parser):
             model = torch.load(model_file_name, map_location='cpu')
 
         self.weight_loaded = True
-
+        self.model = model
         # Build network graph
-        self.pytorch_graph = PytorchGraph(model)
+        self.pytorch_graph = None
+
+    def build_graph(self, input_shape):
         self.input_shape = tuple([1] + input_shape)
         self.pytorch_graph.build(self.input_shape)
         self.state_dict = self.pytorch_graph.state_dict
         self.shape_dict = self.pytorch_graph.shape_dict
-
 
     def gen_IR(self):
         for layer in self.src_graph.topological_sort:
@@ -153,11 +153,13 @@ class PytorchParser(Parser):
     # Layers #
     ##########
     def rename_UNKNOWN(self, source_node):
-        print(source_node.layer)
-        print(source_node.layer.data.size())
         print("PyTorch parser has not supported operator [%s] with name [%s]."
               % (source_node.type, source_node.name))
-        assert False
+        assert False      
+        print(source_node.layer)
+        print(source_node.layer.data.size())
+        
+        
 
 
     def gen_Input(self):
@@ -309,6 +311,15 @@ class PytorchParser(Parser):
         # var
         self.set_weight(source_node.name, "var", variance)
 
+    def rename_Pad(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op="Pad")
+        attr = source_node.attrs
+        kwargs = dict()
+        kwargs['mode'] = attr['mode']
+        kwargs['pads'] = attr['pads']
+        kwargs['constant_values'] = attr['value']
+        assign_IRnode_values(IR_node, kwargs)
+
     def rename_Relu(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op="Relu")
 
@@ -457,7 +468,6 @@ class PytorchParser(Parser):
 
         assign_IRnode_values(IR_node, kwargs)
 
-        print(IR_node)
 
 
     ####################
@@ -494,3 +504,24 @@ class PytorchParser(Parser):
             raise ValueError('Unknown pooling type')
 
         assign_IRnode_values(IR_node, kwargs)
+
+class PytorchParser040(PytorchParser):
+
+    def __init__(self, model_file_name, input_shape):
+        super(PytorchParser040, self).__init__(model_file_name, input_shape)
+        self.pytorch_graph = PytorchGraph040(self.model)
+        self.build_graph(input_shape)
+
+    def get_weight_name(self, node):
+        return node.weights_name
+
+class PytorchParser151(PytorchParser):
+
+    def __init__(self, model_file_name, input_shape):
+        super(PytorchParser151, self).__init__(model_file_name, input_shape)
+        self.pytorch_graph = PytorchGraph151(self.model)
+        self.build_graph(input_shape)
+
+    def get_weight_name(self, node):
+        return self.pytorch_graph.layer_weight_map[node.name]
+    
