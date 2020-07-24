@@ -11,6 +11,7 @@ keras==2.2.4
 coremltools==2.1.0
 mxnet==1.2.0
 cntk==2.6
+pytorch==0.4.0 or 1.5.1
 http://download.pytorch.org/whl/cpu/torch-0.4.0-cp36-cp36m-linux_x86_64.whl
 torchvision==0.2.1
 onnx==1.4.1
