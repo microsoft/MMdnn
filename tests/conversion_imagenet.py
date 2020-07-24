@@ -98,7 +98,6 @@ class TestModels(CorrectnessTest):
         parser.run(IR_file)
         del parser
         del TensorflowParser2
-
         return original_predict
 
 
@@ -255,8 +254,9 @@ class TestModels(CorrectnessTest):
     @staticmethod
     def pytorch_parse(architecture_name, test_input_path):
         from mmdnn.conversion.examples.pytorch.extractor import pytorch_extractor
-        from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser
-
+        from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser040
+        from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser151
+        import torch
         # download model
         architecture_file = pytorch_extractor.download(architecture_name, TestModels.cachedir)
 
@@ -285,10 +285,14 @@ class TestModels(CorrectnessTest):
 
          # original to IR
         IR_file = TestModels.tmpdir + 'pytorch_' + architecture_name + "_converted"
-        parser = PytorchParser(architecture_file, [3, size, size])
+        if torch.__version__ == "0.4.0":
+            parser = PytorchParser040(architecture_file, [3, size, size])
+        else:
+            parser = PytorchParser151(architecture_file, [3, size, size])
         parser.run(IR_file)
         del parser
-        del PytorchParser
+        del PytorchParser040
+        del PytorchParser151
         return original_predict
 
 
