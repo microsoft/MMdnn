@@ -319,12 +319,16 @@ def KitModel(weight_file = None):
     def emit_UpSampling2D(self, IR_node):
         scales = IR_node.get_attr('scales')
         scales = tuple(scales)
-
-        code = "{:<15} = tf.keras.layers.UpSampling2D(size={})({})".format(
+        interpolation_type = IR_node.get_attr('interpolation_type')
+        if interpolation_type not in ["nearest", "bilinear"]:
+            interpolation_type = "nearest"
+        code = "{:<15} = tf.keras.layers.UpSampling2D(size={}, interpolation={})({})".format(
             IR_node.variable_name,
             scales,
+            interpolation_type,
             self.parent_variable_name(IR_node))
         return code
+
 
     def emit_Flatten(self, IR_node):
         #self._emit_unary_operation(IR_node, "contrib.layers.flatten")
