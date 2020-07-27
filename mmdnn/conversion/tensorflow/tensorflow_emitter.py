@@ -320,7 +320,9 @@ def KitModel(weight_file = None):
         scales = IR_node.get_attr('scales')
         scales = tuple(scales)
         interpolation_type = IR_node.get_attr('interpolation_type')
-        if interpolation_type not in ["nearest", "bilinear"]:
+        if interpolation_type:
+            assert interpolation_type in ["nearest", "bilinear"]
+        else:
             interpolation_type = "nearest"
         code = "{:<15} = tf.keras.layers.UpSampling2D(size={}, interpolation={})({})".format(
             IR_node.variable_name,
