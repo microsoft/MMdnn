@@ -158,7 +158,7 @@ class KitModel(nn.Module):
 
         if IR_node.type == 'DepthwiseConv':
             group = in_channels
-            filter *= group
+            filter = group
 
         else:
             group = IR_node.get_attr('group', 1)
@@ -522,7 +522,7 @@ class KitModel(nn.Module):
 
     def emit_Concat(self, IR_node):
         axis = self._convert_axis(IR_node, IR_node.get_attr('axis'))
-        code = "{:<15} = torch.cat(({}), {})".format(
+        code = "{:<15} = torch.cat(({},), {})".format(
             IR_node.variable_name,
             ', '.join(self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))),
             axis,

@@ -86,10 +86,15 @@ def _convert(args):
 
     elif args.srcFramework == 'pytorch':
         assert inputshape != None
-        from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser
+        from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser040
+        from mmdnn.conversion.pytorch.pytorch_parser import PytorchParser151
+        import torch
         model = args.network or args.weights
         assert model != None
-        parser = PytorchParser(model, inputshape[0])
+        if torch.__version__ == "0.4.0":
+            parser = PytorchParser040(model, inputshape[0])
+        else:
+            parser = PytorchParser151(model, inputshape[0])
 
     elif args.srcFramework == 'torch' or args.srcFramework == 'torch7':
         from mmdnn.conversion.torch.torch_parser import TorchParser

@@ -168,6 +168,12 @@ def KitModel(weight_file = None):
 
     def _emit_merge(self, IR_node, func):
         if len(IR_node.in_edges) == 1:
+            if func == "concatenate":
+                inputs = ', '.join('%s' % self.parent_variable_name(IR_node, i) for i in IR_node.in_edges)
+                code = "{:<15} = {}".format(
+                    IR_node.variable_name,
+                    inputs)
+                return code
             IR_node.in_edges.append(IR_node.in_edges[0])
         inputs = ', '.join('%s' % self.parent_variable_name(IR_node, i) for i in IR_node.in_edges)
         axis = ' axis = {},'.format(IR_node.get_attr('axis')) if 'axis' in IR_node.layer.attr else ""
@@ -1077,7 +1083,7 @@ class LRN(Layer):
         squared = K.square(x)
         scale = self.k
         norm_alpha = self.alpha / self.n
-        if (K.image_data_format() == 'channels_first'):
+        if K.image_data_format() == 'channels_first':
             b, f, r, c = self.shape
             squared = K.expand_dims(squared, 0)
             squared = K.spatial_3d_padding(squared, padding=((half_n, half_n), (0, 0), (0,0)))
