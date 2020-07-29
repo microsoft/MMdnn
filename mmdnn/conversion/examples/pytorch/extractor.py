@@ -21,7 +21,7 @@ class pytorch_extractor(base_extractor):
 
     @classmethod
     def help(cls):
-        print ('Support frameworks: {}'.format(cls.architecture_map))
+        print('Supported models: {}'.format(cls.architecture_map))
 
 
     @classmethod

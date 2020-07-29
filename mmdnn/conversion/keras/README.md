@@ -32,7 +32,7 @@ We tested some Keras pre-trained models to others, get more detail from [this fi
 ```bash
 $ mmdownload -f keras
 
-Support frameworks: set(['resnet50', 'mobilenet', 'vgg19', 'vgg16', 'inception_v3', 'nasnet', 'inception_resnet_v2', 'xception', 'yolo2', 'densenet'])
+Supported models: set(['resnet50', 'mobilenet', 'vgg19', 'vgg16', 'inception_v3', 'nasnet', 'inception_resnet_v2', 'xception', 'yolo2', 'densenet'])
 
 $ mmdownload -f keras -n resnet50 -o ./
 

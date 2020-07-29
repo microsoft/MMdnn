@@ -29,7 +29,7 @@ We tested some MXNet pre-trained models to others, get more detail from [this fi
 ```bash
 $ mmdownload -f mxnet
 
-Support frameworks : ['imagenet1k-resnet-152', 'vgg19', 'imagenet1k-resnet-101', 'imagenet1k-resnet-50', 'vgg16', 'imagenet1k-inception-bn', 'imagenet1k-resnext-101', 'imagenet11k-resnet-152', 'imagenet1k-resnext-50', 'imagenet1k-resnext-101-64x4d', 'imagenet1k-resnet-18', 'imagenet11k-place365ch-resnet-152', 'imagenet1k-resnet-34', 'squeezenet_v1.1', 'imagenet11k-place365ch-resnet-50', 'squeezenet_v1.0']
+Supported models : ['imagenet1k-resnet-152', 'vgg19', 'imagenet1k-resnet-101', 'imagenet1k-resnet-50', 'vgg16', 'imagenet1k-inception-bn', 'imagenet1k-resnext-101', 'imagenet11k-resnet-152', 'imagenet1k-resnext-50', 'imagenet1k-resnext-101-64x4d', 'imagenet1k-resnet-18', 'imagenet11k-place365ch-resnet-152', 'imagenet1k-resnet-34', 'squeezenet_v1.1', 'imagenet11k-place365ch-resnet-50', 'squeezenet_v1.0']
 
 $ mmdownload -f mxnet -n imagenet1k-resnet-50 -o ./
 

@@ -15,7 +15,7 @@ yolov3                   |   √(boxed image)  |                 |
 ```bash
 $ mmdownload -f darknet
 
-Support frameworks: ['yolov3', 'yolov2']
+Supported models: ['yolov3', 'yolov2']
 
 $ mmdownload -f darknet -n yolov3 -o ./
 

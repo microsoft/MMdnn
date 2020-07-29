@@ -13,7 +13,7 @@ class base_extractor(object):
 
     @classmethod
     def help(cls):
-        print ('Support frameworks: {}'.format(list(cls.architecture_map.keys())))
+        print('Supported models: {}'.format(list(cls.architecture_map.keys())))
 
 
     @classmethod
