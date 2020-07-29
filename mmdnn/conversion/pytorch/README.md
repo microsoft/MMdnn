@@ -27,7 +27,7 @@ You can refer [PyTorch model extractor](https://github.com/Microsoft/MMdnn/blob/
 
 ```bash
 $ mmdownload -f pytorch -h
-Support frameworks: ['alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201', 'inception_v3', 'resnet101', 'resnet152', 'resnet18', 'resnet34', 'resnet50', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
+Supported models: ['alexnet', 'densenet121', 'densenet161', 'densenet169', 'densenet201', 'inception_v3', 'resnet101', 'resnet152', 'resnet18', 'resnet34', 'resnet50', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn', 'vgg19', 'vgg19_bn']
 
 $ mmdownload -f pytorch -n resnet101 -o ./
 Downloading: "https://download.pytorch.org/models/resnet101-5d3b4d8f.pth" to /my/home/.torch/models/resnet101-5d3b4d8f.pth

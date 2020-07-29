@@ -79,7 +79,7 @@ You can refer [Slim Model Extractor](https://github.com/Microsoft/MMdnn/blob/mas
 ```bash
 $ mmdownload -f tensorflow
 
-Support frameworks: ['inception_v3_frozen', 'resnet_v2_200', 'inception_v1', 'mobilenet_v1_1.0', 'mobilenet_v2_1.0_224', 'resnet_v2_152', 'vgg16', 'mobilenet_v1_1.0_frozen', 'resnet_v1_50', 'resnet_v2_50', 'inception_v3', 'inception_resnet_v2', 'resnet_v1_152', 'inception_v1_frozen', 'vgg19', 'nasnet-a_large']
+Supported models: ['inception_v3_frozen', 'resnet_v2_200', 'inception_v1', 'mobilenet_v1_1.0', 'mobilenet_v2_1.0_224', 'resnet_v2_152', 'vgg16', 'mobilenet_v1_1.0_frozen', 'resnet_v1_50', 'resnet_v2_50', 'inception_v3', 'inception_resnet_v2', 'resnet_v1_152', 'inception_v1_frozen', 'vgg19', 'nasnet-a_large']
 ```
 
 > [Note!] The extractor create a Squeeze operator named **MMdnn_Output** as the output node of the models.

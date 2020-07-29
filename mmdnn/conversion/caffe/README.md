@@ -30,7 +30,7 @@ We tested some Caffe pre-trained models to others, get more detail from [this fi
 ```bash
 $ mmdownload -f caffe
 
-Support frameworks: ['resnet50', 'resnet101', 'voc-fcn8s', 'inception_v4', 'voc-fcn16s', 'squeezenet', 'alexnet', 'inception_v1', 'resnet152', 'xception', 'vgg16', 'vgg19', 'voc-fcn32s']
+Supported models: ['resnet50', 'resnet101', 'voc-fcn8s', 'inception_v4', 'voc-fcn16s', 'squeezenet', 'alexnet', 'inception_v1', 'resnet152', 'xception', 'vgg16', 'vgg19', 'voc-fcn32s']
 
 $ mmdownload -f caffe -n resnet152 -o ./
 

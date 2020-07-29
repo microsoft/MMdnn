@@ -61,7 +61,7 @@ Then we got the IR format model.
 
 You can refer [Slim Model Extractor](https://github.com/Microsoft/MMdnn/blob/master/mmdnn/conversion/examples/coreml/extractor.py) to extract your own coreml model, which is a sample tool to extract both architecture and weights from slim pre-trained models.
 
-Support frameworks: ['inception_v3', 'mobilenet', 'resnet50', 'tinyyolo', 'vgg16']
+Supported models: ['inception_v3', 'mobilenet', 'resnet50', 'tinyyolo', 'vgg16']
 
 Example:
 
