@@ -108,53 +108,11 @@ class PytorchGraph(Graph):
         self.shape_dict = dict()
         self.layer_weight_map = dict()
 
-
-    @staticmethod
-    def _optimize_graph(graph, aten, export_raw_ir=False):
-        # run dce first to eliminate dead parts of the graph that might have been
-        # left behind by things like symbolic_override
-
-        torch._C._jit_pass_dce(graph)
-        torch._C._jit_pass_lint(graph)
-
-        torch._C._jit_pass_peephole(graph)
-        torch._C._jit_pass_lint(graph)
-        if not export_raw_ir:
-            graph = torch._C._jit_pass_onnx(graph, aten)
-            torch._C._jit_pass_lint(graph)
-            torch._C._jit_pass_onnx_peephole(graph)
-            torch._C._jit_pass_lint(graph)
-        torch._C._jit_pass_dce(graph)
-        torch._C._jit_pass_lint(graph)
-        graph = torch._C._jit_pass_canonicalize(graph)
-        torch._C._jit_pass_lint(graph)
-        return graph
-
-
     @staticmethod
     def get_node_id(node):
         import re
         node_id = re.search(r"[\d]+", node.__str__())
         return node_id.group(0)
-
-    @contextlib.contextmanager
-    def set_training(self, model, mode):
-        r"""
-        A context manager to temporarily set the training mode of 'model'
-        to 'mode', resetting it when we exit the with-block.  A no-op if
-        mode is None.
-        """
-        if mode is None:
-            yield
-            return
-        old_mode = model.training
-        if old_mode != mode:
-            model.train(mode)
-        try:
-            yield
-        finally:
-            if old_mode != mode:
-                model.train(old_mode)
 
 
     def build(self, shape):
@@ -217,6 +175,45 @@ class PytorchGraph040(PytorchGraph):
     def CreateGraphNode(self, node):
         return PytorchGraphNode040(node)
 
+    @staticmethod
+    def _optimize_graph(graph, aten, export_raw_ir=False):
+        # run dce first to eliminate dead parts of the graph that might have been
+        # left behind by things like symbolic_override
+
+        torch._C._jit_pass_dce(graph)
+        torch._C._jit_pass_lint(graph)
+
+        torch._C._jit_pass_peephole(graph)
+        torch._C._jit_pass_lint(graph)
+        if not export_raw_ir:
+            graph = torch._C._jit_pass_onnx(graph, aten)
+            torch._C._jit_pass_lint(graph)
+            torch._C._jit_pass_onnx_peephole(graph)
+            torch._C._jit_pass_lint(graph)
+        torch._C._jit_pass_dce(graph)
+        torch._C._jit_pass_lint(graph)
+        graph = torch._C._jit_pass_canonicalize(graph)
+        torch._C._jit_pass_lint(graph)
+        return graph
+    
+    @contextlib.contextmanager
+    def set_training(self, model, mode):
+        r"""
+        A context manager to temporarily set the training mode of 'model'
+        to 'mode', resetting it when we exit the with-block.  A no-op if
+        mode is None.
+        """
+        if mode is None:
+            yield
+            return
+        old_mode = model.training
+        if old_mode != mode:
+            model.train(mode)
+        try:
+            yield
+        finally:
+            if old_mode != mode:
+                model.train(old_mode)
 
 class PytorchGraph151(PytorchGraph):
 
@@ -227,7 +224,7 @@ class PytorchGraph151(PytorchGraph):
         import re
         from torch.onnx.utils import OperatorExportTypes
         from torch.onnx.utils import _trace
-        
+
         self.model.eval()
         with scope_name_workaround():
             graph = _trace(self.model, dummy_input, OperatorExportTypes.ONNX)

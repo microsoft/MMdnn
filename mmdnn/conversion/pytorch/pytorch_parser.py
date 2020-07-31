@@ -335,6 +335,13 @@ class PytorchParser(Parser):
 
     def rename_Mul(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op="Mul")
+    
+    def rename_GlobalAvgpool(self, source_node):
+        kwargs = dict()
+        IR_node = self._convert_identity_operation(source_node, new_op="Pool")
+        kwargs['pooling_type'] = 'AVG'
+        assign_IRnode_values(IR_node, kwargs)
+
 
     def rename_Maxpool(self, source_node):
         attr = source_node.attrs
