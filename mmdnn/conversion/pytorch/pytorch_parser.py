@@ -97,6 +97,10 @@ class PytorchParser(Parser):
         for layer in self.src_graph.topological_sort:
             current_node = self.src_graph.get_node(layer)
             onnx_node_type = current_node.type
+            if onnx_node_type not in PytorchParser.layer_map.keys():
+                print("PyTorch parser has not supported operator [%s]. IR network strucuture may lost info."
+                        % (onnx_node_type))
+                return
             node_type = PytorchParser.layer_map[onnx_node_type]
 
 
@@ -405,17 +409,18 @@ class PytorchParser(Parser):
         # weight: N x M -> C x H x W x M -> H x W x C x M -> N x M
         if self.weight_loaded:
             parent = self.src_graph.get_parent(source_node.name, [0])
-            while parent.type == 'onnx::Flatten' or parent.type == 'onnx::Dropout':
-                parent = self.src_graph.get_parent(parent.name, [0])
-            if len(self.shape_dict[parent.name]) == 4:
-                #
-                original_shape = W.shape
-                channel_first_list = self.shape_dict[parent.name][1:]
-                dim = len(channel_first_list) + 1
-                weight = W.reshape(channel_first_list + [original_shape[1]])
-                assert dim > 2
-                weight = weight.transpose(list(range(1, dim-1)) + [0, dim-1])
-                W = weight.reshape(original_shape)
+            if parent:
+                while parent.type == 'onnx::Flatten' or parent.type == 'onnx::Dropout':
+                    parent = self.src_graph.get_parent(parent.name, [0])
+                if len(self.shape_dict[parent.name]) == 4:
+                    #
+                    original_shape = W.shape
+                    channel_first_list = self.shape_dict[parent.name][1:]
+                    dim = len(channel_first_list) + 1
+                    weight = W.reshape(channel_first_list + [original_shape[1]])
+                    assert dim > 2
+                    weight = weight.transpose(list(range(1, dim-1)) + [0, dim-1])
+                    W = weight.reshape(original_shape)
 
         # weights
         self.set_weight(source_node.name, 'weights', W )

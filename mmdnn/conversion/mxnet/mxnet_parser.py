@@ -822,6 +822,17 @@ class MXNetParser(Parser):
     Here start with Symbol manipulation routines
     """
 
+    def rename_UpSampling(self, source_node):
+        IR_node = self._convert_identity_operation(source_node, new_op="UpSampling2D")
+        kwargs = dict()
+        scale = int(source_node.get_attr("scale"))
+        interpolation_type = source_node.get_attr("sample_type")
+        scales = [scale, scale]
+        kwargs["scales"] = scales
+        kwargs["interpolation_type"] = interpolation_type
+        assign_IRnode_values(IR_node, kwargs)
+
+
     # reverse cannot support yet
     def rename_reshape(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='Reshape')

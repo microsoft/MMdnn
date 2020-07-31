@@ -9,8 +9,6 @@ import torch.autograd
 import torch.serialization
 import contextlib
 from torch.jit import _unique_state_dict
-from torch.onnx.utils import OperatorExportTypes
-from torch.onnx.utils import _trace
 
 class scope_name_workaround(object):
     def __init__(self):
@@ -44,7 +42,7 @@ class scope_name_workaround(object):
                 tracing_state.pop_scope()
                 tracing_state._traced_module_stack.pop()
             return result
-        
+
         self.backup = torch.nn.Module._slow_forward
         setattr(torch.nn.Module, '_slow_forward', _slow_forward)
 
@@ -116,25 +114,6 @@ class PytorchGraph(Graph):
         node_id = re.search(r"[\d]+", node.__str__())
         return node_id.group(0)
 
-    @contextlib.contextmanager
-    def set_training(self, model, mode):
-        r"""
-        A context manager to temporarily set the training mode of 'model'
-        to 'mode', resetting it when we exit the with-block.  A no-op if
-        mode is None.
-        """
-        if mode is None:
-            yield
-            return
-        old_mode = model.training
-        if old_mode != mode:
-            model.train(mode)
-        try:
-            yield
-        finally:
-            if old_mode != mode:
-                model.train(old_mode)
-
 
     def build(self, shape):
         """
@@ -143,7 +122,6 @@ class PytorchGraph(Graph):
         import re
         # construct graph
         dummy_input = torch.autograd.Variable(torch.randn(shape), requires_grad=False)
-
 
         graph, nodes = self.extractgraph(dummy_input)
         
@@ -197,6 +175,45 @@ class PytorchGraph040(PytorchGraph):
     def CreateGraphNode(self, node):
         return PytorchGraphNode040(node)
 
+    @staticmethod
+    def _optimize_graph(graph, aten, export_raw_ir=False):
+        # run dce first to eliminate dead parts of the graph that might have been
+        # left behind by things like symbolic_override
+
+        torch._C._jit_pass_dce(graph)
+        torch._C._jit_pass_lint(graph)
+
+        torch._C._jit_pass_peephole(graph)
+        torch._C._jit_pass_lint(graph)
+        if not export_raw_ir:
+            graph = torch._C._jit_pass_onnx(graph, aten)
+            torch._C._jit_pass_lint(graph)
+            torch._C._jit_pass_onnx_peephole(graph)
+            torch._C._jit_pass_lint(graph)
+        torch._C._jit_pass_dce(graph)
+        torch._C._jit_pass_lint(graph)
+        graph = torch._C._jit_pass_canonicalize(graph)
+        torch._C._jit_pass_lint(graph)
+        return graph
+    
+    @contextlib.contextmanager
+    def set_training(self, model, mode):
+        r"""
+        A context manager to temporarily set the training mode of 'model'
+        to 'mode', resetting it when we exit the with-block.  A no-op if
+        mode is None.
+        """
+        if mode is None:
+            yield
+            return
+        old_mode = model.training
+        if old_mode != mode:
+            model.train(mode)
+        try:
+            yield
+        finally:
+            if old_mode != mode:
+                model.train(old_mode)
 
 class PytorchGraph151(PytorchGraph):
 
@@ -204,11 +221,22 @@ class PytorchGraph151(PytorchGraph):
         super(PytorchGraph151, self).__init__(model)
 
     def extractgraph(self, dummy_input):
+        import re
+        from torch.onnx.utils import OperatorExportTypes
+        from torch.onnx.utils import _trace
+
+        self.model.eval()
         with scope_name_workaround():
             graph = _trace(self.model, dummy_input, OperatorExportTypes.ONNX)
-
         nodes = list(graph.nodes())
         
+        for node in nodes:
+            # print(node.__str__())
+            node_id = PytorchGraph.get_node_id(node)
+            node_name = 'node' + node_id
+            self.layer_weight_map[node_name] = '.'.join(
+                re.findall(r'\[([\w\d.]+)\]', node.scopeName())
+            )
         return graph, nodes
     
     def rename_nodes(self, node, node_id):

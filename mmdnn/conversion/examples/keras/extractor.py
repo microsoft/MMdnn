@@ -46,7 +46,7 @@ class keras_extractor(base_extractor):
 
     @classmethod
     def help(cls):
-        print ('Support frameworks: {}'.format(set().union(cls.architecture_map.keys(), cls.thirdparty_map.keys())))
+        print('Supported models: {}'.format(set().union(cls.architecture_map.keys(), cls.thirdparty_map.keys())))
 
 
     @classmethod

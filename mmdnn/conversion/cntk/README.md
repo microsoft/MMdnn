@@ -25,7 +25,7 @@ We tested some CNTK pre-trained models to others, get more detail from [this fil
 ```bash
 $ mmdownload -f cntk
 
-Support frameworks: ['resnet18', 'resnet50', 'resnet152', 'resnet101', 'inception_v3', 'Fast-RCNN_Pascal', 'alexnet', 'Fast-RCNN_grocery100']
+Supported models: ['resnet18', 'resnet50', 'resnet152', 'resnet101', 'inception_v3', 'Fast-RCNN_Pascal', 'alexnet', 'Fast-RCNN_grocery100']
 
 $ mmdownload -f cntk -n resnet50 -o ./
 
