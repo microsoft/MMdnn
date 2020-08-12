@@ -127,6 +127,11 @@ class PytorchParser(Parser):
 
         new_dim = shape.dim.add()
 
+        if not shape_pytorch:
+            print("Warning: Pytorch cannot inference outputshape of \"{}\" with operator \"{}\". Setting outputshape manually in json file is alternative .".format(source_node.name, source_node.type))
+            IR_node.attr["_output_shapes"].list.shape.extend([shape])
+            return 
+
         # (batch, C, H, W)  & NHWC
         if len(shape_pytorch) == 4:
 
