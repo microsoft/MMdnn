@@ -154,25 +154,8 @@ Done.
 
 ### <a name="visualization">Model Visualization</a>
 
-You can use the [MMdnn model visualizer](http://vis.mmdnn.com/) and submit your IR json file to visualize your model.  In order to run the commands below, you will need to install [requests](https://anaconda.org/anaconda/requests), [keras](https://anaconda.org/anaconda/keras), and [TensorFlow](https://anaconda.org/anaconda/tensorflow) using your favorite package manager.
-
-Use the [Keras "inception_v3" model](https://github.com/fchollet/deep-learning-models) as an example again.
-
-1. Download the pre-trained models
-
-```bash
-$ mmdownload -f keras -n inception_v3
-```
-
-2. Convert the pre-trained model files into an intermediate representation
-
-```bash
-$ mmtoir -f keras -w imagenet_inception_v3.h5 -o keras_inception_v3
-```
-
-3. Open the [MMdnn model visualizer](http://mmdnn.eastasia.cloudapp.azure.com:8080/) and choose file *keras_inception_v3.json*
-
-![vismmdnn](docs/vismmdnn.png)
+We provide a [local visualizer](mmdnn/visualization) to display the network architecture of a deep learning model.
+Please refer to the [instruction](mmdnn/visualization/README.md).
 
 ---
 
