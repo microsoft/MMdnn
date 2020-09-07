@@ -155,6 +155,11 @@ class KitModel(nn.Module):
         filter = IR_node.get_attr('kernel_shape')[-1]
         kernel = IR_node.get_attr('kernel_shape')[:-2]
         strides = IR_node.get_attr('strides')[1:-1]
+        dilations = IR_node.get_attr('dilations')
+        if dilations is None:
+            dilation = 1
+        else:
+            dilation = dilations[1]
 
         if IR_node.type == 'DepthwiseConv':
             group = in_channels
@@ -163,7 +168,7 @@ class KitModel(nn.Module):
         else:
             group = IR_node.get_attr('group', 1)
 
-        self.add_init(2, "self.{} = self.__conv({}, name='{}', in_channels={}, out_channels={}, kernel_size={}, stride={}, groups={}, bias={})".format(
+        self.add_init(2, "self.{} = self.__conv({}, name='{}', in_channels={}, out_channels={}, kernel_size={}, stride={}, groups={}, dilation={}, bias={})".format(
             IR_node.variable_name,
             dim,
             IR_node.name,
@@ -173,6 +178,7 @@ class KitModel(nn.Module):
             tuple(strides),
             # padding,
             group,
+            dilation,
             IR_node.get_attr('use_bias')))
 
         input_node = self._defuse_padding(IR_node)
@@ -462,10 +468,9 @@ class KitModel(nn.Module):
 
 
     def emit_Add(self, IR_node):
-        code = "{:<15} = {} + {}".format(
+        code = "{:<15} = {}".format(
             IR_node.variable_name,
-             self.parent_variable_name(IR_node),
-             self.parent_variable_name(IR_node, [1]))
+            ' + '.join(self.parent_variable_name(IR_node, [idx]) for idx in range(len(IR_node.in_edges))))
         return code
 
 
