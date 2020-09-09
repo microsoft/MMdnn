@@ -59,7 +59,8 @@ class TensorflowGraph(Graph):
     multi_tensor_type = [
         "Slice",
         "Split",
-        "Unpack"
+        "Unpack",
+        "SplitV"
     ]
 
 
