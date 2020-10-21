@@ -132,7 +132,7 @@ class PytorchGraph(Graph):
             output_str = node.__str__().split('=')[0]
             output_shape_str = re.findall(r'[^()!]+', output_str)
             if len(output_shape_str) > 1:
-                output_shape = [int(x.replace('!', '')) for x in output_shape_str[1].split(',')]
+                output_shape = [int(x.replace('!', '').split(':')[0]) for x in output_shape_str[1].split(',')]
             else:
                 output_shape = None
             self.shape_dict[node_name] = output_shape
