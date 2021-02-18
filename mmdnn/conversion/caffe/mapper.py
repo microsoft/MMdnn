@@ -152,7 +152,12 @@ class NodeMapper(object):
     def map_relu(cls, node):
         kwargs = {}
         cls._convert_output_shape(kwargs, node)
-        return Node.create('Relu', **kwargs)
+        negative_slope = node.parameters.negative_slope
+        if negative_slope:
+            kwargs['alpha'] = negative_slope
+            return Node.create('LeakyRelu', **kwargs)
+        else:
+            return Node.create('Relu', **kwargs)
 
 
     @classmethod
