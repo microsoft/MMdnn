@@ -4,7 +4,7 @@
 #----------------------------------------------------------------------------------------------
 
 import numpy as np
-import tensorflow
+import tensorflow.compat.v1 as tensorflow
 from tensorflow.python.framework import tensor_util
 from tensorflow.core.framework import attr_value_pb2
 from mmdnn.conversion.tensorflow.tensorflow_graph import TensorflowGraph
