@@ -1,0 +1,68 @@
+cff-version: 1.2.0
+title: >-
+  Enhancing the interoperability between deep
+  learning frameworks by model conversion
+message: >-
+  If you use MMdnn in your research, please cite it
+  using these metadata. Software is available from
+  https://github.com/microsoft/MMdnn.
+type: software
+authors:
+  - given-names: Yu
+    family-names: Liu
+    affiliation: 'National University of Singapore '
+    orcid: 'https://orcid.org/0000-0002-9702-349X'
+  - given-names: Cheng
+    family-names: Chen
+    affiliation: ByteDance Ltd.
+  - given-names: Ru
+    family-names: Zhang
+    affiliation: Microsoft Research
+  - given-names: Tingting
+    family-names: Qin
+    affiliation: Microsoft Research
+  - given-names: Xiang
+    family-names: Ji
+    affiliation: Microsoft Research
+  - given-names: Haoxiang
+    family-names: Lin
+    affiliation: Microsoft Research
+  - given-names: Mao
+    family-names: Yang
+    affiliation: Microsoft Research
+abstract: >-
+Deep learning (DL) has become one of the most successful machine learning
+techniques. To achieve the optimal development result, there are emerging
+requirements on the interoperability between DL frameworks that the trained
+model files and training/serving programs can be re-utilized. Faithful model
+conversion is a promising technology to enhance the framework interoperability
+in which a source model is transformed into the semantic equivalent in another
+target framework format. However, several major challenges need to be addressed.
+First, there are apparent discrepancies between DL frameworks. Second,
+understanding the semantics of a source model could be difficult due to the
+framework scheme and optimization. Lastly, there exist a large number of DL
+frameworks, bringing potential significant engineering efforts.
+
+In this paper, we propose MMdnn, an open-sourced, comprehensive, and faithful
+model conversion tool for popular DL frameworks. MMdnn adopts a novel unified
+intermediate representation (IR)-based methodology to systematically handle the
+conversion challenges. The source model is first transformed into an
+intermediate computation graph represented by the simple graph-based IR of MMdnn
+and then to the target framework format, which greatly reduces the engineering
+complexity. Since the model structure expressed by developers may have been
+changed by DL frameworks (e.g., graph optimization), MMdnn tries to recover the
+original high-level neural network layers for better semantic comprehension via
+a pattern matching similar method. In the meantime, a piece of model
+construction code is generated to facilitate later retraining or serving. MMdnn
+implements an extensible conversion architecture from the compilation point of
+view, which eases contribution from the community to support new DL operators
+and frameworks. MMdnn has reached good maturity and quality, and is applied for
+converting production models.
+
+
+identifiers:
+  - type: doi
+    value: 10.1145/3368089.3417051
+date-released: "2020-11-08"
+license: "MIT License"
+doi: 10.1145/3368089.3417051
