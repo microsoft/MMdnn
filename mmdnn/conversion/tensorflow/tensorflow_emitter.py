@@ -29,7 +29,9 @@ class TensorflowEmitter(Emitter):
 
     @property
     def header_code(self):
-        return """import tensorflow as tf
+        return """import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+tf.compat.v1.enable_resource_variables()
 
 _weights_dict = dict()
 
@@ -183,7 +185,10 @@ def KitModel(weight_file = None):
         pooling_type = IR_node.get_attr('pooling_type')
         if pooling_type == 'MAX':
             op = 'max_pool'
-            padding_const = ", constant_values=float('-Inf')"
+            # depending on the TensorFlow backend, constant -Inf may not be resolvable
+            # this change makes resulting tf saved model further compatible with tfjs graph model which can be used with webgl backend
+            # -3.4028235e+38 is a value of -tf.float32.max
+            padding_const = ", constant_values=float('-3.4028235e+38')"
         elif pooling_type == 'AVG':
             op = 'avg_pool'
             padding_const = ""
@@ -292,7 +297,7 @@ def KitModel(weight_file = None):
         parent_shape = shape_to_list(parent.get_attr('_output_shapes')[0])
         if len(parent_shape) > 2:
             # flatten is needed
-            self.add_body(1, "{:<15} = tf.contrib.layers.flatten({})".format(
+            self.add_body(1, "{:<15} = tf.compat.v1.layers.Flatten()({})".format(
                 IR_node.variable_name + '_flatten',
                 self.parent_variable_name(IR_node)))
 
@@ -334,7 +339,7 @@ def KitModel(weight_file = None):
 
     def emit_Flatten(self, IR_node):
         #self._emit_unary_operation(IR_node, "contrib.layers.flatten")
-        code = "{:<15} = tf.contrib.layers.flatten({})".format(
+        code = "{:<15} = tf.compat.v1.layers.Flatten()({})".format(
             IR_node.variable_name,
             self.parent_variable_name(IR_node))
         return code

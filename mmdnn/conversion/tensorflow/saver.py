@@ -1,4 +1,4 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 def save_model(MainModel, network_filepath, weight_filepath, dump_filepath, dump_tag = 'SERVING'):
