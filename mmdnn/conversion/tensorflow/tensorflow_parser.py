@@ -508,6 +508,14 @@ class TensorflowParser(Parser):
               % (source_node.type, source_node.name))
         return
 
+    def rename_ResizeNearestNeighbor(self, source_node):               
+        IR_node = self._convert_identity_operation(source_node)
+        input_shape = self.get_parent(source_node.name,[0]).layer.attr['_output_shapes'].list.shape[0].dim[1].size
+        output_shape = source_node.layer.attr['_output_shapes'].list.shape[0].dim[1].size
+        upSample_scale = output_shape/input_shape
+        kwargs = {}
+        kwargs['upSample_scale'] = upSample_scale
+        assign_IRnode_values(IR_node, kwargs)
 
     def rename_Placeholder(self, source_node):
         IR_node = self._convert_identity_operation(source_node, new_op='DataInput')
@@ -559,7 +567,12 @@ class TensorflowParser(Parser):
 
     def rename_Relu(self, source_node):
         self._convert_identity_operation(source_node)
-
+        
+    def rename_LeakyRelu(self, source_node):            # 191011 sfj add
+        IR_node = self._convert_identity_operation(source_node)
+        kwargs = {}
+        kwargs['alpha'] = source_node.get_attr('alpha')  # 191014 sfj add
+        assign_IRnode_values(IR_node, kwargs)
 
     def rename_Softmax(self, source_node):
         self._convert_identity_operation(source_node)
@@ -608,7 +621,9 @@ class TensorflowParser(Parser):
 
     def rename_Square(self, source_node):
         IR_node = self._convert_identity_operation(source_node, in_edge_count = 1, new_op = 'Square')
-
+        
+    def rename_Exp(self, source_node):        # 191013 sfj add
+        IR_node = self._convert_identity_operation(source_node, in_edge_count = 1, new_op = 'Exp')
 
     def rename_MatMul(self, source_node):
 
@@ -681,7 +696,10 @@ class TensorflowParser(Parser):
             # print (source_node)
             # print (source_node.layer)
             # assert False
-            self._convert_identity_operation(source_node, new_op='Div')
+            #self._convert_identity_operation(source_node, new_op='Div')
+            self._convert_identity_operation(source_node, new_op='RealDiv') 
+            self._add_constant_node(source_node)
+
 
 
     def rename_Floor(self, source_node):
@@ -927,7 +945,21 @@ class TensorflowParser(Parser):
                 'split' : source_node.get_attr('num_split')
             }
             assign_IRnode_values(IR_node, kwargs)
+            
+    def rename_SplitV(self, source_node):          # 191013 sfj add, const is [2,2,1,0]
+        IR_node = self._convert_identity_operation(source_node)
+        sizes = tensor_util.MakeNdarray(self.get_parent(source_node.name, [1]).layer.attr['value'].tensor)
+        indices_or_sections = []
+        target = 0
+        for size in sizes:
+            target += size
+            indices_or_sections.append(target)
 
+        kwargs = {
+                'indices_or_sections' : indices_or_sections,
+                'axis' : self.get_parent(source_node.name, [2]).layer.attr['value'].tensor.int_val[0]
+            }
+        assign_IRnode_values(IR_node, kwargs)
 
     def rename_StridedSlice(self, source_node):
         # TODO: Current it is only for slice
@@ -1056,6 +1088,10 @@ class TensorflowParser(Parser):
     def rename_Maximum(self, source_node):
         self._add_constant_node(source_node)
         self._convert_identity_operation(source_node)
+        
+    def rename_Maximum(self, source_node):    # 191016 sfj add
+        self._add_constant_node(source_node)
+        IR_node = self._convert_identity_operation(source_node)
 
     def rename_Cast(self, source_node):
         IR_node = self._convert_identity_operation(source_node)
