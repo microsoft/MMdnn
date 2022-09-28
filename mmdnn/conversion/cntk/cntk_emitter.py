@@ -777,7 +777,7 @@ def yolo_parameter():
 '''.format(self.yolo_parameter))
 
 
-    def _layer_upsample(self):
+    def _layer_UpSampling2D(self):
         self.add_body(0, '''
 def Upsampling2D(x, stride, name):
     assert stride == 2
