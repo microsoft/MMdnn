@@ -52,8 +52,7 @@ class PytorchEmitter(Emitter):
     def add_init(self, indent, codes):
         if isinstance(codes, _string_types):
             codes = [codes]
-        for code in codes:
-            self.init_code += ("    " * indent) + code + '\n'
+        self.init_code += "\n".join([("    " * indent) + code for code in codes]) + "\n"
 
     def parent_variable_name(self, IR_node, path=[0], weight_type='weights'):
         if not IR_node.in_edges and IR_node.name in self.weights_dict.keys():
