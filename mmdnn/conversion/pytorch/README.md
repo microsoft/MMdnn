@@ -36,7 +36,7 @@ PyTorch pretrained model is saved as [./imagenet_resnet101.pth].
 
 ```
 
-### Convert Pytorch pre-trained models to IR
+### Convert PyTorch pre-trained models to IR
 You can convert the whole pytorch model to IR structure. Please remember for the generality, we now only take the whole model `pth`, not just the state dict. To be more specific, it is save using `torch.save()` and `torch.load()` can load the whole model.
 
 ```bash
